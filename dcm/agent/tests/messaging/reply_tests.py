@@ -222,3 +222,91 @@ class TestRequesterStandardPath(unittest.TestCase):
 
         reply_rpc._sm.mapping_to_digraph()
 
+
+class TestRequestListener(unittest.TestCase):
+
+    def test_read_request(self):
+        conn = mock.Mock()
+
+        request_id = "requestID"
+        message_id = "messageID"
+
+        request_doc = {
+            'type': types.MessageTypes.REQUEST,
+            'request_id': request_id,
+            'message_id': message_id,
+            'payload': {}
+        }
+        conn.read.return_value = request_doc
+
+        reply_listener = reply.RequestListener(conn, None, None, None)
+        x = reply_listener.poll()
+        self.assertEqual(request_id, x._request_id)
+
+    def test_read_request_retrans_request(self):
+        conn = mock.Mock()
+
+        request_id = "requestID"
+        message_id = "messageID"
+
+        request_doc = {
+            'type': types.MessageTypes.REQUEST,
+            'request_id': request_id,
+            'message_id': message_id,
+            'payload': {}
+        }
+        conn.read.return_value = request_doc
+
+        reply_listener = reply.RequestListener(conn, None, None, None)
+        x = reply_listener.poll()
+        self.assertEqual(request_id, x._request_id)
+
+        conn.read.return_value = request_doc
+        x = reply_listener.poll()
+        self.assertIsNone(x)
+
+    def test_unknown_ack(self):
+        conn = mock.Mock()
+
+        request_id = "requestID"
+        message_id = "messageID"
+
+        ack_doc = {"type": types.MessageTypes.ACK,
+                     "request_id": request_id,
+                     "message_id": message_id,
+                     "payload": {}
+                     }
+
+        conn.read.return_value = ack_doc
+
+        reply_listener = reply.RequestListener(conn, None, None, None)
+        reply_listener.poll()
+        (param_list, keywords) = conn.send.call_args
+        send_doc = param_list[0]
+        self.assertTrue('type' in send_doc)
+        self.assertEqual(send_doc['type'], types.MessageTypes.NACK)
+
+    def test_request_ack(self):
+        conn = mock.Mock()
+
+        request_id = "requestID"
+        message_id = "messageID"
+
+        request_doc = {
+            'type': types.MessageTypes.REQUEST,
+            'request_id': request_id,
+            'message_id': message_id,
+            'payload': {}
+        }
+        conn.read.return_value = request_doc
+
+        reply_listener = reply.RequestListener(conn, None, None, None)
+        x = reply_listener.poll()
+        self.assertEqual(request_id, x._request_id)
+
+        ack_doc = {"type": types.MessageTypes.CANCEL,
+                     "request_id": request_id,
+                     "message_id": message_id,
+                     }
+        conn.read.return_value = ack_doc
+        reply_listener.poll()

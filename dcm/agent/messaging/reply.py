@@ -82,6 +82,7 @@ class ReplyRPC(object):
             types.MessageTypes.ACK: states.ReplyEvents.REPLY_ACK_RECEIVED,
             types.MessageTypes.NACK: states.ReplyEvents.REPLY_NACK_RECEIVED,
             types.MessageTypes.REPLY: states.ReplyEvents.USER_REPLIES,
+            types.MessageTypes.CANCEL: states.ReplyEvents.CANCEL_RECEIVED,
             types.MessageTypes.REQUEST: states.ReplyEvents.REQUEST_RECEIVED
         }
         if 'type' not in json_doc:
@@ -279,6 +280,20 @@ class ReplyRPC(object):
         """
         pass
 
+    def _sm_cancel_waiting_ack(self):
+        """
+        If a cancel is received while in the requesting state we must make sure
+        that the user does not get the cancel callback until after they have
+        acked the message.  This handler occurs when the user calls ack()
+        after a cancel has arrived.  Here we just register a cancel callback
+        and let the user react to it how they will.
+        """
+        cb = states.UserCallback(logging,
+                                self._cancel_callback,
+                                self._cancel_callback_args,
+                                self._cancel_callback_kwargs)
+        self._reply_listener.register_user_callback(cb)
+
     def _setup_states(self):
         self._sm.add_transition(states.ReplyStates.NEW,
                                 states.ReplyEvents.REQUEST_RECEIVED,
@@ -291,7 +306,7 @@ class ReplyRPC(object):
                                 self._sm_requesting_retransmission_received)
         self._sm.add_transition(states.ReplyStates.REQUESTING,
                                 states.ReplyEvents.CANCEL_RECEIVED,
-                                states.ReplyStates.REQUESTING,
+                                states.ReplyStates.CANCEL_RECEIVED_REQUESTING,
                                 self._sm_requesting_cancel_received)
         self._sm.add_transition(states.ReplyStates.REQUESTING,
                                 states.ReplyEvents.USER_ACCEPTS_REQUEST,
@@ -302,6 +317,27 @@ class ReplyRPC(object):
                                 states.ReplyStates.REPLY,
                                 self._sm_requesting_user_replies)
         self._sm.add_transition(states.ReplyStates.REQUESTING,
+                                states.ReplyEvents.USER_REJECTS_REQUEST,
+                                states.ReplyStates.NACKED,
+                                self._sm_requesting_user_rejects)
+
+        self._sm.add_transition(states.ReplyStates.CANCEL_RECEIVED_REQUESTING,
+                                states.ReplyEvents.REQUEST_RECEIVED,
+                                states.ReplyStates.CANCEL_RECEIVED_REQUESTING,
+                                self._sm_requesting_retransmission_received)
+        self._sm.add_transition(states.ReplyStates.CANCEL_RECEIVED_REQUESTING,
+                                states.ReplyEvents.CANCEL_RECEIVED,
+                                states.ReplyStates.CANCEL_RECEIVED_REQUESTING,
+                                None)
+        self._sm.add_transition(states.ReplyStates.CANCEL_RECEIVED_REQUESTING,
+                                states.ReplyEvents.USER_ACCEPTS_REQUEST,
+                                states.ReplyStates.ACKED,
+                                self._sm_cancel_waiting_ack)
+        self._sm.add_transition(states.ReplyStates.CANCEL_RECEIVED_REQUESTING,
+                                states.ReplyEvents.USER_REPLIES,
+                                states.ReplyStates.REPLY,
+                                self._sm_requesting_user_replies)
+        self._sm.add_transition(states.ReplyStates.CANCEL_RECEIVED_REQUESTING,
                                 states.ReplyEvents.USER_REJECTS_REQUEST,
                                 states.ReplyStates.NACKED,
                                 self._sm_requesting_user_rejects)
@@ -363,13 +399,14 @@ class RequestListener(object):
         self._request_callback_args = request_callback_args
         self._request_callback_kwargs = request_callback_kwargs
         self._request_callback = request_callback
+        self._user_callbacks_list = []
 
     def _read(self):
         incoming_doc = self._conn.read()
         if incoming_doc['type'] == types.MessageTypes.REQUEST:
             # this is new request
             request_id = incoming_doc['request_id']
-            if request_id in self._request_callback:
+            if request_id in self._requests:
                 # this is a retransmission, send in the message
                 req = self._requests[request_id]
                 req.incoming_message(incoming_doc)
@@ -386,8 +423,11 @@ class RequestListener(object):
         else:
             request_id = incoming_doc['request_id']
             if request_id not in self._requests:
-                # TODO send a NACK
-                pass
+                 nack_doc = {'type': types.MessageTypes.NACK,
+                    'message_id': incoming_doc['message_id'],
+                    'request_id': request_id}
+                 self._conn.send(nack_doc)
+                 return
             # get the message
             req = self._requests[request_id]
             req.incoming_message(incoming_doc)

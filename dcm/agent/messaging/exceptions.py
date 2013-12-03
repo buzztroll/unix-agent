@@ -7,6 +7,14 @@ class DoNotChangeStateException(StateMachineException):
     pass
 
 
+class IllegalStateTransitionException(StateMachineException):
+    msg = "The event %(event)s is not valid when in state %(state)s"
+
+    def __init__(self, event, state):
+        super(IllegalStateTransitionException, self).__init__(
+            self.msg % {"event": event, "state": state})
+
+
 class AssertionFailure(Exception):
     pass
 

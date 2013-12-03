@@ -39,6 +39,7 @@ class ReplyEvents(object):
 class ReplyStates(object):
     NEW = "NEW"
     REQUESTING = "REQUESTING"
+    CANCEL_RECEIVED_REQUESTING = "CANCEL_RECEIVED_REQUESTING"
     ACKED = "ACKED"
     REPLY = "REPLY"
     NACKED = "NACKED"
@@ -106,7 +107,11 @@ class StateMachine(object):
         print '}'
 
     def event_occurred(self, event, **kwargs):
-        new_state, func_list = self._state_map[self._current_state][event]
+        try:
+            new_state, func_list = self._state_map[self._current_state][event]
+        except KeyError as keyEx:
+            raise exceptions.IllegalStateTransitionException(
+                event, self._current_state)
         # a logging addapter is added so that me can configure more of the
         # log line in a conf file
         for func in func_list:
@@ -116,18 +121,20 @@ class StateMachine(object):
                 'current_state': self._current_state,
                 'new_state': new_state,
                 'func_name': func.__name__})
-            try:
-                logger.info("Calling %s" % func.__name__)
-                logger.debug("Calling %s | %s" % (func.__name__, func.__doc__))
-                func(logger, **kwargs)
-                self._current_state = new_state
-                logger.info("Moved to new state.")
-            except exceptions.DoNotChangeStateException as dncse:
-                logger.warning("An error occurred that permits us to continue "
-                            "but skip the state change. %s" % str(dncse))
-            except Exception as ex:
-                logger.error("An exception occurred %s" % str(ex))
-                raise
+            if func is not None:
+                try:
+                    logger.info("Calling %s" % func.__name__)
+                    logger.debug("Calling %s | %s" % (func.__name__,
+                                                      func.__doc__))
+                    func(logger, **kwargs)
+                    self._current_state = new_state
+                    logger.info("Moved to new state.")
+                except exceptions.DoNotChangeStateException as dncse:
+                    logger.warning("An error occurred that permits us to "
+                        "continue but skip the state change. %s" % str(dncse))
+                except Exception as ex:
+                    logger.error("An exception occurred %s" % str(ex))
+                    raise
 
     def register_user_callback(self, func, args=None, kwargs=None):
         cb = UserCallback(self._log, func, args, kwargs)
