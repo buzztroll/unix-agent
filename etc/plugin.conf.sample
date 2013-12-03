@@ -1,0 +1,18 @@
+[default]
+exe_path = /servives/agent/bin
+
+[plugin:backup]
+type: python_module
+module: com.enstratius.agent.backup
+
+[plugin:adduser]
+type: exe
+path: addUser.sh
+
+[plugin:echo]
+type: exe
+path: /bin/echo
+
+[plugin:cat]
+type: exe
+path: /bin/cat

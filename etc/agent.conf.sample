@@ -1,0 +1,8 @@
+[workers]
+count=1
+
+[logging]
+configfile=logging.yaml
+
+[plugin]
+configfile=plugin.conf.sample
