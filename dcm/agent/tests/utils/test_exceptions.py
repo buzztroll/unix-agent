@@ -1,0 +1,3 @@
+
+class AgentTestException(Exception):
+    pass
