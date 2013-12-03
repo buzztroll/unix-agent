@@ -1,6 +1,6 @@
 import logging
 
-import dcm.agent.messaging.exceptions as exceptions
+import dcm.agent.exceptions as exceptions
 
 
 class RequesterEvents(object):

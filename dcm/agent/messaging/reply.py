@@ -1,6 +1,6 @@
 import logging
 
-import dcm.agent.messaging.exceptions as exceptions
+import dcm.agent.exceptions as exceptions
 import dcm.agent.messaging.states as states
 import dcm.agent.messaging.types as types
 import dcm.agent.messaging.utils as utils
@@ -30,9 +30,11 @@ class ReplyRPC(object):
         self._timeout = timeout
         self._conn = connection
 
+    def get_message_payload(self):
+        return self._request_payload
+
     def ack(self,
-            cancel_callback, cancel_callback_args, cancel_callback_kwargs,
-            done_callback, done_callback_args, done_callback_kwargs):
+            cancel_callback, cancel_callback_args, cancel_callback_kwargs):
         """
         Indicate to the messaging system that you have successfully received
         this message and stored it for processing.
@@ -43,13 +45,6 @@ class ReplyRPC(object):
             self._cancel_callback_args = []
         self._cancel_callback_args.insert(0, self)
         self._cancel_callback_kwargs = cancel_callback_kwargs
-
-        self._done_callback = done_callback
-        self._done_callback_args = done_callback_args
-        if self._done_callback_args is None:
-            self._done_callback_args = []
-        self._cancel_callback_args.insert(0, self)
-        self._done_callback_kwargs = done_callback_kwargs
 
         self._sm.event_occurred(states.ReplyEvents.USER_ACCEPTS_REQUEST,
                                 message={})
@@ -417,7 +412,8 @@ class RequestListener(object):
             self._requests[request_id] = msg
 
             if self._request_callback:
-                self._request_callback(*self._request_callback_args,
+                self._request_callback(msg,
+                                       *self._request_callback_args,
                                        **self._request_callback_kwargs)
             return msg
         else:

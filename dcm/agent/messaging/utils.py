@@ -4,7 +4,7 @@ import threading
 import traceback
 import uuid
 
-import dcm.agent.messaging.exceptions as exceptions
+import dcm.agent.exceptions as exceptions
 
 
 def build_assertion_exception(logger, assertion_failure, msg):

@@ -1,10 +1,9 @@
 import mock
 import unittest
 import time
-from dcm.agent.messaging import exceptions
 
+import dcm.agent.exceptions as exceptions
 import dcm.agent.messaging.reply as reply
-import dcm.agent.messaging.states as states
 import dcm.agent.messaging.types as types
 
 
