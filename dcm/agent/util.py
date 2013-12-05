@@ -1,21 +1,23 @@
 import logging.handlers
 import logging
 
-# A logging handler that sets the file location based on the job id and script name
+# A logging handler that sets the file location based on the job id
+# and script name
 import random
 import string
 import subprocess
-import threading
 import exceptions
 
 
 class JobLogHandler(logging.FileHandler):
 
-    def __init__(self, filename_format="%(logname)s.log", mode='a', encoding=None):
+    def __init__(self, filename_format="%(logname)s.log", mode='a',
+                 encoding=None):
         self.filename_format = filename_format
         self.file_handles = {}
         base_filename = 'jobs.log'
-        super(JobLogHandler, self).__init__(base_filename, mode=mode, encoding=encoding, delay=1)
+        super(JobLogHandler, self).__init__(base_filename, mode=mode,
+                                            encoding=encoding, delay=1)
 
     def emit(self, record):
         names_a = record.name.rsplit('.', 1)
@@ -71,7 +73,8 @@ def fork_exe(command_line_args, logger, cwd=None):
                                stderr=subprocess.STDOUT,
                                cwd=cwd)
 
-    # TODO interate over the output so that it does not all come just at the end
+    # TODO interate over the output so that it does not all come just at
+    # the end
     stdout, stderr = process.communicate()
 
     logger.info("STDOUT: " + str(stdout))

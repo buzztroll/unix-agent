@@ -1,4 +1,6 @@
 import logging
+import os
+import sys
 
 import dcm.agent.exceptions as exceptions
 import dcm.agent.messaging.utils as utils
@@ -97,15 +99,20 @@ class StateMachine(object):
         state, event_list = self._state_map[state][event]
         event_list.insert(pos, func)
 
-    def mapping_to_digraph(self):
-        print 'state_machine {'
+    def mapping_to_digraph(self, outf=None):
+        if outf is None:
+            outf = sys.stdout
+        outf.write('digraph {' + os.linesep)
+        outf.write('node [shape=circle, style=filled, fillcolor=gray, '
+                   'fixedsize=true, fontsize=11, width=1.5];')
         for start_state in self._state_map:
             for event in self._state_map[start_state]:
                 ent = self._state_map[start_state][event]
                 if ent is not None:
-                    print '%s  -> %s [ label = "%s" ];' % (start_state, ent[0],
-                                                           event)
-        print '}'
+                    outf.write('%s  -> %s [label=" %s ", fontsize=11];'
+                               % (start_state, ent[0], event) + os.linesep)
+        outf.write('}' + os.linesep)
+        outf.flush()
 
     def event_occurred(self, event, **kwargs):
         try:

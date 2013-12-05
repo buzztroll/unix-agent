@@ -415,6 +415,7 @@ class RequestListener(object):
         self._dispatcher = dispatcher
         self._requests = {}
         self._messages_processed = 0
+        self._user_callbacks_list = []
 
     def _read(self):
         incoming_doc = self._conn.read()
@@ -448,7 +449,9 @@ class RequestListener(object):
             req.incoming_message(incoming_doc)
 
     def poll(self):
-        return self._read()
+        for cb in self._user_callbacks_list:
+            cb.call()
+        self._read()
 
     def message_done(self, reply_message):
         del self._requests[reply_message.get_request_id()]
