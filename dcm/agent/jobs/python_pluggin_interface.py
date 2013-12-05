@@ -7,3 +7,6 @@ class PluginInterface(object):
 
     def cancel(self, reply_rpc, *args, **kwargs):
         pass
+
+    def get_name(self):
+        pass

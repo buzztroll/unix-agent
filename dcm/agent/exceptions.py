@@ -30,6 +30,12 @@ class AgentOptionValueException(AgentOptionException):
         super(AgentOptionValueException, self).__init__(message)
 
 
+class AgentOptionValueNotSetException(AgentOptionException):
+    def __init__(self, name):
+        message = ("The config option %(name)s must be set." % locals())
+        super(AgentOptionValueException, self).__init__(message)
+
+
 class AgentOptionPathNotFoundException(AgentOptionException):
     def __init__(self, name, path):
         message = ("The config option %(name)s points to an invalid path: "
@@ -101,4 +107,12 @@ class InvalidMessageParameterValueException(MalformedMessageException):
         super(InvalidMessageParameterValueException, self).__init__(
             self.msg % {'attr_name': attr_name,
                         'attr_value': attr_value})
+
+
+class PerminateConnectionException(MessagingException):
+    msg = "This connection has perminately failed.  This should almost " \
+          "never happen. %(details)s."
+
+    def __init__(self, details):
+        super(PerminateConnectionException, self).__init__(self.msg % locals())
 

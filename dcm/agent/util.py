@@ -1,11 +1,11 @@
 import logging.handlers
 import logging
 
-
 # A logging handler that sets the file location based on the job id and script name
 import random
 import string
 import subprocess
+import threading
 import exceptions
 
 
@@ -42,7 +42,7 @@ class JobLogHandler(logging.FileHandler):
         for fname in self.file_handles:
             f = self.file_handles[fname]
             f.close()
-            del self.file_handles[fname]
+        self.file_handles = {}
 
 
 # A decorator for abstract classes

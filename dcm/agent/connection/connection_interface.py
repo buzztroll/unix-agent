@@ -7,7 +7,7 @@ class ConnectionInterface(object):
         """
         pass
 
-    def write(self, doc):
+    def send(self, doc):
         """
         Write a json document down the connection
         """

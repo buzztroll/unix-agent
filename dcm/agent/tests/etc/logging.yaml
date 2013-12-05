@@ -6,6 +6,9 @@ formatters:
         format: "%(levelname)s - %(message)s"
     job:
         format: "%(levelname)s - %(job_id) - %(message)s"
+    message:
+        format: "%(levelname)s REQUEST=%(request_id)s COMMAND=%(command_name)s -- %(message)s"
+
 
 handlers:
     console:
@@ -30,10 +33,22 @@ handlers:
         encoding: utf8
         filename_format: "/tmp/%(logname)s-%(job_id)s.log"
 
+    state_handler:
+        class: logging.StreamHandler
+        level: DEBUG
+        formatter: message
+        stream: ext://sys.stdout
+
+    message_logger:
+        class: logging.StreamHandler
+        level: DEBUG
+        formatter: message
+        stream: ext://sys.stdout
+
 loggers:
     dcm.agent:
         level: DEBUG
-        handlers: [file_handler]
+        handlers: [console]
         propagate: no
 
     dcm.agent.jobs:
@@ -41,7 +56,16 @@ loggers:
         handlers: [job_file_handler]
         propagate: no
 
+    dcm.agent.messaging.states:
+        level: DEBUG
+        handlers: [state_handler]
+        propagate: no
+
+    dcm.agent.dispatcher:
+        level: DEBUG
+        handlers: [message_logger]
+        propagate: no
 
 root:
     level: DEBUG
-    handlers: [file_handler]
+    handlers: [console]

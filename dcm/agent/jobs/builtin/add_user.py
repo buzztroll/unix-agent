@@ -1,6 +1,7 @@
 import os
-from enstratius.agent import util, exceptions
-import enstratius.agent.jobs as jobs
+import dcm.agent.util as util
+import dcm.agent.exceptions as exceptions
+import dcm.agent.jobs as jobs
 
 
 class AddUser(jobs.Plugin):

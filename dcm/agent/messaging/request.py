@@ -1,3 +1,4 @@
+import logging
 import uuid
 
 import dcm.agent.exceptions as exceptions
@@ -7,6 +8,8 @@ import dcm.agent.messaging.utils as utils
 
 
 class RequestRPC(object):
+
+    logger = utils.MessageLogAdaptor(logging.getLogger(__name__), {})
 
     def __init__(self, document, connection, target_id,
                  timeout=5, cleanup_timeout=60,
@@ -118,12 +121,12 @@ class RequestRPC(object):
     # ever method that starts with _sm_ is called under the same lock.
     ###################################################################
 
-    def _sm_send_request(self, log, **kwargs):
+    def _sm_send_request(self, **kwargs):
         """
         Send a request. This event handler occurs when ever a RPC request is
         sent for the first time.
         """
-        log.info("This initial request has been made.")
+        self.logger.info("This initial request has been made.")
         send_doc = {'request_id': self._request_id,
                     'type': types.MessageTypes.REQUEST,
                     'payload': self._doc}
@@ -136,7 +139,7 @@ class RequestRPC(object):
         self._message_timer = message_timer
         message_timer.send(self._conn)
 
-    def _sm_requesting_timeout(self, log, **kwargs):
+    def _sm_requesting_timeout(self, **kwargs):
         """
         This event occurs when the timeout associated with a RPC message
         request expires.
@@ -144,10 +147,10 @@ class RequestRPC(object):
         message_timer = kwargs['message_timer']
         # The time out did occur before the message could be acked so we must
         # resend it
-        log.info("Resending message id %s" % message_timer.message_id)
+        self.logger.info("Resending message id %s" % message_timer.message_id)
         self._send_request_message(message_timer)
 
-    def _sm_requested_timeout(self, log, **kwargs):
+    def _sm_requested_timeout(self, **kwargs):
         """
         This event occurs when the timeout associated with a RPC message
         request expires but the request was already acknowledge.  This
@@ -156,7 +159,7 @@ class RequestRPC(object):
         """
         pass
 
-    def _sm_requesting_ack(self, log, **kwargs):
+    def _sm_requesting_ack(self, **kwargs):
         """
         This is the standard case where a request is acknowledged by the remote
         side and the requesting side receives the ACK before any timeouts of
@@ -170,14 +173,14 @@ class RequestRPC(object):
         self._message_timer.cancel()
         self._message_timer = None
 
-    def _sm_requested_ack(self, log, **kwargs):
+    def _sm_requested_ack(self, **kwargs):
         # This happens when an ack comes after we already
         # received an ack.  Retransmission overlapping with a received ack can
         # cause this.
         # Hopefully this doesnt happen too often.
         pass
 
-    def _sm_requesting_reply_received(self, log, **kwargs):
+    def _sm_requesting_reply_received(self, **kwargs):
         """
         This occurs when a reply is received before an ack is received.
         This should only happen when the ack is lost or when the target decides
@@ -190,13 +193,15 @@ class RequestRPC(object):
             msg = ("When a reply happens in the REQUESTING state the message "
                    "should always be in the list.  This situation should "
                    "never occur")
-            utils.build_assertion_exception(log, "message not in list", msg)
+            utils.build_assertion_exception(
+                self.logger, "message not in list", msg)
 
         if self._reply_doc is not None:
             msg = ("There should be exactly 1 reply received.  Thus is the "
                    "reply_doc attribute is not None something we terribly "
                    "wrong.")
-            utils.build_assertion_exception(log, "reply not none", msg)
+            utils.build_assertion_exception(
+                self.logger, "reply not none", msg)
 
         self._reply_doc = message
 
@@ -212,7 +217,7 @@ class RequestRPC(object):
                 args.extend(self._reply_args)
             self._sm.register_user_callback(self._user_reply_callback)
 
-    def _sm_requested_reply_received(self, log, **kwargs):
+    def _sm_requested_reply_received(self, **kwargs):
         """
         This is the standard case.  After a request is made, and it receives an
         acknowledgment, it later receives a reply.  Here the reply will be
@@ -222,13 +227,14 @@ class RequestRPC(object):
         if self._message_timer is not None:
             msg = ("In the REQUESTED state the message ID should not be in the"
                    " list")
-            utils.build_assertion_exception(log, "message in list", msg)
+            utils.build_assertion_exception(self.logger, "message in list", msg)
 
         if self._reply_doc is not None:
             msg = ("There should be exactly 1 reply received.  Thus is the "
                    "reply_doc attribute is not None something we terribly "
                    "wrong.")
-            utils.build_assertion_exception(log, "reply doc is not None", msg)
+            utils.build_assertion_exception(
+                self.logger, "reply doc is not None", msg)
 
         self._reply_doc = message
 
@@ -238,7 +244,7 @@ class RequestRPC(object):
                 args.extend(self._reply_args)
             self._sm.register_user_callback(self._user_reply_callback)
 
-    def _sm_user_cb_returned(self, log, **kwargs):
+    def _sm_user_cb_returned(self, **kwargs):
         """
         This is the standard case when the user is notified that a reply has
         been received.  Once the users notification function returns safely
@@ -248,7 +254,7 @@ class RequestRPC(object):
         """
         self._send_reply_ack()
 
-    def _sm_requesting_nack_received(self, log, **kwargs):
+    def _sm_requesting_nack_received(self, **kwargs):
         """
         This occurs when in the requesting state and a NACK is received.
         This happens when the remote side cannot (or does not want to) deal
@@ -257,7 +263,7 @@ class RequestRPC(object):
         """
         self._register_failed_callback()
 
-    def _sm_requested_nack_received(self, log, **kwargs):
+    def _sm_requested_nack_received(self, **kwargs):
         """
         This happens when request has been successfully recevieved yet the
         target (or the messaging channel) decides to cancel the connection.
@@ -266,7 +272,7 @@ class RequestRPC(object):
         """
         self._register_failed_callback()
 
-    def _sm_send_cancel(self, log, **kwargs):
+    def _sm_send_cancel(self, **kwargs):
         """
         This occurs when a user has asked to cancel a message.  If the session
         is not close, or will not imminently close, we simply send a cancel
@@ -278,7 +284,7 @@ class RequestRPC(object):
                       'type': types.MessageTypes.CANCEL}
         self._conn.send(cancel_doc)
 
-    def _sm_cancel_requested_when_closing(self, log, **kwargs):
+    def _sm_cancel_requested_when_closing(self, **kwargs):
         """
         For various reasons dealing with race conditions it is possible
         for a cancel to be requested after the session is ready to close.
@@ -287,7 +293,7 @@ class RequestRPC(object):
         """
         pass
 
-    def _sm_usercb_reply(self, log, **kwargs):
+    def _sm_usercb_reply(self, **kwargs):
         """
         In this case a retransmission of a reply was received.  This can
         happen if the reply ack was lost or delayed.  Here do nothing and
@@ -296,7 +302,7 @@ class RequestRPC(object):
         """
         pass
 
-    def _sm_acksent_reply_received(self, log, **kwargs):
+    def _sm_acksent_reply_received(self, **kwargs):
         """
         In this case a retransmission of a reply was received after an
         ack was sent.  The user has already safely handled the incoming
@@ -304,7 +310,7 @@ class RequestRPC(object):
         """
         self._send_reply_ack()
 
-    def _sm_ack_cleanup_timeout(self, log, **kwargs):
+    def _sm_ack_cleanup_timeout(self, **kwargs):
         """
         This happens when the cleanup timer expires.  This indicates that
         the session can be considered over.  Enough time has passed such
@@ -325,7 +331,7 @@ class RequestRPC(object):
 
         self._session_complete()
 
-    def _sm_failing_cb_returns(self, log, **kwargs):
+    def _sm_failing_cb_returns(self, **kwargs):
         """
         This event occurs after we know the user was successfully notified
         that the session ended.  We can cleanup at this point
@@ -338,7 +344,7 @@ class RequestRPC(object):
         """
         pass
 
-    def _sm_ack_sent_reply_received(self, log, **kwargs):
+    def _sm_ack_sent_reply_received(self, **kwargs):
         """
         This happens when a reply was retransmitted even tho a previous
         reply was received.  The likely cause is that the reply ACK was
@@ -346,7 +352,7 @@ class RequestRPC(object):
         """
         pass
 
-    def _sm_nak_when_closing(self, log, **kwargs):
+    def _sm_nak_when_closing(self, **kwargs):
         """
         This is a very rare case.  This can only happen when a reply has been
         received and a reply ack has been sent.  At this point the RPC has
@@ -462,4 +468,3 @@ class RequestRPC(object):
                                 states.RequesterEvents.TIMEOUT,
                                 states.RequesterStates.ACK_SENT,
                                 self._sm_requested_timeout)
-

@@ -13,13 +13,18 @@ install_requires = [
 tests_require = install_requires + [
         ]
 
-setuptools.setup(name='enstratiusagent',
+setuptools.setup(name='dcmagent',
       version=Version,
-      description='Agent for Enstraius run VMs.',
+      description='Agent for DCM run VMs.',
       author='Dell',
       author_email='enstratius@XXXCHANGETHISdell.com',
       url='http://www.enstratius.com/',
-      packages=[ 'dcm', 'dcm.agent',],
+      packages=[ 'dcm', 'dcm.agent',
+                 'dcm.agent.connection',
+                 'dcm.agent.messaging',
+                 'dcm.agent.jobs',
+                 'dcm.agent.jobs.builtin',
+      ],
 
       include_package_data = True,
       package_data = {},

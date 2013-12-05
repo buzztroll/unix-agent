@@ -2,7 +2,7 @@ import ConfigParser
 import logging
 import os
 import subprocess
-from enstratius.agent import exceptions
+from dcm.agent import exceptions
 
 
 # The abstract object for plugins.
@@ -26,27 +26,30 @@ class Plugin(object):
     def __str__(self):
         return self.name + ":" + self.job_id
 
+    def get_name(self):
+        return self.name
+
 
 # a fork plugin.  Fork an executable and wait for it to complete.
 class ExePlugin(Plugin):
 
     def __init__(self, agent, conf, job_id, items_map, name, arguments):
         super(ExePlugin, self).__init__(agent, conf, job_id, items_map, name, arguments)
-        if 'exe' not in items_map:
+        if 'path' not in items_map:
             raise exceptions.AgentPluginConfigException(
                 "The configuration for the %s plugin does not have "
-                "an exe entry." % name)
-        exe_path = items_map['exe']
+                "an path entry." % name)
+        exe_path = items_map['path']
         if not os.path.exists(exe_path):
             raise exceptions.AgentPluginConfigException(
                 "Module %s is misconfigured.  The path %s "
-                "does not exists" % (name, exe_path))
+                 "does not exists" % (name, exe_path))
         self.exe = os.path.abspath(exe_path)
         self.cwd = os.path.dirname(self.exe)
 
     def run(self):
         try:
-            self._exec()
+            return self._exec()
         except Exception as ex:
             self.logger.error("Error running the subprocess", ex)
 
@@ -67,6 +70,7 @@ class ExePlugin(Plugin):
         self.logger.info("STDOUT: " + str(stdout))
         self.logger.info("STDERR: " + str(stderr))
         self.logger.info("Return code: " + str(process.returncode))
+        return (stdout, stderr, process.returncode)
 
     def cancel(self, reply_rpc, *args, **kwargs):
         pass
@@ -79,7 +83,7 @@ def _load_python(agent, conf, job_id, items_map, name, arguments):
     module_name = items_map['module_name']
     try:
         module = __import__(module_name)
-        return module.load_enstratius_plugin(agent, conf, job_id, items_map, name, arguments)
+        return module.load_plugin(agent, conf, job_id, items_map, name, arguments)
     except ImportError as iee:
         raise exceptions.AgentPluginConfigException(
             "The module named %s could not be imported." % module_name, iee)

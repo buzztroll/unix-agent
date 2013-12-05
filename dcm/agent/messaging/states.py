@@ -1,6 +1,7 @@
 import logging
 
 import dcm.agent.exceptions as exceptions
+import dcm.agent.messaging.utils as utils
 
 
 class RequesterEvents(object):
@@ -48,7 +49,7 @@ class ReplyStates(object):
 
 class UserCallback(object):
 
-    def __init__(self, log, func, args, kwargs):
+    def __init__(self, func, args, kwargs):
         self._func = func
         self._args = args
         if args is None:
@@ -56,7 +57,8 @@ class UserCallback(object):
         self._kwargs = kwargs
         if kwargs is None:
             self._kwargs = {}
-        self._log = log
+        self._log = utils.MessageLogAdaptor(logging.getLogger(__name__), {})
+
 
     def call(self):
         try:
@@ -79,8 +81,7 @@ class StateMachine(object):
         self._state_map = {}
         self._current_state = start_state
         self._user_callbacks_list = []
-        self._log = logging
-        self._fail_point_map = {}
+        self._log = utils.MessageLogAdaptor(logging.getLogger(__name__), {})
 
     def add_transition(self, state_event, event, new_state, func):
         if state_event not in self._state_map:
@@ -109,35 +110,36 @@ class StateMachine(object):
     def event_occurred(self, event, **kwargs):
         try:
             new_state, func_list = self._state_map[self._current_state][event]
+            # a logging adapter is added so that me can configure more of the
+            # log line in a conf file
+            log_msg = ("Event %(event)s occurred.  Moving from state " \
+                       "%(current_state)s to %(new_state)s") % \
+                           {'event': event,
+                            'current_state': self._current_state,
+                            'new_state': new_state}
+            self._log.info(log_msg)
+            for func in func_list:
+                if func is not None:
+                    try:
+                        self._log.info("Calling %s" % func.__name__)
+                        self._log.debug("Calling %s | %s" % (func.__name__,
+                                                             func.__doc__))
+                        func(**kwargs)
+                        self._current_state = new_state
+                        self._log.info("Moved to new state %s." % new_state)
+                    except exceptions.DoNotChangeStateException as dncse:
+                        self._log.warning("An error occurred that permits us "
+                                          "to continue but skip the state "
+                                          "change. %s" % str(dncse))
+                    except Exception as ex:
+                        self._log.error("An exception occurred %s" % str(ex))
+                        raise
         except KeyError as keyEx:
             raise exceptions.IllegalStateTransitionException(
                 event, self._current_state)
-        # a logging addapter is added so that me can configure more of the
-        # log line in a conf file
-        for func in func_list:
-            logger = logging.LoggerAdapter(
-                self._log,
-               {'event': event,
-                'current_state': self._current_state,
-                'new_state': new_state,
-                'func_name': func.__name__})
-            if func is not None:
-                try:
-                    logger.info("Calling %s" % func.__name__)
-                    logger.debug("Calling %s | %s" % (func.__name__,
-                                                      func.__doc__))
-                    func(logger, **kwargs)
-                    self._current_state = new_state
-                    logger.info("Moved to new state.")
-                except exceptions.DoNotChangeStateException as dncse:
-                    logger.warning("An error occurred that permits us to "
-                        "continue but skip the state change. %s" % str(dncse))
-                except Exception as ex:
-                    logger.error("An exception occurred %s" % str(ex))
-                    raise
 
     def register_user_callback(self, func, args=None, kwargs=None):
-        cb = UserCallback(self._log, func, args, kwargs)
+        cb = UserCallback(func, args, kwargs)
         self._user_callbacks_list.append(cb)
 
     def process_callbacks(self):

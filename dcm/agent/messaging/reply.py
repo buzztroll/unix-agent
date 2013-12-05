@@ -1,4 +1,5 @@
 import logging
+import threading
 
 import dcm.agent.exceptions as exceptions
 import dcm.agent.messaging.states as states
@@ -10,29 +11,50 @@ class ReplyRPC(object):
 
     def __init__(self, reply_listener, connection,
                  request_id, message_id, payload,
-                 timeout=5):
-        self._sm = states.StateMachine(states.ReplyStates.NEW)
-        self._setup_states()
-        self._sm.event_occurred(states.ReplyEvents.REQUEST_RECEIVED,
-                                message={})
+                 timeout=1.0):
         self._request_id = request_id
         self._message_id = message_id
         self._request_payload = payload
         self._cancel_callback = None
         self._cancel_callback_args = None
         self._cancel_callback_kwargs = None
-        self._done_callback = None
-        self._done_callback_args = None
-        self._done_callback_kwargs = None
 
         self._reply_message_timer = None
         self._reply_listener = reply_listener
         self._timeout = timeout
         self._conn = connection
 
+        self._lock = threading.RLock()
+
+        self._sm = states.StateMachine(states.ReplyStates.NEW)
+        self._setup_states()
+        self._sm.event_occurred(states.ReplyEvents.REQUEST_RECEIVED,
+                                message={})
+
+        self._log = utils.MessageLogAdaptor(logging.getLogger(__name__), {})
+
+
+    def get_request_id(self):
+        return self._request_id
+
+    def lock(self):
+        self._lock.acquire()
+
+    def unlock(self):
+        self._lock.release()
+
     def get_message_payload(self):
         return self._request_payload
 
+    def kill(self):
+        if self._reply_message_timer:
+            try:
+                self._reply_message_timer.cancel()
+            except:
+                # TODO LOG THIS
+                pass
+
+    @utils.class_method_sync()
     def ack(self,
             cancel_callback, cancel_callback_args, cancel_callback_kwargs):
         """
@@ -49,6 +71,7 @@ class ReplyRPC(object):
         self._sm.event_occurred(states.ReplyEvents.USER_ACCEPTS_REQUEST,
                                 message={})
 
+    @utils.class_method_sync()
     def nak(self, response_document):
         """
         This function is called to out tight reject the message.  The user
@@ -60,6 +83,7 @@ class ReplyRPC(object):
         self._sm.event_occurred(states.ReplyEvents.USER_REJECTS_REQUEST,
                                 message=response_document)
 
+    @utils.class_method_sync()
     def reply(self, response_document):
         """
         Send a reply to this request.  This signifies that the user is
@@ -68,10 +92,12 @@ class ReplyRPC(object):
         self._sm.event_occurred(states.ReplyEvents.USER_REPLIES,
                                 message=response_document)
 
+    @utils.class_method_sync()
     def reply_timeout(self, message_timer):
         self._sm.event_occurred(states.RequesterEvents.TIMEOUT,
                                 message_timer=message_timer)
 
+    @utils.class_method_sync()
     def incoming_message(self, json_doc):
         type_to_event = {
             types.MessageTypes.ACK: states.ReplyEvents.REPLY_ACK_RECEIVED,
@@ -99,14 +125,14 @@ class ReplyRPC(object):
     # ever method that starts with _sm_ is called under the same lock.
     ###################################################################
 
-    def _sm_initial_request_received(self, log, **kwargs):
+    def _sm_initial_request_received(self, **kwargs):
         """
         This is the initial request, we simply set this to the requesting
         state.
         """
         pass
 
-    def _sm_requesting_retransmission_received(self, log, **kwargs):
+    def _sm_requesting_retransmission_received(self, **kwargs):
         """
         After receiving an initial request we receive a retransmission of it.
         The user has not yet acked the message but they have been notified
@@ -115,20 +141,19 @@ class ReplyRPC(object):
         """
         pass
 
-    def _sm_requesting_cancel_received(self, log, **kwargs):
+    def _sm_requesting_cancel_received(self, **kwargs):
         """
         A cancel message flows over the wire after the request is received
         but before it is acknowledged.  Here we will tell the user about the
         cancel.  It is important that the cancel notification comes after
         the message received notification.
         """
-        cb = states.UserCallback(logging,
-                                self._cancel_callback,
-                                self._cancel_callback_args,
-                                self._cancel_callback_kwargs)
+        cb = states.UserCallback(self._cancel_callback,
+                                 self._cancel_callback_args,
+                                 self._cancel_callback_kwargs)
         self._reply_listener.register_user_callback(cb)
 
-    def _sm_requesting_user_accepts(self, log, **kwargs):
+    def _sm_requesting_user_accepts(self, **kwargs):
         """
         The user decided to accept the message.  Here we will send the ack
         """
@@ -137,7 +162,7 @@ class ReplyRPC(object):
                    'request_id': self._request_id}
         self._conn.send(ack_doc)
 
-    def _sm_requesting_user_replies(self, log, **kwargs):
+    def _sm_requesting_user_replies(self, **kwargs):
         """
         The user decides to reply before acknowledging the message.  Therefore
         we just send the reply and it acts as the ack and the reply
@@ -153,7 +178,7 @@ class ReplyRPC(object):
                                            reply_doc)
         self._send_reply_message(message_timer)
 
-    def _sm_requesting_user_rejects(self, log, **kwargs):
+    def _sm_requesting_user_rejects(self, **kwargs):
         """
         The user decides to reject the incoming request so we must send
         a nack to the remote side.
@@ -163,7 +188,7 @@ class ReplyRPC(object):
                     'request_id': self._request_id}
         self._conn.send(nack_doc)
 
-    def _sm_acked_request_received(self, log, **kwargs):
+    def _sm_acked_request_received(self, **kwargs):
         """
         In this case a retransmission of the request comes in after the user
         acknowledged the message.  Here we resend the ack.
@@ -178,18 +203,18 @@ class ReplyRPC(object):
                    'request_id': self._request_id}
         self._conn.send(ack_doc)
 
-    def _sm_acked_cancel_received(self, log, **kwargs):
+    def _sm_acked_cancel_received(self, **kwargs):
         """
         A cancel is received from the remote end.  We simply notify the user
         of the request and allow the user to act upon it.
         """
-        cb = states.UserCallback(logging,
-                                self._cancel_callback,
-                                self._cancel_callback_args,
-                                self._cancel_callback_kwargs)
+        cb = states.UserCallback(self._cancel_callback,
+                                 self._cancel_callback_args,
+                                 self._cancel_callback_kwargs,
+                                 log=self._log)
         self._reply_listener.register_user_callback(cb)
 
-    def _sm_acked_reply(self, log, **kwargs):
+    def _sm_acked_reply(self, **kwargs):
         """
         This is the standard case.  A user has accepted the message and is
         now replying to it.  We send the reply.
@@ -205,7 +230,7 @@ class ReplyRPC(object):
                                            reply_doc)
         self._send_reply_message(message_timer)
 
-    def _sm_reply_request_retrans(self, log, **kwargs):
+    def _sm_reply_request_retrans(self, **kwargs):
         """
         After replying to a message we receive a retransmission of the
         original request.  This can happen if the remote end never receives
@@ -218,7 +243,7 @@ class ReplyRPC(object):
                    'payload': self._response_doc}
         self._conn.send(reply_doc)
 
-    def _sm_reply_cancel_received(self, log, **kwargs):
+    def _sm_reply_cancel_received(self, **kwargs):
         """
         This occurs when a cancel is received after a reply is sent.  It can
         happen if the remote end sends a cancel before the reply is received.
@@ -227,7 +252,7 @@ class ReplyRPC(object):
         """
         pass
 
-    def _sm_reply_ack_received(self, log, **kwargs):
+    def _sm_reply_ack_received(self, **kwargs):
         """
         This is the standard case.  A reply is sent and the ack to that
         reply is received.  At this point we know that the RPC was
@@ -237,7 +262,7 @@ class ReplyRPC(object):
         self._reply_message_timer = None
         self._reply_listener.message_done(self)
 
-    def _sm_reply_ack_timeout(self, log, **kwargs):
+    def _sm_reply_ack_timeout(self, **kwargs):
         """
         This happens when after a given amount of time an ack has still not
         been received.  We thus must re-send the reply.
@@ -245,10 +270,10 @@ class ReplyRPC(object):
         message_timer = kwargs['message_timer']
         # The time out did occur before the message could be acked so we must
         # resend it
-        log.info("Resending reply id %s" % message_timer.message_id)
+        self._log.info("Resending reply id %s" % message_timer.message_id)
         self._send_reply_message(message_timer)
 
-    def _sm_nacked_request_received(self, log, **kwargs):
+    def _sm_nacked_request_received(self, **kwargs):
         """
         This happens when a request is received after it has been nacked.
         This will occur if the first nack is lost or delayed.  We retransmit
@@ -259,7 +284,7 @@ class ReplyRPC(object):
                     'request_id': self._request_id}
         self._conn.send(nack_doc)
 
-    def _sm_nacked_timeout(self, log, **kwargs):
+    def _sm_nacked_timeout(self, **kwargs):
         """
         Once in the nack state we wait a while before terminating the
         communicate in case the nack is lost.  This happens when that waiting
@@ -267,7 +292,7 @@ class ReplyRPC(object):
         """
         self._reply_listener.message_done(self)
 
-    def _sm_cleanup_timeout(self, log, **kwargs):
+    def _sm_cleanup_timeout(self, **kwargs):
         """
         This occurs if the timeout occurred while the reply ack was being
         processed but before the timer could be properly processed.  We
@@ -275,7 +300,7 @@ class ReplyRPC(object):
         """
         pass
 
-    def _sm_cancel_waiting_ack(self):
+    def _sm_cancel_waiting_ack(self, **kwargs):
         """
         If a cancel is received while in the requesting state we must make sure
         that the user does not get the cancel callback until after they have
@@ -283,10 +308,10 @@ class ReplyRPC(object):
         after a cancel has arrived.  Here we just register a cancel callback
         and let the user react to it how they will.
         """
-        cb = states.UserCallback(logging,
-                                self._cancel_callback,
-                                self._cancel_callback_args,
-                                self._cancel_callback_kwargs)
+        cb = states.UserCallback(self._cancel_callback,
+                                 self._cancel_callback_args,
+                                 self._cancel_callback_kwargs,
+                                 log=self._log)
         self._reply_listener.register_user_callback(cb)
 
     def _setup_states(self):
@@ -385,19 +410,18 @@ class ReplyRPC(object):
 
 class RequestListener(object):
 
-    def __init__(self, connection,
-                 request_callback,
-                 request_callback_args,
-                 request_callback_kwargs):
+    def __init__(self, connection, dispatcher):
         self._conn = connection
+        self._dispatcher = dispatcher
         self._requests = {}
-        self._request_callback_args = request_callback_args
-        self._request_callback_kwargs = request_callback_kwargs
-        self._request_callback = request_callback
-        self._user_callbacks_list = []
+        self._messages_processed = 0
 
     def _read(self):
         incoming_doc = self._conn.read()
+        if incoming_doc is None:
+            return
+        if 'request_id' in incoming_doc:
+            utils.setup_message_logging(incoming_doc['request_id'], 'n/a')
         if incoming_doc['type'] == types.MessageTypes.REQUEST:
             # this is new request
             request_id = incoming_doc['request_id']
@@ -410,12 +434,7 @@ class RequestListener(object):
             payload = incoming_doc['payload']
             msg = ReplyRPC(self, self._conn, request_id, message_id, payload)
             self._requests[request_id] = msg
-
-            if self._request_callback:
-                self._request_callback(msg,
-                                       *self._request_callback_args,
-                                       **self._request_callback_kwargs)
-            return msg
+            self._dispatcher.incoming_request(msg)
         else:
             request_id = incoming_doc['request_id']
             if request_id not in self._requests:
@@ -429,15 +448,22 @@ class RequestListener(object):
             req.incoming_message(incoming_doc)
 
     def poll(self):
-        self._process_callbacks()
         return self._read()
 
     def message_done(self, reply_message):
         del self._requests[reply_message.get_request_id()]
+        self._messages_processed += 1
 
     def register_user_callback(self, user_callback):
         self._user_callbacks_list.append(user_callback)
 
-    def _process_callbacks(self):
-        for cb in self._user_callbacks_list:
-            cb.call()
+    def stop(self):
+        for r_id in self._requests:
+            reply = self._requests[r_id]
+            reply.kill()
+
+    def get_messages_processed(self):
+        return self._messages_processed
+
+    def is_busy(self):
+        return len(self._requests) != 0
