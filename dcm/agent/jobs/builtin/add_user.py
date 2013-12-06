@@ -7,7 +7,8 @@ import dcm.agent.jobs as jobs
 class AddUser(jobs.Plugin):
 
     def __init__(self, agent, conf, job_id, items_map, name, arguments):
-        super(AddUser, self).__init__(agent, conf, job_id, items_map, name, arguments)
+        super(AddUser, self).__init__(
+            agent, conf, job_id, items_map, name, arguments)
         try:
             self.user_id = arguments['user_id']
             self.first_name = arguments['first_name']
@@ -28,7 +29,8 @@ class AddUser(jobs.Plugin):
             self.add_user_exe_path = items_map['add_user_exe_path']
             if not os.path.exists(self.add_user_exe_path):
                 raise exceptions.AgentPluginConfigException(
-                    "The plugin %s points an add_user_exe_path that does not exist." % name)
+                    "The plugin %s points an add_user_exe_path that does not "
+                    "exist." % name)
         except KeyError as ke:
             raise exceptions.AgentPluginConfigException(
                 "The plugin %s requires the option %s" % (name, ke.message))

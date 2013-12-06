@@ -4,6 +4,7 @@ class AgentNotImplementedException(Exception):
         message = "The function %s must be implemented." % (func_name)
         super(AgentNotImplementedException, self).__init__(message)
 
+
 class AgentOptionException(Exception):
     pass
 
@@ -115,4 +116,3 @@ class PerminateConnectionException(MessagingException):
 
     def __init__(self, details):
         super(PerminateConnectionException, self).__init__(self.msg % locals())
-

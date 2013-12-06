@@ -7,6 +7,7 @@ import dcm.agent.messaging.utils as message_utils
 
 # Threaded Object
 
+
 class Worker(threading.Thread):
     logger = message_utils.MessageLogAdaptor(logging.getLogger(__name__), {})
 
@@ -19,7 +20,6 @@ class Worker(threading.Thread):
     def done(self):
         self.logger.debug("done() called on worker %s .." % self.getName())
         self._done = True
-
 
     def run(self):
         self.logger.info("Worker %s thread starting." % self.getName())
@@ -39,10 +39,12 @@ class Worker(threading.Thread):
                 try:
                     self.logger.info("Starting job " + str(plugin))
                     (stdout, stderr, returncode) = plugin.run()
-                    self.logger.info("Completed successfully job " + str(plugin))
+                    self.logger.info(
+                        "Completed successfully job " + str(plugin))
                 except Exception as ex:
-                    self.logger.error("Worker %s thread had a top level error when "
-                                      "running job %s" % (self.getName(), plugin), ex)
+                    self.logger.error(
+                        "Worker %s thread had a top level error when "
+                        "running job %s" % (self.getName(), plugin), ex)
                     stdout = ""
                     stderr = ex.message
                     returncode = -1
@@ -73,7 +75,7 @@ class Dispatcher(object):
         self.conf = conf
         self.workers = []
         self.worker_q = Queue.Queue()
-        self._agent = None # figure out what we need here
+        self._agent = None  # figure out what we need here
 
     def start_workers(self):
         self.logger.info("Starting %d workers." % self.conf.workers_count)

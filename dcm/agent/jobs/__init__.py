@@ -34,7 +34,8 @@ class Plugin(object):
 class ExePlugin(Plugin):
 
     def __init__(self, agent, conf, job_id, items_map, name, arguments):
-        super(ExePlugin, self).__init__(agent, conf, job_id, items_map, name, arguments)
+        super(ExePlugin, self).__init__(
+            agent, conf, job_id, items_map, name, arguments)
         if 'path' not in items_map:
             raise exceptions.AgentPluginConfigException(
                 "The configuration for the %s plugin does not have "
@@ -43,7 +44,7 @@ class ExePlugin(Plugin):
         if not os.path.exists(exe_path):
             raise exceptions.AgentPluginConfigException(
                 "Module %s is misconfigured.  The path %s "
-                 "does not exists" % (name, exe_path))
+                "does not exists" % (name, exe_path))
         self.exe = os.path.abspath(exe_path)
         self.cwd = os.path.dirname(self.exe)
 
@@ -57,14 +58,16 @@ class ExePlugin(Plugin):
         args = [self.exe]
         args.extend(self.arguments)
         self.logger.info("Forking the command " + str(args))
-        args = ' '.join(args) # for some reason i cannot just pass the array.  at least should do a shell join
+        args = ' '.join(args)  # for some reason i cannot just pass the array.
+                               # at least should do a shell join
         process = subprocess.Popen(args,
                                    shell=True,
                                    stdout=subprocess.PIPE,
                                    stderr=subprocess.STDOUT,
                                    cwd=self.cwd)
 
-        # TODO interate over the output so that it does not all come just at the end
+        # TODO interate over the output so that it does not all come just at
+        # the end
         stdout, stderr = process.communicate()
 
         self.logger.info("STDOUT: " + str(stdout))
@@ -78,18 +81,21 @@ class ExePlugin(Plugin):
 
 def _load_python(agent, conf, job_id, items_map, name, arguments):
     if 'module_name' not in items_map:
-        raise exceptions.AgentPluginConfigException("The configuration for the %s plugin "
-                                                    "does not contain a module_name entry." % name)
+        raise exceptions.AgentPluginConfigException(
+            "The configuration for the %s plugin does not contain a "
+            "module_name entry." % name)
     module_name = items_map['module_name']
     try:
         module = __import__(module_name)
-        return module.load_plugin(agent, conf, job_id, items_map, name, arguments)
+        return module.load_plugin(
+            agent, conf, job_id, items_map, name, arguments)
     except ImportError as iee:
         raise exceptions.AgentPluginConfigException(
             "The module named %s could not be imported." % module_name, iee)
     except AttributeError as ae:
         raise exceptions.AgentPluginConfigException(
-            "The module named %s does not have the load function." % module_name, ae)
+            "The module named %s does not have the load function."
+            % module_name, ae)
 
 
 def _load_exe(agent, conf, job_id, items_map, name, arguments):
@@ -105,7 +111,8 @@ g_type_to_obj_map = {
 def load_plugin(agent, conf, job_id, name, arguments):
     conffile = conf.plugin_configfile
     if not os.path.exists(conffile):
-        raise exceptions.AgentPluginConfigException("The plugin configuration file %s could not be found" % conffile)
+        raise exceptions.AgentPluginConfigException(
+            "The plugin configuration file %s could not be found" % conffile)
 
     parser = ConfigParser.SafeConfigParser()
     parser.read([conffile])
@@ -122,13 +129,16 @@ def load_plugin(agent, conf, job_id, name, arguments):
 
                 if "type" not in items_map:
                     raise exceptions.AgentPluginConfigException(
-                        "The section %s does not have an entry for type." % section_name)
+                        "The section %s does not have an entry for type."
+                        % section_name)
                 type = items_map["type"]
                 if type not in g_type_to_obj_map:
-                    raise exceptions.AgentPluginConfigException("The module type %s is not valid." % type)
+                    raise exceptions.AgentPluginConfigException(
+                        "The module type %s is not valid." % type)
 
                 func = g_type_to_obj_map[type]
                 return func(agent, conf, job_id, items_map, name, arguments)
             except ConfigParser.NoOptionError as conf_ex:
                 raise exceptions.AgentPluginConfigException(conf_ex.message)
-    raise exceptions.AgentPluginConfigException("Plugin %s was not found." % name)
+    raise exceptions.AgentPluginConfigException(
+        "Plugin %s was not found." % name)

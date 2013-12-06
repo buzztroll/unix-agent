@@ -56,7 +56,7 @@ loggers:
         handlers: [job_file_handler]
         propagate: no
 
-    dcm.agent.messaging.states:
+    dcm.agent.messaging:
         level: DEBUG
         handlers: [state_handler]
         propagate: no

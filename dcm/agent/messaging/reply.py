@@ -5,6 +5,7 @@ import dcm.agent.exceptions as exceptions
 import dcm.agent.messaging.states as states
 import dcm.agent.messaging.types as types
 import dcm.agent.messaging.utils as utils
+import dcm.agent.util as agent_util
 
 
 class ReplyRPC(object):
@@ -32,7 +33,6 @@ class ReplyRPC(object):
                                 message={})
 
         self._log = utils.MessageLogAdaptor(logging.getLogger(__name__), {})
-
 
     def get_request_id(self):
         return self._request_id
@@ -169,9 +169,9 @@ class ReplyRPC(object):
         """
         self._response_doc = kwargs['message']
         reply_doc = {'type': types.MessageTypes.REPLY,
-                   'message_id': utils.new_message_id(),
-                   'request_id': self._request_id,
-                   'payload': self._response_doc}
+                     'message_id': utils.new_message_id(),
+                     'request_id': self._request_id,
+                     'payload': self._response_doc}
 
         message_timer = utils.MessageTimer(self._timeout,
                                            self.reply_timeout,
@@ -210,8 +210,7 @@ class ReplyRPC(object):
         """
         cb = states.UserCallback(self._cancel_callback,
                                  self._cancel_callback_args,
-                                 self._cancel_callback_kwargs,
-                                 log=self._log)
+                                 self._cancel_callback_kwargs)
         self._reply_listener.register_user_callback(cb)
 
     def _sm_acked_reply(self, **kwargs):
@@ -221,9 +220,9 @@ class ReplyRPC(object):
         """
         self._response_doc = kwargs['message']
         reply_doc = {'type': types.MessageTypes.REPLY,
-                   'message_id': utils.new_message_id(),
-                   'request_id': self._request_id,
-                   'payload': self._response_doc}
+                     'message_id': utils.new_message_id(),
+                     'request_id': self._request_id,
+                     'payload': self._response_doc}
 
         message_timer = utils.MessageTimer(self._timeout,
                                            self.reply_timeout,
@@ -238,9 +237,9 @@ class ReplyRPC(object):
         retransmit the reply
         """
         reply_doc = {'type': types.MessageTypes.REPLY,
-                   'message_id': utils.new_message_id(),
-                   'request_id': self._request_id,
-                   'payload': self._response_doc}
+                     'message_id': utils.new_message_id(),
+                     'request_id': self._request_id,
+                     'payload': self._response_doc}
         self._conn.send(reply_doc)
 
     def _sm_reply_cancel_received(self, **kwargs):
@@ -261,6 +260,7 @@ class ReplyRPC(object):
         self._reply_message_timer.cancel()
         self._reply_message_timer = None
         self._reply_listener.message_done(self)
+        self._log.debug("Ordered events: " + str(self._sm.get_event_list()))
 
     def _sm_reply_ack_timeout(self, **kwargs):
         """
@@ -291,6 +291,7 @@ class ReplyRPC(object):
         period has expired.
         """
         self._reply_listener.message_done(self)
+        self._log.debug("Ordered events: " + str(self._sm.get_event_list()))
 
     def _sm_cleanup_timeout(self, **kwargs):
         """
@@ -416,11 +417,29 @@ class RequestListener(object):
         self._requests = {}
         self._messages_processed = 0
         self._user_callbacks_list = []
+        self._reply_observers = []
+
+    def get_reply_observers(self):
+        # get the whole list so that the user can add and remove themselves.
+        # This sort of thing should be done only with carefully writen code
+        # using carefully writen observers that do very light weight
+        # nonblocking operations
+        return self._reply_observers
+
+    def _call_reply_observers(self, func_name, argument):
+        for o in self._reply_observers:
+            try:
+                func = getattr(o, func_name)
+                func(argument)
+            except:
+                # dont let some crappy observer ruin everything
+                pass
 
     def _read(self):
         incoming_doc = self._conn.read()
         if incoming_doc is None:
             return
+        self._call_reply_observers("incoming_message", incoming_doc)
         if 'request_id' in incoming_doc:
             utils.setup_message_logging(incoming_doc['request_id'], 'n/a')
         if incoming_doc['type'] == types.MessageTypes.REQUEST:
@@ -436,14 +455,15 @@ class RequestListener(object):
             msg = ReplyRPC(self, self._conn, request_id, message_id, payload)
             self._requests[request_id] = msg
             self._dispatcher.incoming_request(msg)
+            self._call_reply_observers("new_message", msg)
         else:
             request_id = incoming_doc['request_id']
             if request_id not in self._requests:
-                 nack_doc = {'type': types.MessageTypes.NACK,
-                    'message_id': incoming_doc['message_id'],
-                    'request_id': request_id}
-                 self._conn.send(nack_doc)
-                 return
+                nack_doc = {'type': types.MessageTypes.NACK,
+                            'message_id': incoming_doc['message_id'],
+                            'request_id': request_id}
+                self._conn.send(nack_doc)
+                return
             # get the message
             req = self._requests[request_id]
             req.incoming_message(incoming_doc)
@@ -456,6 +476,7 @@ class RequestListener(object):
     def message_done(self, reply_message):
         del self._requests[reply_message.get_request_id()]
         self._messages_processed += 1
+        self._call_reply_observers("message_done", reply_message)
 
     def register_user_callback(self, user_callback):
         self._user_callbacks_list.append(user_callback)
@@ -470,3 +491,17 @@ class RequestListener(object):
 
     def is_busy(self):
         return len(self._requests) != 0
+
+
+class ReplyObserverInterface(object):
+    @agent_util.not_implemented_decorator
+    def new_message(self, reply):
+        pass
+
+    @agent_util.not_implemented_decorator
+    def message_done(self, reply):
+        pass
+
+    @agent_util.not_implemented_decorator
+    def incoming_message(self, incoming_doc):
+        pass

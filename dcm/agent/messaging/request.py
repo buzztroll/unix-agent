@@ -43,7 +43,8 @@ class RequestRPC(object):
                                 message={})
 
     def send(self):
-        self._sm.event_occurred(states.RequesterEvents.REQUEST_MADE, message={})
+        self._sm.event_occurred(states.RequesterEvents.REQUEST_MADE,
+                                message={})
 
     def cancel(self):
         self._sm.event_occurred(states.RequesterEvents.CANCEL_REQUESTED,
@@ -114,7 +115,6 @@ class RequestRPC(object):
             self._message_timer.cancel()
         if self._completion_timer:
             self._completion_timer.cancel()
-
 
     ###################################################################
     # state machine event handlers
@@ -227,7 +227,8 @@ class RequestRPC(object):
         if self._message_timer is not None:
             msg = ("In the REQUESTED state the message ID should not be in the"
                    " list")
-            utils.build_assertion_exception(self.logger, "message in list", msg)
+            utils.build_assertion_exception(
+                self.logger, "message in list", msg)
 
         if self._reply_doc is not None:
             msg = ("There should be exactly 1 reply received.  Thus is the "

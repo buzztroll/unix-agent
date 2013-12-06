@@ -7,6 +7,7 @@ import dcm.agent.messaging.types as types
 import dcm.agent.messaging.states as states
 from dcm.agent.messaging import request
 
+
 class TestRequesterStandardPath(unittest.TestCase):
 
     def _validate_request_message(self, send_doc, doc):
@@ -111,6 +112,7 @@ class TestRequesterStandardPath(unittest.TestCase):
     def test_standard_with_callback_path(self):
 
         called = False
+
         def reply_called(*args, **kwargs):
             called = True
 
@@ -152,7 +154,6 @@ class TestRequesterStandardPath(unittest.TestCase):
             requester.ack_sent_timeout()
 
 
-
 class TestRequesterRetransmissionCases(unittest.TestCase):
 
     def _validate_request_message(self, send_doc, doc):
@@ -175,7 +176,6 @@ class TestRequesterRetransmissionCases(unittest.TestCase):
         (param_list, keywords) = conn.send.call_args
         self._validate_request_message(param_list[0], doc)
         requester.cleanup()
-
 
     def test_double_reply(self):
 
@@ -305,7 +305,3 @@ class TestRequesterRetransmissionCases(unittest.TestCase):
             self.assertEqual(send_doc['type'], types.MessageTypes.ACK)
 
             requester.ack_sent_timeout()
-
-
-if __name__ == '__main__':
-    unittest.main()

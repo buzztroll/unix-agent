@@ -61,7 +61,6 @@ class UserCallback(object):
             self._kwargs = {}
         self._log = utils.MessageLogAdaptor(logging.getLogger(__name__), {})
 
-
     def call(self):
         try:
             self._log.debug("UserCallback calling %s" % self._func.__name__)
@@ -73,8 +72,8 @@ class UserCallback(object):
                              'ex': str(ex)})
             raise
         finally:
-            self._log.debug("UserCallback function %s returned successfully."\
-                % self._func.__name__)
+            self._log.debug("UserCallback function %s returned successfully."
+                            % self._func.__name__)
 
 
 class StateMachine(object):
@@ -84,6 +83,7 @@ class StateMachine(object):
         self._current_state = start_state
         self._user_callbacks_list = []
         self._log = utils.MessageLogAdaptor(logging.getLogger(__name__), {})
+        self._event_list = []
 
     def add_transition(self, state_event, event, new_state, func):
         if state_event not in self._state_map:
@@ -116,14 +116,12 @@ class StateMachine(object):
 
     def event_occurred(self, event, **kwargs):
         try:
+            old_state = self._current_state
             new_state, func_list = self._state_map[self._current_state][event]
             # a logging adapter is added so that me can configure more of the
             # log line in a conf file
-            log_msg = ("Event %(event)s occurred.  Moving from state " \
-                       "%(current_state)s to %(new_state)s") % \
-                           {'event': event,
-                            'current_state': self._current_state,
-                            'new_state': new_state}
+            log_msg = ("Event %(event)s occurred.  Moving from state "
+                       "%(old_state)s to %(new_state)s") % locals()
             self._log.info(log_msg)
             for func in func_list:
                 if func is not None:
@@ -141,6 +139,7 @@ class StateMachine(object):
                     except Exception as ex:
                         self._log.error("An exception occurred %s" % str(ex))
                         raise
+            self._event_list.append((event, old_state, new_state))
         except KeyError as keyEx:
             raise exceptions.IllegalStateTransitionException(
                 event, self._current_state)
@@ -152,3 +151,6 @@ class StateMachine(object):
     def process_callbacks(self):
         for cb in self._user_callbacks_list:
             cb.call()
+
+    def get_event_list(self):
+        return self._event_list

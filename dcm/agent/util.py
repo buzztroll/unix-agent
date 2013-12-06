@@ -35,7 +35,7 @@ class JobLogHandler(logging.FileHandler):
             self.stream = self.file_handles[filename]
         else:
             self.baseFilename = filename
-            self.stream = self._open();
+            self.stream = self._open()
             self.file_handles[filename] = self.stream
         super(JobLogHandler, self).emit(record)
 

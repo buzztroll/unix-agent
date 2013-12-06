@@ -19,6 +19,7 @@ def class_method_sync():
         return lock_func
     return wrapper
 
+
 def build_assertion_exception(logger, assertion_failure, msg):
     details_out = " === Stacktrace=== " + os.linesep
     for threadId, stack in sys._current_frames().items():

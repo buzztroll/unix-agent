@@ -210,9 +210,9 @@ class TestRequesterStandardPath(unittest.TestCase):
         reply_rpc = reply.ReplyRPC(
             None, None, request_id, message_id, reply_payload)
         reply_doc = {
-                 "request_id": request_id,
-                 "message_id": message_id,
-         }
+            "request_id": request_id,
+            "message_id": message_id,
+        }
         self.assertRaises(exceptions.MissingMessageParameterException,
                           reply_rpc.incoming_message, reply_doc)
         reply_doc['type'] = 'nothing'
@@ -278,11 +278,12 @@ class TestRequestListener(unittest.TestCase):
         request_id = "requestID"
         message_id = "messageID"
 
-        ack_doc = {"type": types.MessageTypes.ACK,
-                     "request_id": request_id,
-                     "message_id": message_id,
-                     "payload": {}
-                     }
+        ack_doc = {
+            "type": types.MessageTypes.ACK,
+            "request_id": request_id,
+            "message_id": message_id,
+            "payload": {}
+        }
 
         conn.read.return_value = ack_doc
 
@@ -314,9 +315,10 @@ class TestRequestListener(unittest.TestCase):
         x = param_list[0]
         self.assertEqual(request_id, x._request_id)
 
-        ack_doc = {"type": types.MessageTypes.CANCEL,
-                     "request_id": request_id,
-                     "message_id": message_id,
-                     }
+        ack_doc = {
+            "type": types.MessageTypes.CANCEL,
+            "request_id": request_id,
+            "message_id": message_id,
+        }
         conn.read.return_value = ack_doc
         reply_listener.poll()
