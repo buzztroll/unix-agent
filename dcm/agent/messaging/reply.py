@@ -67,7 +67,6 @@ class ReplyRPC(object):
             self._cancel_callback_args = []
         self._cancel_callback_args.insert(0, self)
         self._cancel_callback_kwargs = cancel_callback_kwargs
-
         self._sm.event_occurred(states.ReplyEvents.USER_ACCEPTS_REQUEST,
                                 message={})
 
@@ -261,6 +260,8 @@ class ReplyRPC(object):
         self._reply_message_timer = None
         self._reply_listener.message_done(self)
         self._log.debug("Ordered events: " + str(self._sm.get_event_list()))
+        # utils.build_assertion_exception(self._log, "message done", "")
+
 
     def _sm_reply_ack_timeout(self, **kwargs):
         """
@@ -291,7 +292,7 @@ class ReplyRPC(object):
         period has expired.
         """
         self._reply_listener.message_done(self)
-        self._log.debug("Ordered events: " + str(self._sm.get_event_list()))
+        self._log.debug("NACK Ordered events: " + str(self._sm.get_event_list()))
 
     def _sm_cleanup_timeout(self, **kwargs):
         """
@@ -418,6 +419,7 @@ class RequestListener(object):
         self._messages_processed = 0
         self._user_callbacks_list = []
         self._reply_observers = []
+        self._log = utils.MessageLogAdaptor(logging.getLogger(__name__), {})
 
     def get_reply_observers(self):
         # get the whole list so that the user can add and remove themselves.
@@ -442,20 +444,25 @@ class RequestListener(object):
         self._call_reply_observers("incoming_message", incoming_doc)
         if 'request_id' in incoming_doc:
             utils.setup_message_logging(incoming_doc['request_id'], 'n/a')
+        self._log.debug("New message type %s" % incoming_doc['type'])
+
         if incoming_doc['type'] == types.MessageTypes.REQUEST:
             # this is new request
             request_id = incoming_doc['request_id']
             if request_id in self._requests:
+                self._log.debug("Retransmission found")
                 # this is a retransmission, send in the message
                 req = self._requests[request_id]
                 req.incoming_message(incoming_doc)
-                return
-            message_id = incoming_doc['message_id']
-            payload = incoming_doc['payload']
-            msg = ReplyRPC(self, self._conn, request_id, message_id, payload)
-            self._requests[request_id] = msg
-            self._dispatcher.incoming_request(msg)
-            self._call_reply_observers("new_message", msg)
+            else:
+                self._log.debug("New Request found")
+                message_id = incoming_doc['message_id']
+                payload = incoming_doc['payload']
+                msg = ReplyRPC(
+                    self, self._conn, request_id, message_id, payload)
+                self._requests[request_id] = msg
+                self._dispatcher.incoming_request(msg)
+                self._call_reply_observers("new_message", msg)
         else:
             request_id = incoming_doc['request_id']
             if request_id not in self._requests:
@@ -463,10 +470,10 @@ class RequestListener(object):
                             'message_id': incoming_doc['message_id'],
                             'request_id': request_id}
                 self._conn.send(nack_doc)
-                return
-            # get the message
-            req = self._requests[request_id]
-            req.incoming_message(incoming_doc)
+            else:
+                # get the message
+                req = self._requests[request_id]
+                req.incoming_message(incoming_doc)
 
     def poll(self):
         for cb in self._user_callbacks_list:

@@ -66,6 +66,11 @@ loggers:
         handlers: [message_logger]
         propagate: no
 
+    dcm.agent.tests:
+        level: DEBUG
+        handlers: [message_logger]
+        propagate: no
+
 root:
     level: DEBUG
     handlers: [console]

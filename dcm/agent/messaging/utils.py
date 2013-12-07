@@ -23,7 +23,8 @@ def class_method_sync():
 def build_assertion_exception(logger, assertion_failure, msg):
     details_out = " === Stacktrace=== " + os.linesep
     for threadId, stack in sys._current_frames().items():
-        details_out = details_out + "# Thread %s" % threadId + os.linesep
+        details_out = details_out + os.linesep + \
+                      "##### Thread %s #####" % threadId + os.linesep
         for filename, lineno, name, line in traceback.extract_stack(stack):
             details_out = details_out + os.linesep + \
                 'File: "%s", line %d, in %s' % (filename, lineno, name)
@@ -33,7 +34,7 @@ def build_assertion_exception(logger, assertion_failure, msg):
     msg = assertion_failure + " | " + msg + " | " + details_out
     logger.error(msg)
 
-    raise exceptions.AssertionFailure(msg)
+    #raise exceptions.AssertionFailure(msg)
 
 
 def new_message_id():

@@ -132,11 +132,6 @@ class TestRetransmission(unittest.TestCase):
         self.conf_obj = config.AgentConfig()
         test_conf_path = test_utils.get_conf_file()
         self.conf_obj.setup(conffile=test_conf_path)
-        self.disp = dispatcher.Dispatcher(self.conf_obj)
-        self.disp.start_workers()
-
-    def tearDown(self):
-        self.disp.stop()
 
     def _get_conn(self, incoming_lines, outfile, drop_count, retrans_list):
         self._incoming_io = StringIO.StringIO(incoming_lines)
@@ -156,12 +151,15 @@ class TestRetransmission(unittest.TestCase):
             def incoming_message(self, incoming_doc):
                 pass
 
+        disp = dispatcher.Dispatcher(self.conf_obj)
+        disp.start_workers()
+
         in_command = os.linesep.join(command)
         count = len(command)
         inlines = StringIO.StringIO(in_command)
         outfile = StringIO.StringIO()
         conn = self._get_conn(inlines, outfile, drop_count, retrans_list)
-        request_listener = reply.RequestListener(conn, self.disp)
+        request_listener = reply.RequestListener(conn, disp)
         to = TestStateObserver()
         rol = request_listener.get_reply_observers()
         rol.insert(0, to)
@@ -175,6 +173,8 @@ class TestRetransmission(unittest.TestCase):
             output = json.loads(outfile.buflist[i])
             self.assertEquals(0, output['returncode'])
 
+        disp.stop()
+
         return to.state_change_list
 
     def test_retrans_long(self):
@@ -183,12 +183,12 @@ class TestRetransmission(unittest.TestCase):
             types.MessageTypes.ACK,
             types.MessageTypes.NACK,
             types.MessageTypes.REPLY,
-            "AFTER_REPLY_ACK"
         ]
-        for event in events:
-            retrans = test_conn.RequestRetransmission()
-            retrans.set_retrans_event(event, 1)
-            self._many_message(0, ["sleep 0.5"], [retrans])
+        for command in ["sleep 0.5", "echo hello"]:
+            for event in events:
+                retrans = test_conn.RequestRetransmission()
+                retrans.set_retrans_event(event, 1)
+                self._many_message(0, [command], [retrans])
 
     def test_retrans_after_request_long(self):
         retrans = test_conn.RequestRetransmission()
@@ -205,19 +205,36 @@ class TestRetransmission(unittest.TestCase):
         retrans.set_retrans_event(types.MessageTypes.ACK, 1)
         to = self._many_message(0, ["sleep 0.5"], [retrans])
 
-        expected = [('REQUEST_RECEIVED', 'NEW', 'REQUESTING'),
-                    ('ACCEPTED', 'REQUESTING', 'ACKED'),
-                    ('REQUEST_RECEIVED', 'ACKED', 'ACKED'),
-                    ('USER_REPLIES', 'ACKED', 'REPLY'),
-                    ('REPLY_ACK', 'REPLY', 'CLEANUP')]
-        self.assertEqual(to, expected)
-
     def test_retrans_after_reply_long(self):
         retrans = test_conn.RequestRetransmission()
         retrans.set_retrans_event(types.MessageTypes.REPLY, 1)
         to = self._many_message(0, ["sleep 0.5"], [retrans])
 
-    def test_retrans_after_reply_ack_long(self):
-        retrans = test_conn.RequestRetransmission()
-        retrans.set_retrans_event("AFTER_REPLY_ACK", 1)
-        to = self._many_message(0, ["sleep 0.5"], [retrans])
+    def test_retrans_overlap(self):
+        events = [
+            types.MessageTypes.REQUEST,
+            types.MessageTypes.ACK,
+            types.MessageTypes.NACK,
+            types.MessageTypes.REPLY,
+        ]
+        for event in events:
+            retrans = test_conn.RequestRetransmission()
+            retrans.set_retrans_event(event, 1)
+            self._many_message(0, ["sleep 0.5", "echo hello"],
+                               [retrans])
+
+    def test_many_retrans_overlap(self):
+        events = [
+            types.MessageTypes.REQUEST,
+            types.MessageTypes.ACK,
+            types.MessageTypes.NACK,
+            types.MessageTypes.REPLY,
+        ]
+        retrans_list = []
+        for event in events:
+            retrans = test_conn.RequestRetransmission()
+            retrans.set_retrans_event(event, 1)
+            retrans_list.append(retrans)
+        self._many_message(4, ["sleep 0.5", "echo hello", "sleep 0.1"],
+                           retrans_list)
+

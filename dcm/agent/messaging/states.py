@@ -88,16 +88,7 @@ class StateMachine(object):
     def add_transition(self, state_event, event, new_state, func):
         if state_event not in self._state_map:
             self._state_map[state_event] = {}
-        self._state_map[state_event][event] = (new_state, [func])
-
-    def add_transition_callback(self, state, event, func, pos=0):
-        if state not in self._state_map:
-            raise Exception()
-        if event not in self._state_map[state]:
-            raise Exception()
-
-        state, event_list = self._state_map[state][event]
-        event_list.insert(pos, func)
+        self._state_map[state_event][event] = (new_state, func)
 
     def mapping_to_digraph(self, outf=None):
         if outf is None:
@@ -117,29 +108,28 @@ class StateMachine(object):
     def event_occurred(self, event, **kwargs):
         try:
             old_state = self._current_state
-            new_state, func_list = self._state_map[self._current_state][event]
+            new_state, func = self._state_map[self._current_state][event]
             # a logging adapter is added so that me can configure more of the
             # log line in a conf file
             log_msg = ("Event %(event)s occurred.  Moving from state "
                        "%(old_state)s to %(new_state)s") % locals()
             self._log.info(log_msg)
-            for func in func_list:
-                if func is not None:
-                    try:
-                        self._log.info("Calling %s" % func.__name__)
-                        self._log.debug("Calling %s | %s" % (func.__name__,
-                                                             func.__doc__))
-                        func(**kwargs)
-                        self._current_state = new_state
-                        self._log.info("Moved to new state %s." % new_state)
-                    except exceptions.DoNotChangeStateException as dncse:
-                        self._log.warning("An error occurred that permits us "
-                                          "to continue but skip the state "
-                                          "change. %s" % str(dncse))
-                    except Exception as ex:
-                        self._log.error("An exception occurred %s" % str(ex))
-                        raise
             self._event_list.append((event, old_state, new_state))
+            if func is not None:
+                try:
+                    self._log.info("Calling %s" % func.__name__)
+                    self._log.debug("Calling %s | %s" % (func.__name__,
+                                                         func.__doc__))
+                    func(**kwargs)
+                    self._current_state = new_state
+                    self._log.info("Moved to new state %s." % new_state)
+                except exceptions.DoNotChangeStateException as dncse:
+                    self._log.warning("An error occurred that permits us "
+                                      "to continue but skip the state "
+                                      "change. %s" % str(dncse))
+                except Exception as ex:
+                    self._log.error("An exception occurred %s" % str(ex))
+                    raise
         except KeyError as keyEx:
             raise exceptions.IllegalStateTransitionException(
                 event, self._current_state)

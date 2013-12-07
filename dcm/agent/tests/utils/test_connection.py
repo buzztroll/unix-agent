@@ -1,6 +1,7 @@
 import json
 import logging
 import os
+import threading
 
 import dcm.agent.connection.connection_interface as conniface
 import dcm.agent.messaging.utils as utils
@@ -32,7 +33,6 @@ class RequestRetransmission(object):
             types.MessageTypes.REQUEST: 0,
             types.MessageTypes.ACK: 0,
             types.MessageTypes.NACK: 0,
-            "AFTER_REPLY_ACK": 0,
             types.MessageTypes.REPLY: 0}
 
     def set_retrans_event(self, event, count):
@@ -61,50 +61,56 @@ class TestReplySuccessfullyAlways(conniface.ConnectionInterface):
         self._reader = reader
         self._writer = writer
         self._reply_ignore_count = reply_ignore_count
-        self._log = logging.getLogger(__name__)
+        self._log = utils.MessageLogAdaptor(logging.getLogger(__name__), {})
         self._retrans = retrans_requests
         if self._retrans is None:
             self._retrans = []
         self._request_number = 0
         self._retrans_map = {}
+        self._lock = threading.Lock()
+
+    def _read_from_file(self):
+        buf = self._reader.readline().strip()
+        if not buf:
+            return
+
+        self._log.debug("read message " + buf)
+        ba = buf.split()
+        command = ba.pop(0)
+        arguments = ba
+
+        message_id = utils.new_message_id()
+        request_id = utils.new_message_id()
+        request_doc = {
+            'type': types.MessageTypes.REQUEST,
+            'request_id': request_id,
+            'message_id': message_id,
+            'payload': {'command': command, 'arguments': arguments}
+        }
+
+        # check for any retrans requests of this message
+        if len(self._retrans) > self._request_number:
+            rt = self._retrans[self._request_number]
+            self._retrans_map[request_id] = rt
+            rt.set_request_doc(request_doc)
+        self._request_number += 1
+
+        self._check_retrans(request_id, types.MessageTypes.REQUEST)
+        self._readq.append(request_doc)
 
     def read(self):
+        self._lock.acquire()
         try:
+            self._read_from_file()
             if self._readq:
-                msg = self._readq.pop()
-                self._log.debug("Popped message " + str(msg))
+                msg = self._readq.pop(0)
+                utils.setup_message_logging(msg['request_id'], 'n/a')
+                self._log.debug("Fake conn reading " + msg['type'])
                 return msg
-            buf = self._reader.readline().strip()
-            if not buf:
-                return None
-                #raise exceptions.PerminateConnectionException(
-                #    "The tester file ended")
-            self._log.debug("read message " + buf)
-            ba = buf.split()
-            command = ba.pop(0)
-            arguments = ba
-
-            message_id = utils.new_message_id()
-            request_id = utils.new_message_id()
-            request_doc = {
-                'type': types.MessageTypes.REQUEST,
-                'request_id': request_id,
-                'message_id': message_id,
-                'payload': {'command': command, 'arguments': arguments}
-            }
-
-            # check for any retrans requests of this message
-            if len(self._retrans) > self._request_number:
-                rt = self._retrans[self._request_number]
-                self._retrans_map[request_id] = rt
-                rt.set_request_doc(request_doc)
-            self._request_number += 1
-
-            self._check_retrans(request_id, types.MessageTypes.REQUEST)
-
-            return request_doc
         except Exception as ex:
             self._log.error(ex)
+        finally:
+            self._lock.release()
 
     def _check_retrans(self, request_id, event):
         if request_id in self._retrans_map:
@@ -113,31 +119,36 @@ class TestReplySuccessfullyAlways(conniface.ConnectionInterface):
                 self._readq.append(retrans.request_doc)
 
     def send(self, doc):
-        t = doc['type']
-        request_id = doc['request_id']
-        self._check_retrans(request_id, t)
-        if t == types.MessageTypes.ACK:
-            # no reply required here
-            return
-        elif t == types.MessageTypes.NACK:
-            # no reply required here
-            return
-        elif t == types.MessageTypes.REPLY:
-            payload = doc['payload']
-            self._writer.write(json.dumps(payload))
-            self._writer.flush()
+        self._lock.acquire()
+        try:
+            t = doc['type']
+            request_id = doc['request_id']
+            utils.setup_message_logging(request_id, 'n/a')
+            self._log.debug("Fake conn sending " + t)
+            self._check_retrans(request_id, t)
+            if t == types.MessageTypes.ACK:
+                # no reply required here
+                return
+            elif t == types.MessageTypes.NACK:
+                # no reply required here
+                return
+            elif t == types.MessageTypes.REPLY:
+                payload = doc['payload']
+                self._writer.write(json.dumps(payload))
+                self._writer.flush()
 
-            if self._reply_ignore_count == 0:
-                # we must ACK the reply
-                reply_ack = {
-                    "type": types.MessageTypes.ACK,
-                    "request_id": doc["request_id"],
-                    "message_id": doc["message_id"],
-                }
-                self._readq.append(reply_ack)
+                if self._reply_ignore_count == 0:
+                    # we must ACK the reply
+                    reply_ack = {
+                        "type": types.MessageTypes.ACK,
+                        "request_id": doc["request_id"],
+                        "message_id": doc["message_id"],
+                    }
+                    self._readq.append(reply_ack)
+                else:
+                    self._reply_ignore_count -= 1
             else:
-                self._reply_ignore_count -= 1
-            self._check_retrans(request_id, "AFTER_REPLY_ACK")
-        else:
-            raise test_exceptions.AgentTestException(
-                "type %s should never happen" % t)
+                raise test_exceptions.AgentTestException(
+                    "type %s should never happen" % t)
+        finally:
+            self._lock.release()
