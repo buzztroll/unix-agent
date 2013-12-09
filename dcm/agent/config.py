@@ -3,6 +3,7 @@ import ConfigParser
 import logging
 import logging.config
 import os
+import sys
 import yaml
 
 import dcm.agent.exceptions as exceptions
@@ -103,6 +104,8 @@ class AgentConfig(object):
     job_logger = 'dcm.agent.job'
 
     def __init__(self):
+        self._cli_args = None
+        self._remaining_argv = None
         pass
 
     def _parse_command_line(self):
@@ -111,7 +114,12 @@ class AgentConfig(object):
         conf_parser.add_argument(
             "-c", "--conffile", help="Specify config file", metavar="FILE",
             default=None)
+        conf_parser.add_argument("-v", "--verbose", action="count",
+                                 help="Display more output on the console.")
         self._cli_args, self._remaining_argv = conf_parser.parse_known_args()
+
+    def get_cli_arg(self, key):
+        return getattr(self._cli_args, key, None)
 
     def _parse_config_file(self, config_file):
 
@@ -191,3 +199,8 @@ class AgentConfig(object):
             for conf_file in config_files:
                 self._parse_config_file(conf_file)
         self._setup_logging()
+
+    def console_log(self, level, msg, **kwargs):
+        if level > self.get_cli_arg("verbose"):
+            return
+        print >> sys.stderr, msg % kwargs
