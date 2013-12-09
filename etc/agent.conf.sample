@@ -5,7 +5,10 @@ count=1
 configfile=logging.yaml
 
 [connection]
-type=success_tester
+type=dummy
 
 [plugin]
 configfile=plugin.conf.sample
+
+[messaging]
+retransmission_timeout=5.0

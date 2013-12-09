@@ -32,9 +32,11 @@ class AgentOptionValueException(AgentOptionException):
 
 
 class AgentOptionValueNotSetException(AgentOptionException):
-    def __init__(self, name):
+    def __init__(self, name, msg=None):
         message = ("The config option %(name)s must be set." % locals())
-        super(AgentOptionValueException, self).__init__(message)
+        if msg:
+            message = message + " " + msg
+        super(AgentOptionValueNotSetException, self).__init__(message)
 
 
 class AgentOptionPathNotFoundException(AgentOptionException):

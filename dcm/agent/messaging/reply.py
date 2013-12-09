@@ -1,5 +1,6 @@
 import logging
 import threading
+import time
 
 import dcm.agent.exceptions as exceptions
 import dcm.agent.messaging.states as states
@@ -262,7 +263,6 @@ class ReplyRPC(object):
         self._log.debug("Ordered events: " + str(self._sm.get_event_list()))
         # utils.build_assertion_exception(self._log, "message done", "")
 
-
     def _sm_reply_ack_timeout(self, **kwargs):
         """
         This happens when after a given amount of time an ack has still not
@@ -292,7 +292,8 @@ class ReplyRPC(object):
         period has expired.
         """
         self._reply_listener.message_done(self)
-        self._log.debug("NACK Ordered events: " + str(self._sm.get_event_list()))
+        self._log.debug("NACK Ordered events: " +
+                        str(self._sm.get_event_list()))
 
     def _sm_cleanup_timeout(self, **kwargs):
         """
@@ -412,13 +413,15 @@ class ReplyRPC(object):
 
 class RequestListener(object):
 
-    def __init__(self, connection, dispatcher):
+    def __init__(self, connection, dispatcher, timeout=5):
         self._conn = connection
         self._dispatcher = dispatcher
         self._requests = {}
         self._messages_processed = 0
         self._user_callbacks_list = []
         self._reply_observers = []
+        self._timeout = timeout
+        self._shutdown = False
         self._log = utils.MessageLogAdaptor(logging.getLogger(__name__), {})
 
     def get_reply_observers(self):
@@ -455,11 +458,14 @@ class RequestListener(object):
                 req = self._requests[request_id]
                 req.incoming_message(incoming_doc)
             else:
+                if self._shutdown:
+                    return
                 self._log.debug("New Request found")
                 message_id = incoming_doc['message_id']
                 payload = incoming_doc['payload']
                 msg = ReplyRPC(
-                    self, self._conn, request_id, message_id, payload)
+                    self, self._conn, request_id, message_id, payload,
+                    timeout=self._timeout)
                 self._requests[request_id] = msg
                 self._dispatcher.incoming_request(msg)
                 self._call_reply_observers("new_message", msg)
@@ -479,6 +485,8 @@ class RequestListener(object):
         for cb in self._user_callbacks_list:
             cb.call()
         self._read()
+        time.sleep(0)
+        return self._shutdown and not self.is_busy()
 
     def message_done(self, reply_message):
         del self._requests[reply_message.get_request_id()]
@@ -488,7 +496,7 @@ class RequestListener(object):
     def register_user_callback(self, user_callback):
         self._user_callbacks_list.append(user_callback)
 
-    def stop(self):
+    def kill(self):
         for r_id in self._requests:
             reply = self._requests[r_id]
             reply.kill()
@@ -498,6 +506,15 @@ class RequestListener(object):
 
     def is_busy(self):
         return len(self._requests) != 0
+
+    def shutdown(self):
+        """
+        Stop accepting new requests but allow for outstanding messages to
+        complete.
+        """
+        self._shutdown = True  # XXX danger will robinson.  Lets not have
+                               # too many flags like this before we have
+                               # a state machine
 
 
 class ReplyObserverInterface(object):

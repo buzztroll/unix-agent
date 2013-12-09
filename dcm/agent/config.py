@@ -6,6 +6,7 @@ import os
 import yaml
 
 import dcm.agent.exceptions as exceptions
+import dcm.agent.connection.dummy as dummy_con
 import dcm.agent.tests.utils.test_connection as test_connection
 
 
@@ -22,9 +23,20 @@ def get_connection_object(conf):
 
     if con_type == "success_tester":
         source_file = conf.connection_source_file
+        if not source_file:
+            raise exceptions.AgentOptionValueNotSetException(
+                "[connection]source_file",
+                msg="Using the %s connection type." % con_type)
         fptr = open(source_file, "r")
+        if not conf.connection_dest_file:
+            raise exceptions.AgentOptionValueNotSetException(
+                "[connection]dest_file",
+                msg="Using the %s connection type." % con_type)
+
         outf = open(conf.connection_dest_file, "w")
         return test_connection.TestReplySuccessfullyAlways(fptr, outf)
+    elif con_type == "dummy":
+        return dummy_con.DummyConnection()
 
 
 class ConfigOpt(object):
@@ -79,6 +91,8 @@ class FilenameOpt(ConfigOpt):
 
     def get_value(self, parser):
         v = super(FilenameOpt, self).get_value(parser)
+        if v is None:
+            return None
         if not os.path.isabs(v):
             v = os.path.join(self.relative_path, v)
         return os.path.abspath(v)
@@ -115,6 +129,8 @@ class AgentConfig(object):
             FilenameOpt("logging", "configfile", relative_path=relative_path,
                         default=None),
             FilenameOpt("plugin", "configfile", relative_path=relative_path),
+            ConfigOpt("messaging", "retransmission_timeout", float,
+                      default=5),
         ]
         parser = ConfigParser.SafeConfigParser()
         parser.read(config_file)
@@ -126,7 +142,7 @@ class AgentConfig(object):
                 self.__setattr__(config_variable, v)
             except ConfigParser.NoSectionError as nse:
                 raise exceptions.AgentOptionSectionNotFoundException(
-                    opt.section)
+                    opt.name)
 
     def _setup_logging(self):
         if self.logging_configfile is None:
@@ -164,7 +180,7 @@ class AgentConfig(object):
 
         return locations
 
-    def setup(self, conffile=None, clioptions=None):
+    def setup(self, conffile=None, clioptions=False):
         if conffile is not None:
             self._parse_config_file(conffile)
         else:

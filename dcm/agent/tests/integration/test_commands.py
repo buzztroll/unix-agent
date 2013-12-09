@@ -36,7 +36,7 @@ class TestSingleCommands(unittest.TestCase):
 
         # wait until the request is done
         while request_listener.is_busy() or \
-                        request_listener.get_messages_processed() != 1:
+            request_listener.get_messages_processed() != 1:
             request_listener.poll()
         output = json.loads(outfile.buflist[0])
         self.assertEquals(stdout, output['stdout'].strip())
@@ -123,7 +123,7 @@ class TestSerialCommands(unittest.TestCase):
 
     def test_sleep_overlap_many_failures(self):
         self._many_message(0, 10, ["sleep 5", "echo hello1", "sleep 3",
-                                  "echo hello2"])
+                                   "echo hello2"])
 
 
 class TestRetransmission(unittest.TestCase):
@@ -237,4 +237,3 @@ class TestRetransmission(unittest.TestCase):
             retrans_list.append(retrans)
         self._many_message(4, ["sleep 0.5", "echo hello", "sleep 0.1"],
                            retrans_list)
-
