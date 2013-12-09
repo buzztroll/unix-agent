@@ -11,6 +11,7 @@ import dcm.agent.messaging.reply as reply
 _g_conf_object = config.AgentConfig()
 _g_shutting_down = False
 
+
 def kill_handler(signum, frame):
     global _g_shutting_down
     _g_conf_object.console_log(0, "Shutting down.")

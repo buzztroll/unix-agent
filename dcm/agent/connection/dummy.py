@@ -1,5 +1,6 @@
 import dcm.agent.connection.connection_interface as conniface
 
+
 class DummyConnection(conniface.ConnectionInterface):
 
     def read(self):
