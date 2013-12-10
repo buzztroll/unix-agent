@@ -7,9 +7,10 @@ import dcm.agent.messaging.types as types
 import dcm.agent.messaging.utils as utils
 
 
-class RequestRPC(object):
+_g_logger = logging.getLogger(__name__)
 
-    logger = utils.MessageLogAdaptor(logging.getLogger(__name__), {})
+
+class RequestRPC(object):
 
     def __init__(self, document, connection, target_id,
                  timeout=5, cleanup_timeout=60,
@@ -126,7 +127,7 @@ class RequestRPC(object):
         Send a request. This event handler occurs when ever a RPC request is
         sent for the first time.
         """
-        self.logger.info("This initial request has been made.")
+        _g_logger.info("This initial request has been made.")
         send_doc = {'request_id': self._request_id,
                     'type': types.MessageTypes.REQUEST,
                     'payload': self._doc}
@@ -147,7 +148,7 @@ class RequestRPC(object):
         message_timer = kwargs['message_timer']
         # The time out did occur before the message could be acked so we must
         # resend it
-        self.logger.info("Resending message id %s" % message_timer.message_id)
+        _g_logger.info("Resending message id %s" % message_timer.message_id)
         self._send_request_message(message_timer)
 
     def _sm_requested_timeout(self, **kwargs):
@@ -194,14 +195,14 @@ class RequestRPC(object):
                    "should always be in the list.  This situation should "
                    "never occur")
             utils.build_assertion_exception(
-                self.logger, "message not in list", msg)
+                _g_logger, "message not in list", msg)
 
         if self._reply_doc is not None:
             msg = ("There should be exactly 1 reply received.  Thus is the "
                    "reply_doc attribute is not None something we terribly "
                    "wrong.")
             utils.build_assertion_exception(
-                self.logger, "reply not none", msg)
+                _g_logger, "reply not none", msg)
 
         self._reply_doc = message
 
@@ -228,14 +229,14 @@ class RequestRPC(object):
             msg = ("In the REQUESTED state the message ID should not be in the"
                    " list")
             utils.build_assertion_exception(
-                self.logger, "message in list", msg)
+                _g_logger, "message in list", msg)
 
         if self._reply_doc is not None:
             msg = ("There should be exactly 1 reply received.  Thus is the "
                    "reply_doc attribute is not None something we terribly "
                    "wrong.")
             utils.build_assertion_exception(
-                self.logger, "reply doc is not None", msg)
+                _g_logger, "reply doc is not None", msg)
 
         self._reply_doc = message
 

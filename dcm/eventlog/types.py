@@ -1,0 +1,7 @@
+
+
+class EventTypes(object):
+    "INITIAL_REQUEST_RECEIVED"
+    "REQUEST_COMPLETED"
+    "PROCESS_MESSAGE"
+    "INCOMING_MESSAGE"

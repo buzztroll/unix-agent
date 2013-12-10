@@ -26,7 +26,7 @@ def _run_agent(args):
     # def setup config object
     _g_conf_object.setup(clioptions=True)
 
-    logger = utils.MessageLogAdaptor(logging.getLogger(__name__), {})
+    logger = logging.getLogger(__name__)
 
     # def get a connection object
     conn = config.get_connection_object(_g_conf_object)
@@ -42,6 +42,8 @@ def _run_agent(args):
     while not done:
         try:
             if _g_shutting_down:
+                # do it by checking the variable to avoid any threading
+                # issues from the signal handler
                 request_listener.shutdown()
             # service the connections that already exist
             done = request_listener.poll()

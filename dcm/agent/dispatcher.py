@@ -6,10 +6,13 @@ import dcm.agent.jobs as jobs
 import dcm.agent.messaging.utils as message_utils
 
 # Threaded Object
+from dcm.eventlog import tracer
+
+
+_g_logger = logging.getLogger(__name__)
 
 
 class Worker(threading.Thread):
-    logger = message_utils.MessageLogAdaptor(logging.getLogger(__name__), {})
 
     def __init__(self, worker_queue):
         threading.Thread.__init__(self)
@@ -18,11 +21,11 @@ class Worker(threading.Thread):
 
     # It should be safe to call done without a lock
     def done(self):
-        self.logger.debug("done() called on worker %s .." % self.getName())
+        _g_logger.debug("done() called on worker %s .." % self.getName())
         self._done = True
 
     def run(self):
-        self.logger.info("Worker %s thread starting." % self.getName())
+        _g_logger.info("Worker %s thread starting." % self.getName())
 
         # run until it is signaled as done and the worker queue is empty.
         # we have to wait for the worker queue to be empty because it is
@@ -34,42 +37,37 @@ class Worker(threading.Thread):
             try:
                 (reply, plugin) = self.worker_queue.get(True, 1)
                 # setup message logging
-                message_utils.setup_message_logging(reply.get_request_id(),
-                                                    plugin.get_name())
-                try:
-                    self.logger.info("Starting job " + str(plugin))
-                    (stdout, stderr, returncode) = plugin.run()
-                    self.logger.info(
-                        "Completed successfully job " + str(plugin))
-                except Exception as ex:
-                    self.logger.error(
-                        "Worker %s thread had a top level error when "
-                        "running job %s" % (self.getName(), plugin), ex)
-                    stdout = ""
-                    stderr = ex.message
-                    returncode = -1
-                finally:
-                    self.worker_queue.task_done()
-                    self.logger.info("Task done job " + str(plugin))
+                with tracer.RequestTracer(reply.get_request_id()):
+                    try:
+                        _g_logger.info("Starting job " + str(plugin))
+                        (stdout, stderr, returncode) = plugin.run()
+                        _g_logger.info(
+                            "Completed successfully job " + str(plugin))
+                    except Exception as ex:
+                        _g_logger.error(
+                            "Worker %s thread had a top level error when "
+                            "running job %s" % (self.getName(), plugin), ex)
+                        stdout = ""
+                        stderr = ex.message
+                        returncode = -1
+                    finally:
+                        self.worker_queue.task_done()
+                        _g_logger.info("Task done job " + str(plugin))
 
-                reply_message = {'stdout': stdout,
-                                 'stderr': stderr,
-                                 'returncode': returncode,
-                                 "error": ""}
+                    reply_message = {'stdout': stdout,
+                                     'stderr': stderr,
+                                     'returncode': returncode,
+                                     "error": ""}
 
-                # TODO XXX handle messaging errors
-                reply.reply(reply_message)
+                    # TODO XXX handle messaging errors
+                    reply.reply(reply_message)
             except Queue.Empty:
-                self.logger.debug("Queue timeout")
-            finally:
-                message_utils.clear_message_logging()
-        self.logger.info("Worker %s thread ending." % self.getName())
+                _g_logger.debug("Queue timeout")
+        _g_logger.info("Worker %s thread ending." % self.getName())
 
 
 # TODO verify stopping behavior
 class Dispatcher(object):
-
-    logger = message_utils.MessageLogAdaptor(logging.getLogger(__name__), {})
 
     def __init__(self, conf):
         self.conf = conf
@@ -78,21 +76,21 @@ class Dispatcher(object):
         self._agent = None  # figure out what we need here
 
     def start_workers(self):
-        self.logger.info("Starting %d workers." % self.conf.workers_count)
+        _g_logger.info("Starting %d workers." % self.conf.workers_count)
         for i in range(self.conf.workers_count):
             worker = Worker(self.worker_q)
-            self.logger.debug("Starting worker %d : %s" % (i, str(worker)))
+            _g_logger.debug("Starting worker %d : %s" % (i, str(worker)))
             worker.start()
             self.workers.append(worker)
 
     def stop(self):
-        self.logger.info("Stopping workers.")
+        _g_logger.info("Stopping workers.")
         self.worker_q.join()
         for w in self.workers:
-            self.logger.debug("Stopping worker %s" % str(w))
+            _g_logger.debug("Stopping worker %s" % str(w))
             w.done()
             w.join()
-            self.logger.debug("Worker %s is done" % str(w))
+            _g_logger.debug("Worker %s is done" % str(w))
 
     def incoming_request(self, reply, *args, **kwargs):
         try:
@@ -100,12 +98,10 @@ class Dispatcher(object):
             command_name = payload['command']
             arguments = payload['arguments']
             request_id = reply.get_request_id()
-            self.logger.info("Creating a request ID %s" % request_id)
+            _g_logger.info("Creating a request ID %s" % request_id)
             plugin = jobs.load_plugin(
                 self._agent, self.conf, request_id, command_name, arguments)
 
-            message_utils.setup_message_logging(reply.get_request_id(),
-                                                plugin.get_name())
             reply.lock()
             try:
                 self.worker_q.put((reply, plugin))
@@ -115,6 +111,5 @@ class Dispatcher(object):
                 reply.ack(plugin.cancel, None, None)
             finally:
                 reply.unlock()
-                message_utils.clear_message_logging()
         except:
             raise

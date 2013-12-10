@@ -7,6 +7,10 @@ import dcm.agent.messaging.states as states
 import dcm.agent.messaging.types as types
 import dcm.agent.messaging.utils as utils
 import dcm.agent.util as agent_util
+import dcm.eventlog.tracer as tracer
+
+
+_g_logger = logging.getLogger(__name__)
 
 
 class ReplyRPC(object):
@@ -32,8 +36,6 @@ class ReplyRPC(object):
         self._setup_states()
         self._sm.event_occurred(states.ReplyEvents.REQUEST_RECEIVED,
                                 message={})
-
-        self._log = utils.MessageLogAdaptor(logging.getLogger(__name__), {})
 
     def get_request_id(self):
         return self._request_id
@@ -260,8 +262,7 @@ class ReplyRPC(object):
         self._reply_message_timer.cancel()
         self._reply_message_timer = None
         self._reply_listener.message_done(self)
-        self._log.debug("Ordered events: " + str(self._sm.get_event_list()))
-        # utils.build_assertion_exception(self._log, "message done", "")
+        _g_logger.debug("Ordered events: " + str(self._sm.get_event_list()))
 
     def _sm_reply_ack_timeout(self, **kwargs):
         """
@@ -271,7 +272,7 @@ class ReplyRPC(object):
         message_timer = kwargs['message_timer']
         # The time out did occur before the message could be acked so we must
         # resend it
-        self._log.info("Resending reply id %s" % message_timer.message_id)
+        _g_logger.info("Resending reply id %s" % message_timer.message_id)
         self._send_reply_message(message_timer)
 
     def _sm_nacked_request_received(self, **kwargs):
@@ -292,7 +293,7 @@ class ReplyRPC(object):
         period has expired.
         """
         self._reply_listener.message_done(self)
-        self._log.debug("NACK Ordered events: " +
+        _g_logger.debug("NACK Ordered events: " +
                         str(self._sm.get_event_list()))
 
     def _sm_cleanup_timeout(self, **kwargs):
@@ -313,8 +314,7 @@ class ReplyRPC(object):
         """
         cb = states.UserCallback(self._cancel_callback,
                                  self._cancel_callback_args,
-                                 self._cancel_callback_kwargs,
-                                 log=self._log)
+                                 self._cancel_callback_kwargs)
         self._reply_listener.register_user_callback(cb)
 
     def _setup_states(self):
@@ -422,7 +422,6 @@ class RequestListener(object):
         self._reply_observers = []
         self._timeout = timeout
         self._shutdown = False
-        self._log = utils.MessageLogAdaptor(logging.getLogger(__name__), {})
 
     def get_reply_observers(self):
         # get the whole list so that the user can add and remove themselves.
@@ -440,51 +439,56 @@ class RequestListener(object):
                 # dont let some crappy observer ruin everything
                 pass
 
-    def _read(self):
-        incoming_doc = self._conn.read()
+    def _process_doc(self, incoming_doc):
         if incoming_doc is None:
             return
-        self._call_reply_observers("incoming_message", incoming_doc)
-        if 'request_id' in incoming_doc:
-            utils.setup_message_logging(incoming_doc['request_id'], 'n/a')
-        self._log.debug("New message type %s" % incoming_doc['type'])
 
-        if incoming_doc['type'] == types.MessageTypes.REQUEST:
-            # this is new request
-            request_id = incoming_doc['request_id']
-            if request_id in self._requests:
-                self._log.debug("Retransmission found")
-                # this is a retransmission, send in the message
-                req = self._requests[request_id]
-                req.incoming_message(incoming_doc)
+        with tracer.RequestTracer(incoming_doc['request_id']):
+            self._call_reply_observers("incoming_message", incoming_doc)
+            _g_logger.debug("New message type %s" % incoming_doc['type'])
+
+            if incoming_doc['type'] == types.MessageTypes.REQUEST:
+                # this is new request
+                request_id = incoming_doc['request_id']
+                if request_id in self._requests:
+                    _g_logger.debug("Retransmission found")
+                    # this is a retransmission, send in the message
+                    req = self._requests[request_id]
+                    req.incoming_message(incoming_doc)
+                else:
+                    if self._shutdown:
+                        return
+                    _g_logger.debug("New Request found")
+                    message_id = incoming_doc['message_id']
+                    payload = incoming_doc['payload']
+                    msg = ReplyRPC(
+                        self, self._conn, request_id, message_id, payload,
+                        timeout=self._timeout)
+                    self._requests[request_id] = msg
+                    self._dispatcher.incoming_request(msg)
+                    self._call_reply_observers("new_message", msg)
             else:
-                if self._shutdown:
-                    return
-                self._log.debug("New Request found")
-                message_id = incoming_doc['message_id']
-                payload = incoming_doc['payload']
-                msg = ReplyRPC(
-                    self, self._conn, request_id, message_id, payload,
-                    timeout=self._timeout)
-                self._requests[request_id] = msg
-                self._dispatcher.incoming_request(msg)
-                self._call_reply_observers("new_message", msg)
-        else:
-            request_id = incoming_doc['request_id']
-            if request_id not in self._requests:
-                nack_doc = {'type': types.MessageTypes.NACK,
-                            'message_id': incoming_doc['message_id'],
-                            'request_id': request_id}
-                self._conn.send(nack_doc)
-            else:
-                # get the message
-                req = self._requests[request_id]
-                req.incoming_message(incoming_doc)
+                request_id = incoming_doc['request_id']
+                if request_id not in self._requests:
+                    nack_doc = {'type': types.MessageTypes.NACK,
+                                'message_id': incoming_doc['message_id'],
+                                'request_id': request_id}
+                    self._conn.send(nack_doc)
+                else:
+                    # get the message
+                    req = self._requests[request_id]
+                    req.incoming_message(incoming_doc)
+
+    def _validate_doc(self, incoming_doc):
+        pass
 
     def poll(self):
         for cb in self._user_callbacks_list:
-            cb.call()
-        self._read()
+            with tracer.RequestTracer(cb.request_id):
+                cb.call()
+        incoming_doc = self._conn.read()
+        self._validate_doc(incoming_doc)
+        self._process_doc(incoming_doc)
         time.sleep(0)
         return self._shutdown and not self.is_busy()
 

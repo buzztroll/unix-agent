@@ -5,8 +5,6 @@ import threading
 import traceback
 import uuid
 
-import dcm.agent.exceptions as exceptions
-
 
 def class_method_sync():
     def wrapper(func):
@@ -80,38 +78,3 @@ class AckCleanupTimer(object):
 
     def timeout_wrapper(self, *args, **kwargs):
         self._func(self, *args, **kwargs)
-
-
-_g_thread_local_logging = threading.local()
-
-
-class MessageLogAdaptor(logging.LoggerAdapter):
-    def process(self, msg, kwargs):
-        if 'extra' not in kwargs:
-            kwargs["extra"] = {}
-        extra = kwargs['extra']
-
-        if not hasattr(_g_thread_local_logging, "message_dict"):
-            message_dict = {}
-        else:
-            message_dict = _g_thread_local_logging.message_dict
-
-        required_keys = ("request_id", "command_name",)
-
-        for r in required_keys:
-            if r not in message_dict:
-                message_dict[r] = "unknown"
-            extra[r] = message_dict[r]
-
-        return (msg, kwargs)
-
-
-def setup_message_logging(request_id, command_name):
-        if not hasattr(_g_thread_local_logging, "message_dict"):
-            _g_thread_local_logging.message_dict = {}
-        _g_thread_local_logging.message_dict["request_id"] = request_id
-        _g_thread_local_logging.message_dict["command_name"] = command_name
-
-
-def clear_message_logging():
-    _g_thread_local_logging.message_dict = {}

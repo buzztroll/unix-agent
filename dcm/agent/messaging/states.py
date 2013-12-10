@@ -6,6 +6,9 @@ import dcm.agent.exceptions as exceptions
 import dcm.agent.messaging.utils as utils
 
 
+_g_logger = logging.getLogger(__name__)
+
+
 class RequesterEvents(object):
     REQUEST_MADE = "REQUEST_MADE"
     TIMEOUT = "TIMEOUT"
@@ -59,20 +62,19 @@ class UserCallback(object):
         self._kwargs = kwargs
         if kwargs is None:
             self._kwargs = {}
-        self._log = utils.MessageLogAdaptor(logging.getLogger(__name__), {})
 
     def call(self):
         try:
-            self._log.debug("UserCallback calling %s" % self._func.__name__)
+            _g_logger.debug("UserCallback calling %s" % self._func.__name__)
             self._func(*self._args, **self._kwargs)
         except Exception as ex:
-            self._log.error("UserCallback function %(func_name)s threw "
+            _g_logger.error("UserCallback function %(func_name)s threw "
                             "exception %(ex)s" %
                             {'func_name': self._func.__name__,
                              'ex': str(ex)})
             raise
         finally:
-            self._log.debug("UserCallback function %s returned successfully."
+            _g_logger.debug("UserCallback function %s returned successfully."
                             % self._func.__name__)
 
 
@@ -82,7 +84,6 @@ class StateMachine(object):
         self._state_map = {}
         self._current_state = start_state
         self._user_callbacks_list = []
-        self._log = utils.MessageLogAdaptor(logging.getLogger(__name__), {})
         self._event_list = []
 
     def add_transition(self, state_event, event, new_state, func):
@@ -113,22 +114,22 @@ class StateMachine(object):
             # log line in a conf file
             log_msg = ("Event %(event)s occurred.  Moving from state "
                        "%(old_state)s to %(new_state)s") % locals()
-            self._log.info(log_msg)
+            _g_logger.info(log_msg)
             self._event_list.append((event, old_state, new_state))
             if func is not None:
                 try:
-                    self._log.info("Calling %s" % func.__name__)
-                    self._log.debug("Calling %s | %s" % (func.__name__,
+                    _g_logger.info("Calling %s" % func.__name__)
+                    _g_logger.debug("Calling %s | %s" % (func.__name__,
                                                          func.__doc__))
                     func(**kwargs)
                     self._current_state = new_state
-                    self._log.info("Moved to new state %s." % new_state)
+                    _g_logger.info("Moved to new state %s." % new_state)
                 except exceptions.DoNotChangeStateException as dncse:
-                    self._log.warning("An error occurred that permits us "
+                    _g_logger.warning("An error occurred that permits us "
                                       "to continue but skip the state "
                                       "change. %s" % str(dncse))
                 except Exception as ex:
-                    self._log.error("An exception occurred %s" % str(ex))
+                    _g_logger.exception("An exception occurred %s")
                     raise
         except KeyError as keyEx:
             raise exceptions.IllegalStateTransitionException(

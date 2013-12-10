@@ -9,6 +9,9 @@ import dcm.agent.messaging.types as types
 import dcm.agent.tests.utils.test_exceptions as test_exceptions
 
 
+_g_logger = logging.getLogger(__name__)
+
+
 class TestConnectionFileIO(conniface.ConnectionInterface):
 
     def __init__(self, reader, writer):
@@ -61,7 +64,6 @@ class TestReplySuccessfullyAlways(conniface.ConnectionInterface):
         self._reader = reader
         self._writer = writer
         self._reply_ignore_count = reply_ignore_count
-        self._log = utils.MessageLogAdaptor(logging.getLogger(__name__), {})
         self._retrans = retrans_requests
         if self._retrans is None:
             self._retrans = []
@@ -74,7 +76,7 @@ class TestReplySuccessfullyAlways(conniface.ConnectionInterface):
         if not buf:
             return
 
-        self._log.debug("read message " + buf)
+        _g_logger.debug("read message " + buf)
         ba = buf.split()
         command = ba.pop(0)
         arguments = ba
@@ -104,11 +106,10 @@ class TestReplySuccessfullyAlways(conniface.ConnectionInterface):
             self._read_from_file()
             if self._readq:
                 msg = self._readq.pop(0)
-                utils.setup_message_logging(msg['request_id'], 'n/a')
-                self._log.debug("Fake conn reading " + msg['type'])
+                _g_logger.debug("Fake conn reading " + msg['type'])
                 return msg
         except Exception as ex:
-            self._log.error(ex)
+            _g_logger.exception(ex)
         finally:
             self._lock.release()
 
@@ -123,8 +124,7 @@ class TestReplySuccessfullyAlways(conniface.ConnectionInterface):
         try:
             t = doc['type']
             request_id = doc['request_id']
-            utils.setup_message_logging(request_id, 'n/a')
-            self._log.debug("Fake conn sending " + t)
+            _g_logger.debug("Fake conn sending " + t)
             self._check_retrans(request_id, t)
             if t == types.MessageTypes.ACK:
                 # no reply required here
