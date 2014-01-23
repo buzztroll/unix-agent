@@ -304,6 +304,8 @@ class RequestRPC(object):
         """
         pass
 
+
+    ### XXX TODO FIGURE OUT THIS CASE
     def _sm_acksent_reply_received(self, **kwargs):
         """
         In this case a retransmission of a reply was received after an
@@ -463,7 +465,7 @@ class RequestRPC(object):
         self._sm.add_transition(states.RequesterStates.ACK_SENT,
                                 states.RequesterEvents.NACK_RECEIVED,
                                 states.RequesterStates.CLEANUP,
-                                self._sm_nak_when_closing)
+                                self._sm_failing_cb_returns)
         # again a timeout could theoretically happen in this state if the
         # timeout thread is quite slow at getting the lock
         self._sm.add_transition(states.RequesterStates.ACK_SENT,

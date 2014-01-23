@@ -5,6 +5,7 @@ import logging.config
 import os
 import sys
 import yaml
+from dcm.agent.connection import websocket
 
 import dcm.agent.exceptions as exceptions
 import dcm.agent.connection.dummy as dummy_con
@@ -35,9 +36,14 @@ def get_connection_object(conf):
                 msg="Using the %s connection type." % con_type)
 
         outf = open(conf.connection_dest_file, "w")
-        return test_connection.TestReplySuccessfullyAlways(fptr, outf)
+        con = test_connection.TestReplySuccessfullyAlways(fptr, outf)
     elif con_type == "dummy":
-        return dummy_con.DummyConnection()
+        con = dummy_con.DummyConnection()
+    elif con_type == "ws":
+        con = websocket.WebSocketConnection(conf.enstratius_agentmanager_url)
+    else:
+        raise Exception("Unknown connection type")
+    return con
 
 
 class ConfigOpt(object):
@@ -106,7 +112,7 @@ class AgentConfig(object):
     def __init__(self):
         self._cli_args = None
         self._remaining_argv = None
-        pass
+        self._agent_id = None
 
     def _parse_command_line(self):
         conf_parser = argparse.ArgumentParser(
@@ -115,7 +121,8 @@ class AgentConfig(object):
             "-c", "--conffile", help="Specify config file", metavar="FILE",
             default=None)
         conf_parser.add_argument("-v", "--verbose", action="count",
-                                 help="Display more output on the console.")
+                                 help="Display more output on the console.",
+                                 default=0)
         self._cli_args, self._remaining_argv = conf_parser.parse_known_args()
 
     def get_cli_arg(self, key):
@@ -137,8 +144,17 @@ class AgentConfig(object):
             FilenameOpt("logging", "configfile", relative_path=relative_path,
                         default=None),
             FilenameOpt("plugin", "configfile", relative_path=relative_path),
+            FilenameOpt("storage", "temppath", relative_path=relative_path),
+            FilenameOpt("storage", "idfile", relative_path=relative_path),
+            FilenameOpt("storage", "script_dir", relative_path=relative_path),
+            ConfigOpt("cloud", "name", str, default=None),
+            ConfigOpt("cloud", "metadata_url", str,
+                      default="http://169.254.169.254/1.0/meta-data"),
+
             ConfigOpt("messaging", "retransmission_timeout", float,
                       default=5),
+
+            ConfigOpt("enstratius", "agentmanager_url", str, default=None),
         ]
         parser = ConfigParser.SafeConfigParser()
         parser.read(config_file)
@@ -201,6 +217,14 @@ class AgentConfig(object):
         self._setup_logging()
 
     def console_log(self, level, msg, **kwargs):
-        if level > self.get_cli_arg("verbose"):
+        vb_level = self.get_cli_arg("verbose")
+        if level > vb_level:
             return
         print >> sys.stderr, msg % kwargs
+
+    def set_agent_id(self, agent_id):
+        # TODO write to a file
+        self._agent_id = agent_id
+
+    def get_agent_id(self):
+        return self._agent_id

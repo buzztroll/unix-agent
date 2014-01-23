@@ -62,7 +62,8 @@ class Worker(threading.Thread):
                     # TODO XXX handle messaging errors
                     reply.reply(reply_message)
             except Queue.Empty:
-                _g_logger.debug("Queue timeout")
+                #_g_logger.debug("Queue timeout")
+                pass
         _g_logger.info("Worker %s thread ending." % self.getName())
 
 
@@ -93,23 +94,21 @@ class Dispatcher(object):
             _g_logger.debug("Worker %s is done" % str(w))
 
     def incoming_request(self, reply, *args, **kwargs):
-        try:
-            payload = reply.get_message_payload()
-            command_name = payload['command']
-            arguments = payload['arguments']
-            request_id = reply.get_request_id()
-            _g_logger.info("Creating a request ID %s" % request_id)
-            plugin = jobs.load_plugin(
-                self._agent, self.conf, request_id, command_name, arguments)
+        payload = reply.get_message_payload()
+        command_name = payload['command']
+        arguments = payload['arguments']
+        request_id = reply.get_request_id()
+        _g_logger.info("Creating a request ID %s" % request_id)
+        plugin = jobs.load_plugin(
+            self._agent, self.conf, request_id, command_name, arguments)
 
-            reply.lock()
-            try:
-                self.worker_q.put((reply, plugin))
-                # there is an open window when the worker could pull the
-                # command from the queue before it is acked.  The lock prevents
-                # this
-                reply.ack(plugin.cancel, None, None)
-            finally:
-                reply.unlock()
-        except:
-            raise
+        reply.lock()
+        try:
+            self.worker_q.put((reply, plugin))
+            # there is an open window when the worker could pull the
+            # command from the queue before it is acked.  The lock prevents
+            # this
+            reply.ack(plugin.cancel, None, None)
+        finally:
+            reply.unlock()
+

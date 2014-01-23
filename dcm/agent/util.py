@@ -1,12 +1,13 @@
-import logging.handlers
+import os
+import exceptions
 import logging
-
-# A logging handler that sets the file location based on the job id
-# and script name
 import random
 import string
 import subprocess
-import exceptions
+
+
+_g_logger = logging.getLogger(__name__)
+
 
 
 class JobLogHandler(logging.FileHandler):
@@ -81,4 +82,17 @@ def fork_exe(command_line_args, logger, cwd=None):
     logger.info("STDERR: " + str(stderr))
     logger.info("Return code: " + str(process.returncode))
 
-    return process.returncode
+    return process.returncode, stdout, stderr
+
+
+def _get_script_command(conf, script_name):
+    script_path = os.path.join(conf.storage_script_dir, script_name)
+    return script_path
+
+
+def run_script(conf, script_name):
+    script_path = _get_script_command(conf, script_name)
+    rc, out, err = fork_exe([script_path], _g_logger)
+    if rc != 0:
+        raise exceptions.AgentExecutableException(rc, out, err)
+    return out

@@ -18,7 +18,7 @@ class TestConnectionFileIO(conniface.ConnectionInterface):
         self._reader = reader
         self._writer = writer
 
-    def read(self):
+    def recv(self):
         buf = self._reader.readline()
         j = json.loads(buf)
         return j
@@ -100,7 +100,7 @@ class TestReplySuccessfullyAlways(conniface.ConnectionInterface):
         self._check_retrans(request_id, types.MessageTypes.REQUEST)
         self._readq.append(request_doc)
 
-    def read(self):
+    def recv(self):
         self._lock.acquire()
         try:
             self._read_from_file()

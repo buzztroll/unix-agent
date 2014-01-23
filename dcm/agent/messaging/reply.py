@@ -15,9 +15,10 @@ _g_logger = logging.getLogger(__name__)
 
 class ReplyRPC(object):
 
-    def __init__(self, reply_listener, connection,
+    def __init__(self, agent_id, reply_listener, connection,
                  request_id, message_id, payload,
                  timeout=1.0):
+        self._agent_id = agent_id
         self._request_id = request_id
         self._message_id = message_id
         self._request_payload = payload
@@ -187,7 +188,8 @@ class ReplyRPC(object):
         """
         nack_doc = {'type': types.MessageTypes.NACK,
                     'message_id': self._message_id,
-                    'request_id': self._request_id}
+                    'request_id': self._request_id,
+                    'agent_id': self._agent_id}
         self._conn.send(nack_doc)
 
     def _sm_acked_request_received(self, **kwargs):
@@ -262,7 +264,8 @@ class ReplyRPC(object):
         self._reply_message_timer.cancel()
         self._reply_message_timer = None
         self._reply_listener.message_done(self)
-        _g_logger.debug("Ordered events: " + str(self._sm.get_event_list()))
+        _g_logger.debug("Messaging complete.  State event transition: "
+                        + str(self._sm.get_event_list()))
 
     def _sm_reply_ack_timeout(self, **kwargs):
         """
@@ -283,7 +286,8 @@ class ReplyRPC(object):
         """
         nack_doc = {'type': types.MessageTypes.NACK,
                     'message_id': self._message_id,
-                    'request_id': self._request_id}
+                    'request_id': self._request_id,
+                    'agent_id': self._agent_id}
         self._conn.send(nack_doc)
 
     def _sm_nacked_timeout(self, **kwargs):
@@ -413,15 +417,17 @@ class ReplyRPC(object):
 
 class RequestListener(object):
 
-    def __init__(self, connection, dispatcher, timeout=5):
+    def __init__(self, conf, connection, dispatcher):
         self._conn = connection
         self._dispatcher = dispatcher
         self._requests = {}
+        self._expired_requests = {}
         self._messages_processed = 0
         self._user_callbacks_list = []
         self._reply_observers = []
-        self._timeout = timeout
+        self._timeout = conf.messaging_retransmission_timeout
         self._shutdown = False
+        self._conf = conf
 
     def get_reply_observers(self):
         # get the whole list so that the user can add and remove themselves.
@@ -450,7 +456,14 @@ class RequestListener(object):
             if incoming_doc['type'] == types.MessageTypes.REQUEST:
                 # this is new request
                 request_id = incoming_doc['request_id']
-                if request_id in self._requests:
+                if request_id in self._expired_requests:
+                    # this are old requests
+                    nack_doc = {'type': types.MessageTypes.NACK,
+                                'message_id': incoming_doc['message_id'],
+                                'request_id': request_id,
+                                'agent_id': self._conf.get_agent_id()}
+                    self._conn.send(nack_doc)
+                elif request_id in self._requests:
                     _g_logger.debug("Retransmission found")
                     # this is a retransmission, send in the message
                     req = self._requests[request_id]
@@ -462,17 +475,20 @@ class RequestListener(object):
                     message_id = incoming_doc['message_id']
                     payload = incoming_doc['payload']
                     msg = ReplyRPC(
-                        self, self._conn, request_id, message_id, payload,
+                        self, self._conf.get_agent_id(),
+                        self._conn, request_id, message_id, payload,
                         timeout=self._timeout)
-                    self._requests[request_id] = msg
                     self._dispatcher.incoming_request(msg)
                     self._call_reply_observers("new_message", msg)
+                    # only add the message if processing was successful
+                    self._requests[request_id] = msg
             else:
                 request_id = incoming_doc['request_id']
                 if request_id not in self._requests:
                     nack_doc = {'type': types.MessageTypes.NACK,
                                 'message_id': incoming_doc['message_id'],
-                                'request_id': request_id}
+                                'request_id': request_id,
+                                'agent_id': self._conf.get_agent_id()}
                     self._conn.send(nack_doc)
                 else:
                     # get the message
@@ -482,20 +498,70 @@ class RequestListener(object):
     def _validate_doc(self, incoming_doc):
         pass
 
+    def _send_bad_message_reply(self, incoming_doc, message):
+        # we want to send a NACK to the message however it may be an error
+        # because it was not formed with message_id or request_id.  In this
+        # case we will send values in that place indicating that *a* message
+        # was bad.  There will be almost no way for the sender to know which
+        # one
+        try:
+            request_id = incoming_doc['request_id']
+        except KeyError:
+            request_id = "DEADBEEF"
+        try:
+            message_id = incoming_doc['message_id']
+        except KeyError:
+            message_id = "DEADBEEF"
+        nack_doc = {'type': types.MessageTypes.NACK,
+                    'message_id': message_id,
+                    'request_id': request_id,
+                    'error_message': message,
+                    'agent_id': self._conf.get_agent_id()}
+        self._conn.send(nack_doc)
+
     def poll(self):
         for cb in self._user_callbacks_list:
             with tracer.RequestTracer(cb.request_id):
                 cb.call()
-        incoming_doc = self._conn.read()
+        incoming_doc = self._conn.recv()
         self._validate_doc(incoming_doc)
-        self._process_doc(incoming_doc)
+
+        try:
+            self._process_doc(incoming_doc)
+        except Exception as ex:
+            _g_logger.warn("Error processing the message: " + str(incoming_doc),
+                           ex)
+            self._send_bad_message_reply(incoming_doc, ex.message)
+
         time.sleep(0)
         return self._shutdown and not self.is_busy()
 
     def message_done(self, reply_message):
-        del self._requests[reply_message.get_request_id()]
+        # we cannot drop this message too soon or retransmissions will cause
+        # the command to be run again
+        #
+        #  TODO note thread safety
+
+        # TODO put a soft state timer on the expired request IDs so that they
+        # do not leak out forever
+        request_id = reply_message.get_request_id()
+
+        timer = threading.Timer(3600,
+                                self._expired_req_timeout,
+                                args=[request_id])
+        self._expired_requests[request_id] = timer
+        timer.start()
+
+        del self._requests[request_id]
         self._messages_processed += 1
         self._call_reply_observers("message_done", reply_message)
+
+    def _expired_req_timeout(self, req):
+        # TODO note thread safety
+        try:
+            del self._expired_requests[req.get_request_id()]
+        except:
+            pass
 
     def register_user_callback(self, user_callback):
         self._user_callbacks_list.append(user_callback)
@@ -519,6 +585,8 @@ class RequestListener(object):
         self._shutdown = True  # XXX danger will robinson.  Lets not have
                                # too many flags like this before we have
                                # a state machine
+        for timer in self._expired_requests.values():
+            timer.cancel()
 
 
 class ReplyObserverInterface(object):

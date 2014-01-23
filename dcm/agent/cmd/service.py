@@ -5,8 +5,9 @@ import sys
 import dcm.agent.config as config
 import dcm.agent.dispatcher as dispatcher
 import dcm.agent.exceptions as exceptions
-import dcm.agent.messaging.utils as utils
+from dcm.agent.messaging import handshake
 import dcm.agent.messaging.reply as reply
+
 
 _g_conf_object = config.AgentConfig()
 _g_shutting_down = False
@@ -30,14 +31,20 @@ def _run_agent(args):
 
     # def get a connection object
     conn = config.get_connection_object(_g_conf_object)
+    handshake_doc = handshake.get_handshake(_g_conf_object)
+    conn.set_handshake(handshake_doc)
+    handshake_reply = conn.connect()
+
+    if handshake_reply["return_code"] != 200:
+        raise Exception("handshake failed " + handshake_reply['error_message'])
+
+    _g_conf_object.set_agent_id(handshake_doc["agent_id"])
 
     disp = dispatcher.Dispatcher(_g_conf_object)
     disp.start_workers()
 
-    request_listener = reply.RequestListener(
-        conn, disp, timeout=_g_conf_object.messaging_retransmission_timeout)
+    request_listener = reply.RequestListener(_g_conf_object, conn, disp)
 
-    # TODO drive this loop with something real
     done = False
     while not done:
         try:
@@ -48,11 +55,16 @@ def _run_agent(args):
             # service the connections that already exist
             done = request_listener.poll()
         except Exception as ex:
+            # if we get a top level exception we allow the program to terminate
+            # wrapper scripts can potentially make other decisions about
+            # restarting it, but this is the python code saying we are finished
+            # due to an unrecoverable error
             logger.error(ex)
             raise
 
     _g_conf_object.console_log(3, "Stopping the dispatcher.")
     disp.stop()
+    conn.close()
 
 
 def main(args=sys.argv):
@@ -63,3 +75,6 @@ def main(args=sys.argv):
         _g_conf_object.console_log(0, aoex.message)
     if _g_conf_object.get_cli_arg("verbose") > 2:
         raise
+
+
+main()

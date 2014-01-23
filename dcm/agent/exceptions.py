@@ -53,6 +53,14 @@ class AgentOptionRangeException(AgentOptionException):
         super(AgentOptionValueException, self).__init__(message)
 
 
+class AgentConnectionException(Exception):
+    def __init__(self, error_code, error_msg):
+        message = ("The connection to DCM has failed is an unrecoverable way. "
+                   "Error code: %(error_code)s Error Message %(error_msg)s"
+                   % locals())
+        super(AgentConnectionException, self).__init__(error_msg)
+
+
 class AgentPluginConfigException(Exception):
     pass
 
@@ -118,3 +126,19 @@ class PerminateConnectionException(MessagingException):
 
     def __init__(self, details):
         super(PerminateConnectionException, self).__init__(self.msg % locals())
+
+
+class AgentRuntimeException(Exception):
+    pass
+
+
+class AgentConnectionDriverException(Exception):
+    pass
+
+
+class AgentExecutableException(Exception):
+    msg = "The external process run with %(command_line)s returned an error. " \
+          "rc=%(code)s stderr=%(stderr)s stdout=%(stdout)s"
+
+    def __init__(self, rc, stdout, stderr):
+        super(AgentExecutableException, self).__init__(self.msg % locals())
