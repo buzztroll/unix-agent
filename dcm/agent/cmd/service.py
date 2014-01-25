@@ -1,6 +1,7 @@
 import logging
 import signal
 import sys
+from dcm.agent import utils
 
 import dcm.agent.config as config
 import dcm.agent.dispatcher as dispatcher
@@ -15,6 +16,10 @@ _g_shutting_down = False
 
 def kill_handler(signum, frame):
     global _g_shutting_down
+
+    logger = logging.getLogger(__name__)
+
+    logger.info("Shutting down.")
     _g_conf_object.console_log(0, "Shutting down.")
     _g_shutting_down = True
 
@@ -27,7 +32,12 @@ def _run_agent(args):
     # def setup config object
     _g_conf_object.setup(clioptions=True)
 
-    logger = logging.getLogger(__name__)
+    _g_logger = logging.getLogger(__name__)
+
+
+    if _g_conf_object.pydev_host:
+        utils.setup_remote_pydev(_g_conf_object.pydev_host,
+                                 _g_conf_object.pydev_port)
 
     # def get a connection object
     conn = config.get_connection_object(_g_conf_object)
@@ -38,32 +48,23 @@ def _run_agent(args):
     if handshake_reply["return_code"] != 200:
         raise Exception("handshake failed " + handshake_reply['error_message'])
 
-    _g_conf_object.set_agent_id(handshake_doc["agent_id"])
-
+    _g_conf_object.set_agent_id(handshake_reply["agent_id"])
     disp = dispatcher.Dispatcher(_g_conf_object)
     disp.start_workers()
 
     request_listener = reply.RequestListener(_g_conf_object, conn, disp)
 
-    done = False
-    while not done:
+    while not _g_shutting_down:
         try:
-            if _g_shutting_down:
-                # do it by checking the variable to avoid any threading
-                # issues from the signal handler
-                request_listener.shutdown()
-            # service the connections that already exist
-            done = request_listener.poll()
-        except Exception as ex:
-            # if we get a top level exception we allow the program to terminate
-            # wrapper scripts can potentially make other decisions about
-            # restarting it, but this is the python code saying we are finished
-            # due to an unrecoverable error
-            logger.error(ex)
-            raise
+            request_listener.poll()
+        except:
+            _g_logger.exception("WHAT IS HAPPENING")
 
-    _g_conf_object.console_log(3, "Stopping the dispatcher.")
+    _g_logger.debug("Stopping the reply listener")
+    request_listener.shutdown()
+    _g_logger.debug("Stopping the dispatcher")
     disp.stop()
+    _g_logger.debug("Closing the connection")
     conn.close()
 
 
@@ -73,8 +74,10 @@ def main(args=sys.argv):
     except exceptions.AgentOptionException as aoex:
         _g_conf_object.console_log(0, "The agent is misconfigured.")
         _g_conf_object.console_log(0, aoex.message)
-    if _g_conf_object.get_cli_arg("verbose") > 2:
-        raise
-
+        if _g_conf_object.get_cli_arg("verbose") > 2:
+            raise
+    except:
+        _g_logger = logging.getLogger(__name__)
+        _g_logger.exception("An unknown exception bubbled to the top")
 
 main()

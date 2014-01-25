@@ -13,6 +13,7 @@
 #  ======================================================================
 
 import datetime
+import time
 import errno
 import json
 import logging
@@ -66,6 +67,7 @@ class _WebSocketClient(ws4py_client.WebSocketClient):
                             "complete.")
         finally:
             self._cond.release()
+        _g_logger.debug("received handshake %s" % str(self._handshake_reply))
         return self._handshake_reply
 
     def opened(self):
@@ -77,17 +79,19 @@ class _WebSocketClient(ws4py_client.WebSocketClient):
         self.manager.closed(code, reason=reason)
 
     def received_message(self, m):
-        if not self._complete_handshake:
-            try:
-                _g_logger.debug("WS message received " + m.data)
-                self._cond.acquire()
+        _g_logger.debug("WS message received " + m.data)
+        try:
+            self._cond.acquire()
+            if not self._complete_handshake:
+                _g_logger.debug("Handshake received")
                 self._complete_handshake = True
-                self._cond.notify_all()
                 self._handshake_reply = m.data
-            finally:
-                self._cond.release()
-        else:
-            self.receive_queue.put(m.data)
+                self._cond.notify_all()
+            else:
+                _g_logger.debug("Added to receive Q")
+                self.receive_queue.put(m.data)
+        finally:
+            self._cond.release()
 
 
 class _WSManager(threading.Thread):
@@ -125,6 +129,7 @@ class _WSManager(threading.Thread):
             self._ws.wait_for_handshake()
             self._reset_backoff()
             self._connected = True
+            _g_logger.info("The WS connection to %s succeeded." % self._server_url)
         except Exception as ex:
             _g_logger.info("An error forming the WS connection to %s occurred"
                            ": %s" % (self._server_url, ex.message))
@@ -162,29 +167,45 @@ class _WSManager(threading.Thread):
             return False
 
         try:
-            doc = self._send_queue.get(False, 2)
+            doc = self._send_queue.get(True, 2)
         except Queue.Empty:
             return True
 
         try:
-            self._ws.send(json.dumps(doc))
+            msg = json.dumps(doc)
+            _g_logger.debug("sending the message " + msg)
+            self._ws.send(msg)
             self._send_queue.task_done()
         except socket.error as er:
             if er.errno == errno.EPIPE:
+                _g_logger.info("The ws connection broke for " + self._server_url)
                 self._connected = False
             else:
+                _g_logger.info("A WS socket error occurred " + self._server_url)
                 raise
             # XXX TODO we may need to trap other exceptions as well
+        except:
+            _g_logger.exception("An exception occurred while sending.")
         return False
 
     def run(self):
         while not self._done:
-            self.poll()
+            try:
+                self.poll()
+                time.sleep(0)
+            except:
+                _g_logger.exception("An error occurred in poll.")
 
     def close(self):
+        _g_logger.debug("Close called")
         self._done = True
         if self._connected:
             self._ws.close()
+        self._receive_queue.join()
+        self._send_queue.join()
+        _g_logger.debug("The connection to " + self._server_url +
+                        " is closed.")
+
 
 
 class WebSocketConnection(conn_iface.ConnectionInterface):
@@ -206,13 +227,14 @@ class WebSocketConnection(conn_iface.ConnectionInterface):
 
     def recv(self):
         try:
-            m = self._recv_queue.get(False)
+            m = self._recv_queue.get(True, 1)
             self._recv_queue.task_done()
             return json.loads(m)
         except Queue.Empty:
             return None
 
     def send(self, doc):
+        _g_logger.debug("Adding a message to the send queue")
         self._send_queue.put(doc)
 
     def close(self):

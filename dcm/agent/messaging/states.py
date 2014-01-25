@@ -128,7 +128,7 @@ class StateMachine(object):
                     _g_logger.warning("An error occurred that permits us "
                                       "to continue but skip the state "
                                       "change. %s" % str(dncse))
-                except Exception as ex:
+                except:
                     _g_logger.exception("An exception occurred %s")
                     raise
         except KeyError as keyEx:

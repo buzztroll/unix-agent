@@ -6,6 +6,9 @@ import traceback
 import uuid
 
 
+_g_message_uuid = str(uuid.uuid4()).split("-")[0]
+_g_message_id_count = 0
+
 def class_method_sync():
     def wrapper(func):
         def lock_func(self, *args, **kwargs):
@@ -36,8 +39,11 @@ def build_assertion_exception(logger, assertion_failure, msg):
 
 
 def new_message_id():
-    message_id = str(uuid.uuid4())
-    return message_id
+    global _g_message_id_count
+    global _g_message_uuid
+    # TODO lock this... maybe.  it doesnt really matter that much
+    _g_message_id_count = _g_message_id_count + 1
+    return _g_message_uuid + str(_g_message_id_count)
 
 
 class MessageTimer(object):

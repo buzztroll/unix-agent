@@ -15,7 +15,7 @@ _g_logger = logging.getLogger(__name__)
 
 class ReplyRPC(object):
 
-    def __init__(self, agent_id, reply_listener, connection,
+    def __init__(self, reply_listener, agent_id, connection,
                  request_id, message_id, payload,
                  timeout=1.0):
         self._agent_id = agent_id
@@ -120,8 +120,14 @@ class ReplyRPC(object):
                                 message=json_doc)
 
     def _send_reply_message(self, message_timer):
-        self._reply_message_timer = message_timer
-        message_timer.send(self._conn)
+        try:
+            self._reply_message_timer = message_timer
+            _g_logger.debug("Send via message timer")
+            message_timer.send(self._conn)
+            _g_logger.debug("MEssage sent")
+
+        except:
+            _g_logger.debug("WTF SFSDFSDFSD")
 
     ###################################################################
     # state machine event handlers
@@ -162,7 +168,8 @@ class ReplyRPC(object):
         """
         ack_doc = {'type': types.MessageTypes.ACK,
                    'message_id': self._message_id,
-                   'request_id': self._request_id}
+                   'request_id': self._request_id,
+                   'agent_id': self._agent_id}
         self._conn.send(ack_doc)
 
     def _sm_requesting_user_replies(self, **kwargs):
@@ -174,7 +181,8 @@ class ReplyRPC(object):
         reply_doc = {'type': types.MessageTypes.REPLY,
                      'message_id': utils.new_message_id(),
                      'request_id': self._request_id,
-                     'payload': self._response_doc}
+                     'payload': self._response_doc,
+                     'agent_id': self._agent_id}
 
         message_timer = utils.MessageTimer(self._timeout,
                                            self.reply_timeout,
@@ -204,7 +212,8 @@ class ReplyRPC(object):
         message_id = message['message_id']
         ack_doc = {'type': types.MessageTypes.ACK,
                    'message_id': message_id,
-                   'request_id': self._request_id}
+                   'request_id': self._request_id,
+                   'agent_id': self._agent_id}
         self._conn.send(ack_doc)
 
     def _sm_acked_cancel_received(self, **kwargs):
@@ -222,16 +231,36 @@ class ReplyRPC(object):
         This is the standard case.  A user has accepted the message and is
         now replying to it.  We send the reply.
         """
+        _g_logger.debug("Sending ack to the message")
         self._response_doc = kwargs['message']
-        reply_doc = {'type': types.MessageTypes.REPLY,
-                     'message_id': utils.new_message_id(),
-                     'request_id': self._request_id,
-                     'payload': self._response_doc}
+        _g_logger.debug("Sending ack to the message 2")
+        try:
+            reply_doc = {}
+            _g_logger.debug("Sending ack to the message 2.1")
+            reply_doc['type'] = types.MessageTypes.REPLY
+            _g_logger.debug("Sending ack to the message 2.2")
+            reply_doc['message_id'] = utils.new_message_id()
+            _g_logger.debug("Sending ack to the message 2.3")
+            reply_doc['request_id'] = self._request_id
+            _g_logger.debug("Sending ack to the message 2.4")
+            reply_doc['payload'] = self._response_doc
+            _g_logger.debug("Sending ack to the message 2.5")
+            reply_doc['agent_id'] = self._agent_id
+            # reply_doc = {'type': types.MessageTypes.REPLY,
+            #              'message_id': utils.new_message_id(),
+            #              'request_id': self._request_id,
+            #              'payload': self._response_doc,
+            #              'agent_id': self._agent_id}
+        finally:
+            _g_logger.debug("what the balls is going on?")
+        _g_logger.debug("Sending ack to the message 3")
 
         message_timer = utils.MessageTimer(self._timeout,
                                            self.reply_timeout,
                                            reply_doc)
+        _g_logger.debug("Sending ack to the message 4")
         self._send_reply_message(message_timer)
+        _g_logger.debug("Sending ack to the message 5")
 
     def _sm_reply_request_retrans(self, **kwargs):
         """
@@ -243,7 +272,8 @@ class ReplyRPC(object):
         reply_doc = {'type': types.MessageTypes.REPLY,
                      'message_id': utils.new_message_id(),
                      'request_id': self._request_id,
-                     'payload': self._response_doc}
+                     'payload': self._response_doc,
+                     'agent_id': self._agent_id}
         self._conn.send(reply_doc)
 
     def _sm_reply_cancel_received(self, **kwargs):
@@ -524,17 +554,15 @@ class RequestListener(object):
             with tracer.RequestTracer(cb.request_id):
                 cb.call()
         incoming_doc = self._conn.recv()
-        self._validate_doc(incoming_doc)
 
         try:
+            self._validate_doc(incoming_doc)
             self._process_doc(incoming_doc)
         except Exception as ex:
             _g_logger.warn("Error processing the message: " + str(incoming_doc),
                            ex)
             self._send_bad_message_reply(incoming_doc, ex.message)
-
         time.sleep(0)
-        return self._shutdown and not self.is_busy()
 
     def message_done(self, reply_message):
         # we cannot drop this message too soon or retransmissions will cause
@@ -566,11 +594,6 @@ class RequestListener(object):
     def register_user_callback(self, user_callback):
         self._user_callbacks_list.append(user_callback)
 
-    def kill(self):
-        for r_id in self._requests:
-            reply = self._requests[r_id]
-            reply.kill()
-
     def get_messages_processed(self):
         return self._messages_processed
 
@@ -587,7 +610,8 @@ class RequestListener(object):
                                # a state machine
         for timer in self._expired_requests.values():
             timer.cancel()
-
+        for req in self._requests.values():
+            req.kill()
 
 class ReplyObserverInterface(object):
     @agent_util.not_implemented_decorator

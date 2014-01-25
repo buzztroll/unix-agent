@@ -8,7 +8,7 @@ configfile=logging.yaml
 type=ws
 
 [plugin]
-configfile=plugin.conf.sample
+configfile=/Users/bresnaha/Dev/Enstratius/es-ex-pyagent/etc/plugin.conf.test
 
 [messaging]
 retransmission_timeout=5.0

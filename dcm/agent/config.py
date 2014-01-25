@@ -63,6 +63,8 @@ class ConfigOpt(object):
             v = parser.get(self.section, self.name, self.default)
         except ConfigParser.NoOptionError:
             v = self.default
+        except ConfigParser.NoSectionError:
+            v = self.default
         if v is None:
             return v
         try:
@@ -133,6 +135,9 @@ class AgentConfig(object):
         relative_path = os.path.dirname(config_file)
 
         option_list = [
+            ConfigOpt("pydev", "host", str, default=None, options=None),
+            ConfigOpt("pydev", "port", int, default=None, options=None),
+
             ConfigOpt("workers", "count", int, default=4, options=None),
             ConfigOpt("connection", "type", str, default=None, options=None),
             ConfigOpt("connection", "hostname", str, default=None),
@@ -165,6 +170,7 @@ class AgentConfig(object):
                 config_variable = opt.section + '_' + opt.name
                 self.__setattr__(config_variable, v)
             except ConfigParser.NoSectionError as nse:
+                opt.get
                 raise exceptions.AgentOptionSectionNotFoundException(
                     opt.name)
 
@@ -217,10 +223,11 @@ class AgentConfig(object):
         self._setup_logging()
 
     def console_log(self, level, msg, **kwargs):
-        vb_level = self.get_cli_arg("verbose")
-        if level > vb_level:
-            return
-        print >> sys.stderr, msg % kwargs
+        # vb_level = self.get_cli_arg("verbose")
+        # if level > vb_level:
+        #     return
+        # print >> sys.stderr, msg % kwargs
+        return
 
     def set_agent_id(self, agent_id):
         # TODO write to a file

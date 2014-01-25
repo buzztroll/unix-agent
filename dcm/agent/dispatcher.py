@@ -1,6 +1,8 @@
 import logging
 import Queue
 import threading
+import time
+from dcm.agent import exceptions
 
 import dcm.agent.jobs as jobs
 import dcm.agent.messaging.utils as message_utils
@@ -33,37 +35,34 @@ class Worker(threading.Thread):
         # in the queue, and then done() will be called all before we get
         # to the top of the loop.
         # TODO add a force kill
-        while not self._done or not self.worker_queue.empty():
+        while not self._done:
             try:
                 (reply, plugin) = self.worker_queue.get(True, 1)
                 # setup message logging
                 with tracer.RequestTracer(reply.get_request_id()):
                     try:
                         _g_logger.info("Starting job " + str(plugin))
-                        (stdout, stderr, returncode) = plugin.run()
+                        reply_doc = plugin.run()
                         _g_logger.info(
                             "Completed successfully job " + str(plugin))
                     except Exception as ex:
                         _g_logger.error(
                             "Worker %s thread had a top level error when "
                             "running job %s" % (self.getName(), plugin), ex)
-                        stdout = ""
-                        stderr = ex.message
-                        returncode = -1
+                        reply_doc = {'Exception': ex.message}
                     finally:
                         self.worker_queue.task_done()
                         _g_logger.info("Task done job " + str(plugin))
 
-                    reply_message = {'stdout': stdout,
-                                     'stderr': stderr,
-                                     'returncode': returncode,
-                                     "error": ""}
+                    _g_logger.debug("replying: " + str(reply_doc))
 
                     # TODO XXX handle messaging errors
-                    reply.reply(reply_message)
+                    reply.reply(reply_doc)
+                    _g_logger.debug("Reply message sent")
             except Queue.Empty:
-                #_g_logger.debug("Queue timeout")
                 pass
+            except:
+                _g_logger.exception("Something went wrong processing the queue")
         _g_logger.info("Worker %s thread ending." % self.getName())
 
 
@@ -92,23 +91,38 @@ class Dispatcher(object):
             w.done()
             w.join()
             _g_logger.debug("Worker %s is done" % str(w))
+        _g_logger.info("The dispatcher is closed.")
+
 
     def incoming_request(self, reply, *args, **kwargs):
         payload = reply.get_message_payload()
+        _g_logger.debug("Incoming request %s" % str(payload))
         command_name = payload['command']
         arguments = payload['arguments']
         request_id = reply.get_request_id()
         _g_logger.info("Creating a request ID %s" % request_id)
-        plugin = jobs.load_plugin(
-            self._agent, self.conf, request_id, command_name, arguments)
+
+        try:
+            plugin = jobs.load_plugin(
+                self._agent, self.conf, request_id, command_name, arguments)
+        except Exception as ex:
+            _g_logger.error("EEERRRROR", ex)
+            time.sleep(5)
+            raise
+
+        _g_logger.info("Pre disp lock")
 
         reply.lock()
         try:
+            _g_logger.info("have lock")
             self.worker_q.put((reply, plugin))
             # there is an open window when the worker could pull the
             # command from the queue before it is acked.  The lock prevents
             # this
             reply.ack(plugin.cancel, None, None)
+            _g_logger.info("acked")
         finally:
             reply.unlock()
+        _g_logger.info("un lock")
+
 

@@ -1,8 +1,13 @@
 import ConfigParser
+import importlib
 import logging
 import os
+import re
 import subprocess
 from dcm.agent import exceptions
+
+
+_g_logger = logging.getLogger(__name__)
 
 
 # The abstract object for plugins.
@@ -79,23 +84,31 @@ class ExePlugin(Plugin):
         pass
 
 
+# we should use stevedore for this
 def _load_python(agent, conf, job_id, items_map, name, arguments):
+
     if 'module_name' not in items_map:
         raise exceptions.AgentPluginConfigException(
             "The configuration for the %s plugin does not contain a "
             "module_name entry." % name)
     module_name = items_map['module_name']
     try:
-        module = __import__(module_name)
-        return module.load_plugin(
+        module = importlib.import_module(module_name)
+        _g_logger.error("Module acquired " + str(dir(module)))
+
+        rc = module.load_plugin(
             agent, conf, job_id, items_map, name, arguments)
+        return rc
     except ImportError as iee:
         raise exceptions.AgentPluginConfigException(
             "The module named %s could not be imported." % module_name, iee)
     except AttributeError as ae:
+        _g_logger.error("Could not load " + module_name)
         raise exceptions.AgentPluginConfigException(
             "The module named %s does not have the load function."
             % module_name, ae)
+    except:
+        _g_logger.exception("WHAT THE BALLS")
 
 
 def _load_exe(agent, conf, job_id, items_map, name, arguments):
@@ -109,6 +122,9 @@ g_type_to_obj_map = {
 
 
 def load_plugin(agent, conf, job_id, name, arguments):
+
+    _g_logger.debug("ENTER load_plugin")
+
     conffile = conf.plugin_configfile
     if not os.path.exists(conffile):
         raise exceptions.AgentPluginConfigException(
@@ -120,9 +136,12 @@ def load_plugin(agent, conf, job_id, name, arguments):
 
     section_name = 'plugin:' + name
     for s in section:
-        if s == section_name:
+        p = re.compile(s)
+        if p.match(section_name):
+            _g_logger.debug("load_plugin: found a match " + s + " : " + section_name)
+
             try:
-                items = parser.items(section_name)
+                items = parser.items(s)
                 items_map = {}
                 for i in items:
                     items_map[i[0]] = i[1]
@@ -137,6 +156,7 @@ def load_plugin(agent, conf, job_id, name, arguments):
                         "The module type %s is not valid." % type)
 
                 func = g_type_to_obj_map[type]
+                _g_logger.debug("calling load function")
                 return func(agent, conf, job_id, items_map, name, arguments)
             except ConfigParser.NoOptionError as conf_ex:
                 raise exceptions.AgentPluginConfigException(conf_ex.message)
