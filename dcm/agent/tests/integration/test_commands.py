@@ -32,7 +32,8 @@ class TestSingleCommands(unittest.TestCase):
         inlines = StringIO.StringIO(command)
         outfile = StringIO.StringIO()
         conn = self._get_conn(inlines, outfile, drop_count)
-        request_listener = reply.RequestListener(conn, self.disp)
+        request_listener = reply.RequestListener(
+            self.conf_obj, conn, self.disp)
 
         # wait until the request is done
         while request_listener.is_busy() or \
@@ -41,7 +42,8 @@ class TestSingleCommands(unittest.TestCase):
         output = json.loads(outfile.buflist[0])
         self.assertEquals(stdout, output['stdout'].strip())
         self.assertEquals(stderr, output['stderr'])
-        self.assertEquals(0, output['returncode'])
+        self.assertEquals(0, output['return_code'])
+        request_listener.shutdown()
 
     def test_message_no_fail(self):
         self._simple_message(0, "echo Hello1", "Hello1", None)
@@ -100,7 +102,8 @@ class TestSerialCommands(unittest.TestCase):
         inlines = StringIO.StringIO(in_command)
         outfile = StringIO.StringIO()
         conn = self._get_conn(inlines, outfile, drop_count)
-        request_listener = reply.RequestListener(conn, self.disp)
+        request_listener = reply.RequestListener(
+            self.conf_obj, conn, self.disp)
 
         # wait until the request is done
         while request_listener.is_busy() or \
@@ -159,7 +162,7 @@ class TestRetransmission(unittest.TestCase):
         inlines = StringIO.StringIO(in_command)
         outfile = StringIO.StringIO()
         conn = self._get_conn(inlines, outfile, drop_count, retrans_list)
-        request_listener = reply.RequestListener(conn, disp)
+        request_listener = reply.RequestListener(self.conf_obj, conn, disp)
         to = TestStateObserver()
         rol = request_listener.get_reply_observers()
         rol.insert(0, to)

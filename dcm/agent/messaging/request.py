@@ -304,7 +304,6 @@ class RequestRPC(object):
         """
         pass
 
-
     ### XXX TODO FIGURE OUT THIS CASE
     def _sm_acksent_reply_received(self, **kwargs):
         """

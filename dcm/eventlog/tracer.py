@@ -22,6 +22,7 @@ def _get_record_defaults(doc):
         record["dcm_" + k] = doc.get(k, "None")
     return record
 
+
 class RequestFilter(logging.Filter):
     """
     Fliter records if this event is not in the logset

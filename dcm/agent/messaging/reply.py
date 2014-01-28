@@ -15,6 +15,8 @@ _g_logger = logging.getLogger(__name__)
 
 class ReplyRPC(object):
 
+    MISSING_VALUE_STRING = "DEADBEEF"
+
     def __init__(self, reply_listener, agent_id, connection,
                  request_id, message_id, payload,
                  timeout=1.0):
@@ -25,14 +27,11 @@ class ReplyRPC(object):
         self._cancel_callback = None
         self._cancel_callback_args = None
         self._cancel_callback_kwargs = None
-
         self._reply_message_timer = None
         self._reply_listener = reply_listener
         self._timeout = timeout
         self._conn = connection
-
         self._lock = threading.RLock()
-
         self._sm = states.StateMachine(states.ReplyStates.NEW)
         self._setup_states()
         self._sm.event_occurred(states.ReplyEvents.REQUEST_RECEIVED,
@@ -54,9 +53,9 @@ class ReplyRPC(object):
         if self._reply_message_timer:
             try:
                 self._reply_message_timer.cancel()
-            except:
-                # TODO LOG THIS
-                pass
+            except Exception as ex:
+                _g_logger.info("an exception occured when trying to cancel"
+                               "the timer: " + ex.message)
 
     @utils.class_method_sync()
     def ack(self,
@@ -120,14 +119,8 @@ class ReplyRPC(object):
                                 message=json_doc)
 
     def _send_reply_message(self, message_timer):
-        try:
-            self._reply_message_timer = message_timer
-            _g_logger.debug("Send via message timer")
-            message_timer.send(self._conn)
-            _g_logger.debug("MEssage sent")
-
-        except:
-            _g_logger.debug("WTF SFSDFSDFSD")
+        self._reply_message_timer = message_timer
+        message_timer.send(self._conn)
 
     ###################################################################
     # state machine event handlers
@@ -231,36 +224,17 @@ class ReplyRPC(object):
         This is the standard case.  A user has accepted the message and is
         now replying to it.  We send the reply.
         """
-        _g_logger.debug("Sending ack to the message")
         self._response_doc = kwargs['message']
-        _g_logger.debug("Sending ack to the message 2")
-        try:
-            reply_doc = {}
-            _g_logger.debug("Sending ack to the message 2.1")
-            reply_doc['type'] = types.MessageTypes.REPLY
-            _g_logger.debug("Sending ack to the message 2.2")
-            reply_doc['message_id'] = utils.new_message_id()
-            _g_logger.debug("Sending ack to the message 2.3")
-            reply_doc['request_id'] = self._request_id
-            _g_logger.debug("Sending ack to the message 2.4")
-            reply_doc['payload'] = self._response_doc
-            _g_logger.debug("Sending ack to the message 2.5")
-            reply_doc['agent_id'] = self._agent_id
-            # reply_doc = {'type': types.MessageTypes.REPLY,
-            #              'message_id': utils.new_message_id(),
-            #              'request_id': self._request_id,
-            #              'payload': self._response_doc,
-            #              'agent_id': self._agent_id}
-        finally:
-            _g_logger.debug("what the balls is going on?")
-        _g_logger.debug("Sending ack to the message 3")
+        reply_doc = {'type': types.MessageTypes.REPLY,
+                     'message_id': utils.new_message_id(),
+                     'request_id': self._request_id,
+                     'payload': self._response_doc,
+                     'agent_id': self._agent_id}
 
         message_timer = utils.MessageTimer(self._timeout,
                                            self.reply_timeout,
                                            reply_doc)
-        _g_logger.debug("Sending ack to the message 4")
         self._send_reply_message(message_timer)
-        _g_logger.debug("Sending ack to the message 5")
 
     def _sm_reply_request_retrans(self, **kwargs):
         """
@@ -502,16 +476,29 @@ class RequestListener(object):
                     if self._shutdown:
                         return
                     _g_logger.debug("New Request found")
-                    message_id = incoming_doc['message_id']
-                    payload = incoming_doc['payload']
-                    msg = ReplyRPC(
-                        self, self._conf.get_agent_id(),
-                        self._conn, request_id, message_id, payload,
-                        timeout=self._timeout)
-                    self._dispatcher.incoming_request(msg)
-                    self._call_reply_observers("new_message", msg)
-                    # only add the message if processing was successful
-                    self._requests[request_id] = msg
+                    if len(self._requests.keys()) >=\
+                       self._conf.messaging_max_at_once > -1:
+                        _g_logger.info("A new request came in but we are full")
+                        nack_doc = {
+                            'type': types.MessageTypes.NACK,
+                            'message_id': incoming_doc['message_id'],
+                            'request_id': request_id,
+                            'agent_id': self._conf.get_agent_id(),
+                            'exception': ("The agent can only handle %d "
+                                          "commands at once"
+                                          % self._conf.messaging_max_at_once)}
+                        self._conn.send(nack_doc)
+                    else:
+                        message_id = incoming_doc['message_id']
+                        payload = incoming_doc['payload']
+                        msg = ReplyRPC(
+                            self, self._conf.get_agent_id(),
+                            self._conn, request_id, message_id, payload,
+                            timeout=self._timeout)
+                        self._dispatcher.incoming_request(msg)
+                        self._call_reply_observers("new_message", msg)
+                        # only add the message if processing was successful
+                        self._requests[request_id] = msg
             else:
                 request_id = incoming_doc['request_id']
                 if request_id not in self._requests:
@@ -537,11 +524,11 @@ class RequestListener(object):
         try:
             request_id = incoming_doc['request_id']
         except KeyError:
-            request_id = "DEADBEEF"
+            request_id = ReplyRPC.MISSING_VALUE_STRING
         try:
             message_id = incoming_doc['message_id']
         except KeyError:
-            message_id = "DEADBEEF"
+            message_id = ReplyRPC.MISSING_VALUE_STRING
         nack_doc = {'type': types.MessageTypes.NACK,
                     'message_id': message_id,
                     'request_id': request_id,
@@ -559,8 +546,8 @@ class RequestListener(object):
             self._validate_doc(incoming_doc)
             self._process_doc(incoming_doc)
         except Exception as ex:
-            _g_logger.warn("Error processing the message: " + str(incoming_doc),
-                           ex)
+            _g_logger.warn(
+                "Error processing the message: %s" % str(incoming_doc), ex)
             self._send_bad_message_reply(incoming_doc, ex.message)
         time.sleep(0)
 
@@ -612,6 +599,7 @@ class RequestListener(object):
             timer.cancel()
         for req in self._requests.values():
             req.kill()
+
 
 class ReplyObserverInterface(object):
     @agent_util.not_implemented_decorator

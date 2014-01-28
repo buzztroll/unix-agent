@@ -123,13 +123,15 @@ class _WSManager(threading.Thread):
 
         try:
             self._ws = _WebSocketClient(
-                self, self._server_url, self._receive_queue, **self._kwargs)
+                self, self._server_url, self._receive_queue,
+                protocols=['http-only', 'chat'], **self._kwargs)
             self._ws.connect()
             self._reply_hs_doc = self._ws.send_handshake(self._hs_string)
             self._ws.wait_for_handshake()
             self._reset_backoff()
             self._connected = True
-            _g_logger.info("The WS connection to %s succeeded." % self._server_url)
+            _g_logger.info(
+                "The WS connection to %s succeeded." % self._server_url)
         except Exception as ex:
             _g_logger.info("An error forming the WS connection to %s occurred"
                            ": %s" % (self._server_url, ex.message))
@@ -152,7 +154,7 @@ class _WSManager(threading.Thread):
             self._backoff = self._max_backoff
 
         self._next_connection_time = datetime.datetime.now() +\
-                                     datetime.timedelta(seconds=self._backoff)
+            datetime.timedelta(seconds=self._backoff)
 
     def closed(self, code, reason=None):
         # we might want to rest the back off if code is success
@@ -168,6 +170,7 @@ class _WSManager(threading.Thread):
 
         try:
             doc = self._send_queue.get(True, 2)
+            self._send_queue.task_done()
         except Queue.Empty:
             return True
 
@@ -175,13 +178,14 @@ class _WSManager(threading.Thread):
             msg = json.dumps(doc)
             _g_logger.debug("sending the message " + msg)
             self._ws.send(msg)
-            self._send_queue.task_done()
         except socket.error as er:
             if er.errno == errno.EPIPE:
-                _g_logger.info("The ws connection broke for " + self._server_url)
+                _g_logger.info(
+                    "The ws connection broke for %s" % self._server_url)
                 self._connected = False
             else:
-                _g_logger.info("A WS socket error occurred " + self._server_url)
+                _g_logger.info(
+                    "A WS socket error occurred %s" % self._server_url)
                 raise
             # XXX TODO we may need to trap other exceptions as well
         except:
@@ -205,7 +209,6 @@ class _WSManager(threading.Thread):
         self._send_queue.join()
         _g_logger.debug("The connection to " + self._server_url +
                         " is closed.")
-
 
 
 class WebSocketConnection(conn_iface.ConnectionInterface):

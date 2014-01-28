@@ -1,2 +1,2 @@
 pyyaml == 3.10
-ws4py
+ws4py == 0.3.2

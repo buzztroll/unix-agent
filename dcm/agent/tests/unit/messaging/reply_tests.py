@@ -19,7 +19,7 @@ class TestRequesterStandardPath(unittest.TestCase):
         reply_payload = {"reply": "payload"}
 
         reply_rpc = reply.ReplyRPC(
-            reply_listener, conn, request_id, message_id, {})
+            reply_listener, "AGENT_ID", conn, request_id, message_id, {})
         reply_rpc.ack(None, None, None)
         reply_rpc.reply(reply_payload)
 
@@ -58,7 +58,8 @@ class TestRequesterStandardPath(unittest.TestCase):
         incoming_message = {"incoming": "info"}
 
         reply_rpc = reply.ReplyRPC(
-            reply_listener, conn, request_id, message_id, incoming_message)
+            reply_listener, "AGENTID",
+            conn, request_id, message_id, incoming_message)
         reply_rpc.reply(reply_payload)
 
         reply_doc = {"type": types.MessageTypes.ACK,
@@ -87,7 +88,8 @@ class TestRequesterStandardPath(unittest.TestCase):
         reply_payload = {"reply": "payload"}
 
         reply_rpc = reply.ReplyRPC(
-            reply_listener, conn, request_id, message_id, reply_payload)
+            reply_listener, "AGENTID",
+            conn, request_id, message_id, reply_payload)
         request_retrans_doc = {
             'type': types.MessageTypes.REQUEST,
             'request_id': request_id,
@@ -106,7 +108,8 @@ class TestRequesterStandardPath(unittest.TestCase):
         reply_payload = {"reply": "payload"}
 
         reply_rpc = reply.ReplyRPC(
-            reply_listener, conn, request_id, message_id, reply_payload)
+            reply_listener, "AGENTID",
+            conn, request_id, message_id, reply_payload)
         request_retrans_doc = {
             'type': types.MessageTypes.REQUEST,
             'request_id': request_id,
@@ -127,7 +130,8 @@ class TestRequesterStandardPath(unittest.TestCase):
         reply_payload = {"reply": "payload"}
 
         reply_rpc = reply.ReplyRPC(
-            reply_listener, conn, request_id, message_id, reply_payload)
+            reply_listener, "AGENTID",
+            conn, request_id, message_id, reply_payload)
         request_retrans_doc = {
             'type': types.MessageTypes.REQUEST,
             'request_id': request_id,
@@ -154,7 +158,8 @@ class TestRequesterStandardPath(unittest.TestCase):
         reply_payload = {"reply": "payload"}
 
         reply_rpc = reply.ReplyRPC(
-            reply_listener, conn, request_id, message_id, reply_payload)
+            reply_listener, "AGENTID",
+            conn, request_id, message_id, reply_payload)
         reply_rpc.nak({})
 
     def test_reply_ack_timeout(self):
@@ -167,7 +172,8 @@ class TestRequesterStandardPath(unittest.TestCase):
         incoming_message = {"incoming": "info"}
 
         reply_rpc = reply.ReplyRPC(
-            reply_listener, conn, request_id, message_id, incoming_message,
+            reply_listener, "AGENTID",
+            conn, request_id, message_id, incoming_message,
             timeout=1)
         reply_rpc.reply(reply_payload)
 
@@ -190,7 +196,8 @@ class TestRequesterStandardPath(unittest.TestCase):
         reply_payload = {"reply": "payload"}
 
         reply_rpc = reply.ReplyRPC(
-            reply_listener, conn, request_id, message_id, reply_payload)
+            reply_listener, "AGENTID",
+            conn, request_id, message_id, reply_payload)
         reply_rpc.nak({})
 
         request_retrans_doc = {
@@ -208,7 +215,7 @@ class TestRequesterStandardPath(unittest.TestCase):
         message_id = "messageID"
         reply_payload = {"reply": "payload"}
         reply_rpc = reply.ReplyRPC(
-            None, None, request_id, message_id, reply_payload)
+            None, "AGENTID", None, request_id, message_id, reply_payload)
         reply_doc = {
             "request_id": request_id,
             "message_id": message_id,

@@ -137,8 +137,8 @@ class AgentConnectionDriverException(Exception):
 
 
 class AgentExecutableException(Exception):
-    msg = "The external process run with %(command_line)s returned an error. " \
-          "rc=%(code)s stderr=%(stderr)s stdout=%(stdout)s"
+    msg = "The external process run with %(command_line)s returned an " \
+          "error. rc=%(code)s stderr=%(stderr)s stdout=%(stdout)s"
 
     def __init__(self, rc, stdout, stderr):
         super(AgentExecutableException, self).__init__(self.msg % locals())

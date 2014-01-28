@@ -1,5 +1,6 @@
 import dcm.agent.util as agent_util
 
+
 class ConnectionInterface(object):
 
     @agent_util.not_implemented_decorator

@@ -9,7 +9,6 @@ import subprocess
 _g_logger = logging.getLogger(__name__)
 
 
-
 class JobLogHandler(logging.FileHandler):
 
     def __init__(self, filename_format="%(logname)s.log", mode='a',

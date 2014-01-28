@@ -34,7 +34,6 @@ def _run_agent(args):
 
     _g_logger = logging.getLogger(__name__)
 
-
     if _g_conf_object.pydev_host:
         utils.setup_remote_pydev(_g_conf_object.pydev_host,
                                  _g_conf_object.pydev_port)
@@ -66,6 +65,7 @@ def _run_agent(args):
     disp.stop()
     _g_logger.debug("Closing the connection")
     conn.close()
+    _g_logger.debug("Service closed")
 
 
 def main(args=sys.argv):
@@ -79,5 +79,7 @@ def main(args=sys.argv):
     except:
         _g_logger = logging.getLogger(__name__)
         _g_logger.exception("An unknown exception bubbled to the top")
+    finally:
+            _g_logger.debug("Service closed")
 
 main()

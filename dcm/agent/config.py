@@ -139,6 +139,7 @@ class AgentConfig(object):
             ConfigOpt("pydev", "port", int, default=None, options=None),
 
             ConfigOpt("workers", "count", int, default=4, options=None),
+
             ConfigOpt("connection", "type", str, default=None, options=None),
             ConfigOpt("connection", "hostname", str, default=None),
             FilenameOpt("connection", "source_file",
@@ -146,18 +147,23 @@ class AgentConfig(object):
             FilenameOpt("connection", "dest_file",
                         relative_path=relative_path, default=None),
             ConfigOpt("connection", "port", int, default=5309, options=None),
+
             FilenameOpt("logging", "configfile", relative_path=relative_path,
                         default=None),
+
             FilenameOpt("plugin", "configfile", relative_path=relative_path),
+
             FilenameOpt("storage", "temppath", relative_path=relative_path),
             FilenameOpt("storage", "idfile", relative_path=relative_path),
             FilenameOpt("storage", "script_dir", relative_path=relative_path),
+
             ConfigOpt("cloud", "name", str, default=None),
             ConfigOpt("cloud", "metadata_url", str,
                       default="http://169.254.169.254/1.0/meta-data"),
 
             ConfigOpt("messaging", "retransmission_timeout", float,
                       default=5),
+            ConfigOpt("messaging", "max_at_once", int, default=-1),
 
             ConfigOpt("enstratius", "agentmanager_url", str, default=None),
         ]

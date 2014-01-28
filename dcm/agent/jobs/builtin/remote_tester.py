@@ -35,7 +35,7 @@ class RemoteTester(jobs.Plugin):
             while ch != '\n':
                 ch = self.sock.recv(1)
                 msg = msg + ch
-            _g_logger.info("Received " + msg)
+            _g_logger.info("Tester plugin Received " + msg)
             self.sock.close()
             rc = json.loads(msg)
             return rc

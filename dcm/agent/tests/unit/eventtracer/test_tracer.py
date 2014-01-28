@@ -12,7 +12,3 @@ class TestEventTracer(unittest.TestCase):
         logger.addFilter(filter)
         with tracer.RequestTracer("12345"):
             logger.error("A log record")
-
-        pass
-
-

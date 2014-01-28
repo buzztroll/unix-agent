@@ -3,7 +3,6 @@ import os
 import sys
 
 import dcm.agent.exceptions as exceptions
-import dcm.agent.messaging.utils as utils
 
 
 _g_logger = logging.getLogger(__name__)

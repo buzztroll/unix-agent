@@ -78,7 +78,9 @@ class ExePlugin(Plugin):
         self.logger.info("STDOUT: " + str(stdout))
         self.logger.info("STDERR: " + str(stderr))
         self.logger.info("Return code: " + str(process.returncode))
-        return (stdout, stderr, process.returncode)
+        return {"stdout": stdout,
+                "stderr": stderr,
+                "return_code": process.returncode}
 
     def cancel(self, reply_rpc, *args, **kwargs):
         pass
@@ -108,7 +110,8 @@ def _load_python(agent, conf, job_id, items_map, name, arguments):
             "The module named %s does not have the load function."
             % module_name, ae)
     except:
-        _g_logger.exception("WHAT THE BALLS")
+        _g_logger.exception("An exception occurred loading the module")
+        raise
 
 
 def _load_exe(agent, conf, job_id, items_map, name, arguments):
@@ -138,7 +141,8 @@ def load_plugin(agent, conf, job_id, name, arguments):
     for s in section:
         p = re.compile(s)
         if p.match(section_name):
-            _g_logger.debug("load_plugin: found a match " + s + " : " + section_name)
+            _g_logger.debug(
+                "load_plugin: found a match %s: %s" % (s, section_name))
 
             try:
                 items = parser.items(s)

@@ -6,8 +6,10 @@ import traceback
 import uuid
 
 
+_g_logger = logging.getLogger(__name__)
 _g_message_uuid = str(uuid.uuid4()).split("-")[0]
 _g_message_id_count = 0
+
 
 def class_method_sync():
     def wrapper(func):
@@ -39,6 +41,7 @@ def build_assertion_exception(logger, assertion_failure, msg):
 
 
 def new_message_id():
+    # note: using uuid here caused deadlock in tests
     global _g_message_id_count
     global _g_message_uuid
     # TODO lock this... maybe.  it doesnt really matter that much
@@ -56,8 +59,6 @@ class MessageTimer(object):
         self._timer = None
 
     def send(self, conn):
-        if self._timer is not None:
-            pass
         self._timer = threading.Timer(self._timeout,
                                       self._cb,
                                       args=[self])
@@ -67,6 +68,8 @@ class MessageTimer(object):
         self._timer.start()
 
     def cancel(self):
+        if self._timer is None:
+            return
         self._timer.cancel()
         self._timer = None
 

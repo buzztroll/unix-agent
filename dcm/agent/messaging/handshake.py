@@ -57,7 +57,7 @@ def get_handshake(conf):
         'ipv4': ipv4s,
         'ipv6': ipv6s,
         'agent_id': agent_id,
-        'vm_instance' : vm_instance,
+        'vm_instance': vm_instance,
         'injected_id': injected_id,
     }
 

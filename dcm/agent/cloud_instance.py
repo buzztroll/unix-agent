@@ -25,9 +25,8 @@ class CLOUD_TYPES:
 
 def _get_aws_metadata(conf, name):
     headers = {"Content-Type", "application/x-www-form-urlencoded",
-			   "Connection", "Keep-Alive",
-			   "Cache-Control", "no-cache"}
-
+               "Connection", "Keep-Alive",
+               "Cache-Control", "no-cache"}
 
     url = conf.cloud_metadata_url + "/" + name
     req = urllib2.Request(url, headers=headers)
@@ -41,8 +40,8 @@ def _get_aws_metadata(conf, name):
 
 def _get_cloud_stack(conf, name):
     headers = {"Content-Type", "application/x-www-form-urlencoded",
-			   "Connection", "Keep-Alive",
-			   "Cache-Control", "no-cache"}
+               "Connection", "Keep-Alive",
+               "Cache-Control", "no-cache"}
 
     output = util.run_script(conf, "getDhcpAddress")
     dhcp_server_address = output.strip()
