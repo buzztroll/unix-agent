@@ -1,0 +1,52 @@
+#!/bin/bash
+
+set -u
+
+logTag="secureDelete"
+LOGGER=/enstratus/bin/log
+
+$LOGGER -t "$logTag" $0 $@
+$LOGGER -t "$logTag" -v "Filename: ${1}"
+
+if [ $# -lt 1 ] ; then
+   $LOGGER -t "$logTag" Syntax: secureDelete FILE_NAME
+   $LOGGER -t "$logTag" "exit 1" at Line \#$LINENO; exit 1
+fi
+
+BASENAME=`basename $0`
+CUSTOM="/enstratus/custom/bin/$BASENAME"
+
+if [ -x ${CUSTOM} ] ; then
+	${CUSTOM} "$@" 2>&1 | $LOGGER -t "$logTag"
+	$LOGGER -t "$logTag" "exit $?" at Line \#$LINENO; exit $?
+fi
+
+if [ -x ${CUSTOM}-pre ] ; then
+	${CUSTOM}-pre "$@" 2>&1 | $LOGGER -t "$logTag"
+	if [ $? != 0 ] ; then
+		$LOGGER -t "$logTag" "exit $?" at Line \#$LINENO; exit $?
+	fi
+fi
+
+if [ -x /usr/bin/srm ] ; then
+	/usr/bin/srm -f -z "$1"
+	EXIT_CODE=$?
+elif [ -x /usr/sbin/srm ] ; then
+    /usr/sbin/srm -f -z "$1"
+    EXIT_CODE=$?
+elif [ -x /usr/local/bin/srm ] ; then
+    /usr/local/bin/srm -f -z "$1"
+    EXIT_CODE=$?
+else
+	rm -f "$1"
+	EXIT_CODE=$?
+	if [ $? != 0 ] ; then
+		$LOGGER -t "$logTag" Secure delete is not installed on this server. $1 was deleted, but not securely deleted.
+	fi
+fi
+
+if [ -x ${CUSTOM}-post ] ; then
+	${CUSTOM}-post "$@" 2>&1 | $LOGGER -t "$logTag"
+fi
+
+$LOGGER -t "$logTag" "exit ${EXIT_CODE}" at Line \#$LINENO; exit ${EXIT_CODE}

@@ -1,0 +1,92 @@
+#!/bin/bash
+
+set -u
+PATH=/usr/local/sbin:/usr/local/bin:/sbin:/bin:/usr/sbin:/usr/bin:/enstratus/bin
+logTag="setupEncryption"
+LOGGER=/enstratus/bin/log
+
+BASENAME=`basename $0`
+CUSTOM="/enstratus/custom/bin/$BASENAME"
+
+$LOGGER -t "$logTag" $0 $@
+$LOGGER -t "$logTag" -v "rawDevice=$1, encryptedDevice=$2, keyFile=$3"
+
+if [ $# -lt 2 ] ; then
+   $LOGGER -t "$logTag" Syntax: setupEncryption RAW_DEVICE KEY_FILE
+   $LOGGER -t "$logTag" "exit 1" at Line \#$LINENO; exit 1
+fi
+
+if ! which cryptsetup ; then
+	        $LOGGER -t "$logTag" cryptsetup not installed
+			        exit 2
+fi
+
+rawDevice=$1
+encryptedDevice=$2
+keyFile=$3
+
+if [ ! -f "$keyFile" ] ; then
+	$LOGGER -t "$logTag" Unable to ready key file
+	$LOGGER -t "$logTag" "exit 10" at Line \#$LINENO; exit 10
+fi
+
+if [ -x ${CUSTOM} ] ; then
+	${CUSTOM} "$@" 2>&1 | $LOGGER -t "$logTag"
+	$LOGGER -t "$logTag" "exit $?" at Line \#$LINENO; exit $?
+fi
+
+if [ -x ${CUSTOM}-pre ] ; then
+	${CUSTOM}-pre "$@" 2>&1 | $LOGGER -t "$logTag"
+	if [ $? != 0 ] ; then
+		$LOGGER -t "$logTag" "exit $?" at Line \#$LINENO; exit $?
+	fi
+fi
+
+key_filename=$(basename ${keyFile})
+BACKUP_DIR=/var/log/enstratus/files
+NOW=$(date +%y%m%d-%H%M%S)
+
+# Create a directory for file backup.
+if [ ! -d $BACKUP_DIR ]; then
+        sudo mkdir -p $BACKUP_DIR
+        sudo chown enstratus:enstratus $BACKUP_DIR
+fi
+
+# Key file backup for debug.
+cp $keyFile ${BACKUP_DIR}/${key_filename}.$NOW && $LOGGER -t "$logTag" "Key file has been copied to ${BACKUP_DIR}/${key_filename}.$NOW for debug." || $LOGGER -t "$logTag" "Key file backup failed."
+
+# Try to load sha256 module. Ubuntu 12.04 has sha256_generic as a builtin module.
+sudo /sbin/modprobe sha256
+if [ $? != 0 ] ; then
+	sudo /sbin/modprobe sha256_generic
+	if [ $? != 0 ] ; then
+		$LOGGER -t "$logTag" "No support for SHA256 encryption, cannot encrypt file system for $rawDevice"
+		$LOGGER -t "$logTag" "exit 80" at Line \#$LINENO; exit 80
+	fi
+fi
+
+# initializes a LUKS partition and sets the initial key, either via prompting or via <key file>.
+# 1. Some kernels may detect sdX devices as xvdX
+# 2. sdh is identified as xvdl since RHEL/CentOS 6.1
+el_ver=$(grep -o -E '[0-9]\.[0-9]' /etc/redhat-release)
+new_letter=$(echo ${1:(-1)} | tr 'a-z' 'e-z')
+
+if [ ! -b /dev/$1 -a -b /dev/${1/#sd/xvd} ]; then
+	rawDevice=${1/#sd/xvd}
+elif [[ $el_ver > 6.0 && ! -b /dev/$1 && -b /dev/xvd${new_letter} ]]; then
+	rawDevice=xvd${new_letter}
+fi
+
+
+sudo cryptsetup -q luksFormat --cipher aes-cbc-essiv:sha256 "/dev/$rawDevice" "$keyFile" > /dev/null 2>&1
+
+if [ $? != 0 ] ; then
+	$LOGGER -t "$logTag" Unable to setup encryption.
+	$LOGGER -t "$logTag" "exit 11" at Line \#$LINENO; exit 11
+fi
+
+if [ -x ${CUSTOM}-post ] ; then
+	${CUSTOM}-post "$@" 2>&1 | $LOGGER -t "$logTag"
+fi
+
+$LOGGER -t "$logTag" "exit 0" at Line \#$LINENO; exit 0

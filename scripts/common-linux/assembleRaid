@@ -1,0 +1,76 @@
+#!/usr/bin/env bash
+
+set -u
+PATH=/sbin:${PATH}
+
+. "/enstratus/bin/common_mod"
+
+LOGGER=/enstratus/bin/log
+logTag="assembleRaid"
+
+BASENAME=`basename $0`
+CUSTOM="/enstratus/custom/bin/$BASENAME"
+
+$LOGGER -t "$logTag" assembleRaid "$@"
+
+args=($@)
+deviceId=$1
+devices=${args[@]:1}
+
+deviceArray=($devices)
+deviceCount=${#deviceArray[*]}
+
+if [ -x ${CUSTOM} ] ; then
+	${CUSTOM} "$@" 2>&1 | $LOGGER -t "$logTag"
+	exit_with_pipe_value
+fi
+
+if [ -x ${CUSTOM}-pre ] ; then
+	${CUSTOM}-pre "$@" 2>&1 | $LOGGER -t "$logTag"
+	exit_if_pipe_false
+fi
+
+sudo modprobe md
+
+map=""
+el_ver=0
+
+if [ -f /etc/redhat-release ]; then
+	el_ver=$(grep -o -E '[0-9]\.[0-9]' /etc/redhat-release)
+fi
+
+for d in ${devices}; do
+	new_letter=$(echo ${d:(-1)} | tr 'a-z' 'e-z')
+	if [ -b /dev/$d ]; then
+		device=$d
+	elif [ -b /dev/${d/#sd/xvd} ]; then
+		device=${d/#sd/xvd}
+	elif [[ $el_ver > 6.0 && -b /dev/xvd${new_letter} ]]; then
+		device=xvd${new_letter}
+	else
+		$LOGGER -t "$logTag" "/dev/$d does not seem to exist. Ignoring"
+	fi
+
+	map="${map} /dev/${device}"
+
+done
+yes | sudo mdadm --assemble /dev/$deviceId $map
+if [ $? != 0 ] ; then
+	$LOGGER -t "$logTag" "Unable to create RAID with mdadm."
+	exit 20
+fi
+
+if [ -f /etc/mdadm/mdadm.conf ] ; then
+    sudo mdadm --detail --scan | sudo tee -a /etc/mdadm/mdadm.conf
+elif [ -f /etc/mdadm.conf ] ; then
+    sudo mdadm --detail --scan | sudo tee -a /etc/mdadm.conf
+else
+    sudo mdadm --detail --scan | sudo tee /etc/mdadm.conf
+fi
+
+if [ -x ${CUSTOM}-post ] ; then
+	${CUSTOM}-post "$@" 2>&1 | $LOGGER -t "$logTag"
+	exit_if_pipe_false
+fi
+
+exit 0

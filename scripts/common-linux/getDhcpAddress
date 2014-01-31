@@ -1,0 +1,16 @@
+#!/usr/bin/env bash
+
+if [ -d /var/lib/dhcp ]; then
+	DHCP_DIR="/var/lib/dhcp"
+elif [ -d /var/lib/dhclient ]; then
+	DHCP_DIR="/var/lib/dhclient"
+fi
+
+for n in $(seq 0 9); do
+	dhclient_file=${DHCP_DIR}/dhclient-eth${n}.leases
+	if [ -s ${dhclient_file} ]; then
+		DHCP_IP=$(awk '/dhcp-server-identifier/ {print substr($3, 1, length($3) - 1 ) }' ${dhclient_file} | tail -1)
+		break
+	fi
+done
+echo $DHCP_IP

@@ -1,0 +1,104 @@
+#!/bin/bash
+
+set -u
+
+logTag="runConfigurationManagement-PUPPET"
+LOGGER=/enstratus/bin/log
+CERT_DIR=/etc/puppetlabs/puppet/ssl/certs/
+KEY_DIR=/etc/puppetlabs/puppet/ssl/private_keys/
+PUPPET_CONF=/etc/puppetlabs/puppet/puppet.conf
+
+$LOGGER -t "$logTag" $0 $@
+$LOGGER -t "$logTag" -v "RUN_AS_USER=$1 NODE_NAME=$2 PUPPET_MASTER_URL=$3 CERT_FILE_PATH=$4 KEY_FILE_PATH=$5"
+
+if [ $# -lt 5 ] ; then
+   $LOGGER -t "$logTag" "Syntax: runConfigurationManagement-PUPPET RUN_AS_USER NODE_NAME PUPPET_MASTER CERT_FILE_PATH KEY_FILE_PATH"
+   $LOGGER -t "$logTag" "exit 1" at Line \#$LINENO; exit 1
+fi
+
+$LOGGER -t "$logTag" "Running configuration management for Puppet..."
+
+RUN_AS_USER=$1
+NODE_NAME=$2
+#PUPPET_MASTER=$3
+PUPPET_MASTER_URL=$3
+PUPPET_MASTER=`echo ${PUPPET_MASTER_URL} | sed -e "s/[^/]*\/\/\([^@]*@\)\?\([^:/]*\).*/\2/"`
+CERT_FILE_PATH=$4
+KEY_FILE_PATH=$5
+
+PUPPET_BIN=`sudo which puppet`
+
+# This is to guard against sudo not having the right environment for root.
+if [ $? != 0 ]; then
+	$LOGGER -t "$logTag" "No puppet installation found"
+	$LOGGER -t "$logTag" "Checking alternate locations"
+	if [ -x "/opt/puppet/bin/puppet" ]; then
+		$LOGGER -t "$logTag" "Checking /opt/puppet/bin/puppet"
+		PUPPET_BIN=/opt/puppet/bin/puppet
+		$LOGGER -t "$logTag" "Found puppet in `echo ${PUPPET_BIN}`"
+	elif [ -x "/usr/local/bin/puppet" ]; then
+		$LOGGER -t "$logTag" "Checking /usr/local/bin/puppet"
+		PUPPET_BIN=/usr/local/bin/puppet
+		$LOGGER -t "$logTags" "Found puppet in `echo ${PUPPET_BIN}`"
+	else
+		$LOGGER -t "$logTag" "exit 99" at Line \#$LINENO; exit 99
+	fi
+fi
+
+$LOGGER -t "$logTag" "Using puppet in `echo ${PUPPET_BIN}`"
+
+# we need to test if the passed puppetmaster is an IP or hostname
+echo "$PUPPET_MASTER" | grep -E '\b((25[0-5]|2[0-4][0-9]|[01]?[0-9][0-9]?)(\.|$)){4}\b'
+IS_IP=$?
+
+if [[ $IS_IP == 0 ]]; then
+	$LOGGER -t "$logTag" "Detected $PUPPET_MASTER as an IP address. Adding hosts file entry"
+	# This should be changed before release
+	echo "$PUPPET_MASTER puppet puppetmaster-dev puppetmaster" | sudo tee -a /etc/hosts
+	# debug to check hosts file
+	$LOGGER -t "$logTag" "Checking hosts file"
+	while read line;do $LOGGER -t "$logTag" "$line"; done </etc/hosts
+	PUPPET_MASTER="puppet"
+fi
+
+# debug to check hosts file
+$LOGGER -t "$logTag" "Checking hosts file again"
+while read line;do $LOGGER -t "$logTag" "$line"; done </etc/hosts
+
+# Replace the node name in the configuration file
+sudo sed -i "s#ES_NODE_NAME#$NODE_NAME#" ${PUPPET_CONF} > /dev/null 2>&1
+
+# Replace the puppet master in the configuration file
+sudo sed -i "s#ES_PUPPET_MASTER#$PUPPET_MASTER#" ${PUPPET_CONF} > /dev/null 2>&1
+
+# Replace the puppet master in the PE2.5 facts file
+if [ -f /etc/puppetlabs/facter/facts.d/puppet_enterprise_installer.txt ]; then
+        sudo sed -i "s#ES_PUPPET_MASTER#$PUPPET_MASTER#" /etc/puppetlabs/facter/facts.d/puppet_enterprise_installer.txt > /dev/null 2>&1
+fi
+
+# Copy the client cert into place
+sudo cp ${CERT_FILE_PATH} ${CERT_DIR}/${NODE_NAME}.pem > /dev/null 2>&1
+
+# Copy the client key into place
+sudo cp ${KEY_FILE_PATH} ${KEY_DIR}/${NODE_NAME}.pem > /dev/null 2>&1
+
+EXIT=$?
+
+if [[ $EXIT != 0 ]]; then
+        $LOGGER -t "$logTag" "Failed to configure puppet environment: $EXIT"
+	$LOGGER -t "$logTag" "exit 99" at Line \#$LINENO; exit 99
+fi
+
+sudo -i ${PUPPET_BIN} agent --onetime --no-daemonize --detailed-exitcodes --logdest=/mnt/tmp/es-puppet-firstrun.log >  /dev/null 2>&1
+
+EXIT=$?
+
+if [[ $EXIT == 4 || $EXIT == 6 || $EXIT == 1 ]]; then
+        $LOGGER -t "$logTag" "Initial puppet run failed: $EXIT"
+	while read line; do $LOGGER -t "$logTag" "$line"; done </mnt/tmp/es-puppet-firstrun.log
+	$LOGGER -t "$logTag" "exit 99" at Line \#$LINENO; exit 99
+fi
+
+while read line; do $LOGGER -t "$logTag" "$line"; done </mnt/tmp/es-puppet-firstrun.log
+
+$LOGGER -t "$logTag" "Finished running configuration management for Puppet."

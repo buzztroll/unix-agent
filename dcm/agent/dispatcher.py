@@ -67,7 +67,6 @@ class Dispatcher(object):
         self.conf = conf
         self.workers = []
         self.worker_q = Queue.Queue()
-        self._agent = None  # figure out what we need here
 
     def start_workers(self):
         _g_logger.info("Starting %d workers." % self.conf.workers_count)
@@ -95,12 +94,8 @@ class Dispatcher(object):
         request_id = reply.get_request_id()
         _g_logger.info("Creating a request ID %s" % request_id)
 
-        try:
-            plugin = jobs.load_plugin(
-                self._agent, self.conf, request_id, command_name, arguments)
-        except Exception as ex:
-            _g_logger.error("EEERRRROR", ex)
-            raise
+        plugin = jobs.load_plugin(
+            self.conf, request_id, command_name, arguments)
 
         reply.lock()
         try:

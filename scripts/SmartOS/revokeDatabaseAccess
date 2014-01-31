@@ -1,0 +1,44 @@
+#!/bin/bash
+
+# Copyright 2011 enStratus Networks LLC
+#
+# revokeDatabaseAccess - Revokes database access from a client to a specific data source.
+# 
+# This software is part of the enStratus Cloud Management System. Only 
+# authorized licensees of enStratus may use this software and only
+# in the context of enStratus-managed virtual servers and machine images. 
+# Unauthorized copying or distribution of this software is strictly prohibited.
+# Authorized licensees may copy this software onto any machine images
+# and/or virtual hosts being managed by the enStratus system as needed.
+#
+# FUNCTION
+# Triggers any script in the target service for revoking database access.
+
+set -u
+
+LOGFILE="/mnt/tmp/revokeDatabaseAccess.log"
+sudo touch "$LOGFILE"
+sudo chmod 660 "$LOGFILE"
+sudo chown enstratus:enstratus "$LOGFILE"
+
+if [ $# -lt 2 ] ; then
+   echo "Syntax: revokeDatabaseAccess SERVICE_ID CONFIG_FILE" >> "$LOGFILE" 2>&1
+   exit 1
+fi
+
+service=$1
+configFile=$2
+
+REVOKE=/var/enstratus/services/${service}/bin/enstratus-dbrevoke
+
+if [ ! -x "$REVOKE" ] ; then
+	if [ -f "$REVOKE" ] ; then
+		echo "Revoke script is not executable." >> "$LOGFILE" 2>&1
+		exit 10
+	fi
+	exit 0
+fi
+
+"$REVOKE" $service "$configFile" >> "$LOGFILE" 2>&1
+
+exit $?

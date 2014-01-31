@@ -1,0 +1,29 @@
+# Set of common functions.
+LOGGER=/enstratus/bin/log
+
+# This function was designed to work with return value before pipeline.
+# If a log message was given as an argument, it logs the message.
+function exit_if_pipe_false() {
+	ret=${PIPESTATUS}
+	if [ $ret -ne 0 ]; then
+		if [ $# -ne 0 ]; then
+			echo ${1} Exit code: $ret | $LOGGER -t "$logTag"
+		fi
+		exit $ret
+	fi
+}
+
+# Always exits with return value from pipeline.
+# If a log message was given as an argument, it logs the message.
+function exit_with_pipe_value() {
+	ret=${PIPESTATUS}
+	if [ $ret -ne 0 -a $# -ne 0 ]; then
+		echo ${1} Exit code: $ret | $LOGGER -t "$logTag"
+	fi
+	exit $ret
+}
+
+# Overrides sudo to use enstratus user's path. Implemented to support cross-distro scripts.
+function sudo() {
+	/usr/bin/sudo env PATH=${PATH} "$@"
+}

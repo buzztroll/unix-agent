@@ -1,0 +1,15 @@
+#!/bin/bash
+
+ACCOUNTING_RULES=$(iptables -nvx -L | grep "Accounting")
+
+if [[ $ACCOUNTING_RULES == "" ]]; then
+	iptables -I INPUT -s 10.0.0.0/8 -m comment --comment "Accounting private rx"
+	iptables -I INPUT -s 172.16.0.0/12 -m comment --comment "Accounting private rx"
+	iptables -I INPUT -s 192.168.0.0/16 -m comment --comment "Accounting private rx"
+	iptables -I INPUT -s 0.0.0.0/0 -m comment --comment "Accounting total rx"
+	
+	iptables -I OUTPUT -d 10.0.0.0/8 -m comment --comment "Accounting private tx"
+	iptables -I OUTPUT -d 172.16.0.0/12 -m comment --comment "Accounting private tx"
+	iptables -I OUTPUT -d 192.168.0.0/16 -m comment --comment "Accounting private tx"
+	iptables -I OUTPUT -d 0.0.0.0/0 -m comment --comment "Accounting total tx"
+fi

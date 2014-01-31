@@ -23,3 +23,6 @@ name=aws
 temppath=/tmp
 idfile=/tmp/agentidfile.txt
 script_dir=/tmp
+
+[platform]
+script_locations=CentOS,common-linux

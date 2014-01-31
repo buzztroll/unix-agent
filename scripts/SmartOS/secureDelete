@@ -1,0 +1,50 @@
+#!/bin/bash
+
+set -u
+
+logTag="secureDelete"
+LOGGER=/opt/local/enstratus/bin/log
+
+if [ $# -lt 1 ] ; then
+   $LOGGER -t "$logTag" Syntax: secureDelete FILE_NAME
+   exit 1
+fi
+
+BASENAME=`basename $0`
+CUSTOM="/enstratus/custom/bin/$BASENAME"
+
+if [ -x ${CUSTOM} ] ; then
+	${CUSTOM} "$@" 2>&1 | $LOGGER -t "$logTag"
+	exit $?
+fi
+
+if [ -x ${CUSTOM}-pre ] ; then
+	${CUSTOM}-pre "$@" 2>&1 | $LOGGER -t "$logTag"
+	if [ $? != 0 ] ; then
+		exit $?
+	fi
+fi
+
+if [ -x /usr/bin/srm ] ; then
+	/usr/bin/srm -f -z "$1"
+	EXIT_CODE=$?
+elif [ -x /usr/sbin/srm ] ; then
+    /usr/sbin/srm -f -z "$1"
+    EXIT_CODE=$?
+elif [ -x /usr/local/bin/srm ] ; then
+    /usr/local/bin/srm -f -z "$1"
+    EXIT_CODE=$?
+else
+	rm -f "$1"
+	EXIT_CODE=$?
+	if [ $? != 0 ] ; then
+		$LOGGER -t "$logTag" Secure delete is not installed on this server. $1 was deleted, but not securely deleted.
+	fi
+fi
+
+if [ -x ${CUSTOM}-post ] ; then
+	${CUSTOM}-post "$@" 2>&1 | $LOGGER -t "$logTag"
+fi
+
+exit $EXIT_CODE
+

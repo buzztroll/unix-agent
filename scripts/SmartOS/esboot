@@ -1,0 +1,40 @@
+#!/bin/bash
+
+set -u
+
+if [ -d /var/enstratus/services ] ; then
+
+cd /var/enstratus/services
+
+case "${1:-''}" in
+  'start')
+        for dir in /var/enstratus/services/* ; do
+            if [ -d $dir ] ; then
+                svc=$(basename "$dir")
+                cd "/mnt/services/$svc"
+                if [ -x bin/enstratus-start ] ; then
+                    bin/enstratus-start "$svc"
+                fi
+            fi
+        done    
+    ;;
+
+  'stop')
+        for dir in /var/enstratus/services/* ; do
+            if [ -d $dir ] ; then
+                svc=$(basename "$dir")
+                cd "/mnt/services/$svc"
+                if [ -x bin/enstratus-stop ] ; then
+                    bin/enstratus-stop "$svc"
+                fi
+            fi
+    done    
+    ;;
+    
+  *)
+    echo "Usage: $SELF start|stop"
+        exit 1
+        ;;
+esac
+
+fi

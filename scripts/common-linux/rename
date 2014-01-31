@@ -1,0 +1,119 @@
+#!/usr/bin/env bash
+
+# Copyright 2011-2013 Enstratius, Inc.
+#
+# rename - Renames the server to the name given on the command line
+# 
+# This software is part of the Enstratius Cloud Management System. Only 
+# authorized licensees of Enstratius may use this software and only
+# in the context of Enstratius-managed virtual servers and machine images. 
+# Unauthorized copying or distribution of this software is strictly prohibited.
+# Authorized licensees may copy this software onto any machine images
+# and/or virtual hosts being managed by the Enstratius system as needed.
+#
+# FUNCTION
+# Renames the server.
+#
+# HOW TO EXTEND THIS SCRIPT (aka DO NOT EDIT THIS SCRIPT)
+# You can extend or replace this script by setting up your own executables in /enstratus/custom/bin:
+# * /enstratus/custom/bin/rename - if exists, will completely replace this script
+# * /enstratus/custom/bin/rename-pre - if exists, will be executed before this script
+# * /enstratus/custom/bin/rename-post - if exists, will be executed after this script
+# Your custom commands will be called with the same arguments in the same order as
+# this script.
+
+set -u
+
+. "/enstratus/bin/common_mod"
+
+logTag="rename"
+LOGGER=/enstratus/bin/log
+
+if [ $# -lt 2 ] ; then
+   $LOGGER -t "$logTag" "Syntax: rename NAME LOCAL_IP"
+   exit 1
+fi
+
+$LOGGER -t "$logTag" rename "$@"
+
+BASENAME=`basename $0`
+CUSTOM="/enstratus/custom/bin/$BASENAME"
+
+SCALE=0
+
+if [ -x ${CUSTOM} ] ; then
+	${CUSTOM} "$@" 2>&1 | $LOGGER -t "$logTag"
+	exit_with_pipe_value
+fi
+
+if [ -x ${CUSTOM}-pre ] ; then
+	${CUSTOM}-pre "$@" 2>&1 | $LOGGER -t "$logTag"
+	exit_if_pipe_false
+fi
+IPADDRESS=$2
+
+validatehostname() {
+	regex="^(([a-zA-Z]|[a-zA-Z][a-zA-Z0-9\-]*[a-zA-Z0-9])\.)*([A-Za-z]|[A-Za-z][A-Za-z0-9\-]*[A-Za-z0-9])$"
+	echo -n $1 | egrep -q $regex
+	return $?
+}
+
+oldhostname=$(hostname)
+newhostname=$(echo $1 | tr -Cd "[:alnum:].-" )
+if ! validatehostname $newhostname  ; then
+	$LOGGER -t "$logTag" "$newhostname is not a valid hostmane"
+	exit 1
+fi
+
+if [ $oldhostname = $newhostname ]; then
+	$LOGGER -t "$logTag" "hostname has not changed"
+	exit 0
+fi
+
+# Set /etc/hosts file before using sudo (prevent sudo:unable to resolve host)
+if grep -q ^$2 /etc/hosts ; then
+		sudo sed -i "s/$2.*/$2 $newhostname/g" /etc/hosts
+else
+		sudo bash -c "echo $2 $newhostname >> /etc/hosts "
+fi
+$LOGGER -t "$logTag" "hostname updated in /etc/hosts"
+
+# Set hostname and /etc/hostname
+sudo hostname $newhostname
+sudo bash -c "echo $newhostname > /var/tmp/hostname "
+sudo mv /var/tmp/hostname /etc/hostname
+
+# Fix chef client.rb if present
+#if [ -f /etc/chef/client.rb ] ; then
+#	if grep -q "node_name:"  /etc/chef/client.rb; then
+#  		sudo sed -i "s/node_name:.*/node_name: $newhostname/g"  /etc/chef/client.rb
+#    fi
+#fi
+
+# Handle hostname change for Postfix
+if [ -f /etc/postfix/main.cf ]; then
+	sudo grep -i "s/$oldhostname/$newhostname" /etc/postfix/main.cf
+	sudo /etc/init.d/postfix reload
+fi	
+
+if [ -x /etc/init.d/sysklogd ] ; then
+    sudo /etc/init.d/sysklogd restart
+elif [ -x /etc/init.d/syslog ] ; then
+    sudo /etc/init.d/syslog restart
+fi
+
+if [ -s /etc/init.d/ossec ] ; then
+	sudo /etc/init.d/ossec stop
+	sudo /etc/init.d/ossec start
+fi
+
+STATUS=$?
+
+if [ ${STATUS} == 0 ] ; then
+	if [ -x ${CUSTOM}-post ] ; then
+		${CUSTOM}-post "$@" 2>&1 | $LOGGER -t "$logTag"
+		STATUS=${PIPESTATUS}
+	fi
+fi
+
+exit ${STATUS}

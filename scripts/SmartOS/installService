@@ -1,0 +1,93 @@
+#!/bin/bash
+#This script installs the service to the service directory, /var/enstratus/services
+
+set -u
+
+logTag="installService"
+LOGGER=/opt/local/enstratus/bin/log
+
+FILE_TYPES=".tar.gz .tar.bz2 .tgz .zip"
+SERVICE_DIR='/mnt/services'
+
+if [ $# -lt 4 ] ; then
+   $LOGGER -t "$logTag" "Syntax: installService SERVICE_ID CUSTOMER_ID USER_ID SERVICE_IMAGE_FILE"
+   exit 1
+fi
+
+SERVICE_ID=${1}
+CUST_ID=${2}
+USER_ID=${3}
+RESTORE_FILE=${4}
+
+$LOGGER -t "$logTag" "$@"
+
+if [ ! -r "$RESTORE_FILE" ] ; then
+   $LOGGER -t "$logTag" "Restore file does not exist or is not readable."
+   exit 20
+fi
+
+id ${USER_ID} 2> /dev/null
+if [ $? != 0 ] ; then
+   sudo groupadd -f ${USER_ID} 2>&1 | $LOGGER -t "$logTag"
+   sudo useradd -d /home/${USER_ID} -g ${USER_ID} -s /bin/false -c "${USER_ID}" -m ${USER_ID} 2>&1 | $LOGGER -t "$logTag"
+   sudo passwd -N ${USER_ID}
+fi
+
+sudo chown -R "$USER_ID":"$USER_ID" ${SERVICE_DIR}/${SERVICE_ID} 2>&1 | $LOGGER -t "$logTag"
+
+function setPermissions(){
+  $LOGGER -t "$logTag" "Setting permissions for service $SERVICE_ID"
+
+  sudo chgrp enstratus ${SERVICE_DIR}/${SERVICE_ID}/bin
+  sudo chgrp enstratus ${SERVICE_DIR}/${SERVICE_ID}/bin/*
+  sudo chmod g+rxs ${SERVICE_DIR}/${SERVICE_ID}/bin
+  sudo chmod 750 ${SERVICE_DIR}/${SERVICE_ID}/bin/*
+  sudo chmod g-s ${SERVICE_DIR}/${SERVICE_ID}/bin/*
+
+  sudo chgrp enstratus ${SERVICE_DIR}/${SERVICE_ID}/cfg
+  sudo chgrp enstratus ${SERVICE_DIR}/${SERVICE_ID}/cfg/*
+  sudo chmod 770 ${SERVICE_DIR}/${SERVICE_ID}/cfg
+  sudo chmod 770 ${SERVICE_DIR}/${SERVICE_ID}/cfg/*
+
+  sudo chgrp enstratus "${SERVICE_DIR}/${SERVICE_ID}"
+  sudo chmod 775 "${SERVICE_DIR}/${SERVICE_ID}"
+}
+
+
+function readCode(){
+  local CODE=$1
+  if [ $CODE != 0 ]; then
+    $LOGGER -t "$logTag" "Failed loading data with $CODE"
+  else
+    $LOGGER -t "$logTag" "Service ${RESTORE_FILE} installed."
+    setPermissions
+    exit 0
+  fi
+}
+
+for i in ${FILE_TYPES}
+  do count=$( echo ${RESTORE_FILE} | grep -c $i ) > /dev/null 2>&1
+  if [ $count = 1 ]; then
+  echo "Service is of type: $i."
+    $LOGGER -t "$logTag" "Service is of type: $i."
+    $LOGGER -t "$logTag" "Extracting ${RESTORE_FILE}"
+    case "$i" in
+      .tar.gz)
+        sudo -u "${USER_ID}" tar -C ${SERVICE_DIR}/${SERVICE_ID} -zxf ${RESTORE_FILE} > /dev/null 2>&1
+        readCode $?
+        ;;
+      .tar.bz2)
+        sudo -u "${USER_ID}" tar -C ${SERVICE_DIR}/${SERVICE_ID} -jxf ${RESTORE_FILE} > /dev/null 2>&1
+        readCode $?
+        ;;
+      .tgz)
+        sudo -u "${USER_ID}" tar -C ${SERVICE_DIR}/${SERVICE_ID} -zxf ${RESTORE_FILE} > /dev/null 2>&1
+        readCode $?
+        ;;
+      .zip)
+        sudo -u "$USER_ID" unzip -oqq -d ${SERVICE_DIR}/${SERVICE_ID} $RESTORE_FILE > /dev/null 2>&1
+        readCode $?
+        ;;
+    esac
+  fi
+done

@@ -45,9 +45,10 @@ def _run_agent(args):
     handshake_reply = conn.connect()
 
     if handshake_reply["return_code"] != 200:
-        raise Exception("handshake failed " + handshake_reply['error_message'])
+        raise Exception("handshake failed " + handshake_reply['message'])
 
-    _g_conf_object.set_agent_id(handshake_reply["agent_id"])
+    _g_conf_object.set_handshake(handshake_reply["initialize"])
+
     disp = dispatcher.Dispatcher(_g_conf_object)
     disp.start_workers()
 
@@ -72,6 +73,7 @@ def main(args=sys.argv):
     try:
         _run_agent(args)
     except exceptions.AgentOptionException as aoex:
+        _g_conf_object.agent_state = utils.AgentStates.STARTUP_ERROR
         _g_conf_object.console_log(0, "The agent is misconfigured.")
         _g_conf_object.console_log(0, aoex.message)
         if _g_conf_object.get_cli_arg("verbose") > 2:

@@ -1,0 +1,59 @@
+#!/bin/bash
+
+set -u
+
+logTag="format"
+LOGGER=/opt/local/enstratus/bin/log
+
+BASENAME=`basename $0`
+CUSTOM="/enstratus/custom/bin/$BASENAME"
+
+if [ $# -lt 4 ] ; then
+   $LOGGER -t "$logTag" Syntax: format DEVICE_ID FILE_SYSTEM MOUNT_POINT ENCRYPTED
+   exit 1
+fi
+
+deviceId=$1
+fileSystem=$2
+mountPoint=$3
+encrypted=$4
+
+$LOGGER format $1 $2 $3 $4
+
+if [[ $encrypted == "true" ]] ; then
+	device=/dev/mapper/$deviceId
+else
+	device=/dev/$deviceId
+fi
+
+if [ -x ${CUSTOM} ] ; then
+	${CUSTOM} "$@" 2>&1 | $LOGGER -t "$logTag"
+	exit $?
+fi
+
+if [ -x ${CUSTOM}-pre ] ; then
+	${CUSTOM}-pre "$@" 2>&1 | $LOGGER -t "$logTag"
+	if [ $? != 0 ] ; then
+		exit $?
+	fi
+fi
+
+sudo /usr/sbin/mkfs -F ${fileSystem} $device
+
+if [ $? != 0 ] ; then
+	exit 24
+fi
+
+mp=${mountPoint//\//\\\/}
+sudo sed -i "/\s$mp\s/d" /etc/fstab
+if [[ $encrypted == "true" ]] ; then
+	echo "$device $mountPoint $fileSystem noatime 0 0" | sudo tee -a /etc/fstab
+else
+	echo "$device $mountPoint $fileSystem defaults 0 0" | sudo tee -a /etc/fstab
+fi
+				
+if [ -x ${CUSTOM}-post ] ; then
+	${CUSTOM}-post "$@" 2>&1 | $LOGGER -t "$logTag"
+fi
+
+exit 0

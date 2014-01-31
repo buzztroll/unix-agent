@@ -1,0 +1,32 @@
+#!/usr/bin/env bash
+
+# Copyright 2011-2013 Enstratius Networks, Inc.
+#
+# lock - Tells all applications running on the server to lock themselves.
+# 
+# This software is part of the Enstratius Cloud Management System. Only 
+# authorized licensees of Enstratius may use this software and only
+# in the context of Enstratius-managed virtual servers and machine images. 
+# Unauthorized copying or distribution of this software is strictly prohibited.
+# Authorized licensees may copy this software onto any machine images
+# and/or virtual hosts being managed by the Enstratius system as needed.
+#
+
+set -u
+
+logTag="lockFileSystems"
+LOGGER=/enstratus/bin/log
+
+if [ $# -lt 3 ] ; then
+   $LOGGER -t "$logTag" "Syntax: lockServices SERVICES_DIRECTORY TIMEOUT LOCK_FILE"
+   exit 1
+fi
+
+$LOGGER -t "$logTag" "$@"
+
+servicesDirectory=$1
+timeout=$2
+lockFile=$3
+
+java -cp /enstratus/ws/content/WEB-INF/lib/enstratus-agent.jar com.enstratus.agent.tools.LockServices $servicesDirectory $timeout $lockFile 2>&1 | $LOGGER -t "$logTag"
+

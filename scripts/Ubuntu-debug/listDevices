@@ -1,0 +1,26 @@
+#!/bin/bash
+
+# Copyright 2011 enStratus Networks LLC
+#
+# listDevices - Lists devices mounted by this server.
+# 
+# This software is part of the enStratus Cloud Management System. Only 
+# authorized licensees of enStratus may use this software and only
+# in the context of enStratus-managed virtual servers and machine images. 
+# Unauthorized copying or distribution of this software is strictly prohibited.
+# Authorized licensees may copy this software onto any machine images
+# and/or virtual hosts being managed by the enStratus system as needed.
+#
+# FUNCTION
+# List all devices currently mounted for the machine
+
+set -u
+
+logTag="listDevices"
+LOGGER=/enstratus/bin/log
+
+$LOGGER -t "$logTag" $0 $@
+
+df -aTP | grep -v Filesystem | grep -v proc | grep -v tmpfs | grep -v devpts | grep -v securityfs | grep -v sysfs | awk '{print $1" "$2" "$7" "$3" "$4}' 
+
+$LOGGER -t "$logTag" "exit $?" at Line \#$LINENO; exit $?

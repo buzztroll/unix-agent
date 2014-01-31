@@ -1,0 +1,50 @@
+#!/bin/bash
+
+# Copyright 2011 enStratus Networks LLC
+#
+# scaleCheck - Checks to see if this server is resource constrained or is wasting resources
+# 
+# This software is part of the enStratus Cloud Management System. Only 
+# authorized licensees of enStratus may use this software and only
+# in the context of enStratus-managed virtual servers and machine images. 
+# Unauthorized copying or distribution of this software is strictly prohibited.
+# Authorized licensees may copy this software onto any machine images
+# and/or virtual hosts being managed by the enStratus system as needed.
+#
+# FUNCTION
+# Checks the scaling needs of this infrastructure
+#
+# HOW TO EXTEND THIS SCRIPT (aka DO NOT EDIT THIS SCRIPT)
+# You can extend or replace this script by setting up your own executables in /opt/local/enstratus/custom/bin:
+# * /opt/local/enstratus/custom/bin/scaleCheck - if exists, will completely replace this script
+# * /opt/local/enstratus/custom/bin/scaleCheck-pre - if exists, will be executed before this script
+# * /opt/local/enstratus/custom/bin/scaleCheck-post - if exists, will be executed after this script
+# Your custom commands will be called with the same arguments in the same order as
+# this script.
+
+set -u
+
+
+BASENAME=`basename $0`
+CUSTOM="/enstratus/custom/bin/$BASENAME"
+
+if [ -x ${CUSTOM} ] ; then
+	${CUSTOM} "$@"
+	exit $?
+fi
+
+if [ -x ${CUSTOM}-pre ] ; then
+	${CUSTOM}-pre "$@"
+	if [ $? != 0 ] ; then
+		exit $?
+	fi
+fi
+
+STATUS=0
+
+if [ -x ${CUSTOM}-post ] ; then
+	${CUSTOM}-post "$@"
+	STATUS=$?
+fi
+
+exit ${STATUS}

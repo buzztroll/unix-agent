@@ -1,0 +1,31 @@
+#!/bin/bash
+# Run Tomcat as this user ID. Not setting this or leaving it blank will use the
+# default of tomcat55.
+export TOMCAT5_USER=enstratus
+
+# The home directory of the Java development kit (JDK). You need at least
+# JDK version 1.4. If JAVA_HOME is not set, some common directories for 
+# the Sun JDK, various J2SE 1.4 versions, and the free runtimes
+# java-gcj-compat-dev and kaffe are tried.
+export JAVA_HOME=javaHome
+
+# Directory for per-instance configuration files and webapps. It contain the
+# directories conf, logs, webapps, work and temp. See RUNNING.txt for details.
+# Default: /var/lib/tomcat5.5
+export CATALINA_BASE=/enstratus/ws/tomcat
+
+# Arguments to pass to the Java virtual machine (JVM).
+export JAVA_OPTS="-Djava.awt.headless=true -Xms256M -Xmx512M -Dfile.encoding=UTF-8 -Dorg.apache.jasper.runtime.BodyContentImpl.LIMIT_BUFFER=true"
+
+# Java compiler to use for translating JavaServer Pages (JSPs). You can use all
+# compilers that are accepted by Ant's build.compiler property.
+#JSP_COMPILER=jikes
+
+# Use the Java security manager? (yes/no, default: yes)
+# WARNING: Do not disable the security manager unless you understand
+# the consequences!
+# NOTE: java-gcj-compat-dev currently doesn't support a security
+# manager. 
+export TOMCAT5_SECURITY=no
+
+${CATALINA_BASE}/bin/catalina.sh $1

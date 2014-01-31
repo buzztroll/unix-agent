@@ -1,2 +1,3 @@
 pyyaml == 3.10
 ws4py == 0.3.2
+psutil == 1.2.1

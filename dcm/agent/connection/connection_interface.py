@@ -1,4 +1,4 @@
-import dcm.agent.util as agent_util
+import dcm.agent.utils as agent_util
 
 
 class ConnectionInterface(object):

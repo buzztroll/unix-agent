@@ -1,0 +1,23 @@
+#!/usr/bin/env bash
+
+# Copyright 2008-2009 Enstratius, Inc.
+#
+# makeTemp - Shell script to setup the Enstratius temp directory
+# 
+# This software is part of the Enstratius Cloud Management System. Only 
+# authorized licensees of Enstratius may use this software and only
+# in the context of Enstratius-managed virtual servers and machine images. 
+# Unauthorized copying or distribution of this software is strictly prohibited.
+# Authorized licensees may copy this software onto any machine images
+# and/or virtual hosts being managed by the Enstratius system as needed.
+
+set -u
+PATH=/bin:${PATH}
+
+. "/enstratus/bin/common_mod"
+
+if [ ! -d /mnt/tmp ] ; then
+	sudo mkdir /mnt/tmp
+	sudo chown enstratus:enstratus /mnt/tmp
+	sudo chmod 770 /mnt/tmp
+fi

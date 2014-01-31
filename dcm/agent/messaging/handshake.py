@@ -15,7 +15,7 @@ import json
 import os
 import socket
 
-import dcm.agent.cloud_instance as cloud_instance
+import dcm.agent.cloudmetadata as cloud_instance
 
 
 # This function does not really work

@@ -13,12 +13,11 @@ _g_logger = logging.getLogger(__name__)
 # The abstract object for plugins.
 class Plugin(object):
 
-    def __init__(self, agent, conf, job_id, items_map, name, arguments):
+    def __init__(self, conf, request_id, items_map, name, arguments):
         logname = __name__ + "." + name
         log = logging.getLogger(logname)
-        self.agent = agent
-        self.logger = logging.LoggerAdapter(log, {'job_id': job_id})
-        self.job_id = job_id
+        self.logger = logging.LoggerAdapter(log, {'job_id': request_id})
+        self.job_id = request_id
         self.name = name
         self.conf = conf
         self.items_map = items_map
@@ -38,9 +37,9 @@ class Plugin(object):
 # a fork plugin.  Fork an executable and wait for it to complete.
 class ExePlugin(Plugin):
 
-    def __init__(self, agent, conf, job_id, items_map, name, arguments):
+    def __init__(self, conf, request_id, items_map, name, arguments):
         super(ExePlugin, self).__init__(
-            agent, conf, job_id, items_map, name, arguments)
+            conf, request_id, items_map, name, arguments)
         if 'path' not in items_map:
             raise exceptions.AgentPluginConfigException(
                 "The configuration for the %s plugin does not have "
@@ -124,7 +123,7 @@ g_type_to_obj_map = {
 }
 
 
-def load_plugin(agent, conf, job_id, name, arguments):
+def load_plugin(conf, job_id, name, arguments):
 
     _g_logger.debug("ENTER load_plugin")
 
@@ -161,7 +160,7 @@ def load_plugin(agent, conf, job_id, name, arguments):
 
                 func = g_type_to_obj_map[type]
                 _g_logger.debug("calling load function")
-                return func(agent, conf, job_id, items_map, name, arguments)
+                return func(conf, job_id, items_map, name, arguments)
             except ConfigParser.NoOptionError as conf_ex:
                 raise exceptions.AgentPluginConfigException(conf_ex.message)
     raise exceptions.AgentPluginConfigException(

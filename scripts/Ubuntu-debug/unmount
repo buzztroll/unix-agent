@@ -1,0 +1,40 @@
+#!/bin/bash
+
+set -u
+
+BASENAME=`basename $0`
+CUSTOM="/enstratus/custom/bin/$BASENAME"
+LOGGER="/enstratus/bin/log"
+logTag="unmount"
+
+$LOGGER -t "$logTag" $0 $@
+$LOGGER -t "$logTag" -v "mountPoint: $1"
+
+if [ $# -lt 1 ] ; then
+   $LOGGER -t "$logTag" "exit 1" at Line \#$LINENO; exit 1
+fi
+
+mountPoint=$1
+
+if [ -x ${CUSTOM} ] ; then
+	${CUSTOM} "$@" 
+	$LOGGER -t "$logTag" "exit $?" at Line \#$LINENO; exit $?
+fi
+
+if [ -x ${CUSTOM}-pre ] ; then
+	${CUSTOM}-pre "$@" 
+	if [ $? != 0 ] ; then
+		$LOGGER -t "$logTag" "exit $?" at Line \#$LINENO; exit $?
+	fi
+fi
+
+sudo umount $mountPoint 
+				
+mp=${mountPoint/\//\\\/}
+sudo sed -i "/\s$mp\s/d" /etc/fstab
+				
+if [ -x ${CUSTOM}-post ] ; then
+	${CUSTOM}-post "$@"
+fi
+
+$LOGGER -t "$logTag" "exit 0" at Line \#$LINENO; exit 0

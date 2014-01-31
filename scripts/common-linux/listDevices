@@ -1,0 +1,19 @@
+#!/usr/bin/env bash
+
+# Copyright 2011-2013 Enstratius, Inc.
+#
+# listDevices - Lists devices mounted by this server.
+# 
+# This software is part of the Enstratius Cloud Management System. Only 
+# authorized licensees of Enstratius may use this software and only
+# in the context of Enstratius-managed virtual servers and machine images. 
+# Unauthorized copying or distribution of this software is strictly prohibited.
+# Authorized licensees may copy this software onto any machine images
+# and/or virtual hosts being managed by the Enstratius system as needed.
+#
+# FUNCTION
+# List all devices currently mounted for the machine
+
+set -u
+
+df -aTP | grep -v Filesystem | grep -v proc | grep -v tmpfs | grep -v devpts | grep -v securityfs | grep -v sysfs | awk '{print $1" "$2" "$7" "$3" "$4}' 

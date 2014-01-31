@@ -1,0 +1,100 @@
+#!/bin/bash
+
+# Updates Apache configuration to point to haproxy, which then points to application servers
+
+set -u
+
+LOGGER=/opt/local/enstratus/bin/log
+logTag="haproxy:startProxy"
+
+$LOGGER -t "$logTag" startProxyCustom "$@"
+
+service=$1
+remoteAddress=$2
+remotePort=$3
+
+sudo /opt/local/enstratus/bin/modjk-startProxy "$@"
+
+# Update Apache
+sudo /opt/local/enstratus/bin/haproxy-replaceModjk $service
+
+code=$?
+if [ $code -ne 0 ] ; then
+	$LOGGER -t "$logTag" Replaced JK Mount failed: $ret
+	exit 20
+fi
+
+$LOGGER -t "$logTag" Replaced JK Mount
+
+sudo svcadm enable -s haproxy
+
+$LOGGER -t "$logTag" Started HAProxy
+
+# Update haproxy
+found=0
+if [ -e "/opt/local/etc/haproxy.cfg" ] ; then
+  if grep -q "localhost:8080" /opt/local/etc/haproxy.cfg ; then
+    found=1
+  fi
+fi
+
+if [ $found = 0 ] ; then
+  sudo mv /opt/local/etc/haproxy.cfg /opt/local/etc/haproxy.cfg.orig
+
+  echo "global" | sudo tee /opt/local/etc/haproxy.cfg
+  echo "	log 127.0.0.1   local0" | sudo tee -a /opt/local/etc/haproxy.cfg
+  echo "	log 127.0.0.1   local1 notice" | sudo tee -a /opt/local/etc/haproxy.cfg
+  echo "	maxconn 4096" | sudo tee -a /opt/local/etc/haproxy.cfg
+  echo "	user haproxy" | sudo tee -a /opt/local/etc/haproxy.cfg
+  echo "	group haproxy" | sudo tee -a /opt/local/etc/haproxy.cfg
+  echo "defaults" | sudo tee -a /opt/local/etc/haproxy.cfg
+  echo "	log	global" | sudo tee -a /opt/local/etc/haproxy.cfg
+  echo "	mode	http" | sudo tee -a /opt/local/etc/haproxy.cfg
+  echo "	option	httplog" | sudo tee -a /opt/local/etc/haproxy.cfg
+  echo "	option	dontlognull" | sudo tee -a /opt/local/etc/haproxy.cfg
+  echo "	retries	3" | sudo tee -a /opt/local/etc/haproxy.cfg
+  echo " 	redispatch" | sudo tee -a /opt/local/etc/haproxy.cfg
+  echo "	maxconn	2000" | sudo tee -a /opt/local/etc/haproxy.cfg
+  echo "	contimeout	5000" | sudo tee -a /opt/local/etc/haproxy.cfg
+  echo "	clitimeout	50000" | sudo tee -a /opt/local/etc/haproxy.cfg
+  echo "	srvtimeout	50000" | sudo tee -a /opt/local/etc/haproxy.cfg
+  echo "listen ${service} localhost:8080" | sudo tee -a /opt/local/etc/haproxy.cfg
+  echo "	mode	http" | sudo tee -a /opt/local/etc/haproxy.cfg
+  echo "	option	forwardfor" | sudo tee -a /opt/local/etc/haproxy.cfg
+  echo "	balance	roundrobin" | sudo tee -a /opt/local/etc/haproxy.cfg
+fi
+
+$LOGGER -t "$logTag" Configured HAProxy
+
+sudo /opt/local/enstratus/bin/haproxy-addService $service $remoteAddress $remotePort
+
+ret=$?
+
+if [ $ret -ne 0 ] ; then
+	$LOGGER -t "$logTag" Add service failed: $ret
+	exit 20
+fi
+
+$LOGGER -t "$logTag" Added Service
+
+sudo svcadm refresh apache 2>&1 | $LOGGER -t "$logTag"
+
+ret=$?
+
+if [ $ret -ne 0 ] ; then
+	$LOGGER -t "$logTag" Restart Apache failed: $ret
+	exit 20
+fi
+
+$LOGGER -t "$logTag" Restarted Apache
+
+sudo svcadm restart haproxy 2>&1 | $LOGGER -t "$logTag"
+
+ret=$?
+
+if [ $ret -ne 0 ] ; then
+	$LOGGER -t "$logTag" Restart haproxy failed: $ret
+	exit 20
+fi
+
+$LOGGER -t "$logTag" Restarted HAProxy

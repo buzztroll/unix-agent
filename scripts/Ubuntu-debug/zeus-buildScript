@@ -1,0 +1,14 @@
+#!/bin/bash
+
+logTag="zeus-buildScript"
+LOGGER=/enstratus/bin/log
+
+$LOGGER -t "$logTag" $0 $@
+
+remoteAddress="$1"
+pool="$2"
+script="$3"
+
+echo "Pool.removeNodes [ \"${pool}\" ], [ \"${remoteAddress}\" ]" >> "$script"
+
+$LOGGER -t "$logTag" "exit $?" at Line \#$LINENO; exit $?

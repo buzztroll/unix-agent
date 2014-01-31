@@ -1,0 +1,10 @@
+#!/usr/bin/env bash
+
+set -u
+
+cd /mnt/tmp; tar -xzf enstratus.tar.gz
+
+chmod 750 /mnt/tmp/enstratus/upgrade.sh
+
+nohup /mnt/tmp/enstratus/upgrade.sh &
+

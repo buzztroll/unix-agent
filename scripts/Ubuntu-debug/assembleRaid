@@ -1,0 +1,66 @@
+#!/bin/bash
+
+set -u
+
+LOGGER=/enstratus/bin/log
+logTag="assembleRaid"
+
+BASENAME=`basename $0`
+CUSTOM="/enstratus/custom/bin/$BASENAME"
+
+$LOGGER -t "$logTag" assembleRaid $0 $@
+$LOGGER -t "$logTag" -v "deviceId=$1"
+
+args=($@)
+deviceId=$1
+devices=${args[@]:1}
+
+deviceArray=($devices)
+deviceCount=${#deviceArray[*]}
+
+if [ -x ${CUSTOM} ] ; then
+	${CUSTOM} "$@" 2>&1 | $LOGGER -t "$logTag"
+	$LOGGER -t "$logTag" "exit $?" at Line \#$LINENO; exit $?
+fi
+
+if [ -x ${CUSTOM}-pre ] ; then
+	${CUSTOM}-pre "$@" 2>&1 | $LOGGER -t "$logTag"
+	if [ $? != 0 ] ; then
+		$LOGGER -t "$logTag" "exit $?" at Line \#$LINENO; exit $?
+	fi
+fi
+
+sudo modprobe md
+
+map=""
+for d in ${devices}; do
+	if [ -b /dev/$d ]; then
+		device=$d
+	elif [ -b /dev/${d/#sd/xvd} ]; then
+		device=${d/#sd/xvd}
+	else
+		$LOGGER -t "$logTag" "/dev/$d does not seem to exist. Ignoring"
+	fi
+
+	map="${map} /dev/${device}"
+
+done
+yes | sudo mdadm --assemble /dev/$deviceId $map
+if [ $? != 0 ] ; then
+	$LOGGER -t "$logTag" "Unable to create RAID with mdadm."
+	$LOGGER -t "$logTag" "exit 20" at Line \#$LINENO; exit 20
+fi
+
+if [ -f /etc/mdadm/mdadm.conf ] ; then
+    sudo mdadm --detail --scan | sudo tee -a /etc/mdadm/mdadm.conf
+elif [ -f /etc/mdadm.conf ] ; then
+    sudo mdadm --detail --scan | sudo tee -a /etc/mdadm.conf
+else
+    sudo mdadm --detail --scan | sudo tee /etc/mdadm.conf
+fi
+
+if [ -x ${CUSTOM}-post ] ; then
+	${CUSTOM}-post "$@" 2>&1 | $LOGGER -t "$logTag"
+fi
+
+$LOGGER -t "$logTag" "exit $?" at Line \#$LINENO; exit 0

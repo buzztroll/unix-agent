@@ -1,0 +1,13 @@
+#!/bin/bash
+
+# A simple script to get the external ip of an instance. So helpful!
+
+logTag="getMyIP"
+LOGGER=/enstratus/bin/log
+
+$LOGGER -t "$logTag" $0 $@
+
+external=$(wget http://automation.whatismyip.com/n09230945.asp -O - -o /dev/null)
+echo $external
+
+$LOGGER -t "$logTag" "exit $?" at Line \#$LINENO; exit $?

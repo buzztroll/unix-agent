@@ -1,0 +1,51 @@
+#!/bin/bash
+
+set -u
+
+logTag="runConfigurationManagement-ENSTRATUS"
+LOGGER=/opt/local/enstratus/bin/log
+
+if [ $# -lt 3 ] ; then
+   $LOGGER -t "$logTag" "Syntax: runConfigurationManagement-ENSTRATUS RUN_AS_USER CUSTOMER_ID RUN_LIST"
+   exit 1
+fi
+
+$LOGGER -t "$logTag" "Running configuration management for enStratus..."
+
+RUN_AS_USER=$1
+CUSTOMER_ID=$2
+RUN_LIST=$3
+
+#touch /var/enstratus/tmp/first_boot
+FIRST_BOOT='/mnt/tmp/first_boot'
+#echo $RUN_LIST > $FIRST_BOOT
+#echo $RUN_LIST | tee -a $FIRST_BOOT
+#sudo cp $RUN_LIST $FIRST_BOOT > /dev/null 2>&1
+
+sudo chown enstratus $RUN_LIST > /dev/null 2>&1
+sudo chmod 700 $RUN_LIST > /dev/null 2>&1
+sudo tr -d '\015' < $RUN_LIST > $FIRST_BOOT
+
+sudo chown ${RUN_AS_USER}.${RUN_AS_USER} $FIRST_BOOT > /dev/null 2>&1
+sudo chmod 700 $FIRST_BOOT > /dev/null 2>&1
+
+PARENT_DIR=`dirname ${FIRST_BOOT}`
+sudo chmod o+x $PARENT_DIR  > /dev/null 2>&1
+cd $PARENT_DIR
+
+BOOT_SCRIPT=`basename $FIRST_BOOT`
+
+$LOGGER -t "$logTag" "Executing $RUN_LIST script as $RUN_AS_USER."
+
+sudo -u $RUN_AS_USER ./${BOOT_SCRIPT}  > /dev/null 2>&1
+
+EXIT=$?
+
+if [[ $EXIT != 0 ]]; then
+        echo "configuration run failed: $EXIT" 2>&1 | $LOGGER -t "$logTag"
+        exit 99
+else
+        $LOGGER -t "$logTag" "Finished running configuration management for enStratus."
+        rm -f $FIRST_BOOT > /dev/null 2>&1
+        exit 0
+fi

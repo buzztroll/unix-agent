@@ -1,0 +1,12 @@
+#!/usr/bin/env python
+
+import subprocess
+import json
+import sys
+
+remoteAddress=sys.argv[1]
+script=sys.argv[2]
+
+pools=json.read(sys.stdin.read())
+for pool in pools:
+    subprocess.call(['/enstratus/bin/zeus-getNodes', remoteAddress, pool, script ]);

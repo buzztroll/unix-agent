@@ -1,0 +1,18 @@
+#!/usr/bin/python
+
+import os
+import os.path
+import sys
+
+out = open('/etc/default/haproxy', 'r+');
+output = ""
+
+for line in out:
+  if line.find("ENABLED=0") > -1:
+    line = "ENABLED=1\n"
+  output = output + line
+  
+out.seek(0)
+out.write(output)
+out.flush()
+out.close()  

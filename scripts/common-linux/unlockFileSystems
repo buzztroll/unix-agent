@@ -1,0 +1,23 @@
+#!/usr/bin/env bash
+
+set -u
+PATH=/usr/sbin:${PATH}
+
+. "/enstratus/bin/common_mod"
+
+logTag="unlockFileSystems"
+LOGGER=/enstratus/bin/log
+
+$LOGGER -t "$logTag" "Unlocking XFS file systems..."
+
+systems=$(df -t xfs | awk '{print $6}' | grep -v Mounted)
+currentDate=$(date)
+
+for fs in $systems; do
+    echo "[$currentDate] unfreeze(xfs) of $fs..." 2>&1 | $LOGGER -t "$logTag"
+	sudo xfs_freeze -u "$fs" 2>&1 | $LOGGER -t "$logTag"
+done
+
+$LOGGER -t "$logTag" "Unlocked."
+
+exit 0

@@ -1,0 +1,26 @@
+#!/usr/bin/env bash
+
+# This script is called by /enstratus/bin/stopProxy.
+# It functions to remove the IP address from the webfarm balanced by
+# HA Proxy.
+
+IP_ADDRESS=${1}
+
+if [ -e "/etc/haproxy.cfg" ]; then
+	HAPCFG='etc/haproxy.cfg'
+elif [ -e "/etc/haproxy/haproxy.cfg" ]; then
+	HAPCFG='/etc/haproxy/haproxy.cfg'
+else
+	$LOGGER -t "$logTag" Could not find haproxy config file. This is a fail.
+fi
+
+# Delete the server from the list.
+if  grep -q ${IP_ADDRESS} ${HAPCFG}  ; then
+	sudo sed -i "/${IP_ADDRESS}/d" ${HAPCFG}
+	count=$( awk '/count/ {print $4}' ${HAPCFG})
+	incrementCount=$(( $count - 1 ))
+	sudo sed "s/count = ${count}/count = ${incrementCount}/" -i ${HAPCFG}
+	sudo /etc/init.d/haproxy reload
+fi
+
+exit 0

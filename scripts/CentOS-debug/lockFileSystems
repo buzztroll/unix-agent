@@ -1,0 +1,20 @@
+#!/bin/bash
+
+set -u
+
+logTag="lockFileSystems"
+LOGGER=/enstratus/bin/log
+
+$LOGGER -t "$logTag" "Locking XFS file systems..."
+
+systems=$(df -t xfs | awk '{print $6}' | grep -v Mounted)
+currentDate=$(date)
+
+for fs in $systems; do
+    echo "[$currentDate] freeze(xfs) of $fs..." 2>&1 | $LOGGER -t "$logTag"
+	sudo /usr/sbin/xfs_freeze -f $fs 2>&1 | $LOGGER -t "$logTag"
+done
+
+$LOGGER -t "$logTag" "Locked."
+
+exit 0

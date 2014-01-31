@@ -1,0 +1,79 @@
+#!/bin/bash
+
+set -u
+
+logTag="openEncryption"
+LOGGER=/enstratus/bin/log
+
+BASENAME=`basename $0`
+CUSTOM="/enstratus/custom/bin/$BASENAME"
+
+$LOGGER -t "$logTag" $0 $@
+$LOGGER -t "$logTag" -v "rawDevice=$1 encryptedDevice=$2 keyFile=$3"
+
+if [ $# -lt 3 ] ; then
+   $LOGGER -t "$logTag" Syntax: openEncryption RAW_DEVICE ENCRYPTED_DEVICE KEY_FILE
+   $LOGGER -t "$logTag" "exit 1" at Line \#$LINENO; exit 1
+fi
+
+if ! sudo which cryptsetup ; then
+	$LOGGER -t "$logTag" cryptsetup not installed
+	exit 2
+fi
+
+rawDevice=$1
+encryptedDevice=$2
+keyFile=$3
+
+if [ -e /dev/mapper/temp*  ]; then
+        sudo rm -f /dev/mapper/temp*
+fi
+
+if [ ! -f "$keyFile" ] ; then
+        $LOGGER -t "$logTag" Unable to ready key file
+	$LOGGER -t "$logTag" "exit 10" at Line \#$LINENO; exit 10
+fi
+
+if [ -x ${CUSTOM} ] ; then
+        ${CUSTOM} "$@" 2>&1 | $LOGGER -t "$logTag"
+	$LOGGER -t "$logTag" "exit $?" at Line \#$LINENO; exit $?
+fi
+
+if [ -x ${CUSTOM}-pre ] ; then
+        ${CUSTOM}-pre "$@" 2>&1 | $LOGGER -t "$logTag"
+        if [ $? != 0 ] ; then
+		$LOGGER -t "$logTag" "exit $?" at Line \#$LINENO; exit $?
+        fi
+fi
+
+key_filename=$(basename ${keyFile})
+BACKUP_DIR=/var/log/enstratus/files
+NOW=$(date +%y%m%d-%H%M%S)
+
+# Create a directory for file backup.
+if [ ! -d $BACKUP_DIR ]; then
+        sudo mkdir -p $BACKUP_DIR
+        sudo chown enstratus:enstratus $BACKUP_DIR
+fi
+
+# Key file backup for debug.
+cp $keyFile ${BACKUP_DIR}/${key_filename}.$NOW && $LOGGER -t "$logTag" "Key file has been copied to ${BACKUP_DIR}/${key_filename}.$NOW for debug." || $LOGGER -t "$logTag" "Key file backup failed."
+
+# Some kernels may detect sdX devices as xvdX
+
+if [ ! -b /dev/$1 -a -b /dev/${1/#sd/xvd} ]; then
+	rawDevice=${1/#sd/xvd}
+fi
+
+sudo cryptsetup --key-file $keyFile -q luksOpen "/dev/$rawDevice" $encryptedDevice > /dev/null 2>&1
+
+if [ $? != 0 ] ; then
+        $LOGGER -t "$logTag" Unable to open encrypted device.
+	$LOGGER -t "$logTag" "exit 11" at Line \#$LINENO; exit 11
+fi
+
+if [ -x ${CUSTOM}-post ] ; then
+        ${CUSTOM}-post "$@" 2>&1 | $LOGGER -t "$logTag"
+fi
+
+$LOGGER -t "$logTag" "exit 0" at Line \#$LINENO; exit 0

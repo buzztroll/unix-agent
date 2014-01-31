@@ -1,0 +1,52 @@
+#!/bin/bash
+
+set -u
+
+LOGGER=/opt/local/enstratus/bin/log
+logTag="modjk:stopProxy"
+
+$LOGGER -t "$logTag" stopProxy "$@"
+
+if [ $# -lt 1 ] ; then 
+    $LOGGER -t "$logTag" Syntax: stopProxy ADDRESS
+    exit 1
+fi
+
+ipAddress=$1
+
+APACHE=/opt/local/etc/httpd
+
+if [ -r /var/enstratus/tmp/workers.list ] ; then
+    sudo rm -f /var/enstratus/tmp/workers.list
+fi
+
+/enstratus/bin/modjk-removeAddress $ipAddress /var/enstratus/tmp/workers.list 2>&1 | $LOGGER -t "$logTag"
+
+ret=$?
+
+if [ $ret -ne 0 ] ; then
+    $LOGGER -t "$logTag" Removal of address failed: $ret
+    exit 20
+fi
+
+sudo mv /var/enstratus/tmp/workers.list "$APACHE/workers.list"
+
+sudo bin/modjk-buildWorkers "$APACHE/workers.list" "$APACHE/workers.properties" 2>&1 | $LOGGER -t "$logTag"
+
+ret=$?
+
+if [ $ret -ne 0 ] ; then
+    $LOGGER -t "$logTag" Rebuild of workers.properties: $ret
+    exit 21
+fi
+
+sudo svcadm refresh apache 2>&1 | $LOGGER -t "$logTag"
+
+ret=$?
+
+if [ $ret -ne 0 ] ; then
+    $LOGGER -t "$logTag" Apache restart failed: $ret
+    exit 22
+fi
+
+exit 0

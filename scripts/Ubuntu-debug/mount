@@ -1,0 +1,62 @@
+#!/bin/bash
+
+set -u
+
+BASENAME=`basename $0`
+CUSTOM="/enstratus/custom/bin/$BASENAME"
+
+LOGGER="/enstratus/bin/log"
+logTag="mount"
+
+if [ $# -lt 3 ] ; then
+   $LOGGER -t "$logTag" Syntax: mount DEVICE_ID FILE_SYSTEM MOUNT_POINT
+   $LOGGER -t "$logTag" "exit 1" at Line \#$LINENO; exit 1
+fi
+
+$LOGGER -t "$logTag" $0 $@
+$LOGGER -t "$logTag" -v "deviceId=$1 fileSystem=$2 mountPoint=$3"
+
+deviceId=$1
+fileSystem=$2
+mountPoint=$3
+
+if [ -x ${CUSTOM} ] ; then
+	${CUSTOM} "$@" && $LOGGER -t "$logTag" "Custom mount script was run from $CUSTOM"
+	$LOGGER -t "$logTag" "exit $?" at Line \#$LINENO; exit $?
+fi
+
+if [ -x ${CUSTOM}-pre ] ; then
+	${CUSTOM}-pre "$@" && $LOGGER -t "$logTag" "Custom mount script was run from $CUSTOM"
+	if [ $? != 0 ] ; then
+		$LOGGER -t "$logTag" "exit $?" at Line \#$LINENO; exit $?
+	fi
+fi
+
+if [ ! -d "$mountPoint" ] ; then
+	sudo mkdir "$mountPoint" || $LOGGER -t "$logTag" "Creating mount point failed."
+fi
+
+# Some kernels may detect sdX devices as xvdX
+
+if [ ! -b /dev/$1 -a -b /dev/${1/#sd/xvd} ]; then
+	deviceId=${1/#sd/xvd}
+	$LOGGER -t "$logTag" "$deviceId detected."
+fi
+
+exists=$(grep " $mountPoint " /etc/fstab)
+
+if [[ $exists == "" ]] ; then
+	echo "/dev/$deviceId $mountPoint $fileSystem defaults,nobootwait 0 0" | sudo tee -a /etc/fstab
+fi
+
+sleep 10
+$LOGGER -t "$logTag" "mount $mountPoint"
+sudo mount "$mountPoint" && $LOGGER -t "$logTag" "mount successful." || $LOGGER -t "$logTag" "mount failed."
+sudo chown enstratus:enstratus "$mountPoint"
+sudo chmod 775 "$mountPoint" 
+				
+if [ -x ${CUSTOM}-post ] ; then
+	${CUSTOM}-post "$@" && $LOGGER -t "$logTag" "Custom mount script was run from $CUSTOM"
+fi
+
+$LOGGER -t "$logTag" "exit 0" at Line \#$LINENO; exit 0

@@ -1,0 +1,17 @@
+#!/bin/bash
+
+# This file is responsible for altering the file that controls whether haproxy starts
+# It tests to see if it has already been enabled. If not, it echoes in a "1" to ensure
+# that it does.
+
+# This line replaces 0 with 1 in the file haproxy. If it is run multiple times,
+# no affect.
+
+logTag="haproxy-runLb"
+LOGGER=/enstratus/bin/log
+
+$LOGGER -t "$logTag" $0 $@
+
+sudo sed 's/ENABLED=0/ENABLED=1/' -i /etc/default/haproxy && $LOGGER -t "$logTag" "haproxy enabled by modifying /etc/default/haproxy."
+
+$LOGGER -t "$logTag" "exit $?" at Line \#$LINENO; exit $?

@@ -1,0 +1,82 @@
+#!/usr/bin/env bash
+
+set -u
+PATH=/usr/local/sbin:/usr/local/bin:/sbin:/bin:/usr/sbin:/usr/bin:/enstratus/bin
+. "/enstratus/bin/common_mod"
+
+logTag="setupEncryption"
+LOGGER=/enstratus/bin/log
+
+BASENAME=`basename $0`
+CUSTOM="/enstratus/custom/bin/$BASENAME"
+
+if [ $# -lt 2 ] ; then
+   $LOGGER -t "$logTag" Syntax: setupEncryption RAW_DEVICE KEY_FILE
+   exit 1
+fi
+
+if ! sudo which cryptsetup ; then
+    $LOGGER -t "$logTag" cryptsetup not installed
+    exit 2
+fi
+
+rawDevice=$1
+encryptedDevice=$2
+keyFile=$3
+
+$LOGGER -t "$logTag" setupEncryption "$@" 
+
+if [ ! -f "$keyFile" ] ; then
+	$LOGGER -t "$logTag" Unable to ready key file
+	exit 10
+fi
+
+if [ -x ${CUSTOM} ] ; then
+	${CUSTOM} "$@" 2>&1 | $LOGGER -t "$logTag"
+	exit_with_pipe_value
+fi
+
+if [ -x ${CUSTOM}-pre ] ; then
+	${CUSTOM}-pre "$@" 2>&1 | $LOGGER -t "$logTag"
+	exit_if_pipe_false
+fi
+
+sudo modprobe dm_crypt
+if [ $? != 0 ] ; then
+	$LOGGER -t "$logTag" "No support for dm_crypt, cannot encrypt file system for $rawDevice"
+	exit 81
+fi
+
+# initializes a LUKS partition and sets the initial key, either via prompting or via <key file>.
+# 1. Some kernels may detect sdX devices as xvdX
+# 2. sdh is identified as xvdl since RHEL/CentOS 6.1
+el_ver=0
+if [ -f /etc/redhat-release ]; then
+	el_ver=$(grep -o -E '[0-9]\.[0-9]' /etc/redhat-release)
+fi
+new_letter=$(echo ${1:(-1)} | tr 'a-z' 'e-z')
+
+if [ ! -b /dev/$1 ]; then
+	if [[ -b /dev/${1/#sd/xvd} ]]; then
+		rawDevice=${1/#sd/xvd}
+	elif [[ $el_ver > 6.0 && -b /dev/xvd${new_letter} ]]; then
+		rawDevice=xvd${new_letter}
+	else
+		$LOGGER -t "$logTag" "Cannot find device ${rawDevice}."
+		exit 1
+	fi
+fi
+
+sudo cryptsetup -q luksFormat --cipher aes-cbc-essiv:sha256 "/dev/$rawDevice" "$keyFile" > /dev/null 2>&1
+
+if [ $? != 0 ] ; then
+	$LOGGER -t "$logTag" Unable to setup encryption.
+	exit 11
+fi
+
+if [ -x ${CUSTOM}-post ] ; then
+	${CUSTOM}-post "$@" 2>&1 | $LOGGER -t "$logTag"
+	exit_with_pipe_value
+fi
+
+exit 0

@@ -1,0 +1,5 @@
+#!/usr/bin/env bash
+
+[ -t 0 ] || read PIPEINPUT
+
+java -classpath /enstratus/ws/content/WEB-INF/lib/enstratus-agent.jar com.enstratus.agent.tools.Log "$@" $PIPEINPUT

@@ -1,0 +1,36 @@
+#!/bin/bash
+
+logTag="getUnixOs"
+LOGGER=/enstratus/bin/log
+
+$LOGGER -t "$logTag" $0 $@
+
+OS=`uname`
+case $OS in
+   Linux) 
+   	if [ -x /usr/bin/lsb_release ] ; then
+		DISTRO=`/usr/bin/lsb_release -i | cut -d: -f2 | awk '{ print $1}'`
+		case $DISTRO in
+			Ubuntu) echo "UBUNTU" ;;
+			CentOS) echo "CENT_OS" ;;
+			Fedora) echo "FEDORA_CORE" ;;
+			Debian) echo "DEBIAN" ;;
+			n/a) echo "RHEL";;
+			RedHatEnterpriseServer) echo "RHEL";;
+			*) echo "UNIX" ;; 
+		esac
+	elif [ -f /etc/redhat-release ]; then
+		DISTRO=$( cat /etc/redhat-release | awk '{print $1}' )
+		case $DISTRO in
+			CentOS) echo "CENT_OS";;
+			Red) echo "RHEL";;
+		esac
+	fi
+   	;;
+   FreeBSD) echo "FREE_BSD" ;;
+   OpenBSD) echo "OPEN_BSD" ;;
+   SunOS) echo "SOLARIS" ;;
+   *) echo "UNIX";;
+esac
+
+$LOGGER -t "$logTag" "exit $?" at Line \#$LINENO; exit $?

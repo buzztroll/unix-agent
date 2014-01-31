@@ -1,0 +1,35 @@
+#!/bin/bash
+
+set -u
+
+BASENAME=`basename $0`
+CUSTOM="/enstratus/custom/bin/$BASENAME"
+
+if [ $# -lt 1 ] ; then
+   exit 1
+fi
+
+mountPoint=$1
+
+if [ -x ${CUSTOM} ] ; then
+	${CUSTOM} "$@" 
+	exit $?
+fi
+
+if [ -x ${CUSTOM}-pre ] ; then
+	${CUSTOM}-pre "$@" 
+	if [ $? != 0 ] ; then
+		exit $?
+	fi
+fi
+
+sudo umount $mountPoint
+
+mp=${mountPoint/\//\\\/}
+sudo sed -i "/\s$mp\s/d" /etc/vfstab
+
+if [ -x ${CUSTOM}-post ] ; then
+	${CUSTOM}-post "$@"
+fi
+
+exit 0

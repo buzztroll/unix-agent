@@ -1,0 +1,93 @@
+#!/usr/bin/env bash
+
+# Copyright 2011-2013 Enstratius, Inc.
+#
+# removeUser - Removes shell access for the specified user.
+# 
+# This software is part of the Enstratius Cloud Management System. Only 
+# authorized licensees of Enstratius may use this software and only
+# in the context of Enstratius-managed virtual servers and machine images. 
+# Unauthorized copying or distribution of this software is strictly prohibited.
+# Authorized licensees may copy this software onto any machine images
+# and/or virtual hosts being managed by the Enstratius system as needed.
+#
+# FUNCTION
+# Grants the specified user shell access to the server.
+#
+# HOW TO EXTEND THIS SCRIPT (aka DO NOT EDIT THIS SCRIPT)
+# You can extend or replace this script by setting up your own executables in /enstratus/custom/bin:
+# * /enstratus/custom/bin/addUser - if exists, will completely replace this script
+# * /enstratus/custom/bin/addUser-pre - if exists, will be executed before this script
+# * /enstratus/custom/bin/addUser-post - if exists, will be executed after this script
+# Your custom commands will be called with the same arguments in the same order as
+# this script.
+
+set -u
+
+. "/enstratus/bin/common_mod"
+
+logTag="removeUser"
+LOGGER=/enstratus/bin/log
+
+if [ $# -lt 1 ] ; then
+   $LOGGER -t "$logTag" Syntax: removeUser USER_ID
+   exit 1
+fi
+
+$LOGGER -t "$logTag" removeUser "$@"
+
+USERDEL=/usr/sbin/userdel
+
+if [ -f /usr/sbin/userdel ] ; then
+	USERDEL=/usr/sbin/userdel
+elif [ -f /usr/local/sbin/userdel ] ; then
+	USERDEL=/usr/local/sbin/userdel
+else
+	$LOGGER -t "$logTag" Could not find user remove command 
+	exit 80
+fi
+
+BASENAME=`basename $0`
+CUSTOM="/enstratus/custom/bin/$BASENAME"
+
+if [ -x ${CUSTOM} ] ; then
+	${CUSTOM} "$@" 2>&1 | $LOGGER -t "$logTag"
+	exit_with_pipe_value
+fi
+
+USER_ID=${1}
+
+if [ -x ${CUSTOM}-pre ] ; then
+	${CUSTOM}-pre "$@" 2>&1 | $LOGGER -t "$logTag"
+	exit_if_pipe_false
+fi
+
+id "$USER_ID" 2> /dev/null
+if [ $? != 0 ] ; then
+	exit 0
+fi
+
+# Remove the user from sudoers.
+if [ -d /etc/sudoers.d/ ]; then
+	if [ -f /etc/sudoers.d/${USER_ID} ]; then
+		sudo rm /etc/sudoers.d/${USER_ID}
+	fi
+elif [ -f /etc/sudoers ]; then
+	sudo sed -i "/${USER_ID}/d" /etc/sudoers
+fi
+
+sudo "$USERDEL" -f -r "$USER_ID" 2>&1 | $LOGGER -t "$logTag"
+ret=${PIPESTATUS}
+
+if [ -x ${CUSTOM}-post ] ; then
+	${CUSTOM}-post "$@" 2>&1 | $LOGGER -t "$logTag"
+	ret=${PIPESTATUS}
+fi
+
+# After running 'userdel -f -r' command, code 12 is normally returned. That's because /var/mail/USER_ID does not exist.
+# Since it is not a fatal error but a warning, exit code 12 can be replaced with exit code 0.
+if [ $ret -eq 12 ]; then
+	exit 0
+else
+	exit $ret
+fi

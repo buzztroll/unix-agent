@@ -1,0 +1,44 @@
+#!/usr/bin/env bash
+
+# Copyright 2011-2013 Enstratius, Inc.
+#
+# startService - Starts the specified service
+# 
+# This software is part of the Enstratius Cloud Management System. Only 
+# authorized licensees of Enstratius may use this software and only
+# in the context of Enstratius-managed virtual servers and machine images. 
+# Unauthorized copying or distribution of this software is strictly prohibited.
+# Authorized licensees may copy this software onto any machine images
+# and/or virtual hosts being managed by the Enstratius system as needed.
+#
+# FUNCTION
+# This script really does nothing except kick-off the service-specific start-up.
+#
+
+set -u
+PATH=/bin:${PATH}
+
+. "/enstratus/bin/common_mod"
+
+LOGFILE="/mnt/tmp/stopService.log"
+sudo touch "$LOGFILE"
+sudo chmod 660 "$LOGFILE"
+sudo chown enstratus:enstratus "$LOGFILE"
+
+if [ $# -lt 1 ] ; then
+   echo "Syntax: stopService SERVICE_ID" >> "$LOGFILE" 2>&1
+   exit 1
+fi
+
+serviceId=${1}
+
+echo "stopService $serviceId" >> "$LOGFILE" 2>&1
+
+STOP="/mnt/services/$serviceId/bin/enstratus-stop"
+
+if [ ! -x "$STOP" ] ; then
+	echo "Unable to find custom stop script ${STOP}. Fail." >> "$LOGFILE" 2>&1
+	exit 10
+fi
+
+"$STOP" $serviceId >> "$LOGFILE" 2>&1

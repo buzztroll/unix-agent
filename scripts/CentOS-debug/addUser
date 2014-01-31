@@ -1,0 +1,126 @@
+#!/bin/bash
+
+# Copyright 2011 enStratus Networks LLC
+#
+# addUser - Grants shell access for a user to this server.
+# 
+# This software is part of the enStratus Cloud Management System. Only 
+# authorized licensees of enStratus may use this software and only
+# in the context of enStratus-managed virtual servers and machine images. 
+# Unauthorized copying or distribution of this software is strictly prohibited.
+# Authorized licensees may copy this software onto any machine images
+# and/or virtual hosts being managed by the enStratus system as needed.
+#
+# FUNCTION
+# Grants the specified user shell access to the server.
+#
+# HOW TO EXTEND THIS SCRIPT (aka DO NOT EDIT THIS SCRIPT)
+# You can extend or replace this script by setting up your own executables in /enstratus/custom/bin:
+# * /enstratus/custom/bin/addUser - if exists, will completely replace this script
+# * /enstratus/custom/bin/addUser-pre - if exists, will be executed before this script
+# * /enstratus/custom/bin/addUser-post - if exists, will be executed after this script
+# Your custom commands will be called with the same arguments in the same order as
+# this script.
+
+set -u
+
+logTag="addUser"
+LOGGER=/enstratus/bin/log
+
+if [ $# -lt 5 ] ; then 
+   echo "Syntax: addUser CUST_ID USER_ID FIRST_NAME LAST_NAME ADMINISTRATOR" 2>&1 | $LOGGER -t "$logTag"
+   $LOGGER -t "$logTag" "exit 1" at Line \#$LINENO;  exit 1
+fi
+
+$LOGGER -t "$logTag" "$0 $@"
+$LOGGER -t "$logTag" -v "CustomerID=$1, UserID=$2, FirstName=$3, LastName=$4, Administrator=$5"
+
+if [ -f /usr/sbin/useradd ] ; then
+	USERADD=/usr/sbin/useradd
+elif [ -f /usr/local/sbin/useradd ] ; then
+	USERADD=/usr/local/sbin/useradd
+else
+	$LOGGER -t "$logTag" Could not find user addition command 
+	$LOGGER -t "$logTag" "exit 80" at Line \#$LINENO; exit 80
+fi
+
+if [ -f /usr/sbin/usermod ] ; then
+	USERMOD=/usr/sbin/usermod
+elif [ -f /usr/local/sbin/usermod ] ; then
+	USERMOD=/usr/local/sbin/usermod
+else
+	echo "Could not find user mod command" 2>&1 | $LOGGER -t "$logTag"
+	$LOGGER -t "$logTag" "exit 81" at Line \#$LINENO; exit 81
+fi
+
+if [ -f /usr/sbin/groupadd ] ; then
+	GROUPADD=/usr/sbin/groupadd
+elif [ -f /usr/local/sbin/groupadd ] ; then
+	GROUPADD=/usr/local/sbin/groupadd
+else
+	echo "Could not find group add command" 2>&1 | $LOGGER -t "$logTag"
+	$LOGGER -t "$logTag" "exit 82" at Line \#$LINENO; exit 82
+fi
+
+BASENAME=`basename $0`
+CUSTOM=/enstratus/custom/bin/${BASENAME}
+
+if [ -x ${CUSTOM} ] ; then
+	${CUSTOM} "$@" 2>&1 || $LOGGER -t "$logTag" "Custom addUser failed."
+	$LOGGER -t "$logTag" "exit $?" at Line \#$LINENO; exit $?
+fi
+
+CUST_ID=${1}
+USER_ID=${2}
+FIRST_NAME=${3}
+LAST_NAME=${4}
+ADMINISTRATOR=${5}
+
+if [ -x ${CUSTOM}-pre ] ; then
+	${CUSTOM}-pre "$@" 2>&1 || $LOGGER -t "$logTag" "Custom addUser failed."
+	if [ $? != 0 ] ; then
+		$LOGGER -t "$logTag" "exit $?" at Line \#$LINENO; exit $?
+	fi
+fi
+
+id ${USER_ID} 2> /dev/null
+if [ $? == 0 ] ; then
+	exists=1
+else
+	exists=0
+fi
+
+sudo "$GROUPADD" -f ${CUST_ID} 2>&1 || $LOGGER -t "$logTag" "Groupadd failed."
+
+if [[ $? != 0 ]] ; then
+	echo "Group add failed: $?" 2>&1 | $LOGGER -t "$logTag"
+	$LOGGER -t "$logTag" "exit 40" at Line \#$LINENO; exit 40
+fi
+
+if [ $exists == 0 ] ; then
+        sudo ${USERADD} -d /home/${USER_ID} -g ${CUST_ID} -s /bin/bash -c "${FIRST_NAME} ${LAST_NAME}" -m ${USER_ID} 2>&1 && $LOGGER -t "$logTag" "User $USER_ID has been added."
+fi
+
+if [ ${ADMINISTRATOR} == "true" ] ; then
+	sudo ${USERMOD} -G enstratus ${USER_ID} 2>&1 && $LOGGER -t "$logTag" "User $USER_ID has been added to group enstratus."
+	if [ $? != 0 ] ; then
+		echo "User add of $USER_ID to admin group failed: $?" 2>&1 | $LOGGER -t "$logTag"
+		$LOGGER -t "$logTag" "exit 42" at Line \#$LINENO; exit 42
+	fi
+fi
+
+if [ ! -f "/home/${USER_ID}/.ssh" ] ; then
+	sudo /bin/mkdir /home/${USER_ID}/.ssh 2>&1
+fi
+sudo /bin/chown ${USER_ID}:${CUST_ID} /home/${USER_ID}/.ssh 2>&1
+sudo /bin/chmod 700 /home/${USER_ID}/.ssh 2>&1
+
+cat /mnt/tmp/${USER_ID}.pub | sudo tee -a /home/${USER_ID}/.ssh/authorized_keys
+sudo /bin/chown ${USER_ID}:${CUST_ID} /home/${USER_ID}/.ssh/authorized_keys 2>&1
+sudo /bin/chmod 600 /home/${USER_ID}/.ssh/authorized_keys 2>&1
+
+if [ -x ${CUSTOM}-post ] ; then
+	${CUSTOM}-post "$@" 2>&1 | $LOGGER -t "$logTag"
+fi
+
+$LOGGER -t "$logTag" "exit $?" at Line \#$LINENO; exit $?

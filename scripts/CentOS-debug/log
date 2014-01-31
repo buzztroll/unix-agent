@@ -1,0 +1,74 @@
+#!/bin/bash
+# enStratus agent log script for debugging.
+# By Sean Kang. sean.kang@enstrauts.com
+# 30 Nov 2012
+# 
+# Options:
+#
+# 	-i
+# 	Informational log. This flag is used to control log level.
+#
+# 	-t
+# 	Mark a tag.
+#
+#	-v
+#	Consider input as a description of arguments. It also adds [ARG_INFO] tag.
+#
+
+# Full path of log directory and name of log file.
+LOG_DIRECTORY=/var/log/enstratus
+LOG_FILE=enstratus-agent.log
+
+# Set LOG_LEVEL to "INFO" if you want to record informational log. It will leave lots of messages. 
+# Set LOG_LEVEL to "DEBUG" if it's annoying.
+LOG_LEVEL="DEBUG"
+
+# Set "true" if you want to see the descriptions of parameters.
+# Set "false" if not.
+LOG_ARGS_DESC="true"
+
+# Timestamp. It will be added to local log.
+TIMESTAMP=$(date '+%Y-%m-%d %H:%M:%S')
+
+# Get a string from stdin.
+# ex) echo "Hello, world" | $LOGGER -t "test"
+[ -t 0 ] || read PIPEINPUT
+
+# Process options.
+while getopts ":t:iv" o; do
+	case "$o" in
+		t)	LOG_TAG="[${OPTARG}]"
+			LOG_STR_JAVA="-t $OPTARG"
+			;;
+		i)	if [ $LOG_LEVEL != "INFO" ]; then
+				exit 0
+			fi
+			;;
+		v)	if [ $LOG_ARGS_DESC != "true" ]; then
+				exit 0
+			fi
+			LOG_STR="[ARG_INFO]"
+			LOG_STR_JAVA="$LOG_STR_JAVA [ARG_INFO]"
+			;;
+	esac
+done
+
+shift $((OPTIND-1))
+
+# Generate log strings.
+LOG_STR="$TIMESTAMP $LOG_TAG $LOG_STR $PIPEINPUT $@"
+LOG_STR_JAVA="$LOG_STR_JAVA $PIPEINPUT $@"
+
+# Create a directory to store log file.
+if [ ! -d $LOG_DIRECTORY ]; then
+	sudo /bin/mkdir -p $LOG_DIRECTORY
+	sudo /bin/chown enstratus:enstratus $LOG_DIRECTORY
+fi
+
+# Write a log string to local file and stderr.
+echo $LOG_STR >> ${LOG_DIRECTORY}/${LOG_FILE}
+echo $LOG_STR 1>&2
+
+# Send a log string to Console server.
+# INFO level is not recommended in console log since it stores too many logs in DB.
+#java -classpath /enstratus/ws/content/WEB-INF/lib/enstratus-agent.jar com.enstratus.agent.tools.Log $LOG_STR_JAVA

@@ -1,0 +1,82 @@
+#!/bin/bash
+
+# Copyright 2011 enStratus Networks LLC
+#
+# rename - Renames the server to the name given on the command line
+# 
+# This software is part of the enStratus Cloud Management System. Only 
+# authorized licensees of enStratus may use this software and only
+# in the context of enStratus-managed virtual servers and machine images. 
+# Unauthorized copying or distribution of this software is strictly prohibited.
+# Authorized licensees may copy this software onto any machine images
+# and/or virtual hosts being managed by the enStratus system as needed.
+#
+# FUNCTION
+# Renames the server.
+#
+# HOW TO EXTEND THIS SCRIPT (aka DO NOT EDIT THIS SCRIPT)
+# You can extend or replace this script by setting up your own executables in /opt/local/enstratus/custom/bin:
+# * /opt/local/enstratus/custom/bin/rename - if exists, will completely replace this script
+# * /opt/local/enstratus/custom/bin/rename-pre - if exists, will be executed before this script
+# * /opt/local/enstratus/custom/bin/rename-post - if exists, will be executed after this script
+# Your custom commands will be called with the same arguments in the same order as
+# this script.
+
+set -u
+
+logTag="rename"
+LOGGER=/opt/local/enstratus/bin/log
+
+if [ $# -lt 2 ] ; then
+   $LOGGER -t "$logTag" "Syntax: rename NAME LOCAL_IP"
+   exit 1
+fi
+
+$LOGGER -t "$logTag" "$@"
+
+BASENAME=`basename $0`
+CUSTOM="/enstratus/custom/bin/$BASENAME"
+
+SCALE=0
+
+if [ -x ${CUSTOM} ] ; then
+	${CUSTOM} "$@" 2>&1 | $LOGGER -t "$logTag"
+	exit $?
+fi
+
+if [ -x ${CUSTOM}-pre ] ; then
+	${CUSTOM}-pre "$@" 2>&1 | $LOGGER -t "$logTag"
+	if [ $? != 0 ] ; then
+		exit $?
+	fi
+fi
+IPADDRESS=$2
+
+sudo rm -f /var/tmp/nodename
+echo "$1" >> /var/tmp/nodename
+sudo mv /var/tmp/nodename /etc/nodename
+sudo hostname $1
+sudo rm -f /var/tmp/hosts
+echo "::1 localhost" | sudo tee /var/tmp/hosts
+echo "127.0.0.1 localhost loghost" | sudo tee -a /var/tmp/hosts
+echo "${IPADDRESS} $1" | sudo tee -a /var/tmp/hosts
+cat /var/tmp/hosts | $LOGGER -t "$logTag"
+sudo mv /var/tmp/hosts /etc/inet/hosts 2>&1 | $LOGGER -t "$logTag"
+cat /etc/inet/hosts | $LOGGER -t "$logTag"
+if [ $(svcs -Ho state postfix) == "online" ] ; then
+	sudo svcadm restart postfix
+fi
+if [ $(svcs -Ho state system-log) == "online" ] ; then
+    sudo svcadm restart system-log
+fi
+
+STATUS=$?
+
+if [ ${STATUS} == 0 ] ; then
+	if [ -x ${CUSTOM}-post ] ; then
+		${CUSTOM}-post "$@" 2>&1 | $LOGGER -t "$logTag"
+		STATUS=$?
+	fi
+fi
+
+exit ${STATUS}

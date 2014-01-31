@@ -1,0 +1,46 @@
+#!/bin/bash
+
+# Copyright 2011 enStratus Networks LLC
+#
+# terminate - Standard start script that automatically stops all services when the server is going down
+# 
+# This software is part of the enStratus Cloud Management System. Only 
+# authorized licensees of enStratus may use this software and only
+# in the context of enStratus-managed virtual servers and machine images. 
+# Unauthorized copying or distribution of this software is strictly prohibited.
+# Authorized licensees may copy this software onto any machine images
+# and/or virtual hosts being managed by the enStratus system as needed.
+#
+
+set -u
+
+logTag="terminate"
+LOGGER=/enstratus/bin/log
+
+BASENAME=`basename $0`
+CUSTOM=/enstratus/custom/bin/${BASENAME}
+
+if [ -x ${CUSTOM}-pre ] ; then
+	${CUSTOM}-pre "$@" 2>&1 | $LOGGER -t "$logTag"
+	if [ $? != 0 ] ; then
+		exit $?
+	fi
+fi
+
+for file in /mnt/services/* ; do
+	if [ -d "$file" ] ; then
+		svcid=`basename "$file"`
+		svc="${file}/bin/enstratus-stop"
+		if [ -x "${svc}" ] ; then
+			$LOGGER -t "$logTag" Terminating "${svcid}..."
+			cd "$file"; "$svc" "$svcid" 2>&1 | $LOGGER -t "$logTag"
+			cd ..
+			$LOGGER -t "$logTag" Terminated "${svcid}".
+		fi
+	fi
+done
+
+$LOGGER -t "$logTag" enStratus is now shutting down the agent.
+
+sudo /etc/init.d/tomcat-enstratus stop 2>&1 | $LOGGER -t "$logTag"
+

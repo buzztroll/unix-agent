@@ -1,0 +1,27 @@
+#!/usr/bin/python
+
+import os
+import os.path
+import sys
+
+serviceId=sys.argv[1]
+remoteAddress=sys.argv[2]
+remotePort=sys.argv[3]
+
+out = open('/etc/haproxy.cfg', 'r+');
+output = ""
+pos = 0
+
+for line in out:
+  if line.find("server") > -1:
+    pos = pos + 1    
+  output = output + line
+  
+pos = pos + 1  
+service = serviceId + str(pos)
+output = "%s	server %s %s:%s cookie %s\n" % (output, service, remoteAddress, remotePort, service)
+  
+out.seek(0)
+out.write(output)
+out.flush()
+out.close()  

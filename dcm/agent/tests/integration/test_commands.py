@@ -112,7 +112,10 @@ class TestSerialCommands(unittest.TestCase):
 
         for i in range(count):
             output = json.loads(outfile.buflist[i])
-            self.assertEquals(0, output['returncode'])
+            self.assertEquals(0, output['return_code'])
+
+        request_listener.shutdown()
+
 
     def test_echo_serial_message_no_fail(self):
         self._many_message(2, 0, "echo hello")
@@ -174,8 +177,9 @@ class TestRetransmission(unittest.TestCase):
 
         for i in range(count):
             output = json.loads(outfile.buflist[i])
-            self.assertEquals(0, output['returncode'])
+            self.assertEquals(0, output['return_code'])
 
+        request_listener.shutdown()
         disp.stop()
 
         return to.state_change_list

@@ -3,8 +3,9 @@ import ConfigParser
 import logging
 import logging.config
 import os
-import sys
 import yaml
+import dcm
+from dcm.agent import utils
 from dcm.agent.connection import websocket
 
 import dcm.agent.exceptions as exceptions
@@ -13,6 +14,12 @@ import dcm.agent.tests.utils.test_connection as test_connection
 
 
 _g_conf_file_env = "DCM_AGENT_CONF"
+
+
+class AgentToken(object):
+    def __init__(self, encrypted_token, date_string):
+        self.encrypted_token = encrypted_token
+        self.date_string = date_string
 
 
 def get_connection_object(conf):
@@ -68,7 +75,10 @@ class ConfigOpt(object):
         if v is None:
             return v
         try:
-            v = self.my_type(v)
+            if self.my_type == list:
+                v = v.split(",")
+            else:
+                v = self.my_type(v)
         except ValueError:
             raise exceptions.AgentOptionTypeException(
                 self.name, self.my_type, v)
@@ -166,6 +176,7 @@ class AgentConfig(object):
             ConfigOpt("messaging", "max_at_once", int, default=-1),
 
             ConfigOpt("enstratius", "agentmanager_url", str, default=None),
+            ConfigOpt("platform", "script_locations", list, default="SmartOS"),
         ]
         parser = ConfigParser.SafeConfigParser()
         parser.read(config_file)
@@ -241,3 +252,30 @@ class AgentConfig(object):
 
     def get_agent_id(self):
         return self._agent_id
+
+    def set_handshake(self, handshake_doc):
+        if handshake_doc["version"] == "1":
+            self._agent_id = handshake_doc["version"]
+            self.cloud_id = handshake_doc["cloudId"]
+            self.customer_id = handshake_doc["customerId"]
+            self.region_id = handshake_doc["regionId"]
+            self.zone_id = handshake_doc["zoneId"]
+            self.server_id = handshake_doc["serverId"]
+            self.server_name = handshake_doc["serverName"]
+            self.ephemeral_file_system = handshake_doc["ephemeralFileSystem"]
+            self.encrypted_ephemeral_fs_key = \
+                handshake_doc["encryptedEphemeralFsKey"]
+        else:
+            raise exceptions.AgentHandshakeException()
+
+    def get_script_dir(self):
+        _ROOT = dcm.agent.get_root_location()
+        return os.path.join(_ROOT, 'scripts')
+
+    def get_script_location(self, name):
+        script_dir = self.get_script_dir()
+        for platform in self.platform_script_locations:
+            path = os.path.join(script_dir, platform, name)
+            if os.path.exists(path):
+                return path
+        return None

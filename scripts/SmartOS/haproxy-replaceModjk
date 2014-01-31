@@ -1,0 +1,75 @@
+#!/usr/bin/env python
+
+import os
+import os.path
+import shutil
+import sys
+
+serviceId=sys.argv[1]
+
+listFile = "/opt/local/etc/httpd/sites-available/" + serviceId + ".conf"
+
+shutil.copyfile(listFile, listFile + ".orig")
+
+out = open(listFile, 'r+');
+output = ""
+for line in out:
+  if line.find("JkMount") > -1:
+    line = "    ProxyPreserveHost on\n" 
+    line = line + "    ProxyPass / http://localhost:8080/\n"
+    line = line + "    <Proxy *>\n"
+    line = line + "        Order deny,allow\n"
+    line = line + "        Allow from all\n"
+    line = line + "    </Proxy>\n"
+  output = output + line
+  
+out.seek(0)
+out.write(output)
+out.flush()
+out.close()
+
+listFile = "/opt/local/etc/httpd/sites-available/" + serviceId + "-ssl.conf"
+
+if os.path.exists(listFile):
+  shutil.copyfile(listFile, listFile + ".orig")
+  out = open(listFile, 'r+');
+  output = ""
+  for line in out:
+    if line.find("JkMount") > -1:
+      line = "ProxyPreserveHost on\n" 
+      line = line + "    ProxyPass / http://localhost:8080/\n"
+      line = line + "    <Proxy *>\n"
+      line = line + "        Order deny,allow\n"
+      line = line + "        Allow from all\n"
+      line = line + "    </Proxy>\n" 
+    output = output + line
+
+  out.seek(0)
+  out.write(output)
+  out.flush()
+  out.close()
+  
+listFile = "/opt/local/etc/httpd/workers.properties"
+
+shutil.move(listFile, listFile + ".orig")
+
+out = open(listFile + ".orig");
+output = ""
+for line in out:
+  if line.find("worker.list") > -1:
+    workers = line[:len(line) - 1]
+    workers = workers.split("=")[1]
+    ws = ""      
+    for w in workers.split(","):
+      if w.find(serviceId) == -1:
+        ws = ws + w + ",";    
+    output = output + "worker.list=" + ws + "\n"    
+  elif line.find(serviceId) > -1:
+    line = ""
+  else:
+    output = output + line
+out.close()
+out = open(listFile, "w")  
+out.write(output)
+out.flush()
+out.close()

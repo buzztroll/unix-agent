@@ -1,0 +1,81 @@
+#!/bin/bash
+
+set -u
+
+LOGGER=/enstratus/bin/log
+logTag="zeus:startProxy"
+
+$LOGGER -t "$logTag" startProxy "$@"
+
+CLI=/usr/local/zeus/zxtm/bin/zcli
+RM=/enstratus/bin/secureDelete
+
+service=$1
+primaryName=$2
+secondaryNames=$3
+ipAddress=$4
+remoteAddress=$5
+remotePort=$6
+
+if [ -z $remoteAddress ] ; then
+  exit 0
+fi
+
+if [ $# -gt 6 ] ; then
+    sslCert=$7
+    sslKey=$8
+    if [ $# -gt 8 ] ; then
+        sslChained=$9
+        /enstratus/bin/zeus-addSsl $ipAddress $service $sslCert $sslKey $sslChained
+    else
+        /enstratus/bin/zeus-addSsl $ipAddress $service $sslCert $sslKey
+    fi 
+fi
+
+script="/var/tmp/${ipAddress}.${remoteAddress}${remotePort}.scr"
+
+if [ -f "$script" ] ; then
+    sudo "$RM" "$script"
+fi
+
+echo "Pool.addPool [ \"${service}\" ], [ \"${remoteAddress}:${remotePort}\" ]" > "$script"
+
+sudo "$CLI" --passfile /etc/zeus.conf/access "$script"
+
+if [ $# -gt 6 ] ; then
+    echo "Pool.addPool [ \"${service}-ssl\" ], [ \"${remoteAddress}:${remotePort}\" ]" > "$script"
+
+    sudo "$CLI" --passfile /etc/zeus.conf/access "$script"
+fi
+
+echo "Pool.addNodes [ \"${service}\" ], [ \"${remoteAddress}:${remotePort}\" ]" > "$script"
+
+sudo "$CLI" --passfile /etc/zeus.conf/access "$script"
+
+if [ $# -gt 6 ] ; then
+    echo "Pool.addNodes [ \"${service}-ssl\" ], [ \"${remoteAddress}:${remotePort}\" ]" > "$script"
+
+    sudo "$CLI" --passfile /etc/zeus.conf/access "$script"
+fi
+
+echo "VirtualServer.addVirtualServer [ \"${ipAddress}:80\" ], [ { default_pool : \"${service}\", port : 80, protocol : http ]" > "$script"
+
+sudo "$CLI" --passfile /etc/zeus.conf/access "$script"
+
+if [ $# -gt 6 ] ; then
+    echo "VirtualServer.addVirtualServer [ \"${ipAddress}:443\" ], [ { default_pool : \"${service}-ssl\", port : 443, protocol : http ]" > "$script"
+
+    sudo "$CLI" --passfile /etc/zeus.conf/access "$script"
+fi
+
+echo "VirtualServer.setEnabled [ \"${ipAddress}:80\" ], [ true ]" > "$script"
+
+sudo "$CLI" --passfile /etc/zeus.conf/access "$script"
+
+if [ $# -gt 6 ] ; then
+    echo "VirtualServer.setEnabled [ \"${ipAddress}:443\" ], [ true ]" > "$script"
+
+    sudo "$CLI" --passfile /etc/zeus.conf/access "$script"
+fi
+
+sudo "$RM" "$script"

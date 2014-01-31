@@ -1,0 +1,63 @@
+#!/bin/bash
+
+# Copyright 2011 enStratus Networks LLC
+#
+# revokeDatabaseAccess - Revokes database access from a client to a specific data source.
+# 
+# This software is part of the enStratus Cloud Management System. Only 
+# authorized licensees of enStratus may use this software and only
+# in the context of enStratus-managed virtual servers and machine images. 
+# Unauthorized copying or distribution of this software is strictly prohibited.
+# Authorized licensees may copy this software onto any machine images
+# and/or virtual hosts being managed by the enStratus system as needed.
+#
+# FUNCTION
+# Triggers any script in the target service for revoking database access.
+
+set -u
+
+logTag="revokeDatabaseAccess"
+LOGGER=/enstratus/bin/log
+
+$LOGGER -t "$logTag" $0 $@
+$LOGGER -t "$logTag" -v "serviceId: $1, configFile: $2"
+
+LOGFILE="/mnt/tmp/revokeDatabaseAccess.log"
+sudo touch "$LOGFILE"
+sudo chmod 660 "$LOGFILE"
+sudo chown enstratus:enstratus "$LOGFILE"
+
+if [ $# -lt 2 ] ; then
+   echo "Syntax: revokeDatabaseAccess SERVICE_ID CONFIG_FILE" >> "$LOGFILE" 2>&1
+   $LOGGER -t "$logTag" "exit 1" at Line \#$LINENO; exit 1
+fi
+
+serviceId=$1
+configFile=$2
+
+config_filename=$(basename ${configFile})
+
+BACKUP_DIR=/var/log/enstratus/files
+
+# Create a directory for file backup.
+if [ ! -d $BACKUP_DIR ]; then
+        sudo mkdir -p $BACKUP_DIR
+        sudo chown enstratus:enstratus $BACKUP_DIR
+fi
+
+# Config file backup for debug.
+cp $configFile ${BACKUP_DIR}/${config_filename} && $LOGGER -t "$logTag" "Config file has been copied to ${BACKUP_DIR}/${config_filename} for debug." || $LOGGER -t "$logTag" "Config file backup failed."
+
+REVOKE=/mnt/services/${serviceId}/bin/enstratus-dbrevoke
+
+if [ ! -x "$REVOKE" ] ; then
+	if [ -f "$REVOKE" ] ; then
+		echo "Revoke script is not executable." >> "$LOGFILE" 2>&1
+		$LOGGER -t "$logTag" "exit 10" at Line \#$LINENO; exit 10
+	fi
+	$LOGGER -t "$logTag" "exit 0" at Line \#$LINENO; exit 0
+fi
+
+"$REVOKE" $serviceId "$configFile" >> "$LOGFILE" 2>&1
+
+$LOGGER -t "$logTag" "exit $?" at Line \#$LINENO; exit $?

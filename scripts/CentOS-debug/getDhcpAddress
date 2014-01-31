@@ -1,0 +1,7 @@
+#!/bin/bash
+
+# I expect this to return ONLY an IP address.  Nothing else.
+#echo "172.27.0.1"
+
+IP=`cat /var/lib/dhclient/dhclient-eth0.leases | awk '/dhcp-server-identifier/ {print substr($3, 1, length($3) - 1 ) }' | tail -1`
+echo $IP

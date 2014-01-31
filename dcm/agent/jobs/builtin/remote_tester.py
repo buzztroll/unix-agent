@@ -1,7 +1,6 @@
 import json
 import logging
 import socket
-import time
 import dcm.agent.jobs as jobs
 
 
@@ -10,9 +9,9 @@ _g_logger = logging.getLogger(__name__)
 
 class RemoteTester(jobs.Plugin):
 
-    def __init__(self, agent, conf, job_id, items_map, name, arguments):
+    def __init__(self, conf, job_id, items_map, name, arguments):
         super(RemoteTester, self).__init__(
-            agent, conf, job_id, items_map, name, arguments)
+            conf, job_id, items_map, name, arguments)
 
         self._port = int(items_map['remote_port'])
         self._host = items_map['remote_host']

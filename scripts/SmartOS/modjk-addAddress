@@ -1,0 +1,30 @@
+#!/usr/bin/env python
+
+import os
+import sys
+
+serviceId=sys.argv[1]
+ipAddress=sys.argv[2];
+port=sys.argv[3]
+listFile=sys.argv[4]
+
+out = open(listFile, 'w');
+newLine=serviceId + ':' + ipAddress + ':' + port
+exists = False
+if os.path.exists('/opt/local/etc/httpd/workers.list'):
+	list = open('/opt/local/etc/httpd/workers.list', 'r')
+	for line in list:
+		line = line.strip()
+		if line == newLine:
+			exists = True
+		if len(line) > 0:
+			out.write(line)
+			out.write('\n')
+			out.flush()
+
+if not exists:
+	out.write(newLine)
+	out.write('\n')
+	out.flush()
+
+out.close()

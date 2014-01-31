@@ -1,0 +1,7 @@
+#!/bin/bash
+
+remoteAddress="$1"
+pool="$2"
+script="$3"
+
+echo "Pool.removeNodes [ \"${pool}\" ], [ \"${remoteAddress}\" ]" >> "$script"

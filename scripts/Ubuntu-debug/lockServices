@@ -1,0 +1,33 @@
+#!/bin/bash
+
+# Copyright 2011 enStratus Networks LLC
+#
+# lock - Tells all applications running on the server to lock themselves.
+# 
+# This software is part of the enStratus Cloud Management System. Only 
+# authorized licensees of enStratus may use this software and only
+# in the context of enStratus-managed virtual servers and machine images. 
+# Unauthorized copying or distribution of this software is strictly prohibited.
+# Authorized licensees may copy this software onto any machine images
+# and/or virtual hosts being managed by the enStratus system as needed.
+#
+
+set -u
+
+logTag="lockFileSystems"
+LOGGER=/enstratus/bin/log
+
+$LOGGER -t "$logTag" $0 $@
+$LOGGER -t "$logTag" -v "servicesDirectory=$1 timeout=$2 lockFile=$3"
+
+if [ $# -lt 3 ] ; then
+   $LOGGER -t "$logTag" "Syntax: lockServices SERVICES_DIRECTORY TIMEOUT LOCK_FILE"
+   $LOGGER -t "$logTag" "exit 1" at Line \#$LINENO; exit 1
+fi
+
+servicesDirectory=$1
+timeout=$2
+lockFile=$3
+
+java -cp /enstratus/ws/content/WEB-INF/lib/enstratus-agent.jar com.enstratus.agent.tools.LockServices $servicesDirectory $timeout $lockFile 2>&1 | $LOGGER -t "$logTag"
+$LOGGER -t "$logTag" "exit $?" at Line \#$LINENO; exit $?

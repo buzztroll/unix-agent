@@ -1,0 +1,20 @@
+#!/bin/bash
+
+# Copyright 2008-2009 enStratus Networks LLC
+#
+# makeTemp - Shell script to setup the enStratus temp directory
+# 
+# This software is part of the enStratus Cloud Management System. Only 
+# authorized licensees of enStratus may use this software and only
+# in the context of enStratus-managed virtual servers and machine images. 
+# Unauthorized copying or distribution of this software is strictly prohibited.
+# Authorized licensees may copy this software onto any machine images
+# and/or virtual hosts being managed by the enStratus system as needed.
+
+set -u
+
+if [ ! -d /mnt/tmp ] ; then
+	sudo /bin/mkdir /mnt/tmp
+	sudo /bin/chown enstratus:enstratus /mnt/tmp
+	sudo /bin/chmod 770 /mnt/tmp
+fi

@@ -132,6 +132,10 @@ class AgentRuntimeException(Exception):
     pass
 
 
+class AgentHandshakeException(Exception):
+    pass
+
+
 class AgentConnectionDriverException(Exception):
     pass
 
@@ -142,3 +146,13 @@ class AgentExecutableException(Exception):
 
     def __init__(self, rc, stdout, stderr):
         super(AgentExecutableException, self).__init__(self.msg % locals())
+
+
+class AgentUnsupportedCloudFeature(Exception):
+    pass
+
+
+
+
+
+

@@ -1,0 +1,41 @@
+set -u
+
+logTag="enstratus"
+LOGGER=/enstratus/bin/log
+
+$LOGGER -t "$logTag" "$0 $@"
+
+SELF=$(cd $(dirname $0); pwd -P)/$(basename $0)
+
+case "${1:-''}" in
+  'start')
+    if [ -x /enstratus/bin/esboot ] ; then 
+        sudo -u enstratus /enstratus/bin/esboot start
+	$LOGGER -t "$logTag" "started"
+    fi
+    ;;
+
+  'stop')
+    if [ -x /enstratus/bin/esboot ] ; then 
+        sudo -u enstratus /enstratus/bin/esboot stop
+	$LOGGER -t "$logTag" "stopped"
+    fi
+    ;;
+    
+  'restart')
+    if [ -x /enstratus/bin/esboot ] ; then
+        sudo -u enstratus /enstratus/bin/esboot stop
+        sudo -u enstratus /enstratus/bin/esboot start
+	$LOGGER -t "$logTag" "restarted"
+    fi
+    ;;
+    
+  'reload')
+    ;;
+    
+  *)
+    echo "Usage: $SELF start|stop|restart|reload"
+        exit 1
+        ;;
+    
+esac
