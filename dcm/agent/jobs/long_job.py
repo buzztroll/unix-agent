@@ -25,10 +25,10 @@ class LongJob(jobs.Plugin):
     def __init__(self, conf, request_id, items_map, name, arguments):
         super(LongJob, self).__init__(
             conf, request_id, items_map, name, arguments)
+        self._long_runner = items_map["long_runner"]
 
     def run(self):
-        long_runner = self.arguments["long_runner"]
-        detached_job = long_runner.start_new_job(
+        detached_job = self._long_runner.start_new_job(
             self.conf,
             self.request_id,
             self.items_map,

@@ -8,6 +8,8 @@ import time
 import dcm.agent.jobs as jobs
 
 
+# TODO handle thread safety
+
 _g_logger = logging.getLogger(__name__)
 
 
@@ -57,6 +59,7 @@ class LongRunner(object):
             jr = JobRunner(self._run_queue)
             self._runner_list.append(jr)
             jr.start()
+        self._timers = []
 
     def shutdown(self):
         self._run_queue.join()
@@ -66,9 +69,17 @@ class LongRunner(object):
             r.join()
             _g_logger.debug("Runner %s is done" % str(r))
         _g_logger.info("The dispatcher is closed.")
+        for t in self._timers:
+            try:
+                t.cancel()
+            except:
+                pass
+            t.join()
 
-    def start_new_job(self, conf, request_id, items_map, name, arguments):
+    def start_new_job(self, conf, request_id, items_map,
+                      name, arguments):
         module_name = items_map["worker_module"]
+        long_runner = items_map["long_runner"]
 
         plugin = jobs.load_python_module(
             module_name, conf, request_id, items_map, name, arguments)
@@ -76,12 +87,30 @@ class LongRunner(object):
         self._lock.lock()
         try:
             self._job_id = self._job_id + 1
-            detached_job = DetachedJob(self._conf, plugin, name, arguments)
+            detached_job = DetachedJob(self._conf, long_runner,
+                                       plugin, name, arguments)
             self._job_table[detached_job.get_job_id()] = detached_job
             self._run_queue.put(detached_job)
             return detached_job
         finally:
             self._lock.unlock()
+
+    def job_complete(self, job_id):
+        if self._conf.jobs_retain_job_time == 0:
+            return
+        t = threading.Timer(self._conf.jobs_retain_job_time,
+                            self._job_cleanup, job_id)
+        self._timers.append(t)
+        t.start()
+
+    def _job_cleanup(self, job_id):
+        self._lock.lock()
+        try:
+            _g_logger.debug("Removing job %d for the table" % job_id)
+            del self._job_table[job_id]
+        finally:
+            self._lock.unlock()
+        pass
 
     def lookup_job(self, job_id):
 
@@ -103,7 +132,7 @@ class JobStatus(object):
 
 class DetachedJob(object):
 
-    def __init__(self, conf, plugin, command_name, arguments):
+    def __init__(self, conf, long_runner, plugin, command_name, arguments):
         self._customer_id = conf.customer_id
         self._description = command_name
         self._start_date = 0
@@ -115,6 +144,8 @@ class DetachedJob(object):
         self._command_name = command_name
         self._arguments = arguments
         self._error = None
+        self._reply_doc = None
+        self._long_runner = long_runner
 
     def get_job_id(self):
         return self._job_id
@@ -135,9 +166,8 @@ class DetachedJob(object):
         try:
             self._job_status = JobStatus.RUNNING
             self._start_date = calendar.timegm(time.gmtime())
-
             # run the command
-            self.plugin.run()
+            self._reply_doc = self.plugin.run()
         except Exception as ex:
             self._error = ex
             self._job_status = JobStatus.ERROR
@@ -145,6 +175,7 @@ class DetachedJob(object):
             self._job_status = JobStatus.COMPLETE
         finally:
             self._end_date = calendar.timegm(time.gmtime())
+            self._long_runner.job_complete(self._job_id)
 
     def cancel(self):
         pass

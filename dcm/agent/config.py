@@ -293,3 +293,6 @@ class AgentConfig(object):
 
     def unlock(self):
         pass
+
+    def get_service_directory(self, service_name):
+        return os.path.join(self.services_directory, service_name)

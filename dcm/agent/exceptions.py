@@ -148,6 +148,10 @@ class AgentExecutableException(Exception):
         super(AgentExecutableException, self).__init__(self.msg % locals())
 
 
+class AgentJobException(Exception):
+    pass
+
+
 class AgentUnsupportedCloudFeature(Exception):
     pass
 
