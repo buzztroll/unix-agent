@@ -13,6 +13,7 @@
 #  ======================================================================
 
 import os
+import tempfile
 import exceptions
 import logging
 import random
@@ -120,8 +121,34 @@ def run_command(conf, args):
     _g_logger.info("Return code: " + str(process.returncode))
     return (stdout, stderr, process.returncode)
 
+
 def run_script(conf, name, args):
     cmd = conf.get_script_location(name)
     args = [cmd].extend(args)
     return run_command(conf, args)
+
+
+class Lock(object):
+
+    def __init__(self, conf, timeout, no_fs):
+        self._timeout = timeout
+        self._no_fs = no_fs
+        self._lock_process = None
+        self._conf = conf
+
+    def is_locked(self):
+        return self._lock_process is not None
+
+    def lock(self):
+        pass
+
+    def _lock_service(self):
+        (os_fd, lock_file_name) = tempfile.mkstemp(suffix=".lock", prefix="dcm")
+        os.close(os_fd)
+        (_, _, _, _, _, _, _, _, mtime, _) = os.stat(lock_file_name)
+
+        args = [self._conf.services_directory,
+                str(self._timeout),
+                lock_file_name]
+        (stdout, stderr, rc) = run_script("lockServices")
 

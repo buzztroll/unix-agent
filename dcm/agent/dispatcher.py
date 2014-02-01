@@ -1,10 +1,9 @@
 import logging
 import Queue
 import threading
+from dcm.agent import longrunners
 
 import dcm.agent.jobs as jobs
-
-# Threaded Object
 from dcm.eventlog import tracer
 
 
@@ -67,6 +66,7 @@ class Dispatcher(object):
         self.conf = conf
         self.workers = []
         self.worker_q = Queue.Queue()
+        self._long_runner = longrunners.LongRunner(conf)
 
     def start_workers(self):
         _g_logger.info("Starting %d workers." % self.conf.workers_count)
@@ -84,6 +84,8 @@ class Dispatcher(object):
             w.done()
             w.join()
             _g_logger.debug("Worker %s is done" % str(w))
+        _g_logger.info("Shutting down the long runner.")
+        self._long_runner.shutdown()
         _g_logger.info("The dispatcher is closed.")
 
     def incoming_request(self, reply, *args, **kwargs):
@@ -95,7 +97,7 @@ class Dispatcher(object):
         _g_logger.info("Creating a request ID %s" % request_id)
 
         plugin = jobs.load_plugin(
-            self.conf, request_id, command_name, arguments)
+            self.conf, self._long_runner, request_id, command_name, arguments)
 
         reply.lock()
         try:

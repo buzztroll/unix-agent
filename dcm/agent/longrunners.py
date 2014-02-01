@@ -5,6 +5,8 @@ import random
 import threading
 import time
 
+import dcm.agent.jobs as jobs
+
 
 _g_logger = logging.getLogger(__name__)
 
@@ -42,7 +44,6 @@ class JobRunner(threading.Thread):
         _g_logger.info("Job runner %s thread ending." % self.getName())
 
 
-
 class LongRunner(object):
 
     def __init__(self, conf):
@@ -55,6 +56,7 @@ class LongRunner(object):
         for i in range(conf.long_runner_threads):
             jr = JobRunner(self._run_queue)
             self._runner_list.append(jr)
+            jr.start()
 
     def shutdown(self):
         self._run_queue.join()
@@ -65,13 +67,18 @@ class LongRunner(object):
             _g_logger.debug("Runner %s is done" % str(r))
         _g_logger.info("The dispatcher is closed.")
 
-    def start_new_job(self, command_name, arguments):
+    def start_new_job(self, conf, request_id, items_map, name, arguments):
+        module_name = items_map["worker_module"]
+
+        plugin = jobs.load_python_module(
+            module_name, conf, request_id, items_map, name, arguments)
 
         self._lock.lock()
         try:
             self._job_id = self._job_id + 1
-            detached_job = DetachedJob(self._conf, command_name, arguments)
+            detached_job = DetachedJob(self._conf, plugin, name, arguments)
             self._job_table[detached_job.get_job_id()] = detached_job
+            self._run_queue.put(detached_job)
             return detached_job
         finally:
             self._lock.unlock()
@@ -96,7 +103,7 @@ class JobStatus(object):
 
 class DetachedJob(object):
 
-    def __init__(self, conf, command_name, arguments):
+    def __init__(self, conf, plugin, command_name, arguments):
         self._customer_id = conf.customer_id
         self._description = command_name
         self._start_date = 0
@@ -104,9 +111,10 @@ class DetachedJob(object):
         self._job_id = random.randint()
         self._job_status = JobStatus.WAITING
         self._message = None
-        self._conf = conf
+        self._plugin = plugin
         self._command_name = command_name
         self._arguments = arguments
+        self._error = None
 
     def get_job_id(self):
         return self._job_id
@@ -129,8 +137,9 @@ class DetachedJob(object):
             self._start_date = calendar.timegm(time.gmtime())
 
             # run the command
-
-        except:
+            self.plugin.run()
+        except Exception as ex:
+            self._error = ex
             self._job_status = JobStatus.ERROR
         else:
             self._job_status = JobStatus.COMPLETE

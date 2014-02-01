@@ -5,7 +5,6 @@ import logging.config
 import os
 import yaml
 import dcm
-from dcm.agent import utils
 from dcm.agent.connection import websocket
 
 import dcm.agent.exceptions as exceptions
@@ -119,12 +118,15 @@ class FilenameOpt(ConfigOpt):
 
 class AgentConfig(object):
     top_logger = 'dcm.agent'
-    job_logger = 'dcm.agent.job'
 
     def __init__(self):
         self._cli_args = None
         self._remaining_argv = None
         self._agent_id = None
+        self.services_path = None # TODO SET THIS
+        self.ephemeral_mount_point = None # TODO SET THIS
+        self.services_directory = None # TODO SET THIS
+        self.enstratius_directory = None # TODO SET THIS
 
     def _parse_command_line(self):
         conf_parser = argparse.ArgumentParser(
@@ -279,3 +281,15 @@ class AgentConfig(object):
             if os.path.exists(path):
                 return path
         return None
+
+    def is_upgrading(self):
+        return False
+
+    def is_imaging(self):
+        return False
+
+    def lock(self):
+        pass
+
+    def unlock(self):
+        pass

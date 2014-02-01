@@ -1,6 +1,7 @@
 import logging
 import os
 import sys
+import tempfile
 import threading
 import traceback
 import uuid
@@ -87,3 +88,4 @@ class AckCleanupTimer(object):
 
     def timeout_wrapper(self, *args, **kwargs):
         self._func(self, *args, **kwargs)
+

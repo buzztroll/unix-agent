@@ -86,19 +86,12 @@ class ExePlugin(Plugin):
 
 
 # we should use stevedore for this
-def _load_python(agent, conf, job_id, items_map, name, arguments):
-
-    if 'module_name' not in items_map:
-        raise exceptions.AgentPluginConfigException(
-            "The configuration for the %s plugin does not contain a "
-            "module_name entry." % name)
-    module_name = items_map['module_name']
+def load_python_module(
+        module_name, conf, request_id, items_map, name, arguments):
     try:
         module = importlib.import_module(module_name)
         _g_logger.error("Module acquired " + str(dir(module)))
-
-        rc = module.load_plugin(
-            agent, conf, job_id, items_map, name, arguments)
+        rc = module.load_plugin(conf, request_id, items_map, name, arguments)
         return rc
     except ImportError as iee:
         raise exceptions.AgentPluginConfigException(
@@ -113,8 +106,18 @@ def _load_python(agent, conf, job_id, items_map, name, arguments):
         raise
 
 
-def _load_exe(agent, conf, job_id, items_map, name, arguments):
-    return ExePlugin(agent, conf, job_id, items_map, name, arguments)
+def _load_exe(conf, request_id, items_map, name, arguments):
+    return ExePlugin(conf, request_id, items_map, name, arguments)
+
+
+def _load_python(conf, request_id, items_map, name, arguments):
+    if 'module_name' not in items_map:
+        raise exceptions.AgentPluginConfigException(
+            "The configuration for the %s plugin does not contain a "
+            "module_name entry." % name)
+    module_name = items_map['module_name']
+    return load_python_module(
+        module_name, conf, request_id, items_map, name, arguments)
 
 
 g_type_to_obj_map = {
@@ -123,8 +126,7 @@ g_type_to_obj_map = {
 }
 
 
-def load_plugin(conf, job_id, name, arguments):
-
+def load_plugin(conf, long_runner, request_id, name, arguments):
     _g_logger.debug("ENTER load_plugin")
 
     conffile = conf.plugin_configfile
@@ -145,7 +147,7 @@ def load_plugin(conf, job_id, name, arguments):
 
             try:
                 items = parser.items(s)
-                items_map = {}
+                items_map = {"long_runner": long_runner}
                 for i in items:
                     items_map[i[0]] = i[1]
 
@@ -160,7 +162,7 @@ def load_plugin(conf, job_id, name, arguments):
 
                 func = g_type_to_obj_map[type]
                 _g_logger.debug("calling load function")
-                return func(conf, job_id, items_map, name, arguments)
+                return func(conf, request_id, items_map, name, arguments)
             except ConfigParser.NoOptionError as conf_ex:
                 raise exceptions.AgentPluginConfigException(conf_ex.message)
     raise exceptions.AgentPluginConfigException(
