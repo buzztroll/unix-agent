@@ -208,8 +208,6 @@ class _WSManager(threading.Thread):
         self._done = True
         if self._connected:
             self._ws.close()
-        self._receive_queue.join()
-        self._send_queue.join()
         _g_logger.debug("The connection to " + self._server_url +
                         " is closed.")
 

@@ -38,7 +38,12 @@ class TestSingleCommands(unittest.TestCase):
         # wait until the request is done
         while request_listener.is_busy() or \
             request_listener.get_messages_processed() != 1:
-            request_listener.poll()
+            doc = request_listener.poll()
+            if doc:
+                self.disp.incoming_request(doc)
+            doc = self.disp.poll()
+            if doc:
+                request_listener.reply(doc.request_id, doc.reply_doc)
         output = json.loads(outfile.buflist[0])
         self.assertEquals(stdout, output['stdout'].strip())
         self.assertEquals(stderr, output['stderr'])
@@ -108,7 +113,14 @@ class TestSerialCommands(unittest.TestCase):
         # wait until the request is done
         while request_listener.is_busy() or \
             request_listener.get_messages_processed() != count:
-            request_listener.poll()
+            reply_obj = request_listener.poll()
+            if reply_obj is not None:
+                self.disp.incoming_request(reply_obj)
+            work_reply = self.disp.poll()
+            if work_reply:
+                request_listener.reply(
+                    work_reply.request_id, work_reply.reply_doc)
+
 
         for i in range(count):
             output = json.loads(outfile.buflist[i])
@@ -173,7 +185,13 @@ class TestRetransmission(unittest.TestCase):
         # wait until the request is done
         while request_listener.is_busy() or \
             request_listener.get_messages_processed() != count:
-            request_listener.poll()
+            reply_obj = request_listener.poll()
+            if reply_obj is not None:
+                disp.incoming_request(reply_obj)
+            work_reply = disp.poll()
+            if work_reply:
+                request_listener.reply(
+                    work_reply.request_id, work_reply.reply_doc)
 
         for i in range(count):
             output = json.loads(outfile.buflist[i])

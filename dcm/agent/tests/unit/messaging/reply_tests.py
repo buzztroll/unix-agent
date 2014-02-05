@@ -256,6 +256,8 @@ class TestRequestListener(unittest.TestCase):
     def test_read_request_retrans_request(self):
         disp = mock.Mock()
         conn = mock.Mock()
+        conf = mock.Mock()
+
 
         request_id = "requestID"
         message_id = "messageID"
@@ -268,8 +270,8 @@ class TestRequestListener(unittest.TestCase):
         }
         conn.read.return_value = request_doc
 
-        reply_listener = reply.RequestListener(conn, disp)
-        reply_listener.poll()
+        reply_listener = reply.RequestListener(conf, conn, disp)
+        doc = reply_listener.poll()
         (param_list, keywords) = disp.incoming_request.call_args
         x = param_list[0]
         self.assertEqual(request_id, x._request_id)
