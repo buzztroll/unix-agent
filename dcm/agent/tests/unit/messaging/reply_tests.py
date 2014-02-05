@@ -234,6 +234,7 @@ class TestRequestListener(unittest.TestCase):
     def test_read_request(self):
         conn = mock.Mock()
         disp = mock.Mock()
+        conf = mock.Mock()
 
         request_id = "requestID"
         message_id = "messageID"
@@ -244,21 +245,18 @@ class TestRequestListener(unittest.TestCase):
             'message_id': message_id,
             'payload': {}
         }
-        conn.read.return_value = request_doc
+        conn.recv.return_value = request_doc
 
-        reply_listener = reply.RequestListener(conn, disp)
+        reply_listener = reply.RequestListener(conf, conn, disp)
 
-        reply_listener.poll()
-        (param_list, keywords) = disp.incoming_request.call_args
-        x = param_list[0]
-        self.assertEqual(request_id, x._request_id)
+        reqreply = reply_listener.poll()
+        self.assertEqual(request_id, reqreply.get_request_id())
 
     def test_read_request_retrans_request(self):
         disp = mock.Mock()
         conn = mock.Mock()
         conf = mock.Mock()
 
-
         request_id = "requestID"
         message_id = "messageID"
 
@@ -268,21 +266,20 @@ class TestRequestListener(unittest.TestCase):
             'message_id': message_id,
             'payload': {}
         }
-        conn.read.return_value = request_doc
+        conn.recv.return_value = request_doc
 
         reply_listener = reply.RequestListener(conf, conn, disp)
-        doc = reply_listener.poll()
-        (param_list, keywords) = disp.incoming_request.call_args
-        x = param_list[0]
-        self.assertEqual(request_id, x._request_id)
+        reqreply = reply_listener.poll()
+        self.assertEqual(request_id, reqreply.get_request_id())
 
-        conn.read.return_value = request_doc
-        reply_listener.poll()
-        self.assertEqual(disp.incoming_request.call_count, 1)
+        conn.recv.return_value = request_doc
+        reqreply = reply_listener.poll()
+        self.assertIsNone(reqreply)
 
     def test_unknown_ack(self):
         disp = mock.Mock()
         conn = mock.Mock()
+        conf = mock.Mock()
 
         request_id = "requestID"
         message_id = "messageID"
@@ -294,9 +291,9 @@ class TestRequestListener(unittest.TestCase):
             "payload": {}
         }
 
-        conn.read.return_value = ack_doc
+        conn.recv.return_value = ack_doc
 
-        reply_listener = reply.RequestListener(conn, disp)
+        reply_listener = reply.RequestListener(conf, conn, disp)
         reply_listener.poll()
         (param_list, keywords) = conn.send.call_args
         send_doc = param_list[0]
@@ -306,6 +303,7 @@ class TestRequestListener(unittest.TestCase):
     def test_request_ack(self):
         disp = mock.Mock()
         conn = mock.Mock()
+        conf = mock.Mock()
 
         request_id = "requestID"
         message_id = "messageID"
@@ -316,18 +314,16 @@ class TestRequestListener(unittest.TestCase):
             'message_id': message_id,
             'payload': {}
         }
-        conn.read.return_value = request_doc
+        conn.recv.return_value = request_doc
 
-        reply_listener = reply.RequestListener(conn, disp)
-        reply_listener.poll()
-        (param_list, keywords) = disp.incoming_request.call_args
-        x = param_list[0]
-        self.assertEqual(request_id, x._request_id)
+        reply_listener = reply.RequestListener(conf, conn, disp)
+        reqreply = reply_listener.poll()
+        self.assertEqual(request_id, reqreply.get_request_id())
 
         ack_doc = {
             "type": types.MessageTypes.CANCEL,
             "request_id": request_id,
             "message_id": message_id,
         }
-        conn.read.return_value = ack_doc
+        conn.recv.return_value = ack_doc
         reply_listener.poll()
