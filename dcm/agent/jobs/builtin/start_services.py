@@ -24,7 +24,7 @@ class StartServices(jobs.Plugin):
         script_name = items_map["script_name"]
         self.exe = conf.get_script_location(script_name)
 
-    def call(self):
+    def run(self):
         service_list = self.arguments["serviceIds"]
         failures = []
         for service in service_list:

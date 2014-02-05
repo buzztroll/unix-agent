@@ -12,10 +12,13 @@
 #   is obtained from Dell, Inc.
 #  ======================================================================
 
+import logging
 import os
 import dcm.agent.utils as utils
 import dcm.agent.exceptions as exceptions
 import dcm.agent.jobs as jobs
+
+_g_logger = logging.getLogger(__name__)
 
 
 class DirectPass(jobs.Plugin):
@@ -34,7 +37,9 @@ class DirectPass(jobs.Plugin):
         try:
             script_name = items_map["script_name"]
             self.exe_path = conf.get_script_location(script_name)
-            if not os.path.exists(self.add_user_exe_path):
+            _g_logger.debug("script name: %s, exe: %s"\
+                % (script_name, self.exe_path))
+            if not os.path.exists(self.exe_path):
                 raise exceptions.AgentPluginConfigException(
                     "The plugin %s points an add_user_exe_path that does not "
                     "exist." % name)
@@ -42,7 +47,7 @@ class DirectPass(jobs.Plugin):
             raise exceptions.AgentPluginConfigException(
                 "The plugin %s requires the option %s" % (name, ke.message))
 
-    def call(self):
+    def run(self):
         command_line = [self.exe_path].extend(self.ordered_param_list)
         (stdout, stderr, rc) = utils.run_command(command_line)
         reply = {"return_code": rc, "message": "Success"}

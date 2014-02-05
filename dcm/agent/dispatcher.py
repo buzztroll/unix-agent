@@ -1,7 +1,7 @@
 import logging
+from dcm.agent import longrunners
 import Queue
 import threading
-from dcm.agent import longrunners
 
 import dcm.agent.jobs as jobs
 from dcm.eventlog import tracer
@@ -10,27 +10,49 @@ from dcm.eventlog import tracer
 _g_logger = logging.getLogger(__name__)
 
 
+class WorkLoad(object):
+    def __init__(self, request_id, payload, items_map):
+        self.request_id = request_id
+        self.payload = payload
+        self.items_map = items_map
+
+
+class WorkReply(object):
+    def __init__(self, request_id, reply_doc):
+        self.request_id = request_id
+        self.reply_doc = reply_doc
+
+
 class Worker(threading.Thread):
 
-    def __init__(self, worker_queue):
-        threading.Thread.__init__(self)
+    def __init__(self, conf, worker_queue, reply_q):
+        super(Worker, self).__init__()
         self.worker_queue = worker_queue
-        self._done = False
+        self.reply_q = reply_q
+        self._exit = threading.Event()
+        self._conf = conf
 
     # It should be safe to call done without a lock
     def done(self):
         _g_logger.debug("done() called on worker %s .." % self.getName())
-        self._done = True
+        self._exit.set()
 
     def run(self):
         _g_logger.info("Worker %s thread starting." % self.getName())
 
-        while not self._done:
+        while not self._exit.is_set():
             try:
-                (req_reply, plugin) = self.worker_queue.get(True, 1)
+                workload = self.worker_queue.get(True, 1)
                 # setup message logging
-                with tracer.RequestTracer(req_reply.get_request_id()):
+                with tracer.RequestTracer(workload.request_id):
                     try:
+                        plugin = jobs.load_plugin(
+                            self._conf,
+                            workload.items_map,
+                            workload.request_id,
+                            workload.payload["command"],
+                            workload.payload["arguments"])
+
                         _g_logger.info("Starting job " + str(plugin))
                         reply_doc = plugin.run()
                         _g_logger.info(
@@ -38,47 +60,52 @@ class Worker(threading.Thread):
                     except Exception as ex:
                         _g_logger.error(
                             "Worker %s thread had a top level error when "
-                            "running job %s" % (self.getName(), plugin), ex)
+                            "running job %s" % (self.getName(), workload), ex)
                         reply_doc = {
                             'Exception': ex.message,
                             'return_code': 1}
                     finally:
+                        # If we want a shutdown that empties the queue
+                        # before termination we will need to call
                         self.worker_queue.task_done()
-                        _g_logger.info("Task done job " + str(plugin))
+                        _g_logger.info("Task done job " + workload.request_id)
 
-                    _g_logger.debug("replying: " + str(reply_doc))
+                    _g_logger.debug("Adding the reply document to the reply "
+                                    "queue " + str(reply_doc))
 
-                    # TODO XXX handle messaging errors
-                    req_reply.reply(reply_doc)
+                    work_reply = WorkReply(workload.request_id, reply_doc)
+                    self.reply_q.put(work_reply)
                     _g_logger.debug("Reply message sent")
             except Queue.Empty:
                 pass
             except:
                 _g_logger.exception(
                     "Something went wrong processing the queue")
-        _g_logger.info("Worker %s thread ending." % self.getName())
+                raise
+
+        _g_logger.info("Worker %s thread ending." %  self.getName())
 
 
 # TODO verify stopping behavior
 class Dispatcher(object):
 
     def __init__(self, conf):
-        self.conf = conf
+        self._conf = conf
         self.workers = []
         self.worker_q = Queue.Queue()
+        self.reply_q = Queue.Queue()
         self._long_runner = longrunners.LongRunner(conf)
 
     def start_workers(self):
-        _g_logger.info("Starting %d workers." % self.conf.workers_count)
-        for i in range(self.conf.workers_count):
-            worker = Worker(self.worker_q)
+        _g_logger.info("Starting %d workers." % self._conf.workers_count)
+        for i in range(self._conf.workers_count):
+            worker = Worker(self._conf, self.worker_q, self.reply_q)
             _g_logger.debug("Starting worker %d : %s" % (i, str(worker)))
             worker.start()
             self.workers.append(worker)
 
     def stop(self):
         _g_logger.info("Stopping workers.")
-        self.worker_q.join()
         for w in self.workers:
             _g_logger.debug("Stopping worker %s" % str(w))
             w.done()
@@ -86,27 +113,48 @@ class Dispatcher(object):
             _g_logger.debug("Worker %s is done" % str(w))
         _g_logger.info("Shutting down the long runner.")
         self._long_runner.shutdown()
+        _g_logger.info("Flushing the work queue.")
+        while not self.worker_q.empty():
+            workload = self.worker_q.get()
+            #req_reply.shutdown()
         _g_logger.info("The dispatcher is closed.")
 
-    def incoming_request(self, reply, *args, **kwargs):
-        payload = reply.get_message_payload()
+    def incoming_request(self, reply_obj):
+        payload = reply_obj.get_message_payload()
         _g_logger.debug("Incoming request %s" % str(payload))
-        command_name = payload['command']
-        arguments = payload['arguments']
-        request_id = reply.get_request_id()
+        request_id = reply_obj.get_request_id()
         _g_logger.info("Creating a request ID %s" % request_id)
 
-        plugin = jobs.load_plugin(
-            self.conf, self._long_runner, request_id, command_name, arguments)
+        items_map = jobs.parse_plugin_doc(self._conf, payload["command"])
 
-        reply.lock()
+        if "longer_runner" in items_map:
+            dj = self._long_runner.start_new_job(
+                    self._conf,
+                    request_id,
+                    items_map,
+                    payload["command"],
+                    payload["arguments"])
+            reply_doc = dj.get_message_payload()
+            wr = WorkReply(request_id, reply_doc)
+            self.reply_q.put(wr)
+        else:
+            workload = WorkLoad(request_id, payload, items_map)
+            self.worker_q.put(workload)
+
+        # there is an open window when the worker could pull the
+        # command from the queue before it is acked.  A lock could
+        # prevent this but it is safe so long as poll and incoming_request
+        # are called in the same thread
+        reply_obj.ack(None, None, None)
+        _g_logger.debug(
+            "The request %s has been set to send an ACK" % request_id)
+
+    def poll(self):
+        rc = None
         try:
-            self.worker_q.put((reply, plugin))
-            # there is an open window when the worker could pull the
-            # command from the queue before it is acked.  The lock prevents
-            # this
-            reply.ack(plugin.cancel, None, None)
-            _g_logger.debug(
-                "The request %s has been set to send an ACK" % request_id)
-        finally:
-            reply.unlock()
+            work_reply = self.reply_q.get(True, 1)
+            rc = work_reply
+        except Queue.Empty:
+            pass
+        self._long_runner.poll()
+        return rc

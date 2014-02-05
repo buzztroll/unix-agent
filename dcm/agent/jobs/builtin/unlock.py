@@ -25,7 +25,7 @@ class UnLock(jobs.Plugin):
         script_name = items_map["script_name"]
         self.command = [conf.get_script_location(script_name)]
 
-    def call(self):
+    def run(self):
         self._conf.unlock()
 
         reply_doc = {

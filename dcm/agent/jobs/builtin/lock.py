@@ -25,7 +25,7 @@ class Lock(jobs.Plugin):
         script_name = items_map["script_name"]
         self.command = [conf.get_script_location(script_name)]
 
-    def call(self):
+    def run(self):
         timeout = self.arguments["timeout"]
         if timeout < 10000:
             timeout = 10000

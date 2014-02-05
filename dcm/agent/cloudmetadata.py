@@ -49,7 +49,9 @@ class CLOUD_TYPES:
 
 
 def _get_metadata_server_url_data(url):
+    _g_logger.debug("Attempting to get metadata at %s" % url)
     u_req = urllib2.Request(url)
+    _g_logger.debug("Attempting to get metadata at %s" % str(u_req))
     u_req.add_header("Content-Type", "application/x-www-form-urlencoded")
     u_req.add_header("Connection", "Keep-Alive")
     u_req.add_header("Cache-Control", "no-cache")
@@ -74,39 +76,49 @@ def get_dhcp_ip_address(conf):
 
 
 def get_cloud_metadata(conf, key):
-    if conf.cloud_type == CLOUD_TYPES.Amazon or conf.cloud_type == CLOUD_TYPES.Eucalyptus:
-        url = conf.get_root_metaurl() + "/" + key
-        data = _get_metadata_server_url_data(url)
-        result =  data
-    elif conf.cloud_type == CLOUD_TYPES.CloudStack or conf.cloud_type == CLOUD_TYPES.CloudStack3:
-        addr = get_dhcp_ip_address(conf)
-        url = "http://%s/" % addr
-        result = _get_metadata_server_url_data(url)
-        if result is not None and conf.cloud_type == CLOUD_TYPES.CloudStack:
-            # split the name out for anything before CloudStack 3
-            split_name = result.strip().split("-")
-            if len(split_name) > 2:
-                result = split_name[2]
-    else:
-        # NOTE we may want to log this
-        result = None
-    return result
+    _g_logger.debug("Get metadata %s" % key)
 
+    try:
+        result = None
+        if conf.cloud_type == CLOUD_TYPES.Amazon or conf.cloud_type == CLOUD_TYPES.Eucalyptus:
+            url = conf.cloud_metadata_url + "/" + key
+            data = _get_metadata_server_url_data(url)
+            result = data
+        elif conf.cloud_type == CLOUD_TYPES.CloudStack or conf.cloud_type == CLOUD_TYPES.CloudStack3:
+            addr = get_dhcp_ip_address(conf)
+            url = "http://%s/" % addr
+            result = _get_metadata_server_url_data(url)
+            if result is not None and conf.cloud_type == CLOUD_TYPES.CloudStack:
+                # split the name out for anything before CloudStack 3
+                split_name = result.strip().split("-")
+                if len(split_name) > 2:
+                    result = split_name[2]
+        else:
+            # NOTE we may want to log this
+            result = None
+        return result
+    finally:
+        _g_logger.debug("Metadata value of %s is %s" % (key, result))
 
 def get_instance_id(conf):
-    if conf.instance_id is None:
-        return conf.instance_id
+    _g_logger.debug("Get instance ID called")
 
-    if conf.cloud_type == CLOUD_TYPES.Amazon or\
-                    conf.cloud_type == CLOUD_TYPES.Eucalyptus:
-        instance_id = get_cloud_metadata("instance-id")
-    elif conf.cloud_type == CLOUD_TYPES.CloudStack:
-        instance_id = get_cloud_metadata("latest/instance-id")
-    elif conf.cloud_type == CLOUD_TYPES.CloudStack3:
-        instance_id = get_cloud_metadata("latest/vm-id")
-    else:
-        instance_id = None
-    conf.instance_id = instance_id
+    try:
+        if conf.instance_id is None:
+            return conf.instance_id
+
+        if conf.cloud_type == CLOUD_TYPES.Amazon or\
+                        conf.cloud_type == CLOUD_TYPES.Eucalyptus:
+            instance_id = get_cloud_metadata("instance-id")
+        elif conf.cloud_type == CLOUD_TYPES.CloudStack:
+            instance_id = get_cloud_metadata("latest/instance-id")
+        elif conf.cloud_type == CLOUD_TYPES.CloudStack3:
+            instance_id = get_cloud_metadata("latest/vm-id")
+        else:
+            instance_id = None
+        conf.instance_id = instance_id
+    finally:
+        _g_logger.debug("Instance ID is %s" % str(conf.instance_id))
     return instance_id
 
 

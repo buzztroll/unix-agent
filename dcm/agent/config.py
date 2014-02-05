@@ -5,6 +5,8 @@ import logging.config
 import os
 import yaml
 import dcm
+from dcm.agent import job_runner
+from dcm.agent.cloudmetadata import CLOUD_TYPES
 from dcm.agent.connection import websocket
 
 import dcm.agent.exceptions as exceptions
@@ -12,6 +14,7 @@ import dcm.agent.connection.dummy as dummy_con
 import dcm.agent.tests.utils.test_connection as test_connection
 
 
+_g_logger = logging.getLogger(__name__)
 _g_conf_file_env = "DCM_AGENT_CONF"
 
 
@@ -127,6 +130,7 @@ class AgentConfig(object):
         self.ephemeral_mount_point = None # TODO SET THIS
         self.services_directory = None # TODO SET THIS
         self.enstratius_directory = None # TODO SET THIS
+        self.instance_id = None
 
     def _parse_command_line(self):
         conf_parser = argparse.ArgumentParser(
@@ -151,6 +155,8 @@ class AgentConfig(object):
             ConfigOpt("pydev", "port", int, default=None, options=None),
 
             ConfigOpt("workers", "count", int, default=4, options=None),
+            ConfigOpt("workers", "long_runner_threads", int, default=1,
+                      options=None),
 
             ConfigOpt("connection", "type", str, default=None, options=None),
             ConfigOpt("connection", "hostname", str, default=None),
@@ -170,6 +176,7 @@ class AgentConfig(object):
             FilenameOpt("storage", "script_dir", relative_path=relative_path),
 
             ConfigOpt("cloud", "name", str, default=None),
+            ConfigOpt("cloud", "type", str, default=CLOUD_TYPES.Amazon),
             ConfigOpt("cloud", "metadata_url", str,
                       default="http://169.254.169.254/1.0/meta-data"),
 
@@ -257,7 +264,7 @@ class AgentConfig(object):
 
     def set_handshake(self, handshake_doc):
         if handshake_doc["version"] == "1":
-            self._agent_id = handshake_doc["version"]
+            self._agent_id = handshake_doc["agentID"]
             self.cloud_id = handshake_doc["cloudId"]
             self.customer_id = handshake_doc["customerId"]
             self.region_id = handshake_doc["regionId"]
@@ -276,8 +283,11 @@ class AgentConfig(object):
 
     def get_script_location(self, name):
         script_dir = self.get_script_dir()
+        _g_logger.debug("Script Dir %s" % script_dir)
         for platform in self.platform_script_locations:
+            _g_logger.debug("Script platform %s" % platform)
             path = os.path.join(script_dir, platform, name)
+            _g_logger.debug("Script location %s" % path)
             if os.path.exists(path):
                 return path
         return None
@@ -296,3 +306,7 @@ class AgentConfig(object):
 
     def get_service_directory(self, service_name):
         return os.path.join(self.services_directory, service_name)
+
+    def start_job_runner(self):
+        self.jr = job_runner.JobRunner()
+

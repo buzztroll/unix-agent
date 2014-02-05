@@ -49,6 +49,14 @@ class ReplyRPC(object):
     def get_message_payload(self):
         return self._request_payload
 
+    def shutdown(self):
+        try:
+            if self._reply_message_timer:
+                self._reply_message_timer.cancel()
+            self._reply_listener.message_done(self)
+        except Exception as ex:
+            _g_logger.warn("Error shutting down the request", ex)
+
     def kill(self):
         if self._reply_message_timer:
             try:
@@ -495,10 +503,10 @@ class RequestListener(object):
                             self, self._conf.get_agent_id(),
                             self._conn, request_id, message_id, payload,
                             timeout=self._timeout)
-                        self._dispatcher.incoming_request(msg)
                         self._call_reply_observers("new_message", msg)
                         # only add the message if processing was successful
                         self._requests[request_id] = msg
+                        return msg
             else:
                 request_id = incoming_doc['request_id']
                 if request_id not in self._requests:
@@ -516,6 +524,7 @@ class RequestListener(object):
         pass
 
     def _send_bad_message_reply(self, incoming_doc, message):
+        _g_logger.debug("Sending the bad message %s" % message)
         # we want to send a NACK to the message however it may be an error
         # because it was not formed with message_id or request_id.  In this
         # case we will send values in that place indicating that *a* message
@@ -544,7 +553,7 @@ class RequestListener(object):
 
         try:
             self._validate_doc(incoming_doc)
-            self._process_doc(incoming_doc)
+            return self._process_doc(incoming_doc)
         except Exception as ex:
             _g_logger.warn(
                 "Error processing the message: %s" % str(incoming_doc), ex)
@@ -599,6 +608,10 @@ class RequestListener(object):
             timer.cancel()
         for req in self._requests.values():
             req.kill()
+
+    def reply(self, request_id, reply_doc):
+        reply_req = self._requests[request_id]
+        reply_req.reply(reply_doc)
 
 
 class ReplyObserverInterface(object):

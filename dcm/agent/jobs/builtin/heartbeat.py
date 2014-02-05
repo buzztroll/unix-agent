@@ -21,7 +21,7 @@ class Heartbeat(jobs.Plugin):
         super(Heartbeat, self).__init__(
             conf, job_id, items_map, name, arguments)
 
-    def call(self):
+    def run(self):
         reply_doc = {
             "return_code": 0,
             "reply_type": "string",

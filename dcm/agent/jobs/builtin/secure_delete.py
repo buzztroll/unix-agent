@@ -27,8 +27,8 @@ class SecureDelete(direct_pass.DirectPass):
             raise exceptions.AgentPluginConfigException(
                 "The plugin %s requires the option %s" % (name, ke.message))
 
-    def call(self):
-        reply = super(SecureDelete, self).call()
+    def run(self):
+        reply = super(SecureDelete, self).run()
         filename = self.arguments["fileName"]
 
         # TODO figure out why the java code did this

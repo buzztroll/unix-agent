@@ -32,7 +32,7 @@ class GetDeviceMappings(jobs.Plugin):
         script_name = items_map["script_name"]
         self.command = [conf.get_script_location(script_name)]
 
-    def call(self):
+    def run(self):
         (stdout, stderr, rc) = utils.run_command(self.command)
         if rc != 0:
             reply_doc = {

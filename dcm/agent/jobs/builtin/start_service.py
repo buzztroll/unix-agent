@@ -30,7 +30,7 @@ class StartService(jobs.Plugin):
             raise exceptions.AgentPluginConfigException(
                 "The plugin %s requires the option %s" % (name, ke.message))
 
-    def call(self):
+    def run(self):
         (stdout, stderr, rc) = utils.run_command(self.command)
         # NOTE(buzztroll) this is a little bit different than the other
         # reply docs.  here we let a non 0 rc through to tell enstratius

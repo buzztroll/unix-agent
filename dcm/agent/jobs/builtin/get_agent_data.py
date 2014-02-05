@@ -27,7 +27,7 @@ class GetAgentData(jobs.Plugin):
         self.command = [conf.get_script_location(script_name),
                         arguments["serviceId"]]
 
-    def call(self):
+    def run(self):
         (total_ram, used_ram, f, p) = psutil.phymem_usage()
         reply_object = {
             "cpu_count": multiprocessing.cpu_count(),

@@ -38,7 +38,7 @@ class AddUser(direct_pass.DirectPass):
         if 'password' not in arguments['password'] or not arguments['password']:
             self.arguments["password"] = utils.generate_password()
 
-    def call(self):
+    def run(self):
         key_file = self.agent.get_temp_file(self.user_id + ".pub")
 
         try:

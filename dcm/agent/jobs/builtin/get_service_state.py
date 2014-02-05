@@ -26,7 +26,7 @@ class GetServiceState(jobs.Plugin):
         self.command = [conf.get_script_location(script_name),
                         arguments["serviceId"]]
 
-    def call(self):
+    def run(self):
         (stdout, stderr, rc) = utils.run_command(self.command)
         if rc != 0:
             reply_doc = {

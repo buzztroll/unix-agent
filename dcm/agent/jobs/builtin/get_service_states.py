@@ -25,7 +25,7 @@ class GetServiceStates(jobs.Plugin):
         script_name = items_map["script_name"]
         self._script_exe = conf.get_script_location(script_name)
 
-    def call(self):
+    def run(self):
         string_list = []
         if not os.path.exists(self.conf.services_directory):
             for f in os.listdir(self.conf.services_directory):

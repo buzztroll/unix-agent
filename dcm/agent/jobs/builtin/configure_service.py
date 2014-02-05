@@ -96,7 +96,7 @@ class ConfigureService(jobs.Plugin):
         except OSError as osEx:
             _g_logger.debug("Failed to delete %s : %s" % (fname, osEx.message))
 
-    def call(self):
+    def run(self):
         address = None
         try:
             address = self.arguments["address"]

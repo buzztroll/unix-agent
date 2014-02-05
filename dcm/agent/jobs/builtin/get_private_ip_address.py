@@ -11,11 +11,13 @@
 #   this material is strictly forbidden unless prior written permission
 #   is obtained from Dell, Inc.
 #  ======================================================================
+import logging
 
 import dcm.agent.cloudmetadata as cloudmetadata
-import dcm.agent.utils as utils
 import dcm.agent.jobs.direct_pass as direct_pass
 
+
+_g_logger = logging.getLogger(__name__)
 
 class GetPrivateIpAddress(direct_pass.DirectPass):
 
@@ -23,8 +25,10 @@ class GetPrivateIpAddress(direct_pass.DirectPass):
         super(GetPrivateIpAddress, self).__init__(
             conf, job_id, items_map, name, arguments)
 
-    def call(self):
-        private_ips = cloudmetadata.get_ipv4_addresses()
+    def run(self):
+        _g_logger.debug("Running the handler %s" % __name__)
+
+        private_ips = cloudmetadata.get_ipv4_addresses(self.conf)
         if not private_ips:
             reply_doc = {
                 "return_code": 1,
@@ -37,7 +41,6 @@ class GetPrivateIpAddress(direct_pass.DirectPass):
                 "reply_object": private_ips[0]
             }
         return reply_doc
-
 
     def cancel(self, reply_rpc, *args, **kwargs):
         pass

@@ -63,6 +63,6 @@ class RemoteTester(jobs.Plugin):
         pass
 
 
-def load_plugin(agent, conf, job_id, items_map, name, arguments):
-    _g_logger.debug("IN LOAD")
-    return RemoteTester(agent, conf, job_id, items_map, name, arguments)
+def load_plugin(conf, job_id, items_map, name, arguments):
+    _g_logger.debug("IN TESTER LOAD")
+    return RemoteTester(conf, job_id, items_map, name, arguments)

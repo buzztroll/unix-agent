@@ -14,6 +14,7 @@
 
 import os
 import tempfile
+import sys
 import exceptions
 import logging
 import random
@@ -104,27 +105,13 @@ def setup_remote_pydev(host, port):
         return False
 
 
-def run_command(conf, args):
-    _g_logger.info("Forking the command " + str(args))
-    args = ' '.join(args)  # for some reason i cannot just pass the array.
-                           # at least should do a shell join
-    script_dir = conf.get_script_dir()
-    process = subprocess.Popen(args,
-                               shell=True,
-                               stdout=subprocess.PIPE,
-                               stderr=subprocess.STDOUT,
-                               cwd=script_dir)
-    stdout, stderr = process.communicate()
-
-    _g_logger.info("command %s:  STDOUT: %s" + str(stdout))
-    _g_logger.info("STDERR: " + str(stderr))
-    _g_logger.info("Return code: " + str(process.returncode))
-    return (stdout, stderr, process.returncode)
+def run_command(conf, cmd_line):
+    return conf.jr.run_command(cmd_line)
 
 
 def run_script(conf, name, args):
     cmd = conf.get_script_location(name)
-    args = [cmd].extend(args)
+    args.insert(0, cmd)
     return run_command(conf, args)
 
 

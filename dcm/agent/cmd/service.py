@@ -6,6 +6,7 @@ from dcm.agent import utils
 import dcm.agent.config as config
 import dcm.agent.dispatcher as dispatcher
 import dcm.agent.exceptions as exceptions
+import dcm.agent.job_runner as job_runner
 from dcm.agent.messaging import handshake
 import dcm.agent.messaging.reply as reply
 
@@ -38,6 +39,8 @@ def _run_agent(args):
         utils.setup_remote_pydev(_g_conf_object.pydev_host,
                                  _g_conf_object.pydev_port)
 
+    _g_conf_object.start_job_runner()
+
     # def get a connection object
     conn = config.get_connection_object(_g_conf_object)
     handshake_doc = handshake.get_handshake(_g_conf_object)
@@ -56,10 +59,25 @@ def _run_agent(args):
 
     while not _g_shutting_down:
         try:
-            request_listener.poll()
-        except:
-            _g_logger.exception("WHAT IS HAPPENING")
+            reply_obj = request_listener.poll()
+            try:
+                if reply_obj is not None:
+                    disp.incoming_request(reply_obj)
+                work_reply = disp.poll()
+                if work_reply:
+                    request_listener.reply(
+                        work_reply.request_id, work_reply.reply_doc)
+            except:
+                _g_logger.exception("A top level exception occurred after "
+                                    "creating the request.  Cleaning up the "
+                                    "request")
+                reply_obj.shutdown()
 
+        except:
+            _g_logger.exception("A top level exception occurred")
+
+    _g_logger.debug("Shutting down the job runner")
+    _g_conf_object.jr.shutdown()
     _g_logger.debug("Stopping the reply listener")
     request_listener.shutdown()
     _g_logger.debug("Stopping the dispatcher")
@@ -81,7 +99,11 @@ def main(args=sys.argv):
     except:
         _g_logger = logging.getLogger(__name__)
         _g_logger.exception("An unknown exception bubbled to the top")
+        raise
     finally:
-            _g_logger.debug("Service closed")
+        _g_logger.debug("Service closed")
+    return 0
 
-main()
+if __name__ == '__main__':
+    rc = main()
+    sys.exit(rc)
