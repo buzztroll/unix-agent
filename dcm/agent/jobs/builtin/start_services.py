@@ -30,7 +30,7 @@ class StartServices(jobs.Plugin):
         for service in service_list:
             command = [self.exe, service]
             try:
-                (stdout, stderr, rc) = utils.run_command(command)
+                (stdout, stderr, rc) = utils.run_command(self.conf, command)
                 if rc != 0:
                     failures.append(service + ":-1")
             except Exception as ex:

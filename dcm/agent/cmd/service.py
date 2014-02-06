@@ -16,6 +16,10 @@ _g_shutting_down = False
 
 
 def kill_handler(signum, frame):
+    shutdown_main_loop()
+
+
+def shutdown_main_loop():
     global _g_shutting_down
 
     logger = logging.getLogger(__name__)
@@ -25,21 +29,21 @@ def kill_handler(signum, frame):
     _g_shutting_down = True
 
 
-def _run_agent(args):
-    global _g_shutting_down
-
+def _pre_threads(conf, args):
     signal.signal(signal.SIGINT, kill_handler)
     signal.signal(signal.SIGTERM, kill_handler)
     # def setup config object
-    _g_conf_object.setup(clioptions=True)
+    conf.setup(clioptions=True, args=args)
 
-    _g_logger = logging.getLogger(__name__)
-
-    if _g_conf_object.pydev_host:
+    if conf.pydev_host:
         utils.setup_remote_pydev(_g_conf_object.pydev_host,
                                  _g_conf_object.pydev_port)
 
-    _g_conf_object.start_job_runner()
+    conf.start_job_runner()
+
+
+def _run_agent():
+    _g_logger = logging.getLogger(__name__)
 
     # def get a connection object
     conn = config.get_connection_object(_g_conf_object)
@@ -56,6 +60,11 @@ def _run_agent(args):
     disp.start_workers()
 
     request_listener = reply.RequestListener(_g_conf_object, conn, disp)
+    return _agent_main_loop(_g_conf_object, request_listener, disp, conn)
+
+
+def _agent_main_loop(conf, request_listener, disp, conn):
+    logger = logging.getLogger(__name__)
 
     while not _g_shutting_down:
         try:
@@ -68,28 +77,29 @@ def _run_agent(args):
                     request_listener.reply(
                         work_reply.request_id, work_reply.reply_doc)
             except:
-                _g_logger.exception("A top level exception occurred after "
+                logger.exception("A top level exception occurred after "
                                     "creating the request.  Cleaning up the "
                                     "request")
                 reply_obj.shutdown()
 
         except:
-            _g_logger.exception("A top level exception occurred")
+            logger.exception("A top level exception occurred")
 
-    _g_logger.debug("Shutting down the job runner")
-    _g_conf_object.jr.shutdown()
-    _g_logger.debug("Stopping the reply listener")
+    logger.debug("Shutting down the job runner")
+    conf.jr.shutdown()
+    logger.debug("Stopping the reply listener")
     request_listener.shutdown()
-    _g_logger.debug("Stopping the dispatcher")
+    logger.debug("Stopping the dispatcher")
     disp.stop()
-    _g_logger.debug("Closing the connection")
+    logger.debug("Closing the connection")
     conn.close()
-    _g_logger.debug("Service closed")
+    logger.debug("Service closed")
 
 
 def main(args=sys.argv):
     try:
-        _run_agent(args)
+        _pre_threads(_g_conf_object, args)
+        _run_agent()
     except exceptions.AgentOptionException as aoex:
         _g_conf_object.agent_state = utils.AgentStates.STARTUP_ERROR
         _g_conf_object.console_log(0, "The agent is misconfigured.")

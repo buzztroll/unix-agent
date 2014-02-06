@@ -48,8 +48,9 @@ class DirectPass(jobs.Plugin):
                 "The plugin %s requires the option %s" % (name, ke.message))
 
     def run(self):
-        command_line = [self.exe_path].extend(self.ordered_param_list)
-        (stdout, stderr, rc) = utils.run_command(command_line)
+        command_line = [self.exe_path]
+        command_line.extend(self.ordered_param_list)
+        (stdout, stderr, rc) = utils.run_command(self.conf, command_line)
         reply = {"return_code": rc, "message": "Success"}
         if rc != 0:
             reply["message"] = stderr

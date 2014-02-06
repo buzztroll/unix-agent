@@ -142,7 +142,7 @@ def parse_plugin_doc(conf, name):
     _g_logger.debug("ENTER load_plugin")
 
     conffile = conf.plugin_configfile
-    if not os.path.exists(conffile):
+    if conffile is None or not os.path.exists(conffile):
         raise exceptions.AgentPluginConfigException(
             "The plugin configuration file %s could not be found" % conffile)
 

@@ -1,3 +1,4 @@
+import Queue
 import json
 import logging
 import os
@@ -152,3 +153,32 @@ class TestReplySuccessfullyAlways(conniface.ConnectionInterface):
                     "type %s should never happen" % t)
         finally:
             self._lock.release()
+
+class ReqRepQHolder(object):
+
+    def __init__(self):
+        self._req_send_q = Queue.Queue()
+        self._req_recv_q = Queue.Queue()
+
+    class TestCon(conniface.ConnectionInterface):
+        def __init__(self, sq, rq):
+            self._send_q = sq
+            self._recv_q = rq
+
+        def recv(self):
+            try:
+                return self._recv_q.get(False)
+            except Queue.Empty:
+                return None
+
+        def send(self, doc):
+            self._send_q.put(doc)
+
+        def close(self):
+            pass
+
+    def get_req_conn(self):
+        return ReqRepQHolder.TestCon(self._req_send_q, self._req_recv_q)
+
+    def get_reply_conn(self):
+        return ReqRepQHolder.TestCon(self._req_recv_q, self._req_send_q)

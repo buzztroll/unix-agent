@@ -1,7 +1,7 @@
 import os
 
 
-def get_conf_file():
+def get_conf_file(fname="agent.conf"):
     path = os.path.dirname(__file__)
     path = os.path.dirname(path)
-    return os.path.join(path, "etc/agent.conf")
+    return os.path.join(path, "etc", fname)

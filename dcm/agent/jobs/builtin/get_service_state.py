@@ -27,7 +27,7 @@ class GetServiceState(jobs.Plugin):
                         arguments["serviceId"]]
 
     def run(self):
-        (stdout, stderr, rc) = utils.run_command(self.command)
+        (stdout, stderr, rc) = utils.run_command(self.conf, self.command)
         if rc != 0:
             reply_doc = {
                 "return_code": rc,

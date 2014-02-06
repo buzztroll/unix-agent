@@ -24,6 +24,8 @@ class JobRunnerWorker(multiprocessing.Process):
             while not self._exit.is_set():
                 if self._pipe.poll(1):
                     cmd = self._pipe.recv()
+                    if cmd is None:
+                        continue;
                     try:
                         _g_logger.debug("Child runner starting the script %s" % cmd)
 

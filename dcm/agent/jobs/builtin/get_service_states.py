@@ -27,14 +27,16 @@ class GetServiceStates(jobs.Plugin):
 
     def run(self):
         string_list = []
-        if not os.path.exists(self.conf.services_directory):
+        if self.conf.storage_services_dir and \
+                not os.path.exists(self.conf.storage_services_dir):
             for f in os.listdir(self.conf.services_directory):
                 if f[0] == "a" and os.path.isdir(
                         os.path.join(self.conf.services_directory, f)):
                     string_list.append(f)
                     try:
                         command = [self._script_exe, f]
-                        (stdout, stderr, rc) = utils.run_command(command)
+                        (stdout, stderr, rc) = \
+                            utils.run_command(self.conf, command)
                         line = stdout.split(os.linesep)[0].strip()
                         string_list.append(line)
                     except Exception as ex:

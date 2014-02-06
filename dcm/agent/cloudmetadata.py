@@ -48,15 +48,14 @@ class CLOUD_TYPES:
     VMware = "VMware"
 
 
-def _get_metadata_server_url_data(url):
+def _get_metadata_server_url_data(url, timeout=1):
     _g_logger.debug("Attempting to get metadata at %s" % url)
     u_req = urllib2.Request(url)
-    _g_logger.debug("Attempting to get metadata at %s" % str(u_req))
     u_req.add_header("Content-Type", "application/x-www-form-urlencoded")
     u_req.add_header("Connection", "Keep-Alive")
     u_req.add_header("Cache-Control", "no-cache")
 
-    response = urllib2.urlopen(u_req)
+    response = urllib2.urlopen(u_req, timeout=timeout)
     if response.code != 200:
         return None
     data = response.read().strip()

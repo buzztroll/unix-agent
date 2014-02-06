@@ -3,6 +3,7 @@ import ConfigParser
 import logging
 import logging.config
 import os
+import sys
 import yaml
 import dcm
 from dcm.agent import job_runner
@@ -128,11 +129,10 @@ class AgentConfig(object):
         self._agent_id = None
         self.services_path = None # TODO SET THIS
         self.ephemeral_mount_point = None # TODO SET THIS
-        self.services_directory = None # TODO SET THIS
         self.enstratius_directory = None # TODO SET THIS
         self.instance_id = None
 
-    def _parse_command_line(self):
+    def _parse_command_line(self, argv):
         conf_parser = argparse.ArgumentParser(
             description="Start the agent")
         conf_parser.add_argument(
@@ -141,7 +141,8 @@ class AgentConfig(object):
         conf_parser.add_argument("-v", "--verbose", action="count",
                                  help="Display more output on the console.",
                                  default=0)
-        self._cli_args, self._remaining_argv = conf_parser.parse_known_args()
+        self._cli_args, self._remaining_argv = \
+            conf_parser.parse_known_args(args=argv)
 
     def get_cli_arg(self, key):
         return getattr(self._cli_args, key, None)
@@ -171,9 +172,10 @@ class AgentConfig(object):
 
             FilenameOpt("plugin", "configfile", relative_path=relative_path),
 
-            FilenameOpt("storage", "temppath", relative_path=relative_path),
-            FilenameOpt("storage", "idfile", relative_path=relative_path),
-            FilenameOpt("storage", "script_dir", relative_path=relative_path),
+            FilenameOpt("storage", "temppath", relative_path=relative_path,
+                        default="/tmp"),
+            FilenameOpt("storage", "services_dir", relative_path=relative_path,
+                        default=None),
 
             ConfigOpt("cloud", "name", str, default=None),
             ConfigOpt("cloud", "type", str, default=CLOUD_TYPES.Amazon),
@@ -236,12 +238,12 @@ class AgentConfig(object):
 
         return locations
 
-    def setup(self, conffile=None, clioptions=False):
+    def setup(self, conffile=None, clioptions=False, args=sys.argv):
         if conffile is not None:
             self._parse_config_file(conffile)
         else:
             if clioptions is not None:
-                self._parse_command_line()
+                self._parse_command_line(args)
             config_files = self._get_config_files()
             # parse command line options to get all the config files
             for conf_file in config_files:

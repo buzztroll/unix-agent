@@ -77,7 +77,7 @@ class MessageTimer(object):
 class AckCleanupTimer(object):
     def __init__(self, timeout, func):
         self._func = func
-        self._timer = threading.Timer(timeout)
+        self._timer = threading.Timer(timeout, self.timeout_wrapper)
 
     def start(self):
         return self._timer.start()

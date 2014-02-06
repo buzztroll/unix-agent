@@ -31,20 +31,22 @@ class AddUser(direct_pass.DirectPass):
                                         arguments["last_name"],
                                         arguments["administrator"],
                                         arguments["password"]]
+            self.ssh_public_key = arguments["authentication"]
         except KeyError as ke:
             raise exceptions.AgentPluginConfigException(
                 "The plugin %s requires the option %s" % (name, ke.message))
 
-        if 'password' not in arguments['password'] or not arguments['password']:
+        if not arguments['password']:
             self.arguments["password"] = utils.generate_password()
 
     def run(self):
-        key_file = self.agent.get_temp_file(self.user_id + ".pub")
+        key_file = os.path.join(
+            self.conf.storage_temppath, self.arguments["user_id"] + ".pub")
 
         try:
             with open(key_file, "w") as f:
                 f.write(self.ssh_public_key)
-            return super(AddUser, self).call()
+            return super(AddUser, self).run()
         finally:
             os.remove(key_file)
 

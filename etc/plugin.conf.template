@@ -1,0 +1,34 @@
+[default]
+
+[plugin:get_private_ip_address]
+type: python_module
+module_name: dcm.agent.jobs.builtin.get_private_ip_address
+script_name: getIpAddresses
+
+[plugin:get_agent_data]
+type: python_module
+module_name: dcm.agent.jobs.builtin.get_agent_data
+
+[plugin:heartbeat]
+type: python_module
+module_name: dcm.agent.jobs.builtin.heartbeat
+
+[plugin:add_user]
+type: python_module
+module_name: dcm.agent.jobs.builtin.add_user
+script_name: addUser
+
+[plugin:remove_user]
+type: python_module
+module_name: dcm.agent.jobs.builtin.remove_user
+script_name: removeUser
+
+[plugin:list_devices]
+type: python_module
+module_name: dcm.agent.jobs.builtin.list_devices
+script_name: listDevices
+
+[plugin:get_service_states]
+type: python_module
+module_name: dcm.agent.jobs.builtin.get_service_states
+script_name: checkService
