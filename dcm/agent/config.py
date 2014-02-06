@@ -176,6 +176,8 @@ class AgentConfig(object):
                         default="/tmp"),
             FilenameOpt("storage", "services_dir", relative_path=relative_path,
                         default=None),
+            FilenameOpt("storage", "enstartius_dir", relative_path=relative_path,
+                        default=None),
 
             ConfigOpt("cloud", "name", str, default=None),
             ConfigOpt("cloud", "type", str, default=CLOUD_TYPES.Amazon),

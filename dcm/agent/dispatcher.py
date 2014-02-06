@@ -58,9 +58,10 @@ class Worker(threading.Thread):
                         _g_logger.info(
                             "Completed successfully job " + str(plugin))
                     except Exception as ex:
-                        _g_logger.error(
+                        _g_logger.exception(
                             "Worker %s thread had a top level error when "
-                            "running job %s" % (self.getName(), workload), ex)
+                            "running job %s : %s"
+                            % (self.getName(), str(workload), ex.message))
                         reply_doc = {
                             'Exception': ex.message,
                             'return_code': 1}

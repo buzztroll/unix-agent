@@ -55,7 +55,10 @@ def _get_metadata_server_url_data(url, timeout=1):
     u_req.add_header("Connection", "Keep-Alive")
     u_req.add_header("Cache-Control", "no-cache")
 
-    response = urllib2.urlopen(u_req, timeout=timeout)
+    try:
+        response = urllib2.urlopen(u_req, timeout=timeout)
+    except urllib2.URLError:
+        return None
     if response.code != 200:
         return None
     data = response.read().strip()
@@ -133,7 +136,6 @@ def get_ipv4_addresses(conf):
     (stdout, stderr, rc) = utils.run_script(conf, "getIpAddresses", [])
     for line in stdout.split(os.linesep):
         line = line.strip()
-        if line not in ip_list:
+        if line and     line not in ip_list:
             ip_list.append(line)
-
     return ip_list

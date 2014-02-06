@@ -238,6 +238,7 @@ class RequestRPC(object):
             utils.build_assertion_exception(
                 _g_logger, "reply doc is not None", msg)
 
+        _g_logger.debug("The incoming reply is %s" % str(message))
         self._reply_doc = message
 
         if self._reply_callback is not None:

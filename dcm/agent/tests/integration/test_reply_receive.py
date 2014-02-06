@@ -1,4 +1,5 @@
 import random
+import socket
 import threading
 import unittest
 import pwd
@@ -9,9 +10,11 @@ import dcm.agent.tests.utils as test_utils
 import dcm.agent.tests.utils.test_connection as test_conn
 
 
-class TestSingleRequest(unittest.TestCase):
+class TestSimpleSingleCommands(unittest.TestCase):
 
     def setUp(self):
+        service._g_shutting_down = False # this has to be the worst thing I have ever done
+
         self.conf_obj = config.AgentConfig()
         test_conf_path = test_utils.get_conf_file("agent.realplugins.conf")
         service._pre_threads(self.conf_obj, ["-c", test_conf_path])
@@ -119,6 +122,8 @@ class TestSingleRequest(unittest.TestCase):
         req_rpc = self._rpc_wait_reply(doc)
         r = req_rpc.get_reply()
         self.assertEquals(r["payload"]["reply_type"], "agent_data")
+        self.assertEquals(r["payload"]["return_code"], 0)
+
 
     def test_add_user_remove_user(self):
         user_name = "dcm" + str(random.randint(10, 99))
@@ -135,7 +140,6 @@ class TestSingleRequest(unittest.TestCase):
                           "administrator": False}}
         req_rpc = self._rpc_wait_reply(doc)
         r = req_rpc.get_reply()
-
         self.assertEquals(r["payload"]["return_code"], 0)
 
         pw_ent = pwd.getpwnam(user_name)
@@ -145,7 +149,7 @@ class TestSingleRequest(unittest.TestCase):
         doc = {
             "command": "remove_user",
             "arguments": {"agent_token": None,
-                          "userID": user_name}}
+                          "user_id": user_name}}
 
         req_rpc = self._rpc_wait_reply(doc)
         r = req_rpc.get_reply()
@@ -160,6 +164,8 @@ class TestSingleRequest(unittest.TestCase):
         req_reply = self._rpc_wait_reply(doc)
         r = req_reply.get_reply()
         print r
+        self.assertEquals(r["payload"]["return_code"], 0)
+
         # TODO verify that this matches the output of the command
 
     def test_get_service_states(self):
@@ -170,7 +176,33 @@ class TestSingleRequest(unittest.TestCase):
         req_reply = self._rpc_wait_reply(doc)
         r = req_reply.get_reply()
         print r
+        self.assertEquals(r["payload"]["return_code"], 0)
+
         # TODO verify that this matches the output of the command
+
+    def test_rename(self):
+        orig_hostname = socket.gethostname()
+
+        new_hostname = "buzztroll.net"
+        doc = {
+            "command": "rename",
+            "arguments": {"agent_token": None, "server_name": new_hostname}
+        }
+        req_reply = self._rpc_wait_reply(doc)
+        r = req_reply.get_reply()
+        self.assertEquals(r["payload"]["return_code"], 0)
+
+        self.assertEqual(socket.gethostname(), new_hostname)
+
+        doc = {
+            "command": "rename",
+            "arguments": {"agent_token": None, "server_name": orig_hostname}
+        }
+        req_reply = self._rpc_wait_reply(doc)
+        r = req_reply.get_reply()
+        self.assertEquals(r["payload"]["return_code"], 0)
+
+        self.assertEqual(socket.gethostname(), orig_hostname)
 
     # def test_start_service(self):
     #     doc = {

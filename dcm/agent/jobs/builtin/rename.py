@@ -11,9 +11,13 @@
 #   this material is strictly forbidden unless prior written permission
 #   is obtained from Dell, Inc.
 #  ======================================================================
-from dcm.agent import exceptions
+import logging
+from dcm.agent import exceptions, cloudmetadata
 
 import dcm.agent.jobs.direct_pass as direct_pass
+
+
+_g_logger = logging.getLogger(__name__)
 
 
 class Rename(direct_pass.DirectPass):
@@ -22,11 +26,24 @@ class Rename(direct_pass.DirectPass):
             conf, job_id, items_map, name, arguments)
 
         try:
-            self._ordered_param_list = [arguments["serverName"],
-                                        arguments["ipAddress"]]
+            self.ordered_param_list = [arguments["server_name"]]
         except KeyError as ke:
             raise exceptions.AgentPluginConfigException(
                 "The plugin %s requires the option %s" % (name, ke.message))
+
+    def run(self):
+        private_ips = cloudmetadata.get_ipv4_addresses(self.conf)
+        if not private_ips:
+            reply_doc = {
+                "return_code": 1,
+                "message": "No IP Address was found"
+            }
+            return reply_doc
+
+        _g_logger.debug("Acquired ip addr %s" % private_ips[0])
+        self.ordered_param_list.extend(private_ips[0])
+
+        return super(Rename, self).run()
 
 
 def load_plugin(conf, job_id, items_map, name, arguments):

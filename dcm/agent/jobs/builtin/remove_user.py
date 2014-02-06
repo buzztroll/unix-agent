@@ -21,7 +21,7 @@ class RemoveUser(direct_pass.DirectPass):
         super(RemoveUser, self).__init__(
             conf, job_id, items_map, name, arguments)
         try:
-            self._ordered_param_list = [arguments["user_id"]]
+            self.ordered_param_list = [arguments["user_id"]]
         except KeyError as ke:
             raise exceptions.AgentPluginConfigException(
                 "The plugin %s requires the option %s" % (name, ke.message))

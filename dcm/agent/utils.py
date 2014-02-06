@@ -106,6 +106,8 @@ def setup_remote_pydev(host, port):
 
 
 def run_command(conf, cmd_line):
+    if type(cmd_line) == list or type(cmd_line) == tuple:
+        " ".join([str(i) for i in cmd_line])
     return conf.jr.run_command(cmd_line)
 
 

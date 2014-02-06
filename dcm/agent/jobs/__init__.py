@@ -90,7 +90,7 @@ def load_python_module(
         module_name, conf, request_id, items_map, name, arguments):
     try:
         module = importlib.import_module(module_name)
-        _g_logger.error("Module acquired " + str(dir(module)))
+        _g_logger.debug("Module acquired " + str(dir(module)))
         rc = module.load_plugin(conf, request_id, items_map, name, arguments)
         return rc
     except ImportError as iee:

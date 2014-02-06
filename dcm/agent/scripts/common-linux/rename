@@ -24,10 +24,11 @@
 
 set -u
 
-. "/enstratus/bin/common_mod"
+DIRNAME=`dirname $0`
+. "$DIRNAME/common_mod"
 
 logTag="rename"
-LOGGER=/enstratus/bin/log
+LOGGER=$DIRNAME/log
 
 if [ $# -lt 2 ] ; then
    $LOGGER -t "$logTag" "Syntax: rename NAME LOCAL_IP"

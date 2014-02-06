@@ -37,6 +37,7 @@ class DirectPass(jobs.Plugin):
         try:
             script_name = items_map["script_name"]
             self.exe_path = conf.get_script_location(script_name)
+
             _g_logger.debug("script name: %s, exe: %s"\
                 % (script_name, self.exe_path))
             if not os.path.exists(self.exe_path):
@@ -48,12 +49,15 @@ class DirectPass(jobs.Plugin):
                 "The plugin %s requires the option %s" % (name, ke.message))
 
     def run(self):
-        command_line = [self.exe_path]
-        command_line.extend(self.ordered_param_list)
-        (stdout, stderr, rc) = utils.run_command(self.conf, command_line)
-        reply = {"return_code": rc, "message": "Success"}
-        if rc != 0:
-            reply["message"] = stderr
+        command_list = [self.exe_path]
+        command_list.extend(self.ordered_param_list)
+        _g_logger.debug("Plugin running the command %s" % str(command_list))
+        (stdout, stderr, rc) = utils.run_command(self.conf, command_list)
+        _g_logger.debug("Command %s: stdout %s.  stderr: %s" %
+                        (str(command_list), stdout, stderr))
+        reply = {"return_code": rc, "message": stdout,
+                 "error_message": stderr, "return_type": "void"}
+        return reply
         # TODO XXX should stdout go on payload?
 
     def cancel(self, reply_rpc, *args, **kwargs):

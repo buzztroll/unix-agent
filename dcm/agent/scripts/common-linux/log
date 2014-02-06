@@ -2,4 +2,9 @@
 
 [ -t 0 ] || read PIPEINPUT
 
-java -classpath /enstratus/ws/content/WEB-INF/lib/enstratus-agent.jar com.enstratus.agent.tools.Log "$@" $PIPEINPUT
+if [ "X$1" != "X"  ]; then
+    echo ${@} 1>&2
+fi
+if [ "X$PIPEINPUT" != "X" ]; then
+    echo $PIPEINPUT 1>&2
+fi

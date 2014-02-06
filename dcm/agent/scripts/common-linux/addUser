@@ -25,11 +25,14 @@
 set -u
 PATH=/bin:${PATH}
 
-. "/enstratus/bin/common_mod"
+BASENAME=`basename $0`
+DIRNAME=`dirname $0`
+. "$DIRNAME/common_mod"
 
 logTag="addUser"
-LOGGER=/enstratus/bin/log
+LOGGER=$DIRNAME/log
 
+echo "running ${@}" | $LOGGER
 if [ $# -lt 5 ] ; then 
    echo "Syntax: addUser CUST_ID USER_ID FIRST_NAME LAST_NAME ADMINISTRATOR" 2>&1 | $LOGGER -t "$logTag"
    exit 1

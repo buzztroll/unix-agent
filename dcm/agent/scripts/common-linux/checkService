@@ -9,7 +9,8 @@
 
 set -u
 
-LOGGER=/enstratus/bin/log
+DIRNAME=`dirname $0`
+LOGGER=$DIRNAME/log
 logTag="checkService"
 
 if [ $# -lt 1 ] ; then

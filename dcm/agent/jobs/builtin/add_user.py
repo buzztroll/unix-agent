@@ -25,7 +25,7 @@ class AddUser(direct_pass.DirectPass):
             conf, job_id, items_map, name, arguments)
 
         try:
-            self._ordered_param_list = [conf.customer_id,
+            self.ordered_param_list = [conf.customer_id,
                                         arguments["user_id"],
                                         arguments["first_name"],
                                         arguments["last_name"],

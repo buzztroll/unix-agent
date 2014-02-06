@@ -43,7 +43,7 @@ class JobRunnerWorker(multiprocessing.Process):
                         _g_logger.info("STDERR: %s " % stderr)
                         _g_logger.info("Return code: " + str(rc))
                     except Exception as ex:
-                        _g_logger.exception("Failed to run the script %s : %s",
+                        _g_logger.exception("Failed to run the script %s : %s" %
                                    (str(cmd), str(ex)))
                         rc = 1
                         stdout = None
@@ -79,6 +79,9 @@ class JobRunner(object):
         self._child.start()
 
     def run_command(self, cmd):
+        if type(cmd) == list or type(cmd) == tuple:
+            cmd = " ".join([str(i) for i in cmd])
+
         _g_logger.debug("Sending the command %s to the child runner" % cmd)
         self._parent_conn.send(cmd)
         (rc, stdout, stderr) = self._parent_conn.recv()

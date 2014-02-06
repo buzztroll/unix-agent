@@ -14,6 +14,7 @@ configfile=plugin.conf
 [storage]
 temppath=@TEMP_PATH@
 services_dir=@SERVICE_DIR@
+enstartius_dir=@ENSTRATIUS_DIR@
 
 [cloud]
 type=@CLOUD_TYPE@
