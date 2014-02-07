@@ -44,11 +44,11 @@ class TestSimpleSingleCommands(unittest.TestCase):
         handshake_doc["encryptedEphemeralFsKey"] = "DEADBEAF"
 
         self.conf_obj.set_handshake(handshake_doc)
+        self.conf_obj.start_job_runner()
 
         self.thread = threading.Thread(target=self._run_main_loop)
         self.thread.start()
         self.disp.start_workers()
-
 
     def _run_main_loop(self):
         self.disp.stop()

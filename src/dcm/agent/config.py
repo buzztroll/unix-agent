@@ -68,13 +68,22 @@ class ConfigOpt(object):
         self.minv = minv
         self.maxv = maxv
 
-    def get_value(self, parser):
+    def get_option_name(self):
+        option_name = "%s_%s" % (self.section, self.name)
+        return option_name
+
+    def get_default(self):
+        return self.default
+
+    def get_value(self, parser, default=None, **kwargs):
+        if default is None:
+            default = self.default
         try:
-            v = parser.get(self.section, self.name, self.default)
+            v = parser.get(self.section, self.name, default)
         except ConfigParser.NoOptionError:
-            v = self.default
+            v = default
         except ConfigParser.NoSectionError:
-            v = self.default
+            v = default
         if v is None:
             return v
         try:
@@ -107,16 +116,15 @@ class ConfigOpt(object):
 
 class FilenameOpt(ConfigOpt):
 
-    def __init__(self, section, name, relative_path=None, default=None):
+    def __init__(self, section, name, default=None):
         super(FilenameOpt, self).__init__(section, name, str, default=default)
-        self.relative_path = relative_path
 
-    def get_value(self, parser):
+    def get_value(self, parser, relative_path=None, **kwarg):
         v = super(FilenameOpt, self).get_value(parser)
         if v is None:
             return None
         if not os.path.isabs(v):
-            v = os.path.join(self.relative_path, v)
+            v = os.path.join(relative_path, v)
         return os.path.abspath(v)
 
 
@@ -131,27 +139,10 @@ class AgentConfig(object):
         self.ephemeral_mount_point = None # TODO SET THIS
         self.enstratius_directory = None # TODO SET THIS
         self.instance_id = None
+        self._init_file_options()
 
-    def _parse_command_line(self, argv):
-        conf_parser = argparse.ArgumentParser(
-            description="Start the agent")
-        conf_parser.add_argument(
-            "-c", "--conffile", help="Specify config file", metavar="FILE",
-            default=None)
-        conf_parser.add_argument("-v", "--verbose", action="count",
-                                 help="Display more output on the console.",
-                                 default=0)
-        self._cli_args, self._remaining_argv = \
-            conf_parser.parse_known_args(args=argv)
-
-    def get_cli_arg(self, key):
-        return getattr(self._cli_args, key, None)
-
-    def _parse_config_file(self, config_file):
-
-        relative_path = os.path.dirname(config_file)
-
-        option_list = [
+    def _init_file_options(self):
+        self.option_list = [
             ConfigOpt("pydev", "host", str, default=None, options=None),
             ConfigOpt("pydev", "port", int, default=None, options=None),
 
@@ -161,23 +152,17 @@ class AgentConfig(object):
 
             ConfigOpt("connection", "type", str, default=None, options=None),
             ConfigOpt("connection", "hostname", str, default=None),
-            FilenameOpt("connection", "source_file",
-                        relative_path=relative_path, default=None),
-            FilenameOpt("connection", "dest_file",
-                        relative_path=relative_path, default=None),
+            FilenameOpt("connection", "source_file", default=None),
+            FilenameOpt("connection", "dest_file", default=None),
             ConfigOpt("connection", "port", int, default=5309, options=None),
 
-            FilenameOpt("logging", "configfile", relative_path=relative_path,
-                        default=None),
+            FilenameOpt("logging", "configfile", default=None),
 
-            FilenameOpt("plugin", "configfile", relative_path=relative_path),
+            FilenameOpt("plugin", "configfile"),
 
-            FilenameOpt("storage", "temppath", relative_path=relative_path,
-                        default="/tmp"),
-            FilenameOpt("storage", "services_dir", relative_path=relative_path,
-                        default=None),
-            FilenameOpt("storage", "enstartius_dir", relative_path=relative_path,
-                        default=None),
+            FilenameOpt("storage", "temppath", default="/tmp"),
+            FilenameOpt("storage", "services_dir", default=None),
+            FilenameOpt("storage", "enstartius_dir", default=None),
 
             ConfigOpt("cloud", "name", str, default=None),
             ConfigOpt("cloud", "type", str, default=CLOUD_TYPES.Amazon),
@@ -191,14 +176,44 @@ class AgentConfig(object):
             ConfigOpt("enstratius", "agentmanager_url", str, default=None),
             ConfigOpt("platform", "script_locations", list, default="SmartOS"),
         ]
+        for o in self.option_list:
+            k = o.get_option_name()
+            v = o.get_default()
+            self.__setattr__(k, v)
+
+    def _parse_command_line(self, argv):
+        conf_parser = argparse.ArgumentParser(
+            description="Start the agent")
+        conf_parser.add_argument(
+            "-c", "--conffile", help="Specify config file", metavar="FILE",
+            default=None)
+        conf_parser.add_argument("-v", "--verbose", action="count",
+                                 help="Display more output on the console.",
+                                 default=0)
+        conf_parser.add_argument("-V", "--version", action="store_true",
+                                 help="Display just the version of this "
+                                      "agent installation.",
+                                 dest="version",
+                                 default=False)
+        self._cli_args, self._remaining_argv = \
+            conf_parser.parse_known_args(args=argv)
+
+    def get_cli_arg(self, key):
+        return getattr(self._cli_args, key, None)
+
+    def _parse_config_file(self, config_file):
+
+        relative_path = os.path.dirname(config_file)
+
         parser = ConfigParser.SafeConfigParser()
         parser.read(config_file)
 
-        for opt in option_list:
+        for opt in self.option_list:
             try:
-                v = opt.get_value(parser)
-                config_variable = opt.section + '_' + opt.name
-                self.__setattr__(config_variable, v)
+                oname = opt.get_option_name()
+                v = opt.get_value(parser, relative_path=relative_path,
+                                  default=getattr(self, oname))
+                self.__setattr__(oname, v)
             except ConfigParser.NoSectionError as nse:
                 opt.get
                 raise exceptions.AgentOptionSectionNotFoundException(

@@ -1,0 +1,9 @@
+#!/bin/bash
+#
+# Perform necessary es-ex-pyagent removal steps
+# after package is uninstalled.
+#
+
+echo "es-ex-pyagent has been uninstalled!"
+
+exit 0

@@ -1,6 +1,5 @@
 from setuptools import setup, find_packages
 
-
 Version=0.2
 
 setup(name='es-ex-pyagent',
