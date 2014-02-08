@@ -12,14 +12,18 @@ setup(name='es-ex-pyagent',
        entry_points = {
         'console_scripts': [
             "dcm-agent=dcm.agent.cmd.service:main",
+            "dcm-agent-configure=dcm.agent.cmd.configure:main",
         ],
 
       },
       include_package_data = True,
-      install_requires = ["pyyaml == 3.10", "ws4py == 0.3.2"],
+      install_requires = ["pyyaml == 3.10",
+                          "ws4py == 0.3.2",
+                          "apache-libcloud == 0.14.0"],
 
       package_data = {"dcm.agent": ["dcm/agent/scripts/*",
-                                    "dcm/agent/etc/*"]},
+                                    "dcm/agent/etc/*"],
+                      "dcm.agent.tests": ["dcm/agent/tests/etc/*"]},
 
       classifiers=[
           "Development Status :: 4 - Beta",

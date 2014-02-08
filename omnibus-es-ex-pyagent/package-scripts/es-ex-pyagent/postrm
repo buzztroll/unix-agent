@@ -4,6 +4,8 @@
 # after package is uninstalled.
 #
 
+rm -rf /enstartus
+
 echo "es-ex-pyagent has been uninstalled!"
 
 exit 0

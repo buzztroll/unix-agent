@@ -59,7 +59,7 @@ def get_connection_object(conf):
 class ConfigOpt(object):
 
     def __init__(self, section, name, t, default=None,
-                 options=None, minv=None, maxv=None):
+                 options=None, minv=None, maxv=None, help=None):
         self.section = section
         self.name = name
         self.my_type = t
@@ -67,6 +67,7 @@ class ConfigOpt(object):
         self.default = default
         self.minv = minv
         self.maxv = maxv
+        self.help = help
 
     def get_option_name(self):
         option_name = "%s_%s" % (self.section, self.name)
@@ -74,6 +75,9 @@ class ConfigOpt(object):
 
     def get_default(self):
         return self.default
+
+    def get_help(self):
+        return self.help
 
     def get_value(self, parser, default=None, **kwargs):
         if default is None:
@@ -116,8 +120,9 @@ class ConfigOpt(object):
 
 class FilenameOpt(ConfigOpt):
 
-    def __init__(self, section, name, default=None):
-        super(FilenameOpt, self).__init__(section, name, str, default=default)
+    def __init__(self, section, name, default=None, help=None):
+        super(FilenameOpt, self).__init__(section, name, str, default=default,
+                                          help=help)
 
     def get_value(self, parser, relative_path=None, **kwarg):
         v = super(FilenameOpt, self).get_value(parser)
@@ -143,26 +148,42 @@ class AgentConfig(object):
 
     def _init_file_options(self):
         self.option_list = [
-            ConfigOpt("pydev", "host", str, default=None, options=None),
-            ConfigOpt("pydev", "port", int, default=None, options=None),
+            ConfigOpt("pydev", "host", str, default=None, options=None,
+                      help="The hostname of the pydev debugger"),
+            ConfigOpt("pydev", "port", int, default=None, options=None,
+                      help="The port where the pydev debugger is listening"),
 
-            ConfigOpt("workers", "count", int, default=4, options=None),
+            ConfigOpt("workers", "count", int, default=4, options=None,
+                      help="The number of worker threads that will be "
+                           "processing incoming requests"),
+
             ConfigOpt("workers", "long_runner_threads", int, default=1,
-                      options=None),
+                      options=None,
+                      help="The number of worker threads that will be "
+                           "processing long running jobs (anything that "
+                           "returns a job description)"),
 
-            ConfigOpt("connection", "type", str, default=None, options=None),
+            ConfigOpt("connection", "type", str, default=None, options=None,
+                      help="The type of connection object to use.  Supported "
+                           "types are ws and fallback"),
+
             ConfigOpt("connection", "hostname", str, default=None),
             FilenameOpt("connection", "source_file", default=None),
             FilenameOpt("connection", "dest_file", default=None),
             ConfigOpt("connection", "port", int, default=5309, options=None),
 
-            FilenameOpt("logging", "configfile", default=None),
+            FilenameOpt("logging", "configfile", default=None,
+                        help ="The location of the log configuration file"),
 
-            FilenameOpt("plugin", "configfile"),
+            FilenameOpt("plugin", "configfile",
+                        help="The location of the plugin configuration file"),
 
             FilenameOpt("storage", "temppath", default="/tmp"),
             FilenameOpt("storage", "services_dir", default=None),
             FilenameOpt("storage", "enstartius_dir", default=None),
+            FilenameOpt("storage", "binaries_path", default=None),
+            FilenameOpt("storage", "ephemeral_mountpoint", default=None),
+            FilenameOpt("storage", "operations_path", default=None),
 
             ConfigOpt("cloud", "name", str, default=None),
             ConfigOpt("cloud", "type", str, default=CLOUD_TYPES.Amazon),
@@ -174,7 +195,9 @@ class AgentConfig(object):
             ConfigOpt("messaging", "max_at_once", int, default=-1),
 
             ConfigOpt("enstratius", "agentmanager_url", str, default=None),
-            ConfigOpt("platform", "script_locations", list, default="SmartOS"),
+            ConfigOpt("platform", "script_locations", list,
+                      default="common-linux"),
+            ConfigOpt("platform", "name", list, default=None),
         ]
         for o in self.option_list:
             k = o.get_option_name()

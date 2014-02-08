@@ -3,12 +3,13 @@ import os
 import subprocess
 import sys
 import platform
-
-import virtualenv
+import textwrap
+from dcm.agent import config
+import ConfigParser
 
 
 # below are the variables with no defaults that must be determined
-dcm_url = "https://enstratius.com:8080"
+dcm_url = "https://provisioning.enstratus.com:3303/ws"
 cloud_choice = None
 platform_cloice = None
 
@@ -48,6 +49,7 @@ cloud_choices = {
     20: "Other",
 }
 
+
 def setup_command_line_parser():
     parser = argparse.ArgumentParser(
         description='DCM Agent Installer for linux.')
@@ -56,8 +58,8 @@ def setup_command_line_parser():
                         dest="cloud",
                         help="The cloud where this virtual machine will be "
                              "run.  Options: %s" % ", ".join(
-                            cloud_choices.values()),
-                        choices=cloud_choices.values())
+                            cloud_choices.values()))
+                        # choices=cloud_choices.values())
     parser.add_argument("--url", "-u", dest="url",
                         default=dcm_url,
                         help="The location of the dcm web socket listener")
@@ -67,6 +69,11 @@ def setup_command_line_parser():
                         default=False,
                         help="Increase the amount of output produced by the "
                              "script."),
+
+    parser.add_argument("--initial", "-I", dest="initial",
+                        action='store_true',
+                        default=False,
+                        help=argparse.SUPPRESS),
 
     parser.add_argument("--binaries-path", "-b",
                         metavar=default_binaries_path,
@@ -132,9 +139,9 @@ def run_command(cmd):
     return (rc, stdout, stderr)
 
 
-def identify_platform():
+def identify_platform(opts):
 
-    if platform.system().lower() != "linux":
+    if not opts.initial and platform.system().lower() != "linux":
         raise Exception("This agent can only be used on Linux platform.")
 
     lsb = "/usr/bin/lsb_release"
@@ -172,6 +179,8 @@ def identify_platform():
             if line.find("amazon linux ami") >= 0:
                 return "el"
 
+    if opts.initial:
+        return None
     raise Exception("The platform could not be determined")
 
 
@@ -192,36 +201,6 @@ def select_cloud():
     return cloud
 
 
-def do_virtual_env(opts, ve_path):
-    orig_args = sys.argv
-    sys.argv = ["virtualenv.py", "--no-site-packages", ve_path]
-    try:
-        virtualenv.main()
-    finally:
-        sys.argv = orig_args
-
-
-def make_directories(opts):
-    dirs = [
-            opts.binaries_path,
-            opts.ephemeral_mountpoint,
-            opts.enstratus_path,
-            opts.operations_path,
-            opts.services_path,
-            opts.temp_path,
-            os.path.join(opts.enstratus_path, "etc"),
-            os.path.join(opts.enstratus_path, "bin"),
-            ]
-
-    for d in dirs:
-        try:
-            os.makedirs(d)
-        except OSError as osEx:
-            if osEx.errno != 17:
-                raise Exception("The directory %s could not be made: %s " %
-                                (d, osEx.message))
-
-
 def do_py_install(ve_path):
     command = "%s %s" % (os.path.join(
         os.getcwd(), "install-py-mod.sh"), ve_path)
@@ -230,55 +209,114 @@ def do_py_install(ve_path):
         raise Exception(stderr)
 
 
-def _sed(sub_list, source, dest):
-    with open(dest, "w") as dest_fptr:
-        with open(source, "r") as source_ptr:
-            for line in source_ptr.readlines():
-                for o, s in sub_list:
-                    line = line.replace(o, s)
-                dest_fptr.write(line)
+def _default_conf_dict():
+
+    conf_dict = {}
+    conf = config.AgentConfig()
+    for c in conf.option_list:
+
+        s_d = {}
+        if c.section in conf_dict:
+            s_d = conf_dict[c.section]
+        else:
+            conf_dict[c.section] = s_d
+
+        s_d[c.name] = (c.get_help(), c.get_default())
+    return conf_dict
 
 
-def do_conf_files(opts):
+def _update_conf_dict(conf_file, conf_dict):
 
-    source_dir = os.path.join(os.path.dirname(os.getcwd()), "etc")
-    dest_dir = os.path.join(opts.enstratus_path, "etc")
+    parser = ConfigParser.SafeConfigParser()
+    parser.read([conf_file])
 
-    log_sub = [("@LOGFILE_PATH@",
-                os.path.join(opts.enstratus_path, "agent.log"))]
-    _sed(log_sub,
-         os.path.join(source_dir, "logging.yaml.template"),
-         os.path.join(dest_dir, "logging.yaml"))
+    for s in parser.sections():
+        if s in conf_dict:
+            sd = conf_dict[s]
+        else:
+            sd = {}
+            conf_dict[s] = sd
 
-    _sed([],
-         os.path.join(source_dir, "plugin.conf.template"),
-         os.path.join(dest_dir, "plugin.conf"))
+        items_list = parser.items(s)
+        for (key, value) in items_list:
+            help = None
+            if key in conf_dict:
+                (help, _) = sd[key]
+            sd[key] = (help, value)
 
-    agent_sub = [
-        ("@TEMP_PATH@", opts.temp_path),
-        ("@SERVICE_DIR@", opts.services_path),
-        ("@CLOUD_TYPE@", opts.cloud),
-        ("@AGENT_MANAGER_URL@", opts.url + "/ws")
+
+def write_conf_file(dest_filename, conf_dict):
+
+    with open(dest_filename, "w") as fptr:
+        for section_name in conf_dict:
+            sd = conf_dict[section_name]
+            fptr.write("[%s]%s" % (section_name, os.linesep))
+
+            for item_name in sd:
+                (help, value) = sd[item_name]
+                if help:
+                    help_lines = textwrap.wrap(help, 79)
+                    for h in help_lines:
+                        fptr.write("# %s%s" % (h, os.linesep))
+                if value is None:
+                    fptr.write("#%s=" % item_name)
+                else:
+                    if type(value) == list:
+                        value = str(value)[1:-1]
+                    fptr.write("%s=%s" % (item_name, str(value)))
+
+                fptr.write(os.linesep)
+
+            fptr.write(os.linesep)
+
+
+def manage_conf(conf_file_name):
+
+    conf_d = _default_conf_dict()
+    _update_conf_dict(conf_file_name, conf_d)
+
+    return conf_d
+
+
+def make_dirs(opts):
+    dirs = [
+        os.path.join(opts.enstratus_path, "etc"),
+        os.path.join(opts.enstratus_path, "bin"),
     ]
-    _sed(agent_sub,
-         os.path.join(source_dir, "agent.conf.template"),
-         os.path.join(dest_dir, "agent.conf"))
 
-    return dest_dir
+    for d in dirs:
+        try:
+            os.makedirs(d)
+        except OSError as osE:
+            if osE.errno != 17:
+                raise
 
 
-def write_exe(opts, ve):
-    agent_exe_fname = os.path.join(opts.enstratus_path, "bin", "agent.sh")
+def merge_opts(conf_d, opts):
 
-    agent_script = """
-#!/bin/bash
+    map_opts_to_conf = {
+        "cloud": ("cloud", "type"),
+        "dcm_url": ("enstratius", "agentmanager_url"),
+        "binaries_path": ("storage", "binaries_path"),
+        "ephemeral_mountpoint": ("storage", "ephemeral_mountpoint"),
+        "enstratus_path": ("storage", "enstartius_dir"),
+        "operations_path": ("storage", "operations_path"),
+        "services_path": ("storage", "services_dir"),
+        "temp_path": ("storage", "temppath"),
+        "platform": ("platform", "name"),
+    }
+    for opts_name in map_opts_to_conf:
+        (s, i) = map_opts_to_conf[opts_name]
 
-. %(install_dir)s/bin/activate
-%(ve_dir)s/bin/dcm-agent -c %(install_dir)s/etc/agent.conf
-""" % {"install_dir": opts.enstratus_path, "ve_dir": ve}
-    with open(agent_exe_fname, "w") as f:
-        f.write(agent_script)
-
+        if s not in conf_d:
+            conf_d[s] = {}
+        sd = conf_d[s]
+        v = getattr(opts, opts_name, None)
+        h = None
+        if i in sd:
+            (h, _) = sd[i]
+        if v is not None:
+            sd[i] = (h, v)
 
 
 def main():
@@ -286,25 +324,23 @@ def main():
     parser = setup_command_line_parser()
     opts = parser.parse_args(args=sys.argv[1:])
 
-    ve_path = os.path.join(opts.enstratus_path, "VE")
-
     try:
+        if opts.cloud is not None and opts.cloud not in cloud_choices:
+            raise Exception("%s is not a valid cloud choice.  It must be one "
+                            "of %s" % (opts.cloud, str(cloud_choices.values())))
         if opts.platform is None:
-            opts.platform = identify_platform()
-        if opts.cloud is None:
+            opts.platform = identify_platform(opts)
+        if opts.cloud is None and not opts.initial:
             opts.cloud = select_cloud()
-        make_directories(opts)
-        do_virtual_env(opts, ve_path)
 
-        do_py_install(ve_path)
+        make_dirs(opts)
+        conf_file_name = os.path.join(opts.enstratus_path, "etc", "agent.conf")
 
-        dest_dir = do_conf_files(opts)
-
-        write_exe(opts, ve_path)
+        conf_d = manage_conf(conf_file_name)
+        merge_opts(conf_d, opts)
+        write_conf_file(conf_file_name, conf_d)
 
         print "The agent installation was successful."
-        print "Further customizations can be made in the configuration files " \
-              "found in the directory %s" % dest_dir
 
     except Exception as ex:
         print >> sys.stderr, ex.message
@@ -313,4 +349,5 @@ def main():
 
 
 if __name__ == "__main__":
-    main()
+    rc = main()
+    sys.exit(rc)

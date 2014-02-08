@@ -1,0 +1,9 @@
+[default]
+exe_path = /services/agent/bin
+
+
+[plugin:.*]
+type: python_module
+module_name: dcm.agent.jobs.builtin.remote_tester
+remote_host: localhost
+remote_port: 9988
