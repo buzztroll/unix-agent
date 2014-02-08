@@ -38,8 +38,7 @@ Vagrant.configure("2") do |config|
   config.vm.synced_folder "../omnibus-es-ex-pyagent/pkg/", "/agent/pkgs"
 
   config.vm.provision :shell do |shell|
-    shell.inline = "/vagrant/bin/test-distro.sh $1"
+    shell.inline = "/vagrant/test-distro.sh $1"
     shell.args = ENV['ES_AGENT_PKG_NAME']
-    
   end
 end
