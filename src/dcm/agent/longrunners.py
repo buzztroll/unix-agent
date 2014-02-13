@@ -1,7 +1,6 @@
 import calendar
 import logging
 import Queue
-import random
 import threading
 import time
 
@@ -38,14 +37,16 @@ class JobReply(object):
         self.end_date = None
         self.error = None
 
+
 class JobRunner(threading.Thread):
 
-    def __init__(self, queue, reply_queue):
+    def __init__(self, conf, queue, reply_queue):
         super(JobRunner, self).__init__()
         self._queue = queue
         self._exit = threading.Event()
         self._current_job = None
         self._reply_queue = reply_queue
+        self._conf = conf
 
     # It should be safe to call done without a lock
     def done(self):
@@ -62,11 +63,15 @@ class JobRunner(threading.Thread):
                 work = self._queue.get(True, 1)
 
                 try:
+                    _g_logger.debug("Running the long job %s:%s" %\
+                                    (work.name, work.request_id))
+
                     job_reply = JobReply(work.job_id)
                     self._reply_queue.put(job_reply)
 
                     plugin = jobs.load_python_module(
                         work.items_map["module_name"],
+                        self._conf,
                         work.request_id,
                         work.items_map,
                         work.name,
@@ -74,6 +79,7 @@ class JobRunner(threading.Thread):
 
                     job_reply.reply_doc = plugin.run()
                 except Exception as ex:
+                    _g_logger.exception("An error occurred")
                     job_reply.error = ex.message
                     job_reply.job_status = JobStatus.ERROR
                 else:
@@ -81,12 +87,14 @@ class JobRunner(threading.Thread):
                 finally:
                     job_reply.end_date = calendar.timegm(time.gmtime())
                     self._reply_queue.put(job_reply)
+                    _g_logger.debug("Completed the long job %s:%s "
+                                    "STATUS=%s" % (work.name, work.request_id,
+                                                   job_reply.job_status))
 
             except Queue.Empty:
                 pass
             except:
-                _g_logger.exception(
-                    "Something went wrong processing the job")
+                _g_logger.exception("Something went wrong processing the job")
             finally:
                 self._current_job = None
 
@@ -104,7 +112,7 @@ class LongRunner(object):
         self._reply_queue = Queue.Queue()
         self._runner_list = []
         for i in range(conf.workers_long_runner_threads):
-            jr = JobRunner(self._run_queue, self._reply_queue)
+            jr = JobRunner(conf, self._run_queue, self._reply_queue)
             self._runner_list.append(jr)
             jr.start()
         self._timers = []
@@ -127,23 +135,22 @@ class LongRunner(object):
 
     def start_new_job(self, conf, request_id, items_map,
                       name, arguments):
-        module_name = items_map["module"]
+        module_name = items_map["module_name"]
 
         plugin = jobs.load_python_module(
             module_name, conf, request_id, items_map, name, arguments)
 
-        self._lock.lock()
-        try:
+        with self._lock:
             self._job_id = self._job_id + 1
             new_job = NewLongJob(
                 items_map, name, arguments, self._job_id, request_id)
-            detached_job = DetachedJob(self._conf, self,
+            detached_job = DetachedJob(self._conf, self._job_id,
                                        plugin, name, arguments)
             self._job_table[detached_job.get_job_id()] = detached_job
+            _g_logger.debug("Starting new long job id=%s"\
+                            % str(detached_job.get_job_id()))
             self._run_queue.put(new_job)
             return detached_job
-        finally:
-            self._lock.unlock()
 
     def job_complete(self, job_id):
         if self._conf.jobs_retain_job_time == 0:
@@ -154,37 +161,38 @@ class LongRunner(object):
         t.start()
 
     def _job_cleanup(self, job_id):
-        self._lock.lock()
-        try:
+        with self._lock:
             _g_logger.debug("Removing job %d for the table" % job_id)
             del self._job_table[job_id]
-        finally:
-            self._lock.unlock()
-        pass
 
     def lookup_job(self, job_id):
-        self._lock.lock()
-        try:
-            return self._job_table[job_id]
-        except Exception as ex:
-            return None
-        finally:
-            self._lock.unlock()
+        with self._lock:
+            try:
+                return self._job_table[job_id]
+            except Exception as ex:
+                return None
 
     def poll(self):
         try:
-            work_reply = self._reply_queue.get(True, 1)
-            self._lock.lock()
-            try:
-                jd = self._job_table[work_reply.job_id]
-                jd.update(work_reply)
-                if jd._job_status == JobStatus.ERROR or jd._job_status == JobStatus.COMPLETE:
-                    self.job_complete(work_reply.job_id)
-            except Exception as ex:
-                return None
-            finally:
-                self._lock.unlock()
+            _g_logger.debug("Polling the long runner")
+            job_reply = self._reply_queue.get(True, 1)
+
+            with self._lock:
+                try:
+                    _g_logger.debug("long runner poll has the lock, "
+                                    "updating %s" % str(job_reply.job_id))
+
+                    jd = self._job_table[job_reply.job_id]
+                    jd.update(job_reply)
+                    if jd._job_status == JobStatus.ERROR or\
+                                    jd._job_status == JobStatus.COMPLETE:
+                        self.job_complete(job_reply.job_id)
+                except Exception:
+                    _g_logger.exception("Failed to update")
+                    return None
         except Queue.Empty:
+            _g_logger.debug("Polling the long runner reply q empty")
+
             pass
 
 

@@ -195,6 +195,7 @@ class AgentConfig(object):
             ConfigOpt("platform", "script_locations", list,
                       default="common-linux"),
             ConfigOpt("platform", "name", list, default=None),
+            ConfigOpt("jobs", "retain_job_time", int, default=3600),
         ]
         for o in self.option_list:
             k = o.get_option_name()

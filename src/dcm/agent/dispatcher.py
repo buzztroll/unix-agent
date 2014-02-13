@@ -23,6 +23,32 @@ class WorkReply(object):
         self.reply_doc = reply_doc
 
 
+def _run_plugin(conf, items_map, request_id, command, arguments):
+    try:
+        plugin = jobs.load_plugin(
+            conf,
+            items_map,
+            request_id,
+            command,
+            arguments)
+
+        _g_logger.info("Starting job " + str(plugin))
+        reply_doc = plugin.run()
+        _g_logger.info(
+            "Completed successfully job " + str(plugin))
+    except Exception as ex:
+        _g_logger.exception(
+            "Worker %s thread had a top level error when "
+            "running job %s : %s"
+            % (threading.current_thread().getName(), request_id, ex.message))
+        reply_doc = {
+            'Exception': ex.message,
+            'return_code': 1}
+    finally:
+        _g_logger.info("Task done job " + request_id)
+    return reply_doc
+
+
 class Worker(threading.Thread):
 
     def __init__(self, conf, worker_queue, reply_q):
@@ -45,31 +71,13 @@ class Worker(threading.Thread):
                 workload = self.worker_queue.get(True, 1)
                 # setup message logging
                 with tracer.RequestTracer(workload.request_id):
-                    try:
-                        plugin = jobs.load_plugin(
-                            self._conf,
-                            workload.items_map,
-                            workload.request_id,
-                            workload.payload["command"],
-                            workload.payload["arguments"])
 
-                        _g_logger.info("Starting job " + str(plugin))
-                        reply_doc = plugin.run()
-                        _g_logger.info(
-                            "Completed successfully job " + str(plugin))
-                    except Exception as ex:
-                        _g_logger.exception(
-                            "Worker %s thread had a top level error when "
-                            "running job %s : %s"
-                            % (self.getName(), str(workload), ex.message))
-                        reply_doc = {
-                            'Exception': ex.message,
-                            'return_code': 1}
-                    finally:
-                        # If we want a shutdown that empties the queue
-                        # before termination we will need to call
-                        self.worker_queue.task_done()
-                        _g_logger.info("Task done job " + workload.request_id)
+                    reply_doc = _run_plugin(self._conf,
+                                            workload.items_map,
+                                            workload.request_id,
+                                            workload.payload["command"],
+                                            workload.payload["arguments"])
+                    self.worker_queue.task_done()
 
                     _g_logger.debug("Adding the reply document to the reply "
                                     "queue " + str(reply_doc))
@@ -135,7 +143,21 @@ class Dispatcher(object):
                     items_map,
                     payload["command"],
                     payload["arguments"])
-            reply_doc = dj.get_message_payload()
+            payload_doc = dj.get_message_payload()
+            reply_doc = {
+                "return_code": 0,
+                "reply_type": "job_description",
+                "reply_object": payload_doc
+            }
+            wr = WorkReply(request_id, reply_doc)
+            self.reply_q.put(wr)
+        elif "immediate" in items_map:
+            items_map["long_runner"] = self._long_runner
+            reply_doc = _run_plugin(self._conf,
+                                    items_map,
+                                    request_id,
+                                    payload["command"],
+                                    payload["arguments"])
             wr = WorkReply(request_id, reply_doc)
             self.reply_q.put(wr)
         else:

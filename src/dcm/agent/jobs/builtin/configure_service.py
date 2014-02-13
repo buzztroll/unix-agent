@@ -22,6 +22,7 @@ import dcm.agent.jobs as jobs
 _g_logger = logging.getLogger(__name__)
 
 
+# This handlers configure_service_with_ssl and configure_service
 class ConfigureService(jobs.Plugin):
     def __init__(self, conf, job_id, items_map, name, arguments):
         super(ConfigureService, self).__init__(

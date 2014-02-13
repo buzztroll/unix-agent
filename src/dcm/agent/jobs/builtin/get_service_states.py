@@ -11,10 +11,14 @@
 #   this material is strictly forbidden unless prior written permission
 #   is obtained from Dell, Inc.
 #  ======================================================================
+import logging
 import os
 
 import dcm.agent.jobs as jobs
 import dcm.agent.utils as utils
+
+
+_g_logger = logging.getLogger(__name__)
 
 
 class GetServiceStates(jobs.Plugin):
@@ -27,11 +31,12 @@ class GetServiceStates(jobs.Plugin):
 
     def run(self):
         string_list = []
+
         if self.conf.storage_services_dir and \
-                not os.path.exists(self.conf.storage_services_dir):
-            for f in os.listdir(self.conf.services_directory):
+                os.path.exists(self.conf.storage_services_dir):
+            for f in os.listdir(self.conf.storage_services_dir):
                 if f[0] == "a" and os.path.isdir(
-                        os.path.join(self.conf.services_directory, f)):
+                        os.path.join(self.conf.storage_services_dir, f)):
                     string_list.append(f)
                     try:
                         command = [self._script_exe, f]

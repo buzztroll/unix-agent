@@ -46,23 +46,31 @@ class InstallService(direct_pass.DirectPass):
         cloud_id = self.arguments["fromCloudId"]
         service_id = self.arguments["serviceId"]
 
+        # there are two version that we have to deal with.  Instead of
+        # switching on a version number we inspect the document for values
+        delegate = self.arguments.get("deletegate", None)
+        endpoint = self.arguments.get("endpoint", None)
+        account = self.arguments.get("account", None)
+        region_id = self.arguments.get("providerRegionId", self.conf.region_id)
+
         customer_id = self.arguments["customerId"]
         run_as_user = self.arguments["runAsUser"]
 
-        region_id = self.conf.region_id
-        if "providerRegionId" in self.arguments:
-            region_id = self.arguments["providerRegionId"]
-
-        storagecloud.download(cloud_id, container_name, object_name,
-             access_key, secret_key,
-             service_image_path,
-             region_id=region_id)
+        storagecloud.download(
+            cloud_id, container_name, object_name,
+            access_key, secret_key,
+            service_image_path,
+            region_id=region_id,
+            delegate=delegate,
+            endpoint=endpoint,
+            account=account)
 
         self.ordered_param_list = [service_id,
                                    customer_id,
                                    run_as_user,
                                    service_image_path]
         return super(InstallService, self).run()
+
 
 def load_plugin(conf, job_id, items_map, name, arguments):
     return InstallService(conf, job_id, items_map, name, arguments)

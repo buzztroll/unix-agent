@@ -99,7 +99,10 @@ def _map_cloud_name_to_provider(cloud_type, region_id):
 
 def download(cloud_id, container_name, object_name,
              storage_access_key, storage_secret_key,
-             destination_file, region_id=None):
+             destination_file, region_id=None,
+             delegate=None,
+             endpoint=None,
+             account=None):
     try:
         cloud_type = _map_cloud_id_to_type[cloud_id]
         driver_cls = _map_cloud_name_to_provider(cloud_type, region_id)
@@ -119,7 +122,10 @@ def download(cloud_id, container_name, object_name,
 
 def upload(cloud_id, source_path, container_name, object_name,
            storage_access_key, storage_secret_key,
-           region_id=None):
+           region_id=None,
+           delegate=None,
+           endpoint=None,
+           account=None):
 
     try:
         cloud_type = _map_cloud_id_to_type[cloud_id]

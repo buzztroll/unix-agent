@@ -54,7 +54,6 @@ class TestSimpleSingleCommands(unittest.TestCase):
         self.disp.start_workers()
 
     def _run_main_loop(self):
-        self.disp.stop()
         service._agent_main_loop(self.conf_obj,
                                  self.request_listener,
                                  self.disp,
@@ -92,6 +91,7 @@ class TestSimpleSingleCommands(unittest.TestCase):
 
 
     def tearDown(self):
+        self.disp.stop()
         service.shutdown_main_loop()
 
     def test_get_private_ip(self):
@@ -208,14 +208,38 @@ class TestSimpleSingleCommands(unittest.TestCase):
 
         self.assertEqual(socket.gethostname(), orig_hostname)
 
+    def _get_job_description(self, job_id):
+        arguments = {
+            "agent_token": None,
+            "jobId": job_id
+        }
+        doc = {
+            "command": "get_job_description",
+            "arguments": arguments
+        }
+        req_reply = self._rpc_wait_reply(doc)
+        r = req_reply.get_reply()
+        self.assertEquals(r["payload"]["return_code"], 0)
+        self.assertEquals(r["payload"]["reply_type"], "job_description")
+
+        jd = r["payload"]["reply_object"]
+
+        return jd
+
+
     @test_utils.system_changing
     def test_install_start_stop_configure_service(self):
+        """
+        install a service, start it, configure it in two ways, stop it, then
+        delete the directory it was put into
+        """
+        service_id = "asuccess_service"
 
         # test install
         arguments = {
             "agent_token": None,
             "customerId": self.customer_id,
-            "serviceId": "success_service",
+            "serviceId": service_id,
             "fromCloudId": 1,
             "runAsUser": "vagrant",
             "storageAccessKey": os.environ["S3_ACCESS_KEY"],
@@ -234,8 +258,14 @@ class TestSimpleSingleCommands(unittest.TestCase):
         req_reply = self._rpc_wait_reply(doc)
         r = req_reply.get_reply()
         self.assertEquals(r["payload"]["return_code"], 0)
+        self.assertEquals(r["payload"]["reply_type"], "job_description")
 
-        service_dir = self.conf_obj.get_service_directory("success_service")
+        jd = r["payload"]["reply_object"]
+        while jd["job_status"] == "WAITING":
+            jd = self._get_job_description(jd["job_id"])
+        self.assertEqual(jd["job_status"], "COMPLETE")
+
+        service_dir = self.conf_obj.get_service_directory(service_id)
         self.assertTrue(os.path.exists(service_dir))
         self.assertTrue(os.path.exists(os.path.join(service_dir,
                                                     "bin/enstratus-configure")))
@@ -249,7 +279,7 @@ class TestSimpleSingleCommands(unittest.TestCase):
         arguments = {
             "agent_token": None,
             "customerId": self.customer_id,
-            "serviceId": "success_service"
+            "serviceId": service_id
         }
         doc = {
             "command": "start_service",
@@ -275,7 +305,7 @@ class TestSimpleSingleCommands(unittest.TestCase):
         arguments = {
             "agent_token": None,
             "forCustomerId": self.customer_id,
-            "serviceId": "success_service",
+            "serviceId": service_id,
             "runAsUser": "vagrant",
             "configurationData": configuration_data
         }
@@ -287,6 +317,11 @@ class TestSimpleSingleCommands(unittest.TestCase):
         req_reply = self._rpc_wait_reply(doc)
         r = req_reply.get_reply()
         self.assertEquals(r["payload"]["return_code"], 0)
+        jd = r["payload"]["reply_object"]
+        while jd["job_status"] == "WAITING":
+            jd = self._get_job_description(jd["job_id"])
+        self.assertEqual(jd["job_status"], "COMPLETE")
+
         self.assertTrue(os.path.exists("/tmp/service_configure"))
 
         with open("/tmp/service_configure", "r") as fptr:
@@ -309,7 +344,7 @@ class TestSimpleSingleCommands(unittest.TestCase):
         arguments = {
             "agent_token": None,
             "forCustomerId": self.customer_id,
-            "serviceId": "success_service",
+            "serviceId": service_id,
             "runAsUser": "vagrant",
             "configurationData": configuration_data,
 
@@ -326,7 +361,13 @@ class TestSimpleSingleCommands(unittest.TestCase):
         req_reply = self._rpc_wait_reply(doc)
         r = req_reply.get_reply()
         self.assertEquals(r["payload"]["return_code"], 0)
+        jd = r["payload"]["reply_object"]
+        while jd["job_status"] == "WAITING":
+            jd = self._get_job_description(jd["job_id"])
+        self.assertEqual(jd["job_status"], "COMPLETE")
+
         self.assertTrue(os.path.exists("/tmp/service_configure"))
+
 
         with open("/tmp/service_configure", "r") as fptr:
             secs = fptr.readline()
@@ -340,11 +381,27 @@ class TestSimpleSingleCommands(unittest.TestCase):
             data = fptr.read()
             self.assertEqual(data, configuration_data)
 
+        # get service state
+        arguments = {
+            "agent_token": None
+        }
+        doc = {
+            "command": "get_service_states",
+            "arguments": arguments
+        }
+        req_reply = self._rpc_wait_reply(doc)
+        r = req_reply.get_reply()
+        self.assertEquals(r["payload"]["return_code"], 0)
+        self.assertEquals(r["payload"]["reply_type"], "string_array")
+        service_array = r["payload"]["reply_object"]
+
+        self.assertEqual([service_id, 'OK'], service_array)
+
         # test stop
         arguments = {
             "agent_token": None,
             "customerId": self.customer_id,
-            "serviceId": "success_service"
+            "serviceId": service_id
         }
         doc = {
             "command": "stop_service",

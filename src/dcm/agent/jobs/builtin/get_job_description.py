@@ -29,7 +29,8 @@ class GetJobDescription(jobs.Plugin):
 
     def run(self):
         job_id = self.arguments["jobId"]
-        job_description = longrunners.lookup_job(job_id)
+        lr = self.items_map["long_runner"]
+        job_description = lr.lookup_job(job_id)
         if job_description is None:
             return {'return_code': 1, 'message': "no such job id %d" % job_id}
         return {'return_code': 0,
