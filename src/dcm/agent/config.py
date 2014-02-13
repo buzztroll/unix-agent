@@ -140,9 +140,6 @@ class AgentConfig(object):
         self._cli_args = None
         self._remaining_argv = None
         self._agent_id = None
-        self.services_path = None # TODO SET THIS
-        self.ephemeral_mount_point = None # TODO SET THIS
-        self.enstratius_directory = None # TODO SET THIS
         self.instance_id = None
         self._init_file_options()
 
@@ -179,11 +176,11 @@ class AgentConfig(object):
                         help="The location of the plugin configuration file"),
 
             FilenameOpt("storage", "temppath", default="/tmp"),
-            FilenameOpt("storage", "services_dir", default=None),
-            FilenameOpt("storage", "enstartius_dir", default=None),
-            FilenameOpt("storage", "binaries_path", default=None),
-            FilenameOpt("storage", "ephemeral_mountpoint", default=None),
-            FilenameOpt("storage", "operations_path", default=None),
+            FilenameOpt("storage", "services_dir", default="/mnt/services"),
+            FilenameOpt("storage", "base_dir", default="/dcm"),
+            FilenameOpt("storage", "binaries_path", default="/dcm/bin"),
+            FilenameOpt("storage", "ephemeral_mountpoint", default="/mnt"),
+            FilenameOpt("storage", "operations_path", default="/mnt"),
 
             ConfigOpt("cloud", "name", str, default=None),
             ConfigOpt("cloud", "type", str, default=CLOUD_TYPES.Amazon),
@@ -347,8 +344,11 @@ class AgentConfig(object):
         pass
 
     def get_service_directory(self, service_name):
-        return os.path.join(self.services_directory, service_name)
+        return os.path.join(self.storage_services_dir, service_name)
 
     def start_job_runner(self):
         self.jr = job_runner.JobRunner()
+
+    def get_temp_file(self, filename):
+        return os.path.join(self.storage_temppath, filename)
 

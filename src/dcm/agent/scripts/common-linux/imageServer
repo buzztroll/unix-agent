@@ -15,21 +15,16 @@
 # Enstratius will call this script to bundle your root volume as an Amazon Machine Image
 # and upload it to Amazon S3.
 #
-# HOW TO EXTEND THIS SCRIPT (aka DO NOT EDIT THIS SCRIPT)
-# You can extend or replace this script by setting up your own executables in /enstratus/custom/bin:
-# * /enstratus/custom/bin/makeImage - if exists, will completely replace this script
-# * /enstratus/custom/bin/makeImage-pre - if exists, will be executed before this script
-# * /enstratus/custom/bin/makeImage-post - if exists, will be executed after this script
-# Your replacement commands will be called with the same arguments in the same order as
-# this script.
 
 set -u
 
-. "/enstratus/bin/common_mod"
+BASENAME=`basename $0`
+DIRNAME=`dirname $0`
+. "$DIRNAME/common_mod"
 
 EC2_HOME=/usr
 
-LOGGER=/enstratus/bin/log
+LOGGER=$DIRNAME/log
 logTag="imageServer"
 
 if [ $# -lt 11 ] ; then
@@ -38,7 +33,7 @@ if [ $# -lt 11 ] ; then
 fi
 
 BASENAME=`basename $0`
-CUSTOM="/enstratus/custom/bin/$BASENAME"
+CUSTOM="$DCM_BASEDIR/custom/bin/$BASENAME"
 
 if [ -x ${CUSTOM} ] ; then
 	${CUSTOM} "$@" 2>&1 | $LOGGER -t "$logTag"

@@ -21,7 +21,7 @@ class StopProxy(direct_pass.DirectPass):
             conf, job_id, items_map, name, arguments)
 
         try:
-            self.ordered_param_list = [conf.enstratius_directory,
+            self.ordered_param_list = [conf.storage_base_dir,
                                        arguments["toAddress"]]
         except KeyError as ke:
             raise exceptions.AgentPluginConfigException(

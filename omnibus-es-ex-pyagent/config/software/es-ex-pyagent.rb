@@ -14,5 +14,4 @@ build do
   command "#{install_dir}/embedded/bin/pip install -I --build #{project_dir} -r /agent/src/requirements.txt", :env => build_env
   command "#{install_dir}/embedded/bin/pip install -I --build #{project_dir} -r /agent/src/test-requirements.txt", :env => build_env
   command "cd /agent/src; #{install_dir}/embedded/bin/python setup.py install", :env => build_env
-  command "#{install_dir}/embedded/bin/dcm-agent-configure  -I -v -p /tmp", :env => build_env
 end

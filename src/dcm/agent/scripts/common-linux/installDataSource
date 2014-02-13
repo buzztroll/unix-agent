@@ -18,10 +18,12 @@
 set -u
 PATH=/bin:${PATH}
 
-. "/enstratus/bin/common_mod"
+BASENAME=`basename $0`
+DIRNAME=`dirname $0`
+. "$DIRNAME/common_mod"
 
 logTag="installDataSource"
-LOGGER=/enstratus/bin/log
+LOGGER=$DIRNAME/log
 
 if [ $# -lt 3 ] ; then
    $LOGGER -t "$logTag" "Syntax: installDataSource SERVICE_ID CONFIG_FILE IMAGE_FILE"

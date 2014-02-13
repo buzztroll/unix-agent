@@ -14,13 +14,15 @@
 
 set -u
 
-. "/enstratus/bin/common_mod"
+DIRNAME=`dirname $0`
+. "$DIRNAME/common_mod"
+BASENAME=`basename $0`
 
 logTag="terminate"
-LOGGER=/enstratus/bin/log
+LOGGER=$DIRNAME/log
 
 BASENAME=`basename $0`
-CUSTOM=/enstratus/custom/bin/${BASENAME}
+CUSTOM=$DCM_BASEDIR/custom/bin/${BASENAME}
 
 if [ -x ${CUSTOM}-pre ] ; then
 	${CUSTOM}-pre "$@" 2>&1 | $LOGGER -t "$logTag"

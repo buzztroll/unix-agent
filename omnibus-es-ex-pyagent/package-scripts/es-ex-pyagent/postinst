@@ -1,20 +1,86 @@
-#!/bin/bash
+#!/usr/bin/env bash
 #
-# Perform necessary es-ex-pyagent setup steps
-# after package is installed.
+# Copyright 2010-2013 Enstratius, Inc.
 #
+# post-install - Set privileges of directories and files, make init scripts, run enstratius service.
+#
+# This software is part of the Enstratius Cloud Management System. Only
+# authorized licensees of Enstratius may use this software and only
+# in the context of Enstratius-managed virtual servers and machine images.
+# Unauthorized copying or distribution of this software is strictly prohibited.
+# Authorized licensees may copy this software onto any machine images
+# and/or virtual hosts being managed by the Enstratius system as needed.
 
-PROGNAME=$(basename $0)
+PATH=/bin:${PATH}
 
-function error_exit
-{
-  echo "${PROGNAME}: ${1:-"Unknown Error"}" 1>&2
-  exit 1
-}
+set -u
 
-mkdir -p /enstratus/bin
-mkdir -p /enstratus/etc
+USERNAME="dcm"
+BASEDIRNAME="/dcm"
 
-echo "Thank you for installing es-ex-pyagent!"
+echo "Setting $USERNAME permissions..."
+chown -R $USERNAME:$USERNAME $BASEDIRNAME
+chmod 775 $BASEDIRNAME
+chmod 750 $BASEDIRNAME/bin
+chmod 550 $BASEDIRNAME/bin/*
+chmod 755 $BASEDIRNAME/custom/bin
+chmod -R 750 $BASEDIRNAME/home
+chown -R $USERNAME:$USERNAME $BASEDIRNAME/home
+chmod 750 $BASEDIRNAME/cfg
+chmod 640 $BASEDIRNAME/cfg/*
 
+mkdir -p /mnt/services
+chown -R $USERNAME:$USERNAME /mnt/services
+
+echo "Done."
+
+echo "Create the configuration file"
+
+/opt/es-ex-pyagent/embedded/bin/dcm-agent-configure -v -I
+
+echo "Done"
+
+echo "Setting /mnt/tmp and /tmp permissions..."
+mkdir -p /mnt/tmp 2>&1 > /dev/null
+chown -R $USERNAME:$USERNAME /mnt/tmp 2>&1 > /dev/null
+chown root:root /tmp 2>&1 > /dev/null
+chmod 1777 /tmp 2>&1 > /dev/null
+echo "Done."
+
+echo "Adding user to sudoers..."
+
+# Update sudoers.
+if [ -d /etc/sudoers.d ]; then
+	# For distros that have the latest sudo package which uses sudoers.d directory.
+	grep -q '#includedir /etc/sudoers.d' /etc/sudoers
+	if [ $? -ne 0 ]; then
+		echo "#includedir /etc/sudoers.d" >> /etc/sudoers
+	fi
+	sed -i "/$USERNAME/d" /etc/sudoers
+	echo "Defaults:$USERNAME !requiretty" > /tmp/ens-sudoers
+	echo "$USERNAME ALL=(ALL) NOPASSWD: ALL" >> /tmp/ens-sudoers
+	chown root:root /tmp/ens-sudoers
+	chmod 0440 /tmp/ens-sudoers
+	mv /tmp/ens-sudoers /etc/sudoers.d/$USERNAME
+elif [ -f /etc/sudoers ]; then
+	# For distros that do not have the latest sudo package.
+	chmod u+w /etc/sudoers
+	sed -i "/$USERNAME/d" /etc/sudoers
+	echo "Defaults:$USERNAME !requiretty" >> /etc/sudoers
+	echo "$USERNAME ALL=(ALL) NOPASSWD: ALL" >> /etc/sudoers
+	chmod u-w /etc/sudoers
+else
+	echo "error. sudoers not found."
+	exit 55
+fi
+echo "Done."
+
+echo "Attempting to install startup scripts..."
+
+echo "....TODO install rc.d/runit action"
+
+echo "======================================================="
+echo "The installation of the DCM Agent has completed."
+echo "To start the agent, run the following command."
+echo "======================================================="
 exit 0

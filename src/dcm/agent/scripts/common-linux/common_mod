@@ -1,5 +1,8 @@
+DCM_USER=vagrant
+DCM_BASEDIR=/dcm
+
 # Set of common functions.
-LOGGER=/enstratus/bin/log
+LOGGER=$DCM_BASEDIR/bin/log
 
 # This function was designed to work with return value before pipeline.
 # If a log message was given as an argument, it logs the message.
@@ -23,7 +26,7 @@ function exit_with_pipe_value() {
 	exit $ret
 }
 
-# Overrides sudo to use enstratus user's path. Implemented to support cross-distro scripts.
+# Overrides sudo to use dcm user's path. Implemented to support cross-distro scripts.
 function sudo() {
 	/usr/bin/sudo env PATH=${PATH} "$@"
 }

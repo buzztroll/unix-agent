@@ -1,3 +1,0 @@
-# Do not add in the /bin/bash directive here; enStratus auto-adds it
-set -u
-sudo -u enstratus /opt/local/enstratus/bin/enstratus-service $1

@@ -3,7 +3,7 @@
 set -u
 
 logTag="runConfigurationManagement-CHEF"
-LOGGER=/enstratus/bin/log
+LOGGER=$DIRNAME/log
 FIRST_BOOT='/etc/chef/first-boot.json'
 
 $LOGGER -t "$logTag" runConfigurationManagement-CHEF "$@"

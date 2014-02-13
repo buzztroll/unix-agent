@@ -2,10 +2,12 @@
 
 set -u
 
-. "/enstratus/bin/common_mod"
+DIRNAME=`dirname $0`
+. "$DIRNAME/common_mod"
+BASENAME=`basename $0`
 
 logTag="secureDelete"
-LOGGER=/enstratus/bin/log
+LOGGER=$DIRNAME/bin/log
 
 if [ $# -lt 1 ] ; then
    $LOGGER -t "$logTag" Syntax: secureDelete FILE_NAME
@@ -13,7 +15,7 @@ if [ $# -lt 1 ] ; then
 fi
 
 BASENAME=`basename $0`
-CUSTOM="/enstratus/custom/bin/$BASENAME"
+CUSTOM="$DCM_BASEDIR/custom/bin/$BASENAME"
 
 if [ -x ${CUSTOM} ] ; then
 	${CUSTOM} "$@" 2>&1 | $LOGGER -t "$logTag"

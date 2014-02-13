@@ -1,3 +1,0 @@
-# Do not add in the /bin/bash directive here; Enstratius auto-adds it
-set -u
-su - enstratus -s "/bin/bash" -c "/enstratus/bin/enstratus-service $1"

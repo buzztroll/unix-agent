@@ -19,6 +19,7 @@ setup(name='es-ex-pyagent',
       include_package_data = True,
       install_requires = ["pyyaml == 3.10",
                           "ws4py == 0.3.2",
+                          "psutil == 1.2.1",
                           "apache-libcloud == 0.14.0"],
 
       package_data = {"dcm.agent": ["dcm/agent/scripts/*",

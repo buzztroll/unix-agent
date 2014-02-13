@@ -17,9 +17,11 @@
 
 set -u
 
-. "/enstratus/bin/common_mod"
+DIRNAME=`dirname $0`
+. "$DIRNAME/common_mod"
+BASENAME=`basename $0`
 
-LOGGER=/enstratus/bin/log
+LOGGER=$DIRNAME/log
 logTag="startService"
 
 

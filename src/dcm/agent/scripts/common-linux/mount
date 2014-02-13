@@ -3,13 +3,15 @@
 set -u
 PATH=/bin:${PATH}
 
-. "/enstratus/bin/common_mod"
+BASENAME=`basename $0`
+DIRNAME=`dirname $0`
+. "$DIRNAME/common_mod"
 
 logTag="mount"
-LOGGER=/enstratus/bin/log
+LOGGER=$DIRNAME/bin/log
 
 BASENAME=`basename $0`
-CUSTOM="/enstratus/custom/bin/$BASENAME"
+CUSTOM="$DCM_BASEDIR/custom/bin/$BASENAME"
 
 if [ $# -lt 3 ] ; then
    $LOGGER -t "$logTag" Syntax: mount DEVICE_ID FILE_SYSTEM MOUNT_POINT
@@ -68,7 +70,7 @@ fi
 sleep 10
 sudo mount "$mountPoint" 2>&1 | $LOGGER -t "$logTag"
 exit_if_pipe_false "Mount failed."
-sudo chown enstratus:enstratus "$mountPoint"  2>&1 | $LOGGER -t "$logTag"
+sudo chown $DCM_USER:$DCM_USER "$mountPoint"  2>&1 | $LOGGER -t "$logTag"
 sudo chmod 775 "$mountPoint" 2>&1 | $LOGGER -t "$logTag"
 ret=${PIPESTATUS}
 				

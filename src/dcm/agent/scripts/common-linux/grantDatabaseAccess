@@ -17,9 +17,11 @@
 set -u
 PATH=/bin:${PATH}
 
-. "/enstratus/bin/common_mod"
+BASENAME=`basename $0`
+DIRNAME=`dirname $0`
+. "$DIRNAME/common_mod"
 
-LOGGER=/enstratus/bin/log
+LOGGER=$DIRNAME/log
 logTag="grantDatabaseAccess"
 
 if [ $# -lt 2 ] ; then

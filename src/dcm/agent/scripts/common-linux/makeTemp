@@ -14,10 +14,12 @@
 set -u
 PATH=/bin:${PATH}
 
-. "/enstratus/bin/common_mod"
+BASENAME=`basename $0`
+DIRNAME=`dirname $0`
+. "$DIRNAME/common_mod"
 
 if [ ! -d /mnt/tmp ] ; then
 	sudo mkdir /mnt/tmp
-	sudo chown enstratus:enstratus /mnt/tmp
+	sudo chown $DCM_USER:$DCM_USER /mnt/tmp
 	sudo chmod 770 /mnt/tmp
 fi

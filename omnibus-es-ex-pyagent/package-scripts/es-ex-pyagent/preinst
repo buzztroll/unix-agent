@@ -1,7 +1,56 @@
-#!/bin/bash
+#!/usr/bin/env bash
+# Copyright 2010-2013 Enstratius, Inc.
 #
-# Perform necessary es-ex-pyagent setup steps
-# before package is installed.
-#
+# pre-install - Set privileges of directories and files, make init scripts, run enstratius service.
+# 
+# This software is part of the Enstratius Cloud Management System. Only 
+# authorized licensees of Enstratius may use this software and only
+# in the context of Enstratius-managed virtual servers and machine images. 
+# Unauthorized copying or distribution of this software is strictly prohibited.
+# Authorized licensees may copy this software onto any machine images
+# and/or virtual hosts being managed by the Enstratius system as needed.
 
-echo "You're about to install es-ex-pyagent!"
+set -u
+
+PATH=/usr/sbin:/bin:${PATH}
+
+USERNAME="dcm"
+BASEDIRNAME="/dcm"
+
+echo "Install es-ex-pyagent..."
+
+# Create directories.
+needed_directories="$BASEDIRNAME $BASEDIRNAME/etc $BASEDIRNAME/home $BASEDIRNAME/custom/bin $BASEDIRNAME/cfg"
+for d in $needed_directories
+do
+    echo "Creating directory at $d..."
+    if [ ! -d $d ] ; then
+	    mkdir -p $d
+	    if [ $? != 0 ] ; then
+		    echo "Could not create $d directory. Are you running this as root?"
+    		exit 30
+	    fi
+    fi
+    echo "Done."
+done
+
+echo "Creating user and group..."
+# Create user/group group.
+grep -q $USERNAME /etc/group
+if [ $? != 0 ] ; then
+	groupadd $USERNAME
+	if [ $? != 0 ] ; then
+		echo "Failed to add $USERNAME group."
+		exit 40
+	fi
+fi
+# Create user.
+grep -q $USERNAME /etc/passwd
+if [ $? != 0 ] ; then
+	useradd -d $BASEDIRNAME/home -g $USERNAME -s /bin/false -m $USERNAME
+	if [ $? != 0 ] ; then
+		echo "Failed to add $USERNAME user."
+		exit 41
+	fi
+fi
+echo "Done."

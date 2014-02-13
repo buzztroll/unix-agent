@@ -61,9 +61,9 @@ class GetDeviceMappings(jobs.Plugin):
 
             if mount_point == "/":
                 type = DeviceTypes.ROOT
-            elif mount_point == self.conf.services_path:
+            elif mount_point == self.conf.storage_services_dir:
                 type = DeviceTypes.SERVICE
-            elif mount_point == self.conf.ephemeral_mount_point:
+            elif mount_point == self.conf.storage_ephemeral_mountpoint:
                 type = DeviceTypes.EPHEMERAL
             else:
                 type = DeviceTypes.CUSTOM

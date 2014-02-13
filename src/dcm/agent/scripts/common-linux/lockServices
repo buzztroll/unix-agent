@@ -15,7 +15,7 @@
 set -u
 
 logTag="lockFileSystems"
-LOGGER=/enstratus/bin/log
+LOGGER=$DIRNAME/log
 
 if [ $# -lt 3 ] ; then
    $LOGGER -t "$logTag" "Syntax: lockServices SERVICES_DIRECTORY TIMEOUT LOCK_FILE"

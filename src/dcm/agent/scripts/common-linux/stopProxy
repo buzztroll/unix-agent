@@ -2,9 +2,11 @@
 
 set -u
 
-. "/enstratus/bin/common_mod"
+DIRNAME=`dirname $0`
+. "$DIRNAME/common_mod"
+BASENAME=`basename $0`
 
-LOGGER=/enstratus/bin/log
+LOGGER=$DIRNAME/log
 logTag="stopProxy"
 
 $LOGGER -t "$logTag" stopProxy "$@"
@@ -15,7 +17,7 @@ if [ $# -lt 1 ] ; then
 fi
 
 BASENAME=`basename $0`
-CUSTOM=/enstratus/custom/bin/${BASENAME}
+CUSTOM=$DCM_BASEDIR/custom/bin/${BASENAME}
 
 if [ -x ${CUSTOM} ] ; then
     ${CUSTOM} "$@" 2>&1 | $LOGGER -t "$logTag"
@@ -37,7 +39,7 @@ if [ -x ${CUSTOM}-pre ] ; then
     exit_if_pipe_false
 fi
 
-"/enstratus/bin/${PROXY}-stopProxy" "$@"
+"$DCM_BASEDIR/bin/${PROXY}-stopProxy" "$@"
 
 code=$?
 if [ $code -ne 0 ] ; then

@@ -17,9 +17,11 @@
 
 set -u
 
-. "/enstratus/bin/common_mod"
+BASENAME=`basename $0`
+DIRNAME=`dirname $0`
+. "$DIRNAME/common_mod"
 
-LOGGER=/enstratus/bin/log
+LOGGER=$DIRNAME/log
 logTag="configureService"
 
 $LOGGER -t "$logTag" "$@"
@@ -56,7 +58,7 @@ PROPS="/mnt/services/${SERVICE_ID}/cfg/enstratus.cfg"
 
 if [ -r "$PROPS" ] ; then
 	sudo bash -c "tr -d '\015' < $PROPS > ${PROPS}.tmp && mv ${PROPS}.tmp $PROPS"
-        sudo chown ${USER_ID}:enstratus "$PROPS"
+        sudo chown ${USER_ID}:$DCM_USER "$PROPS"
         sudo chmod 640 "$PROPS"
 fi
 

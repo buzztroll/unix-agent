@@ -1,3 +1,7 @@
+# this program simply creates the configuration file needed by the agent
+# it is assumed that all of the directories have already been created with
+# the proper permissions
+
 import argparse
 import os
 import subprocess
@@ -15,9 +19,9 @@ platform_cloice = None
 
 
 # below are the variables that have predetermined defaults
-default_binaries_path = "/enstratus/bin"
+default_binaries_path = "/dcm/bin"
 default_ephemeral_mountpoint = "/mnt"
-default_enstratus_path = "/enstratus"
+default_base_path = "/dcm"
 default_operations_path = "/mnt"
 default_services_path = "/mnt/services"
 default_temp_path = "/mnt/tmp"
@@ -88,10 +92,10 @@ def setup_command_line_parser():
                         dest="ephemeral_mountpoint",
                         help="The location of ephemeral mount point.")
 
-    parser.add_argument("--enstratus-path", "-p",
-                        metavar=default_enstratus_path,
-                        default=default_enstratus_path,
-                        dest="enstratus_path",
+    parser.add_argument("--base-path", "-p",
+                        metavar=default_base_path,
+                        default=default_base_path,
+                        dest="base_path",
                         help="The path to enstratius")
 
     parser.add_argument("--operations-path", "-o",
@@ -278,20 +282,6 @@ def manage_conf(conf_file_name):
     return conf_d
 
 
-def make_dirs(opts):
-    dirs = [
-        os.path.join(opts.enstratus_path, "etc"),
-        os.path.join(opts.enstratus_path, "bin"),
-    ]
-
-    for d in dirs:
-        try:
-            os.makedirs(d)
-        except OSError as osE:
-            if osE.errno != 17:
-                raise
-
-
 def merge_opts(conf_d, opts):
 
     map_opts_to_conf = {
@@ -299,7 +289,7 @@ def merge_opts(conf_d, opts):
         "dcm_url": ("enstratius", "agentmanager_url"),
         "binaries_path": ("storage", "binaries_path"),
         "ephemeral_mountpoint": ("storage", "ephemeral_mountpoint"),
-        "enstratus_path": ("storage", "enstartius_dir"),
+        "base_path": ("storage", "base_dir"),
         "operations_path": ("storage", "operations_path"),
         "services_path": ("storage", "services_dir"),
         "temp_path": ("storage", "temppath"),
@@ -333,14 +323,11 @@ def main():
         if opts.cloud is None and not opts.initial:
             opts.cloud = select_cloud()
 
-        make_dirs(opts)
-        conf_file_name = os.path.join(opts.enstratus_path, "etc", "agent.conf")
+        conf_file_name = os.path.join(opts.base_path, "etc", "agent.conf")
 
         conf_d = manage_conf(conf_file_name)
         merge_opts(conf_d, opts)
         write_conf_file(conf_file_name, conf_d)
-
-        print "The agent installation was successful."
 
     except Exception as ex:
         print >> sys.stderr, ex.message

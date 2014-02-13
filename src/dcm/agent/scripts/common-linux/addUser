@@ -14,13 +14,6 @@
 # FUNCTION
 # Grants the specified user shell access to the server.
 #
-# HOW TO EXTEND THIS SCRIPT (aka DO NOT EDIT THIS SCRIPT)
-# You can extend or replace this script by setting up your own executables in /enstratus/custom/bin:
-# * /enstratus/custom/bin/addUser - if exists, will completely replace this script
-# * /enstratus/custom/bin/addUser-pre - if exists, will be executed before this script
-# * /enstratus/custom/bin/addUser-post - if exists, will be executed after this script
-# Your custom commands will be called with the same arguments in the same order as
-# this script.
 
 set -u
 PATH=/bin:${PATH}
@@ -68,7 +61,7 @@ else
 fi
 
 BASENAME=`basename $0`
-CUSTOM=/enstratus/custom/bin/${BASENAME}
+CUSTOM=$DCM_BASEDIR/custom/bin/${BASENAME}
 
 if [ -x ${CUSTOM} ] ; then
 	${CUSTOM} "$@" 2>&1 | $LOGGER -t "$logTag"
@@ -105,8 +98,8 @@ if [ $exists == 0 ] ; then
 fi
 
 if [ ${ADMINISTRATOR} == "true" ] ; then
-	sudo ${USERMOD} -G enstratus ${USER_ID} 2>&1 | $LOGGER -t "$logTag"
-	exit_if_pipe_false "User add of ${USER_ID} to enstratus group failed."
+	sudo ${USERMOD} -G $DCM_USER ${USER_ID} 2>&1 | $LOGGER -t "$logTag"
+	exit_if_pipe_false "User add of ${USER_ID} to dcm group failed."
 	if [ -d /etc/sudoers.d ]; then
 		# For distros that have the latest sudo package which uses sudoers.d directory.
 		echo "${USER_ID} ALL=(ALL) NOPASSWD: ALL" > /tmp/${USER_ID}-sudoer

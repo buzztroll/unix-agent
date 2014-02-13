@@ -1,8 +1,11 @@
+import os
 import random
+import shutil
 import socket
 import threading
 import unittest
 import pwd
+import datetime
 from dcm.agent.cmd import service
 from dcm.agent import config, dispatcher
 from dcm.agent.messaging import reply, request
@@ -36,7 +39,7 @@ class TestSimpleSingleCommands(unittest.TestCase):
         handshake_doc["agentID"] = self.agent_id
         handshake_doc["cloudId"] = "Amazon"
         handshake_doc["customerId"] = self.customer_id
-        handshake_doc["regionId"] = "asia"
+        handshake_doc["regionId"] = "us_west_oregon"
         handshake_doc["zoneId"] = "rack2"
         handshake_doc["serverId"] = "thisServer"
         handshake_doc["serverName"] = "dcm.testagent.com"
@@ -124,7 +127,7 @@ class TestSimpleSingleCommands(unittest.TestCase):
         self.assertEquals(r["payload"]["reply_type"], "agent_data")
         self.assertEquals(r["payload"]["return_code"], 0)
 
-
+    @test_utils.system_changing
     def test_add_user_remove_user(self):
         user_name = "dcm" + str(random.randint(10, 99))
 
@@ -180,6 +183,7 @@ class TestSimpleSingleCommands(unittest.TestCase):
 
         # TODO verify that this matches the output of the command
 
+    @test_utils.system_changing
     def test_rename(self):
         orig_hostname = socket.gethostname()
 
@@ -204,14 +208,159 @@ class TestSimpleSingleCommands(unittest.TestCase):
 
         self.assertEqual(socket.gethostname(), orig_hostname)
 
-    # def test_start_service(self):
-    #     doc = {
-    #         "command": "start_service",
-    #         "arguments": {"agent_token": None,
-    #                       "customer_id": self.customer_id,
-    #                       "service_id": }
-    #     }
-    #     req_reply = self._rpc_wait_reply(doc)
-    #     r = req_reply.get_reply()
-    #     print r
-    #     # TODO verify that this matches the output of the command
+    @test_utils.system_changing
+    def test_install_start_stop_configure_service(self):
+
+        # test install
+        arguments = {
+            "agent_token": None,
+            "customerId": self.customer_id,
+            "serviceId": "success_service",
+            "fromCloudId": 1,
+            "runAsUser": "vagrant",
+            "storageAccessKey": os.environ["S3_ACCESS_KEY"],
+            "storageSecretKey": os.environ["S3_SECRET_KEY"],
+            "encryption": "not_used",
+            "encryptionPublicKey": "not_used",
+            "encryptionPrivateKey": "not_user",
+            "serviceImageDirectory": "enstratiustests",
+            "serviceImageFile": "success_service.tar.gz"
+        }
+
+        doc = {
+            "command": "install_service",
+            "arguments": arguments
+        }
+        req_reply = self._rpc_wait_reply(doc)
+        r = req_reply.get_reply()
+        self.assertEquals(r["payload"]["return_code"], 0)
+
+        service_dir = self.conf_obj.get_service_directory("success_service")
+        self.assertTrue(os.path.exists(service_dir))
+        self.assertTrue(os.path.exists(os.path.join(service_dir,
+                                                    "bin/enstratus-configure")))
+        self.assertTrue(os.path.exists(os.path.join(service_dir,
+                                                    "bin/enstratus-stop")))
+        self.assertTrue(os.path.exists(os.path.join(service_dir,
+                                                    "bin/enstratus-start")))
+
+        # test start
+
+        arguments = {
+            "agent_token": None,
+            "customerId": self.customer_id,
+            "serviceId": "success_service"
+        }
+        doc = {
+            "command": "start_service",
+            "arguments": arguments
+        }
+        start_time = datetime.datetime.now()
+        req_reply = self._rpc_wait_reply(doc)
+        r = req_reply.get_reply()
+        self.assertEquals(r["payload"]["return_code"], 0)
+        self.assertTrue(os.path.exists("/tmp/service_start"))
+
+        with open("/tmp/service_start", "r") as fptr:
+            secs = fptr.readline()
+        tm = datetime.datetime.utcfromtimestamp(float(secs))
+        self.assertTrue(tm > start_time)
+
+        configuration_data = """
+        This is some configuration data.
+        That will be writen over there
+        """
+
+        # test configure
+        arguments = {
+            "agent_token": None,
+            "forCustomerId": self.customer_id,
+            "serviceId": "success_service",
+            "runAsUser": "vagrant",
+            "configurationData": configuration_data
+        }
+        doc = {
+            "command": "configure_service",
+            "arguments": arguments
+        }
+        start_time = datetime.datetime.now()
+        req_reply = self._rpc_wait_reply(doc)
+        r = req_reply.get_reply()
+        self.assertEquals(r["payload"]["return_code"], 0)
+        self.assertTrue(os.path.exists("/tmp/service_configure"))
+
+        with open("/tmp/service_configure", "r") as fptr:
+            secs = fptr.readline()
+        tm = datetime.datetime.utcfromtimestamp(float(secs))
+        self.assertTrue(tm > start_time)
+
+        cfg_file = os.path.join(service_dir, "cfg", "enstratus.cfg")
+        self.assertTrue(os.path.exists(cfg_file))
+
+        with open(cfg_file, "r") as fptr:
+            data = fptr.read()
+            self.assertEqual(data, configuration_data)
+
+        ssl_public = "SFSOHWEKJRNMNSD<MNCSDNFSLEJFLKSENF<SDNCVDMS< CV"
+        ssl_private = "sdfsdfsdjkhwekrjnwekrnweknv,mx vm,nwekrnlwekndfems,nfsd"
+        configuration_data = configuration_data + "poerPPPO"
+
+        # test with ssl configure
+        arguments = {
+            "agent_token": None,
+            "forCustomerId": self.customer_id,
+            "serviceId": "success_service",
+            "runAsUser": "vagrant",
+            "configurationData": configuration_data,
+
+            "address": "http://someplacefcdx.com",
+            "sslPublic": ssl_public,
+            "sslPrivate": ssl_private,
+            "sslChain": None
+        }
+        doc = {
+            "command": "configure_service_with_ssl",
+            "arguments": arguments
+        }
+        start_time = datetime.datetime.now()
+        req_reply = self._rpc_wait_reply(doc)
+        r = req_reply.get_reply()
+        self.assertEquals(r["payload"]["return_code"], 0)
+        self.assertTrue(os.path.exists("/tmp/service_configure"))
+
+        with open("/tmp/service_configure", "r") as fptr:
+            secs = fptr.readline()
+        tm = datetime.datetime.utcfromtimestamp(float(secs))
+        self.assertTrue(tm > start_time)
+
+        cfg_file = os.path.join(service_dir, "cfg", "enstratus.cfg")
+        self.assertTrue(os.path.exists(cfg_file))
+
+        with open(cfg_file, "r") as fptr:
+            data = fptr.read()
+            self.assertEqual(data, configuration_data)
+
+        # test stop
+        arguments = {
+            "agent_token": None,
+            "customerId": self.customer_id,
+            "serviceId": "success_service"
+        }
+        doc = {
+            "command": "stop_service",
+            "arguments": arguments
+        }
+        start_time = datetime.datetime.now()
+        req_reply = self._rpc_wait_reply(doc)
+        r = req_reply.get_reply()
+        self.assertEquals(r["payload"]["return_code"], 0)
+        self.assertTrue(os.path.exists("/tmp/service_stop"))
+
+        with open("/tmp/service_stop", "r") as fptr:
+            secs = fptr.readline()
+        tm = datetime.datetime.utcfromtimestamp(float(secs))
+        self.assertTrue(tm > start_time)
+
+        shutil.rmtree(service_dir)
+
+

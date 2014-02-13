@@ -18,9 +18,11 @@
 set -u
 PATH=/usr/bin:${PATH}
 
-. "/enstratus/bin/common_mod"
+BASENAME=`basename $0`
+DIRNAME=`dirname $0`
+. "$DIRNAME/common_mod"
 
-LOGGER=/enstratus/bin/log
+LOGGER=$DIRNAME/log
 logTag=enstratus:backupService
 
 $LOGGER -t "$logTag" backupService "$@"
@@ -33,7 +35,7 @@ fi
 serviceId=$1
 backupFile="$2"
 BASENAME=`basename $0`
-CUSTOM="/enstratus/custom/bin/$BASENAME"
+CUSTOM="$DCM_BASEDIR/custom/bin/$BASENAME"
 
 if [ -x "$CUSTOM" ] ; then
 	"$CUSTOM" "$@" 2>&1 | $LOGGER -t "$logTag"

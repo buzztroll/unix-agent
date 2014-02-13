@@ -156,7 +156,6 @@ class AgentUnsupportedCloudFeature(Exception):
     pass
 
 
-
-
-
-
+class AgentStorageCloudException(Exception):
+    def __init__(self, message):
+        super(AgentStorageCloudException, self).__init__(message)

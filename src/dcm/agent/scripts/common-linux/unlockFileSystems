@@ -3,10 +3,12 @@
 set -u
 PATH=/usr/sbin:${PATH}
 
-. "/enstratus/bin/common_mod"
+DIRNAME=`dirname $0`
+. "$DIRNAME/common_mod"
+BASENAME=`basename $0`
 
 logTag="unlockFileSystems"
-LOGGER=/enstratus/bin/log
+LOGGER=$DIRNAME/log
 
 $LOGGER -t "$logTag" "Unlocking XFS file systems..."
 

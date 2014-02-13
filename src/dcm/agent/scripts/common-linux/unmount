@@ -3,13 +3,15 @@
 set -u
 PATH=/bin:${PATH}
 
-. "/enstratus/bin/common_mod"
+DIRNAME=`dirname $0`
+. "$DIRNAME/common_mod"
+BASENAME=`basename $0`
 
 logTag="unmount"
-LOGGER=/enstratus/bin/log
+LOGGER=$DIRNAME/log
 
 BASENAME=`basename $0`
-CUSTOM="/enstratus/custom/bin/$BASENAME"
+CUSTOM="$DCM_BASEDIR/custom/bin/$BASENAME"
 
 if [ $# -lt 1 ] ; then
    $LOGGER -t "$logTag" Syntax: unmount MOUNT_POINT

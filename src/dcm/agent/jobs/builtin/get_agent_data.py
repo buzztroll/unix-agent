@@ -15,6 +15,7 @@
 import multiprocessing
 import platform
 import dcm.agent.jobs as jobs
+import psutil
 
 
 class GetAgentData(jobs.Plugin):
@@ -23,13 +24,14 @@ class GetAgentData(jobs.Plugin):
             conf, job_id, items_map, name, arguments)
 
     def run(self):
-        (total_ram, used_ram, f, p) = (4096, 512, 3, 3)
+        load = psutil.cpu_percent(1.0) # NOTE(buzztroll) this will block for 1s
+        (total_ram, used_ram, f, p) = psutil.phymem_usage()
         reply_object = {
             "cpu_count": multiprocessing.cpu_count(),
-            "cpu_load": 0.0,
+            "cpu_load": load,
             "current_ram": used_ram,
             "max_ram": total_ram,
-            "processes": 10,
+            "processes": len(psutil.get_pid_list()),
             "platform": platform.platform(),
             # NOTE(buzztroll) I am not sure what to do with server state.  The
             # available options suggest error or contention.  I think if we get

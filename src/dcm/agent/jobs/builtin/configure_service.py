@@ -12,20 +12,6 @@
 #   is obtained from Dell, Inc.
 #  ======================================================================
 
-# TODO NOT DONE
-#
-#
-# 	public JobDescription configureService(AgentToken token, long forCustomerId, String serviceId, String runAsUser,
-# 			byte[] configurationData) throws AgentException, AgentSecurityException {
-# 		logger.trace("enter - configureService");
-# 		return configureServiceWithSSL(token, forCustomerId, serviceId, runAsUser, configurationData, null, null, null,
-# 				null);
-# 	}
-#
-# 	public JobDescription configureServiceWithSSL(AgentToken token, long forCustomerId, String serviceId,
-# 			String runAsUser, byte[] configurationData, String address, String sslPublic, byte[] sslPrivate,
-# 			String sslChain) throws AgentException, AgentSecurityException {
-# 		logger.trace("enter - configureServiceWithSSL");
 import logging
 import os
 from dcm.agent import exceptions, utils
@@ -43,7 +29,18 @@ class ConfigureService(jobs.Plugin):
 
         script_name = items_map["script_name"]
         self.exe = conf.get_script_location(script_name)
+
+        self._customer_id = arguments["forCustomerId"]
         self._service_id = arguments["serviceId"]
+        self._run_as_user = arguments["runAsUser"]
+        self._configuration_data = arguments["configurationData"]
+
+        # with ssl parameters
+        self._address = arguments.get("address", None)
+        self._ssl_public = arguments.get("sslPublic", None)
+        self._ssl_private = arguments.get("sslPrivate", None)
+        self._ssl_chain = arguments.get("sslChain", None)
+
         self._cert_file_name = None
         self._key_file_name = None
         self._chain_file_name = None
@@ -57,36 +54,34 @@ class ConfigureService(jobs.Plugin):
                 _g_logger.error(msg)
                 raise exceptions.AgentJobException(msg)
 
-            _g_logger.info("Writing SSL file: %s" % fname)
-            with open(fname) as cert_f:
-                try:
-                    cert_f.write(data)
-                except Exception as ex:
-                    msg = "Could not write file: %s" % ex.message
-                    _g_logger.error(msg)
-                    raise exceptions.AgentJobException(msg)
+        _g_logger.info("Writing file: %s" % fname)
+        with open(fname, "w") as cert_f:
+            try:
+                cert_f.write(data)
+            except Exception as ex:
+                msg = "Could not write file: %s" % ex.message
+                _g_logger.error(msg)
+                raise exceptions.AgentJobException(msg)
 
-
-    def _do_ssl(self, address, ssl_public, ssl_private, ssl_chain):
-        if address is None or ssl_public is None or ssl_private is None:
-            return
-
+    def _do_ssl(self):
         # write out the SSL cert to service dir
-        self._cert_file_name = os.path.join(self._conf.get_service_directory(),
-                                            "cfg",
-                                            self._service_id + ".cert")
-        self._safe_write(self._cert_file_name, ssl_public)
-        self._key_file_name = os.path.join(self._conf.get_service_directory(),
-                                           "cfg",
-                                           self._service_id + ".key")
+        self._cert_file_name = os.path.join(
+            self.conf.get_service_directory(self._service_id),
+            "cfg",
+            self._service_id + ".cert")
+        self._safe_write(self._cert_file_name, self._ssl_public)
+        self._key_file_name = os.path.join(
+            self.conf.get_service_directory(self._service_id),
+            "cfg",
+            self._service_id + ".key")
         _g_logger.info("Writing SSL key: %s" % self._key_file_name)
-        self._safe_write(self._key_file_name, ssl_private)
+        self._safe_write(self._key_file_name, self._ssl_private)
 
-        if ssl_chain is not None:
+        if self._ssl_chain is not None:
             self._chain_file_name = os.path.join(
-                self._conf.get_service_directory(), "cfg",
+                self.conf.get_service_directory(self._service_id), "cfg",
                 self._service_id + ".chained")
-            self._safe_write(self._chain_file_name, ssl_chain)
+            self._safe_write(self._chain_file_name, self._ssl_chain)
 
     def _delete_file(self, fname):
         if fname is None:
@@ -97,39 +92,31 @@ class ConfigureService(jobs.Plugin):
             _g_logger.debug("Failed to delete %s : %s" % (fname, osEx.message))
 
     def run(self):
-        address = None
-        try:
-            address = self.arguments["address"]
-            ssl_public = self.arguments["sslPublic"]
-            ssl_private = self.arguments["sslPrivate"]
-            ssl_chain = self.arguments["sslChain"]
-
-            self._do_ssl(address, ssl_public, ssl_private, ssl_chain)
-
-        except KeyError as ke:
-            # if this happens it means we are not using ssl
-            pass
+        if self._address is not None and self._ssl_public is not None\
+            and self._ssl_private is not None:
+            self._do_ssl()
 
         try:
             #Write out the temporary config file to the service directory...
-            config_file_name = os.path.join(self._conf.get_service_directory(),
-                                            "cfg",
-                                            "enstratus.cfg")
-            self._safe_write(config_file_name, self.arguments["configurationData"])
+            config_file_name = os.path.join(
+                self.conf.get_service_directory(self._service_id),
+                "cfg",
+                "enstratus.cfg")
+            self._safe_write(config_file_name, self._configuration_data)
 
             cmd_list = [self.exe,
-                        self.arguments["runAsUser"],
-                        self.arguments["customerId"],
+                        self._run_as_user,
+                        self._customer_id,
                         self._service_id]
-            if address is not None and self._cert_file_name is not None and\
-                    self._key_file_name is not None:
-                cmd_list.append(address)
+            if self._address is not None and self._cert_file_name is not None\
+                    and self._key_file_name is not None:
+                cmd_list.append(self._address)
                 cmd_list.append(self._cert_file_name)
                 cmd_list.append(self._key_file_name)
                 if self._chain_file_name is not None:
                     cmd_list.append(self._chain_file_name)
 
-            (stdout, stderr, rc) = utils.run_command(cmd_list)
+            (stdout, stderr, rc) = utils.run_command(self.conf, cmd_list)
             if rc != 0:
                 reply_doc = {"return_code": rc,
                              "message": stderr}
@@ -142,15 +129,6 @@ class ConfigureService(jobs.Plugin):
             self._delete_file(self._cert_file_name)
             self._delete_file(self._key_file_name)
             self._delete_file(self._chain_file_name)
-            # TODO clear out memory of secrets?
-
-
-        reply_doc = {
-            "return_code": 0,
-            "reply_type": "agent_data",
-            "reply_object": reply_object
-        }
-        return reply_doc
 
 
 def load_plugin(conf, job_id, items_map, name, arguments):

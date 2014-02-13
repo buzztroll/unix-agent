@@ -1,0 +1,9 @@
+# HOW TO EXTEND THESE SCRIPT (aka DO NOT EDIT ANY SCRIPTS)
+#
+# You can extend or replace these script by setting up your own executables in
+# /dcm/custom/bin:
+# * /dcm/custom/bin/<script name> - if exists, will completely replace this script
+# * /dcm/custom/bin/<script name>-pre - if exists, will be executed before this script
+# * /dcm/custom/bin/<script name>-post - if exists, will be executed after this script
+# Your custom commands will be called with the same arguments in the same order as
+# this script.

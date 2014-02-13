@@ -32,10 +32,7 @@ class JobRunnerWorker(multiprocessing.Process):
                         process = subprocess.Popen(cmd,
                                            shell=True,
                                            stdout=subprocess.PIPE,
-                                           stderr=subprocess.STDOUT,
-                                           bufsize=0,
-                                           env={},
-                                           close_fds=True)
+                                           stderr=subprocess.PIPE)
                         stdout, stderr = process.communicate()
                         rc = process.returncode
 

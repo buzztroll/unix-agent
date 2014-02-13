@@ -18,12 +18,14 @@
 set -u
 PATH=/bin:${PATH}
 
-. "/enstratus/bin/common_mod"
+DIRNAME=`dirname $0`
+. "$DIRNAME/common_mod"
+BASENAME=`basename $0`
 
 LOGFILE="/mnt/tmp/stopService.log"
 sudo touch "$LOGFILE"
 sudo chmod 660 "$LOGFILE"
-sudo chown enstratus:enstratus "$LOGFILE"
+sudo chown $DCM_USER:$DCM_USER "$LOGFILE"
 
 if [ $# -lt 1 ] ; then
    echo "Syntax: stopService SERVICE_ID" >> "$LOGFILE" 2>&1

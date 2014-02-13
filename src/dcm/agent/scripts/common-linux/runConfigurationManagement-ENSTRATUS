@@ -22,7 +22,7 @@ FIRST_BOOT='/mnt/tmp/first_boot'
 #echo $RUN_LIST | tee -a $FIRST_BOOT
 #sudo cp $RUN_LIST $FIRST_BOOT > /dev/null 2>&1
 
-sudo chown enstratus $RUN_LIST > /dev/null 2>&1
+sudo chown $DCM_USER $RUN_LIST > /dev/null 2>&1
 sudo chmod 700 $RUN_LIST > /dev/null 2>&1
 sudo tr -d '\015' < $RUN_LIST > $FIRST_BOOT
 
