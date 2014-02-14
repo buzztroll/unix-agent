@@ -14,7 +14,7 @@
 import logging
 from libcloud.common.types import LibcloudError
 
-from libcloud.storage.types import Provider
+from libcloud.storage.types import Provider, ContainerDoesNotExistError
 import libcloud.storage.providers as libcloud_providers
 from dcm.agent.cloudmetadata import CLOUD_TYPES
 from dcm.agent import exceptions
@@ -133,12 +133,24 @@ def upload(cloud_id, source_path, container_name, object_name,
     except KeyError:
         raise exceptions.AgentUnsupportedCloudFeature()
 
-    try:
-        driver = driver_cls(storage_access_key, storage_secret_key)
+    driver = driver_cls(storage_access_key, storage_secret_key)
 
-        # XXX TODO check to see if the container already exists
+    try:
+        container = driver.get_container(container_name)
+    except ContainerDoesNotExistError as libCloudEx:
         container = driver.create_container(container_name=container_name)
 
-        driver.upload_object(source_path, container, object_name)
-    except LibcloudError as ex:
-        raise exceptions.AgentStorageCloudException(ex.message)
+    driver.upload_object(source_path, container, object_name)
+
+
+def get_cloud_driver(cloud_id, storage_access_key, storage_secret_key,
+                     region_id=None,
+                     delegate=None,
+                     endpoint=None,
+                     account=None):
+
+    cloud_type = _map_cloud_id_to_type[cloud_id]
+    driver_cls = _map_cloud_name_to_provider(cloud_type, region_id)
+
+    driver = driver_cls(storage_access_key, storage_secret_key)
+    return driver

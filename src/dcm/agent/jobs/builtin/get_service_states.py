@@ -38,10 +38,11 @@ class GetServiceStates(jobs.Plugin):
                 if f[0] == "a" and os.path.isdir(
                         os.path.join(self.conf.storage_services_dir, f)):
                     string_list.append(f)
+                    cwd = self.conf.get_service_directory(f)
                     try:
                         command = [self._script_exe, f]
                         (stdout, stderr, rc) = \
-                            utils.run_command(self.conf, command)
+                            utils.run_command(self.conf, command, cwd=cwd)
                         line = stdout.split(os.linesep)[0].strip()
                         string_list.append(line)
                     except Exception as ex:

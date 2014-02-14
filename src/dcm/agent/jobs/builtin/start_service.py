@@ -26,12 +26,14 @@ class StartService(jobs.Plugin):
         try:
             self.command = [conf.get_script_location(script_name),
                             arguments["serviceId"]]
+            self.cwd = self.conf.get_service_directory(arguments["serviceId"])
         except KeyError as ke:
             raise exceptions.AgentPluginConfigException(
                 "The plugin %s requires the option %s" % (name, ke.message))
 
     def run(self):
-        (stdout, stderr, rc) = utils.run_command(self.conf, self.command)
+        (stdout, stderr, rc) = utils.run_command(
+            self.conf, self.command, cwd=self.cwd)
         # NOTE(buzztroll) this is a little bit different than the other
         # reply docs.  here we let a non 0 rc through to tell enstratius
         # what happened to the status.  I am not sure that i like this

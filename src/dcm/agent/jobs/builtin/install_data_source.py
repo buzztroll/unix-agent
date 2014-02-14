@@ -11,46 +11,54 @@
 #   this material is strictly forbidden unless prior written permission
 #   is obtained from Dell, Inc.
 #  ======================================================================
-from dcm.agent import jobs
-from dcm.agent.jobs import direct_pass
 
-#forCustomerId, intoServiceId, fromImageDirectory, fromDataSourceImage,
-#				fromCloudId, usingAccessKey, withSecretKey, encryption, encryptedWithStorageKey, basedOnPrivateStorageKey,
-#				havingConfiguration
-from dcm.agent import storagecloud
+import dcm.agent.jobs.direct_pass as direct_pass
+from dcm.agent import storagecloud, utils
 
 
-class InstallDataSource(jobs.Plugin):
+class InstallDataSource(direct_pass.DirectPass):
 
     def __init__(self, conf, job_id, items_map, name, arguments):
         super(InstallDataSource, self).__init__(
             conf, job_id, items_map, name, arguments)
 
     def run(self):
-        access_key = self.arguments["using_access_key"]
-        secret_key = self.arguments["with_secret_key"]
-        container_name = self.arguments["from_image_directory"]
-        object_name = self.arguments["from_data_source_image"]
+        service_id = self.arguments["serviceId"]
+        object_name = self.arguments["dataSourceImage"]
+        container_name = self.arguments["imageDirectory"]
+        cloud_id = self.arguments["fromCloudId"]
+        access_key = self.arguments["storageAccessKey"]
+        secret_key = self.arguments["storageSecretKey"]
+        configuration = self.arguments["configuration"]
+        delegate = self.arguments.get("deletegate", None)
+        endpoint = self.arguments.get("endpoint", None)
+        account = self.arguments.get("account", None)
+        region_id = self.arguments.get("providerRegionId", self.conf.region_id)
 
-        dest_file = self.conf.get_temp_file(object_name)
-        conf_file = self.conf.get_temp_file(object_name)
+        conf_file = self.conf.get_temp_file("installds.cfg")
+        restore_file = self.conf.get_temp_file(object_name)
+        try:
+            with open(conf_file, "w") as fptr:
+                fptr.write(configuration)
 
-        storagecloud.download(self.conf, container_name, object_name,
-             access_key, secret_key, dest_file)
+            storagecloud.download(
+                cloud_id, container_name, object_name,
+                access_key, secret_key,
+                restore_file,
+                region_id=region_id,
+                delegate=delegate,
+                endpoint=endpoint,
+                account=account)
 
-        # write config data to temp file
-        script_name = self.items_map["script_name"]
-        exe_path = self.conf.get_script_location(script_name)
+            self.ordered_param_list = [service_id,
+                                       conf_file,
+                                       restore_file]
 
-        cmd = [exe_path,
-               self.arguments["into_service_id"],
-               conf_file,
-               dest_file]
-
-
-
-    def cancel(self, reply_rpc, *args, **kwargs):
-        pass
+            self.cwd = self.conf.get_service_directory(service_id)
+            return super(InstallDataSource, self).run()
+        finally:
+            utils.safe_delete(conf_file)
+            utils.safe_delete(restore_file)
 
 
 def load_plugin(conf, job_id, items_map, name, arguments):

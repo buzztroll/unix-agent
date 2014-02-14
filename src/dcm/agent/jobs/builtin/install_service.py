@@ -65,6 +65,7 @@ class InstallService(direct_pass.DirectPass):
             endpoint=endpoint,
             account=account)
 
+        self.cwd = os.path.dirname(service_image_path)
         self.ordered_param_list = [service_id,
                                    customer_id,
                                    run_as_user,

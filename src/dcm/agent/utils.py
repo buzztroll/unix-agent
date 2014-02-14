@@ -105,16 +105,26 @@ def setup_remote_pydev(host, port):
         return False
 
 
-def run_command(conf, cmd_line):
+def run_command(conf, cmd_line, cwd=None):
     if type(cmd_line) == list or type(cmd_line) == tuple:
         " ".join([str(i) for i in cmd_line])
-    return conf.jr.run_command(cmd_line)
+    return conf.jr.run_command(cmd_line, cwd=cwd)
 
 
 def run_script(conf, name, args):
     cmd = conf.get_script_location(name)
     args.insert(0, cmd)
     return run_command(conf, args)
+
+
+def safe_delete(fname):
+    try:
+        os.remove(fname)
+        return True
+    except OSError as osEx:
+        if osEx.errno == 2:
+            return True
+        return False
 
 
 class Lock(object):

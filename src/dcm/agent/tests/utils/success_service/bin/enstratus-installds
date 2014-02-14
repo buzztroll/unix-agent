@@ -1,0 +1,17 @@
+#!/usr/bin/env bash
+
+service_id=$1
+config_file=$2
+image_file=$3
+
+if [ ! -e $config_file ]; then
+    echo "The file $config_file does not exist"
+    exit 1
+fi
+
+if [ ! -e $image_file ]; then
+    echo "The file $image_file does not exist"
+    exit 1
+fi
+
+exit 0

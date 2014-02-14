@@ -21,6 +21,7 @@ class StopService(direct_pass.DirectPass):
             conf, job_id, items_map, name, arguments)
 
         try:
+            self.cwd = self.conf.get_service_directory(arguments["serviceId"])
             self.ordered_param_list = [arguments["serviceId"]]
         except KeyError as ke:
             raise exceptions.AgentPluginConfigException(

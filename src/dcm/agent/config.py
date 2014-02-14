@@ -4,6 +4,7 @@ import logging
 import logging.config
 import os
 import sys
+import tempfile
 import yaml
 import dcm
 from dcm.agent import job_runner
@@ -351,5 +352,6 @@ class AgentConfig(object):
         self.jr = job_runner.JobRunner()
 
     def get_temp_file(self, filename):
-        return os.path.join(self.storage_temppath, filename)
+        new_dir = tempfile.mkdtemp(dir=self.storage_temppath)
+        return os.path.join(new_dir, filename)
 

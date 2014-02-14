@@ -1,0 +1,7 @@
+#!/usr/bin/env bash
+
+fname="/tmp/service_configure"
+
+date +%s > $fname
+
+exit 0

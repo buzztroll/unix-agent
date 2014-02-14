@@ -7,7 +7,7 @@ import unittest
 import pwd
 import datetime
 from dcm.agent.cmd import service
-from dcm.agent import config, dispatcher
+from dcm.agent import config, dispatcher, storagecloud
 from dcm.agent.messaging import reply, request
 import dcm.agent.tests.utils as test_utils
 import dcm.agent.tests.utils.test_connection as test_conn
@@ -261,7 +261,7 @@ class TestSimpleSingleCommands(unittest.TestCase):
         self.assertEquals(r["payload"]["reply_type"], "job_description")
 
         jd = r["payload"]["reply_object"]
-        while jd["job_status"] == "WAITING":
+        while jd["job_status"] in ["WAITING", "RUNNING"]:
             jd = self._get_job_description(jd["job_id"])
         self.assertEqual(jd["job_status"], "COMPLETE")
 
@@ -318,7 +318,7 @@ class TestSimpleSingleCommands(unittest.TestCase):
         r = req_reply.get_reply()
         self.assertEquals(r["payload"]["return_code"], 0)
         jd = r["payload"]["reply_object"]
-        while jd["job_status"] == "WAITING":
+        while jd["job_status"] in ["WAITING", "RUNNING"]:
             jd = self._get_job_description(jd["job_id"])
         self.assertEqual(jd["job_status"], "COMPLETE")
 
@@ -362,12 +362,11 @@ class TestSimpleSingleCommands(unittest.TestCase):
         r = req_reply.get_reply()
         self.assertEquals(r["payload"]["return_code"], 0)
         jd = r["payload"]["reply_object"]
-        while jd["job_status"] == "WAITING":
+        while jd["job_status"] in ["WAITING", "RUNNING"]:
             jd = self._get_job_description(jd["job_id"])
         self.assertEqual(jd["job_status"], "COMPLETE")
 
         self.assertTrue(os.path.exists("/tmp/service_configure"))
-
 
         with open("/tmp/service_configure", "r") as fptr:
             secs = fptr.readline()
@@ -397,6 +396,32 @@ class TestSimpleSingleCommands(unittest.TestCase):
 
         self.assertEqual([service_id, 'OK'], service_array)
 
+        # install data source
+        arguments = {
+            "agent_token": None,
+            "customerId": self.customer_id,
+            "serviceId": service_id,
+            "fromCloudId": 1,
+            "runAsUser": "vagrant",
+            "storageAccessKey": os.environ["S3_ACCESS_KEY"],
+            "storageSecretKey": os.environ["S3_SECRET_KEY"],
+            "configuration": configuration_data,
+            "imageDirectory": "enstratiustests",
+            "dataSourceImage": "success_service.tar.gz"
+        }
+        doc = {
+            "command": "install_data_source",
+            "arguments": arguments
+        }
+        req_reply = self._rpc_wait_reply(doc)
+        r = req_reply.get_reply()
+        self.assertEquals(r["payload"]["return_code"], 0)
+        self.assertEquals(r["payload"]["reply_type"], "job_description")
+        jd = r["payload"]["reply_object"]
+        while jd["job_status"] in ["WAITING", "RUNNING"]:
+            jd = self._get_job_description(jd["job_id"])
+        self.assertEqual(jd["job_status"], "COMPLETE")
+
         # test stop
         arguments = {
             "agent_token": None,
@@ -417,7 +442,112 @@ class TestSimpleSingleCommands(unittest.TestCase):
             secs = fptr.readline()
         tm = datetime.datetime.utcfromtimestamp(float(secs))
         self.assertTrue(tm > start_time)
-
         shutil.rmtree(service_dir)
 
+    @test_utils.system_changing
+    def test_install_backup_data_set_service(self):
+        """
+        install a service, start it, configure it in two ways, stop it, then
+        delete the directory it was put into
+        """
+        service_id = "asuccess_service"
 
+        nw = datetime.datetime.now()
+        tm_str = nw.strftime("%Y%m%d%H%M%S")
+        container_name = "enstratiustests"
+        dataSourceName = "somename%d" % random.randint(0, 1000) + tm_str
+
+        # test install
+        arguments = {
+            "agent_token": None,
+            "customerId": self.customer_id,
+            "serviceId": service_id,
+            "fromCloudId": 1,
+            "runAsUser": "vagrant",
+            "storageAccessKey": os.environ["S3_ACCESS_KEY"],
+            "storageSecretKey": os.environ["S3_SECRET_KEY"],
+            "encryption": "not_used",
+            "encryptionPublicKey": "not_used",
+            "encryptionPrivateKey": "not_user",
+            "serviceImageDirectory": container_name,
+            "serviceImageFile": "success_service.tar.gz"
+        }
+
+        doc = {
+            "command": "install_service",
+            "arguments": arguments
+        }
+        req_reply = self._rpc_wait_reply(doc)
+        r = req_reply.get_reply()
+        self.assertEquals(r["payload"]["return_code"], 0)
+        self.assertEquals(r["payload"]["reply_type"], "job_description")
+
+        jd = r["payload"]["reply_object"]
+        while jd["job_status"] in ["WAITING", "RUNNING"]:
+            jd = self._get_job_description(jd["job_id"])
+        self.assertEqual(jd["job_status"], "COMPLETE")
+
+        service_dir = self.conf_obj.get_service_directory(service_id)
+        self.assertTrue(os.path.exists(service_dir))
+        self.assertTrue(os.path.exists(os.path.join(service_dir,
+                                                    "bin/enstratus-configure")))
+        self.assertTrue(os.path.exists(os.path.join(service_dir,
+                                                    "bin/enstratus-stop")))
+        self.assertTrue(os.path.exists(os.path.join(service_dir,
+                                                    "bin/enstratus-start")))
+
+        configuration_data = """
+        This is some configuration data.
+        That will be writen over there
+        """
+
+         # test install
+        arguments = {
+            "agent_token": None,
+            "configuration": configuration_data,
+            "customerId": self.customer_id,
+            "serviceId": service_id,
+            "inCloudId": 1,
+            "runAsUser": "vagrant",
+            "cloudAccessKey": os.environ["S3_ACCESS_KEY"],
+            "cloudSecretKey": os.environ["S3_SECRET_KEY"],
+            "encryption": "not_used",
+            "encryptionPublicKey": "not_used",
+            "encryptionPrivateKey": "not_used",
+            "toBackupDirectory": "enstratiustests",
+            "serviceImageFile": "success_service.tar.gz",
+            "providerRegionId": "us_west_oregon",
+            "dataSourceName": dataSourceName
+        }
+        doc = {
+            "command": "backup_data_source",
+            "arguments": arguments
+        }
+        req_reply = self._rpc_wait_reply(doc)
+        r = req_reply.get_reply()
+        self.assertEquals(r["payload"]["return_code"], 0)
+        self.assertEquals(r["payload"]["reply_type"], "job_description")
+
+        jd = r["payload"]["reply_object"]
+        while jd["job_status"] in ["WAITING", "RUNNING"]:
+            jd = self._get_job_description(jd["job_id"])
+        self.assertEqual(jd["job_status"], "COMPLETE")
+        shutil.rmtree(service_dir)
+
+        cloud = storagecloud.get_cloud_driver(
+            arguments["inCloudId"],
+            arguments["cloudAccessKey"],
+            arguments["cloudSecretKey"],
+            region_id=arguments["providerRegionId"])
+
+        container = cloud.get_container(arguments["toBackupDirectory"])
+        obj_list = cloud.list_container_objects(container)
+
+        found = False
+        for o in obj_list:
+            ndx = o.name.find(dataSourceName)
+            if ndx >= 0:
+                found = True
+                cloud.delete_object(o)
+
+        self.assertTrue(found)
