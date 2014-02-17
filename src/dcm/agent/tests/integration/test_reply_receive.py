@@ -2,12 +2,11 @@ import os
 import random
 import shutil
 import socket
-import threading
 import unittest
 import pwd
 import datetime
 from dcm.agent.cmd import service
-from dcm.agent import config, dispatcher, storagecloud
+from dcm.agent import config, dispatcher, storagecloud, parent_receive_q
 from dcm.agent.messaging import reply, request
 import dcm.agent.tests.utils as test_utils
 import dcm.agent.tests.utils.test_connection as test_conn
@@ -23,13 +22,14 @@ class TestSimpleSingleCommands(unittest.TestCase):
         service._pre_threads(self.conf_obj, ["-c", test_conf_path])
         self.disp = dispatcher.Dispatcher(self.conf_obj)
 
-
         self.test_con = test_conn.ReqRepQHolder()
+
         self.req_conn = self.test_con.get_req_conn()
         self.reply_conn = self.test_con.get_reply_conn()
 
         self.request_listener = reply.RequestListener(
             self.conf_obj, self.reply_conn, self.disp)
+        self.reply_conn.set_receiver(self.request_listener)
 
         self.agent_id = "theAgentID"
         self.customer_id = 50
@@ -49,9 +49,7 @@ class TestSimpleSingleCommands(unittest.TestCase):
         self.conf_obj.set_handshake(handshake_doc)
         self.conf_obj.start_job_runner()
 
-        self.thread = threading.Thread(target=self._run_main_loop)
-        self.thread.start()
-        self.disp.start_workers()
+        self.disp.start_workers(self.request_listener)
 
     def _run_main_loop(self):
         service._agent_main_loop(self.conf_obj,
@@ -61,38 +59,33 @@ class TestSimpleSingleCommands(unittest.TestCase):
 
     def _rpc_wait_reply(self, doc):
 
-        x = []
-        cond = threading.Condition()
+        class TestRequestReceiver(parent_receive_q.ParentReceiveQObserver):
+            def __init__(self, req):
+                self.req = req
+
+            def incoming_parent_q_message(self, obj):
+                self.req.incoming_message(obj)
+
         def reply_callback():
-            cond.acquire()
-            try:
-                x.append(True)
-                cond.notify_all()
-            finally:
-                cond.release()
+            service.shutdown_main_loop()
 
         reqRPC = request.RequestRPC(doc, self.req_conn, self.agent_id,
                                     reply_callback=reply_callback)
+        req_receiver = TestRequestReceiver(reqRPC)
+        self.req_conn.set_receiver(req_receiver)
+
         reqRPC.send()
 
-        while not x:
-            cond.acquire()
-            try:
-                msg = self.req_conn.recv()
-                if msg != None:
-                    reqRPC.incoming_message(msg)
-                cond.wait(0.1)
-            finally:
-                cond.release()
-            reqRPC.poll()
+        self._run_main_loop()
 
         reqRPC.cleanup()
+
         return reqRPC
 
-
     def tearDown(self):
-        self.disp.stop()
-        service.shutdown_main_loop()
+        service._cleanup_agent(
+            self.conf_obj, self.request_listener, self.disp, self.reply_conn)
+        self.req_conn.close()
 
     def test_get_private_ip(self):
         doc = {
@@ -166,7 +159,6 @@ class TestSimpleSingleCommands(unittest.TestCase):
         }
         req_reply = self._rpc_wait_reply(doc)
         r = req_reply.get_reply()
-        print r
         self.assertEquals(r["payload"]["return_code"], 0)
 
         # TODO verify that this matches the output of the command
@@ -178,7 +170,6 @@ class TestSimpleSingleCommands(unittest.TestCase):
         }
         req_reply = self._rpc_wait_reply(doc)
         r = req_reply.get_reply()
-        print r
         self.assertEquals(r["payload"]["return_code"], 0)
 
         # TODO verify that this matches the output of the command
@@ -267,15 +258,14 @@ class TestSimpleSingleCommands(unittest.TestCase):
 
         service_dir = self.conf_obj.get_service_directory(service_id)
         self.assertTrue(os.path.exists(service_dir))
-        self.assertTrue(os.path.exists(os.path.join(service_dir,
-                                                    "bin/enstratus-configure")))
+        self.assertTrue(os.path.exists(
+            os.path.join(service_dir, "bin/enstratus-configure")))
         self.assertTrue(os.path.exists(os.path.join(service_dir,
                                                     "bin/enstratus-stop")))
         self.assertTrue(os.path.exists(os.path.join(service_dir,
                                                     "bin/enstratus-start")))
 
         # test start
-
         arguments = {
             "agent_token": None,
             "customerId": self.customer_id,

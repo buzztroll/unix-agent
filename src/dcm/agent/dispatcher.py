@@ -5,6 +5,7 @@ import threading
 
 import dcm.agent.jobs as jobs
 from dcm.eventlog import tracer
+from dcm.agent import parent_receive_q
 
 
 _g_logger = logging.getLogger(__name__)
@@ -57,16 +58,18 @@ class Worker(threading.Thread):
         self.reply_q = reply_q
         self._exit = threading.Event()
         self._conf = conf
+        self._is_done = False
 
     # It should be safe to call done without a lock
     def done(self):
         _g_logger.debug("done() called on worker %s .." % self.getName())
+        self._is_done = True
         self._exit.set()
 
     def run(self):
         _g_logger.info("Worker %s thread starting." % self.getName())
 
-        while not self._exit.is_set():
+        while not self._is_done:
             try:
                 workload = self.worker_queue.get(True, 1)
                 # setup message logging
@@ -102,11 +105,14 @@ class Dispatcher(object):
         self._conf = conf
         self.workers = []
         self.worker_q = Queue.Queue()
-        self.reply_q = Queue.Queue()
+        self.reply_q = parent_receive_q.get_master_receive_queue(
+            self, str(self))
         self._long_runner = longrunners.LongRunner(conf)
+        self.request_listener = None
 
-    def start_workers(self):
+    def start_workers(self, request_listener):
         _g_logger.info("Starting %d workers." % self._conf.workers_count)
+        self.request_listener = request_listener
         for i in range(self._conf.workers_count):
             worker = Worker(self._conf, self.worker_q, self.reply_q)
             _g_logger.debug("Starting worker %d : %s" % (i, str(worker)))
@@ -172,12 +178,6 @@ class Dispatcher(object):
         _g_logger.debug(
             "The request %s has been set to send an ACK" % request_id)
 
-    def poll(self):
-        rc = None
-        try:
-            work_reply = self.reply_q.get(True, 1)
-            rc = work_reply
-        except Queue.Empty:
-            pass
-        self._long_runner.poll()
-        return rc
+    def incoming_parent_q_message(self, work_reply):
+        self.request_listener.reply(work_reply.request_id, work_reply.reply_doc)
+

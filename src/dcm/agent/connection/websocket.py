@@ -25,6 +25,7 @@ import ws4py.client.threadedclient as ws4py_client
 
 from dcm.agent import exceptions
 import dcm.agent.connection.connection_interface as conn_iface
+from dcm.agent import parent_receive_q
 
 
 _g_logger = logging.getLogger(__name__)
@@ -88,8 +89,8 @@ class _WebSocketClient(ws4py_client.WebSocketClient):
                 self._handshake_reply = m.data
                 self._cond.notify_all()
             else:
-                _g_logger.debug("Added to receive Q")
-                self.receive_queue.put(m.data)
+                json_doc = json.loads(m.data)
+                self.receive_queue.put(json_doc)
         finally:
             self._cond.release()
 
@@ -172,6 +173,8 @@ class _WSManager(threading.Thread):
             return False
 
         try:
+            # The wait interval here only controls the amount of time to
+            # shutdown
             doc = self._send_queue.get(True, 2)
             self._send_queue.task_done()
         except Queue.Empty:
@@ -214,13 +217,20 @@ class _WSManager(threading.Thread):
 
 class WebSocketConnection(conn_iface.ConnectionInterface):
 
-    def __init__(self, server_url, **kwargs):
+    def __init__(self, server_url):
         self._send_queue = Queue.Queue()
-        self._recv_queue = Queue.Queue()
+        self._recv_queue = None
         self._hs_string = None
 
+
+        self._ws_manager = None
+        self._server_url = server_url
+
+    def set_receiver(self, receive_object):
+        self._recv_queue = parent_receive_q.get_master_receive_queue(
+            receive_object, str(self))
         self._ws_manager = _WSManager(
-            server_url, self._recv_queue, self._send_queue, **kwargs)
+            self._server_url, self._recv_queue, self._send_queue)
 
     def set_handshake(self, handshake_doc):
         self._hs_string = json.dumps(handshake_doc)
@@ -231,8 +241,10 @@ class WebSocketConnection(conn_iface.ConnectionInterface):
 
     def recv(self):
         try:
-            m = self._recv_queue.get(True, 1)
+            _g_logger.debug("recv called |%d|" % self._recv_queue.qsize())
+            m = self._recv_queue.get(True, 0.1)
             self._recv_queue.task_done()
+            _g_logger.debug("User requested to receive |%d| %s" % (self._recv_queue.qsize(), m))
             return json.loads(m)
         except Queue.Empty:
             return None

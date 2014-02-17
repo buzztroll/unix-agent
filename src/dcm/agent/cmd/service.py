@@ -9,6 +9,7 @@ import dcm.agent.dispatcher as dispatcher
 import dcm.agent.exceptions as exceptions
 from dcm.agent.messaging import handshake
 import dcm.agent.messaging.reply as reply
+from dcm.agent import parent_receive_q
 
 
 _g_version = pkg_resources.require("es-ex-pyagent")[0].version
@@ -28,6 +29,7 @@ def shutdown_main_loop():
     logger.info("Shutting down.")
     _g_conf_object.console_log(0, "Shutting down.")
     _g_shutting_down = True
+    parent_receive_q.wakeup()
 
 
 def _pre_threads(conf, args):
@@ -46,6 +48,10 @@ def _run_agent():
 
     # def get a connection object
     conn = config.get_connection_object(_g_conf_object)
+    disp = dispatcher.Dispatcher(_g_conf_object)
+    request_listener = reply.RequestListener(_g_conf_object, conn, disp)
+    conn.set_receiver(request_listener)
+
     handshake_doc = handshake.get_handshake(_g_conf_object)
     conn.set_handshake(handshake_doc)
     handshake_reply = conn.connect()
@@ -55,11 +61,10 @@ def _run_agent():
 
     _g_conf_object.set_handshake(handshake_reply["initialize"])
 
-    disp = dispatcher.Dispatcher(_g_conf_object)
-    disp.start_workers()
+    disp.start_workers(request_listener)
 
-    request_listener = reply.RequestListener(_g_conf_object, conn, disp)
-    return _agent_main_loop(_g_conf_object, request_listener, disp, conn)
+    rc = _agent_main_loop(_g_conf_object, request_listener, disp, conn)
+    _cleanup_agent(_g_conf_object, request_listener, disp, conn)
 
 
 def _agent_main_loop(conf, request_listener, disp, conn):
@@ -67,22 +72,13 @@ def _agent_main_loop(conf, request_listener, disp, conn):
 
     while not _g_shutting_down:
         try:
-            reply_obj = request_listener.poll()
-            try:
-                if reply_obj is not None:
-                    disp.incoming_request(reply_obj)
-                work_reply = disp.poll()
-                if work_reply:
-                    request_listener.reply(
-                        work_reply.request_id, work_reply.reply_doc)
-            except:
-                logger.exception("A top level exception occurred after "
-                                    "creating the request.  Cleaning up the "
-                                    "request")
-                reply_obj.shutdown()
-
+            parent_receive_q.poll()
         except:
             logger.exception("A top level exception occurred")
+
+
+def _cleanup_agent(conf, request_listener, disp, conn):
+    logger = logging.getLogger(__name__)
 
     logger.debug("Shutting down the job runner")
     conf.jr.shutdown()
@@ -114,6 +110,7 @@ def main(args=sys.argv):
         _g_logger.exception("An unknown exception bubbled to the top")
         raise
     return 0
+
 
 if __name__ == '__main__':
     rc = main()

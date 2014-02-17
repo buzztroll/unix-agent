@@ -3,13 +3,13 @@ version: 1
 disable_existing_loggers: False
 formatters:
     simple:
-        format: "%(asctime)s $(name)s %(levelname)s - %(message)s"
+        format: "%(asctime)s %(name)s %(levelname)s - %(message)s"
     simple_request_tracer:
-        format: "%(asctime)s $(name)s %(levelname)s - %(message)s || REQUEST=%(dcm_request_id)s request_kws=%(dcm_kwargs)s"
+        format: "%(asctime)s %(name)s %(levelname)s - %(message)s || REQUEST=%(dcm_request_id)s request_kws=%(dcm_kwargs)s"
     job:
-        format: "%(asctime)s $(name)s %(levelname)s - %(message)s || REQUEST=%(dcm_request_id)s command=%(dcm_command_name)s request_kws=%(dcm_kwargs)s"
+        format: "%(asctime)s %(name)s %(levelname)s - %(message)s || REQUEST=%(dcm_request_id)s command=%(dcm_command_name)s request_kws=%(dcm_kwargs)s"
     message:
-        format: "%(asctime)s $(name)s %(levelname)s - %(message)s || REQUEST=%(dcm_request_id)s message=%(dcm_message_type)s request_kws=%(dcm_kwargs)s"
+        format: "%(asctime)s %(name)s %(levelname)s - %(message)s || REQUEST=%(dcm_request_id)s message=%(dcm_message_type)s request_kws=%(dcm_kwargs)s"
 
 filters:
     add_request:

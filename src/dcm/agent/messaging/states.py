@@ -51,32 +51,6 @@ class ReplyStates(object):
     CLEANUP = "CLEANUP"
 
 
-class UserCallback(object):
-
-    def __init__(self, func, args, kwargs):
-        self._func = func
-        self._args = args
-        if args is None:
-            self._args = []
-        self._kwargs = kwargs
-        if kwargs is None:
-            self._kwargs = {}
-
-    def call(self):
-        try:
-            _g_logger.debug("UserCallback calling %s" % self._func.__name__)
-            self._func(*self._args, **self._kwargs)
-        except Exception as ex:
-            _g_logger.error("UserCallback function %(func_name)s threw "
-                            "exception %(ex)s" %
-                            {'func_name': self._func.__name__,
-                             'ex': str(ex)})
-            raise
-        finally:
-            _g_logger.debug("UserCallback function %s returned successfully."
-                            % self._func.__name__)
-
-
 class StateMachine(object):
 
     def __init__(self, start_state):
@@ -133,14 +107,6 @@ class StateMachine(object):
         except KeyError as keyEx:
             raise exceptions.IllegalStateTransitionException(
                 event, self._current_state)
-
-    def register_user_callback(self, func, args=None, kwargs=None):
-        cb = UserCallback(func, args, kwargs)
-        self._user_callbacks_list.append(cb)
-
-    def process_callbacks(self):
-        for cb in self._user_callbacks_list:
-            cb.call()
 
     def get_event_list(self):
         return self._event_list

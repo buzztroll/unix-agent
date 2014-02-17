@@ -1,6 +1,6 @@
 import logging
 import threading
-import time
+from dcm.agent import parent_receive_q
 
 import dcm.agent.exceptions as exceptions
 import dcm.agent.messaging.states as states
@@ -50,38 +50,41 @@ class ReplyRPC(object):
         return self._request_payload
 
     def shutdown(self):
-        try:
-            if self._reply_message_timer:
-                self._reply_message_timer.cancel()
-            self._reply_listener.message_done(self)
-        except Exception as ex:
-            _g_logger.warn("Error shutting down the request", ex)
+        with tracer.RequestTracer(self._request_id):
+            try:
+                if self._reply_message_timer:
+                    self._reply_message_timer.cancel()
+                self._reply_listener.message_done(self)
+            except Exception as ex:
+                _g_logger.warn("Error shutting down the request", ex)
 
     def kill(self):
-        if self._reply_message_timer:
-            try:
-                self._reply_message_timer.cancel()
-            except Exception as ex:
-                _g_logger.info("an exception occured when trying to cancel"
-                               "the timer: " + ex.message)
+        with tracer.RequestTracer(self._request_id):
+            if self._reply_message_timer:
+                try:
+                    self._reply_message_timer.cancel()
+                except Exception as ex:
+                    _g_logger.info("an exception occured when trying to cancel"
+                                   "the timer: " + ex.message)
 
-    @utils.class_method_sync()
+    @utils.class_method_sync
     def ack(self,
             cancel_callback, cancel_callback_args, cancel_callback_kwargs):
         """
         Indicate to the messaging system that you have successfully received
         this message and stored it for processing.
         """
-        self._cancel_callback = cancel_callback
-        self._cancel_callback_args = cancel_callback_args
-        if self._cancel_callback_args is None:
-            self._cancel_callback_args = []
-        self._cancel_callback_args.insert(0, self)
-        self._cancel_callback_kwargs = cancel_callback_kwargs
-        self._sm.event_occurred(states.ReplyEvents.USER_ACCEPTS_REQUEST,
-                                message={})
+        with tracer.RequestTracer(self._request_id):
+            self._cancel_callback = cancel_callback
+            self._cancel_callback_args = cancel_callback_args
+            if self._cancel_callback_args is None:
+                self._cancel_callback_args = []
+            self._cancel_callback_args.insert(0, self)
+            self._cancel_callback_kwargs = cancel_callback_kwargs
+            self._sm.event_occurred(states.ReplyEvents.USER_ACCEPTS_REQUEST,
+                                    message={})
 
-    @utils.class_method_sync()
+    @utils.class_method_sync
     def nak(self, response_document):
         """
         This function is called to out tight reject the message.  The user
@@ -90,41 +93,45 @@ class ReplyRPC(object):
         referenced by the user.
 
         """
-        self._sm.event_occurred(states.ReplyEvents.USER_REJECTS_REQUEST,
-                                message=response_document)
+        with tracer.RequestTracer(self._request_id):
+            self._sm.event_occurred(states.ReplyEvents.USER_REJECTS_REQUEST,
+                                    message=response_document)
 
-    @utils.class_method_sync()
+    @utils.class_method_sync
     def reply(self, response_document):
         """
         Send a reply to this request.  This signifies that the user is
         done with this object.
         """
-        self._sm.event_occurred(states.ReplyEvents.USER_REPLIES,
-                                message=response_document)
+        with tracer.RequestTracer(self._request_id):
+            self._sm.event_occurred(states.ReplyEvents.USER_REPLIES,
+                                    message=response_document)
 
-    @utils.class_method_sync()
+    @utils.class_method_sync
     def reply_timeout(self, message_timer):
-        self._sm.event_occurred(states.RequesterEvents.TIMEOUT,
-                                message_timer=message_timer)
+        with tracer.RequestTracer(self._request_id):
+            self._sm.event_occurred(states.RequesterEvents.TIMEOUT,
+                                    message_timer=message_timer)
 
-    @utils.class_method_sync()
+    @utils.class_method_sync
     def incoming_message(self, json_doc):
-        type_to_event = {
-            types.MessageTypes.ACK: states.ReplyEvents.REPLY_ACK_RECEIVED,
-            types.MessageTypes.NACK: states.ReplyEvents.REPLY_NACK_RECEIVED,
-            types.MessageTypes.REPLY: states.ReplyEvents.USER_REPLIES,
-            types.MessageTypes.CANCEL: states.ReplyEvents.CANCEL_RECEIVED,
-            types.MessageTypes.REQUEST: states.ReplyEvents.REQUEST_RECEIVED
-        }
-        if 'type' not in json_doc:
-            raise exceptions.MissingMessageParameterException('type')
-        if json_doc['type'] not in type_to_event:
-            raise exceptions.InvalidMessageParameterValueException(
-                'type', json_doc['type'])
+        with tracer.RequestTracer(self._request_id):
+            type_to_event = {
+                types.MessageTypes.ACK: states.ReplyEvents.REPLY_ACK_RECEIVED,
+                types.MessageTypes.NACK: states.ReplyEvents.REPLY_NACK_RECEIVED,
+                types.MessageTypes.REPLY: states.ReplyEvents.USER_REPLIES,
+                types.MessageTypes.CANCEL: states.ReplyEvents.CANCEL_RECEIVED,
+                types.MessageTypes.REQUEST: states.ReplyEvents.REQUEST_RECEIVED
+            }
+            if 'type' not in json_doc:
+                raise exceptions.MissingMessageParameterException('type')
+            if json_doc['type'] not in type_to_event:
+                raise exceptions.InvalidMessageParameterValueException(
+                    'type', json_doc['type'])
 
-        # this next call drives the state machine
-        self._sm.event_occurred(type_to_event[json_doc['type']],
-                                message=json_doc)
+            # this next call drives the state machine
+            self._sm.event_occurred(type_to_event[json_doc['type']],
+                                    message=json_doc)
 
     def _send_reply_message(self, message_timer):
         self._reply_message_timer = message_timer
@@ -158,10 +165,10 @@ class ReplyRPC(object):
         cancel.  It is important that the cancel notification comes after
         the message received notification.
         """
-        cb = states.UserCallback(self._cancel_callback,
-                                 self._cancel_callback_args,
-                                 self._cancel_callback_kwargs)
-        self._reply_listener.register_user_callback(cb)
+        parent_receive_q.register_user_callback(
+            self._cancel_callback,
+            self._cancel_callback_args,
+            self._cancel_callback_kwargs)
 
     def _sm_requesting_user_accepts(self, **kwargs):
         """
@@ -222,10 +229,10 @@ class ReplyRPC(object):
         A cancel is received from the remote end.  We simply notify the user
         of the request and allow the user to act upon it.
         """
-        cb = states.UserCallback(self._cancel_callback,
-                                 self._cancel_callback_args,
-                                 self._cancel_callback_kwargs)
-        self._reply_listener.register_user_callback(cb)
+        parent_receive_q.register_user_callback(
+            self._cancel_callback,
+            self._cancel_callback_args,
+            self._cancel_callback_kwargs)
 
     def _sm_acked_reply(self, **kwargs):
         """
@@ -328,10 +335,10 @@ class ReplyRPC(object):
         after a cancel has arrived.  Here we just register a cancel callback
         and let the user react to it how they will.
         """
-        cb = states.UserCallback(self._cancel_callback,
-                                 self._cancel_callback_args,
-                                 self._cancel_callback_kwargs)
-        self._reply_listener.register_user_callback(cb)
+        parent_receive_q.register_user_callback(
+            self._cancel_callback,
+            self._cancel_callback_args,
+            self._cancel_callback_kwargs)
 
     def _setup_states(self):
         self._sm.add_transition(states.ReplyStates.NEW,
@@ -429,13 +436,13 @@ class ReplyRPC(object):
 
 class RequestListener(object):
 
-    def __init__(self, conf, connection, dispatcher):
-        self._conn = connection
+    def __init__(self, conf, sender_connection, dispatcher):
+        self._conn = sender_connection
         self._dispatcher = dispatcher
         self._requests = {}
         self._expired_requests = {}
         self._messages_processed = 0
-        self._user_callbacks_list = []
+
         self._reply_observers = []
         self._timeout = conf.messaging_retransmission_timeout
         self._shutdown = False
@@ -463,7 +470,8 @@ class RequestListener(object):
 
         with tracer.RequestTracer(incoming_doc['request_id']):
             self._call_reply_observers("incoming_message", incoming_doc)
-            _g_logger.debug("New message type %s" % incoming_doc['type'])
+            _g_logger.debug("New message type %s :: %s" % (incoming_doc['type'],
+                                                           incoming_doc))
 
             if incoming_doc['type'] == types.MessageTypes.REQUEST:
                 # this is new request
@@ -506,7 +514,13 @@ class RequestListener(object):
                         self._call_reply_observers("new_message", msg)
                         # only add the message if processing was successful
                         self._requests[request_id] = msg
-                        return msg
+                        try:
+                            self._dispatcher.incoming_request(msg)
+                        except Exception as ex:
+                            del self._requests[request_id]
+                            _g_logger.error("The dispatcher could not handle "
+                                            "the message")
+                            raise
             else:
                 request_id = incoming_doc['request_id']
                 if request_id not in self._requests:
@@ -545,21 +559,6 @@ class RequestListener(object):
                     'agent_id': self._conf.get_agent_id()}
         self._conn.send(nack_doc)
 
-    def poll(self):
-        for cb in self._user_callbacks_list:
-            with tracer.RequestTracer(cb.request_id):
-                cb.call()
-        incoming_doc = self._conn.recv()
-
-        try:
-            self._validate_doc(incoming_doc)
-            return self._process_doc(incoming_doc)
-        except Exception as ex:
-            _g_logger.warn(
-                "Error processing the message: %s" % str(incoming_doc), ex)
-            self._send_bad_message_reply(incoming_doc, ex.message)
-        time.sleep(0)
-
     def message_done(self, reply_message):
         # we cannot drop this message too soon or retransmissions will cause
         # the command to be run again
@@ -581,14 +580,17 @@ class RequestListener(object):
         self._call_reply_observers("message_done", reply_message)
 
     def _expired_req_timeout(self, req):
-        # TODO note thread safety
+        _g_logger.debug("******** _expired_req_timeout")
         try:
             del self._expired_requests[req.get_request_id()]
         except:
             pass
 
     def register_user_callback(self, user_callback):
-        self._user_callbacks_list.append(user_callback)
+        parent_receive_q.register_user_callback(
+            user_callback,
+            self._cancel_callback_args,
+            self._cancel_callback_kwargs)
 
     def get_messages_processed(self):
         return self._messages_processed
@@ -612,6 +614,16 @@ class RequestListener(object):
     def reply(self, request_id, reply_doc):
         reply_req = self._requests[request_id]
         reply_req.reply(reply_doc)
+
+    def incoming_parent_q_message(self, incoming_doc):
+        _g_logger.debug("Received message %s" % str(incoming_doc))
+        try:
+            self._validate_doc(incoming_doc)
+            return self._process_doc(incoming_doc)
+        except Exception as ex:
+            _g_logger.exception(
+                "Error processing the message: %s" % str(incoming_doc))
+            self._send_bad_message_reply(incoming_doc, ex.message)
 
 
 class ReplyObserverInterface(object):

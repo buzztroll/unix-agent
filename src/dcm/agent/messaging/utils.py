@@ -11,15 +11,13 @@ _g_message_uuid = str(uuid.uuid4()).split("-")[0]
 _g_message_id_count = 0
 
 
-def class_method_sync():
-    def wrapper(func):
-        def lock_func(self, *args, **kwargs):
-            self.lock()
-            try:
-                return func(self, *args, **kwargs)
-            finally:
-                self.unlock()
-        return lock_func
+def class_method_sync(func):
+    def wrapper(self, *args, **kwargs):
+        self.lock()
+        try:
+            return func(self, *args, **kwargs)
+        finally:
+            self.unlock()
     return wrapper
 
 
@@ -57,7 +55,15 @@ class MessageTimer(object):
         self._cb = callback
         self.message_id = None
         self._timer = None
+        self._lock = threading.RLock()
 
+    def lock(self):
+        self._lock.acquire()
+
+    def unlock(self):
+        self._lock.release()
+
+    @class_method_sync
     def send(self, conn):
         self._timer = threading.Timer(self._timeout,
                                       self._cb,
@@ -67,6 +73,7 @@ class MessageTimer(object):
         conn.send(self._send_doc)
         self._timer.start()
 
+    @class_method_sync
     def cancel(self):
         if self._timer is None:
             return

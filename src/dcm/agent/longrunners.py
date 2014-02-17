@@ -3,6 +3,7 @@ import logging
 import Queue
 import threading
 import time
+from dcm.agent import parent_receive_q
 
 import dcm.agent.jobs as jobs
 
@@ -101,7 +102,7 @@ class JobRunner(threading.Thread):
         _g_logger.info("Job runner %s thread ending." % self.getName())
 
 
-class LongRunner(object):
+class LongRunner(parent_receive_q.ParentReceiveQObserver):
 
     def __init__(self, conf):
         self._job_table = {}
@@ -109,7 +110,8 @@ class LongRunner(object):
         self._lock = threading.RLock()
         self._conf = conf
         self._run_queue = Queue.Queue()
-        self._reply_queue = Queue.Queue()
+        self._reply_queue = parent_receive_q.get_master_receive_queue(
+            self, str(self))
         self._runner_list = []
         for i in range(conf.workers_long_runner_threads):
             jr = JobRunner(conf, self._run_queue, self._reply_queue)
@@ -162,7 +164,7 @@ class LongRunner(object):
 
     def _job_cleanup(self, job_id):
         with self._lock:
-            _g_logger.debug("Removing job %d for the table" % job_id)
+            _g_logger.debug("####### Removing job %d from the table" % job_id)
             del self._job_table[job_id]
 
     def lookup_job(self, job_id):
@@ -172,28 +174,20 @@ class LongRunner(object):
             except Exception as ex:
                 return None
 
-    def poll(self):
-        try:
-            _g_logger.debug("Polling the long runner")
-            job_reply = self._reply_queue.get(True, 1)
+    def incoming_parent_q_message(self, job_reply):
+        with self._lock:
+            try:
+                _g_logger.debug("long runner poll has the lock, "
+                                "updating %s" % str(job_reply.job_id))
 
-            with self._lock:
-                try:
-                    _g_logger.debug("long runner poll has the lock, "
-                                    "updating %s" % str(job_reply.job_id))
-
-                    jd = self._job_table[job_reply.job_id]
-                    jd.update(job_reply)
-                    if jd._job_status == JobStatus.ERROR or\
-                                    jd._job_status == JobStatus.COMPLETE:
-                        self.job_complete(job_reply.job_id)
-                except Exception:
-                    _g_logger.exception("Failed to update")
-                    return None
-        except Queue.Empty:
-            _g_logger.debug("Polling the long runner reply q empty")
-
-            pass
+                jd = self._job_table[job_reply.job_id]
+                jd.update(job_reply)
+                if jd._job_status == JobStatus.ERROR or\
+                                jd._job_status == JobStatus.COMPLETE:
+                    self.job_complete(job_reply.job_id)
+            except Exception:
+                _g_logger.exception("Failed to update")
+                return None
 
 
 class DetachedJob(object):

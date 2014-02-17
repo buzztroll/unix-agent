@@ -182,6 +182,7 @@ class AgentConfig(object):
             FilenameOpt("storage", "binaries_path", default="/dcm/bin"),
             FilenameOpt("storage", "ephemeral_mountpoint", default="/mnt"),
             FilenameOpt("storage", "operations_path", default="/mnt"),
+            FilenameOpt("storage", "idfile", default=None),
 
             ConfigOpt("cloud", "name", str, default=None),
             ConfigOpt("cloud", "type", str, default=CLOUD_TYPES.Amazon),

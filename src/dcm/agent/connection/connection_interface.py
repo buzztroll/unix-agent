@@ -4,7 +4,7 @@ import dcm.agent.utils as agent_util
 class ConnectionInterface(object):
 
     @agent_util.not_implemented_decorator
-    def recv(self):
+    def set_receiver(self, receive_object):
         """
         Read 1 packet from the connection.  1 complete json doc.
         """

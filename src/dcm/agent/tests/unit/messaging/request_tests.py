@@ -2,6 +2,7 @@ import unittest
 
 import mock
 import time
+from dcm.agent import parent_receive_q
 
 import dcm.agent.messaging.types as types
 import dcm.agent.messaging.states as states
@@ -139,7 +140,7 @@ class TestRequesterStandardPath(unittest.TestCase):
                          'request_id': send_doc['request_id']}
 
             requester.incoming_message(reply_doc)
-            requester.poll()
+            parent_receive_q.poll()
 
             self.assertEqual(states.RequesterStates.ACK_SENT,
                              requester._sm._current_state)

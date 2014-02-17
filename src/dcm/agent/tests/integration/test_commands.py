@@ -2,7 +2,7 @@ import json
 import os
 import unittest
 import StringIO
-from dcm.agent import dispatcher
+from dcm.agent import dispatcher, parent_receive_q
 
 import dcm.agent.config as config
 from dcm.agent.messaging import types
@@ -18,7 +18,6 @@ class TestSingleCommands(unittest.TestCase):
         test_conf_path = test_utils.get_conf_file()
         self.conf_obj.setup(conffile=test_conf_path)
         self.disp = dispatcher.Dispatcher(self.conf_obj)
-        self.disp.start_workers()
 
     def tearDown(self):
         self.disp.stop()
@@ -34,16 +33,12 @@ class TestSingleCommands(unittest.TestCase):
         conn = self._get_conn(inlines, outfile, drop_count)
         request_listener = reply.RequestListener(
             self.conf_obj, conn, self.disp)
+        conn.set_receiver(request_listener)
+        self.disp.start_workers(request_listener)
 
         # wait until the request is done
-        while request_listener.is_busy() or \
-            request_listener.get_messages_processed() != 1:
-            doc = request_listener.poll()
-            if doc:
-                self.disp.incoming_request(doc)
-            doc = self.disp.poll()
-            if doc:
-                request_listener.reply(doc.request_id, doc.reply_doc)
+        while request_listener.get_messages_processed() != 1:
+            parent_receive_q.poll()
         output = json.loads(outfile.buflist[0])
         self.assertEquals(stdout, output['stdout'].strip())
         self.assertEquals(stderr, output['stderr'])
@@ -85,7 +80,6 @@ class TestSerialCommands(unittest.TestCase):
         test_conf_path = test_utils.get_conf_file()
         self.conf_obj.setup(conffile=test_conf_path)
         self.disp = dispatcher.Dispatcher(self.conf_obj)
-        self.disp.start_workers()
 
     def tearDown(self):
         self.disp.stop()
@@ -106,21 +100,16 @@ class TestSerialCommands(unittest.TestCase):
 
         inlines = StringIO.StringIO(in_command)
         outfile = StringIO.StringIO()
+
         conn = self._get_conn(inlines, outfile, drop_count)
         request_listener = reply.RequestListener(
             self.conf_obj, conn, self.disp)
+        conn.set_receiver(request_listener)
+        self.disp.start_workers(request_listener)
 
         # wait until the request is done
-        while request_listener.is_busy() or \
-            request_listener.get_messages_processed() != count:
-            reply_obj = request_listener.poll()
-            if reply_obj is not None:
-                self.disp.incoming_request(reply_obj)
-            work_reply = self.disp.poll()
-            if work_reply:
-                request_listener.reply(
-                    work_reply.request_id, work_reply.reply_doc)
-
+        while request_listener.get_messages_processed() != count:
+            parent_receive_q.poll()
 
         for i in range(count):
             output = json.loads(outfile.buflist[i])
@@ -170,28 +159,25 @@ class TestRetransmission(unittest.TestCase):
                 pass
 
         disp = dispatcher.Dispatcher(self.conf_obj)
-        disp.start_workers()
 
         in_command = os.linesep.join(command)
         count = len(command)
         inlines = StringIO.StringIO(in_command)
         outfile = StringIO.StringIO()
         conn = self._get_conn(inlines, outfile, drop_count, retrans_list)
-        request_listener = reply.RequestListener(self.conf_obj, conn, disp)
+
+        request_listener = reply.RequestListener(
+            self.conf_obj, conn, disp)
+        conn.set_receiver(request_listener)
         to = TestStateObserver()
         rol = request_listener.get_reply_observers()
         rol.insert(0, to)
+        disp.start_workers(request_listener)
 
         # wait until the request is done
-        while request_listener.is_busy() or \
-            request_listener.get_messages_processed() != count:
-            reply_obj = request_listener.poll()
-            if reply_obj is not None:
-                disp.incoming_request(reply_obj)
-            work_reply = disp.poll()
-            if work_reply:
-                request_listener.reply(
-                    work_reply.request_id, work_reply.reply_doc)
+        while request_listener.get_messages_processed() != count:
+            parent_receive_q.poll()
+
 
         for i in range(count):
             output = json.loads(outfile.buflist[i])

@@ -1,5 +1,6 @@
 import logging
 import uuid
+from dcm.agent import parent_receive_q
 
 import dcm.agent.exceptions as exceptions
 import dcm.agent.messaging.states as states
@@ -51,10 +52,7 @@ class RequestRPC(object):
         self._sm.event_occurred(states.RequesterEvents.CANCEL_REQUESTED,
                                 message={})
 
-    def poll(self):
-        self._sm.process_callbacks()
-
-    def _user_reply_callback(self):
+    def _user_reply_callback(self, *args, **kwargs):
         self._reply_callback(*self._reply_args, **self._reply_kwargs)
         self.user_reply_callback_returns()
 
@@ -216,7 +214,13 @@ class RequestRPC(object):
             args = [message]
             if self._reply_args:
                 args.extend(self._reply_args)
-            self._sm.register_user_callback(self._user_reply_callback)
+
+            parent_receive_q.register_user_callback(
+                self._cancel_callback,
+                self._cancel_callback_args,
+                self._cancel_callback_kwargs)
+
+            parent_receive_q.UserCallback(self._user_reply_callback, None, None)
 
     def _sm_requested_reply_received(self, **kwargs):
         """
@@ -245,7 +249,9 @@ class RequestRPC(object):
             args = [message]
             if self._reply_args:
                 args.extend(self._reply_args)
-            self._sm.register_user_callback(self._user_reply_callback)
+            parent_receive_q.register_user_callback(
+                self._user_reply_callback,
+                self._reply_args, self._reply_kwargs)
 
     def _sm_user_cb_returned(self, **kwargs):
         """
