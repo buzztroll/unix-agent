@@ -100,7 +100,6 @@ def main(args=sys.argv):
         _g_conf_object.start_job_runner()
         _run_agent()
     except exceptions.AgentOptionException as aoex:
-        _g_conf_object.agent_state = utils.AgentStates.STARTUP_ERROR
         _g_conf_object.console_log(0, "The agent is misconfigured.")
         _g_conf_object.console_log(0, aoex.message)
         if _g_conf_object.get_cli_arg("verbose") > 2:

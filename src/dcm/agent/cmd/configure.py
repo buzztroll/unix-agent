@@ -4,12 +4,15 @@
 
 import argparse
 import os
+import shutil
 import subprocess
 import sys
 import platform
 import textwrap
 from dcm.agent import config
 import ConfigParser
+
+import dcm.agent
 
 
 # below are the variables with no defaults that must be determined
@@ -309,13 +312,26 @@ def merge_opts(conf_d, opts):
             sd[i] = (h, v)
 
 
+def do_plugin(opts):
+    dest_plugin_path = os.path.join(opts.base_path, "etc", "plugin.conf")
+    dest_logging_path = os.path.join(opts.base_path, "etc", "logging.yaml")
+
+    root_dir = dcm.agent.get_root_location()
+
+    src_pluggin_path = os.path.join(root_dir, "etc", "plugin.conf")
+    src_logging_path = os.path.join(root_dir, "etc", "logging.yaml")
+
+    shutil.copy(src_pluggin_path, dest_plugin_path)
+    shutil.copy(src_logging_path, dest_logging_path)
+
+
 def main():
 
     parser = setup_command_line_parser()
     opts = parser.parse_args(args=sys.argv[1:])
 
     try:
-        if opts.cloud is not None and opts.cloud not in cloud_choices:
+        if opts.cloud is not None and opts.cloud not in cloud_choices.values():
             raise Exception("%s is not a valid cloud choice.  It must be one "
                             "of %s" % (opts.cloud, str(cloud_choices.values())))
         if opts.platform is None:
@@ -323,8 +339,9 @@ def main():
         if opts.cloud is None and not opts.initial:
             opts.cloud = select_cloud()
 
-        conf_file_name = os.path.join(opts.base_path, "etc", "agent.conf")
+        do_plugin(opts)
 
+        conf_file_name = os.path.join(opts.base_path, "etc", "agent.conf")
         conf_d = manage_conf(conf_file_name)
         merge_opts(conf_d, opts)
         write_conf_file(conf_file_name, conf_d)

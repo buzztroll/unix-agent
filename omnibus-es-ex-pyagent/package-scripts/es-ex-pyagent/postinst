@@ -77,7 +77,47 @@ echo "Done."
 
 echo "Attempting to install startup scripts..."
 
-echo "....TODO install rc.d/runit action"
+echo "Attempting to install startup scripts..."
+
+startup_fname="/etc/init.d/es-ex-pyagent"
+echo "#!/usr/bin/env bash" > $startup_fname
+
+if [ -f /usr/sbin/update-rc.d ] ; then
+
+	echo "#" >> $startup_fname
+	echo "### BEGIN INIT INFO" >> $startup_fname
+	echo "# Provides:          es-ex-pyagent" >> $startup_fname
+	echo "# Required-Start:    \$remote_fs \$syslog" >> $startup_fname
+	echo "# Required-Stop:     \$remote_fs \$syslog" >> $startup_fname
+	echo "# Should-Start:      \$network \$named" >> $startup_fname
+	echo "# Should-Stop:       \$network \$named" >> $startup_fname
+	echo "# Default-Start:     2 3 4 5" >> $startup_fname
+	echo "# Default-Stop:      0 1 6" >> $startup_fname
+	echo "# Short-Description: Starts and stops the enStratus agent" >> $startup_fname
+	echo "# Description:       Starts and stops the enStratus agent Tomcat service." >> $startup_fname
+	echo "### END INIT INFO" >> $startup_fname
+
+	#echo "/opt/es-ex-pyagent/embedded/bin/dcm-agent -c /dcm/etc/agent.conf" >> $startup_fname
+
+	chmod 755 $startup_fname
+
+	update-rc.d es-ex-pyagent defaults
+
+elif [ -x /sbin/chkconfig ] ; then
+
+	echo "# chkconfig: 2345 60 40" >> $startup_fname
+	echo "# description: Manages the enStratus agent." >> $startup_fname
+
+	#echo "/opt/es-ex-pyagent/embedded/bin/dcm-agent -c /dcm/etc/agent.conf" >> $startup_fname
+
+	chmod 755 $startup_fname
+	chkconfig --add es-ex-pyagent
+
+else
+	echo "Could not identify startup protocols. Contact enStratus support at support@enstratus.com."
+	exit 90
+fi
+echo "Done."
 
 echo "======================================================="
 echo "The installation of the DCM Agent has completed."
