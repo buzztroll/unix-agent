@@ -1,8 +1,9 @@
 import logging
+import os
 import signal
 import sys
-import pkg_resources
 
+import dcm.agent
 from dcm.agent import utils
 import dcm.agent.config as config
 import dcm.agent.dispatcher as dispatcher
@@ -12,7 +13,6 @@ import dcm.agent.messaging.reply as reply
 from dcm.agent import parent_receive_q
 
 
-_g_version = pkg_resources.require("es-ex-pyagent")[0].version
 _g_conf_object = config.AgentConfig()
 _g_shutting_down = False
 
@@ -41,6 +41,12 @@ def _pre_threads(conf, args):
     if conf.pydev_host:
         utils.setup_remote_pydev(_g_conf_object.pydev_host,
                                  _g_conf_object.pydev_port)
+
+    if 'PYDEVD_DEBUG_HOST' in os.environ:
+        pydev = os.environ['PYDEVD_DEBUG_HOST']
+        print pydev
+        h, p = pydev.split(":")
+        utils.setup_remote_pydev(h, int(p))
 
 
 def _run_agent():
@@ -95,7 +101,7 @@ def main(args=sys.argv):
     try:
         _pre_threads(_g_conf_object, args)
         if(_g_conf_object.get_cli_arg("version")):
-            print "Version %s" % _g_version
+            print "Version %s" % dcm.agent.g_version
             return 0
         _g_conf_object.start_job_runner()
         _run_agent()

@@ -15,6 +15,7 @@ import json
 import os
 import socket
 
+import dcm.agent
 import dcm.agent.cloudmetadata as cloud_instance
 
 
@@ -59,6 +60,8 @@ def get_handshake(conf):
         'agent_id': agent_id,
         'vm_instance': vm_instance,
         'injected_id': injected_id,
+        'version': dcm.agent.g_version,
+        'platform': conf.platform_name
     }
 
     return handshake_doc

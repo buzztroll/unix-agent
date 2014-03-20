@@ -97,9 +97,9 @@ def setup_remote_pydev(host, port):
 
         pydevd.settrace(host,
                         port=port,
-                        stdoutToServer=False,
-                        stderrToServer=False,
-                        suspend=False)
+                        stdoutToServer=True,
+                        stderrToServer=True,
+                        suspend=True)
         return True
     except Exception:
         return False

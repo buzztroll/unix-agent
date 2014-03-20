@@ -196,7 +196,7 @@ class AgentConfig(object):
             ConfigOpt("enstratius", "agentmanager_url", str, default=None),
             ConfigOpt("platform", "script_locations", list,
                       default="common-linux"),
-            ConfigOpt("platform", "name", list, default=None),
+            ConfigOpt("platform", "name", str, default="python"),
             ConfigOpt("jobs", "retain_job_time", int, default=3600),
         ]
         for o in self.option_list:
@@ -305,19 +305,19 @@ class AgentConfig(object):
         return self._agent_id
 
     def set_handshake(self, handshake_doc):
-        if handshake_doc["version"] == "1":
-            self._agent_id = handshake_doc["agentID"]
-            self.cloud_id = handshake_doc["cloudId"]
-            self.customer_id = handshake_doc["customerId"]
-            self.region_id = handshake_doc["regionId"]
-            self.zone_id = handshake_doc["zoneId"]
-            self.server_id = handshake_doc["serverId"]
-            self.server_name = handshake_doc["serverName"]
-            self.ephemeral_file_system = handshake_doc["ephemeralFileSystem"]
-            self.encrypted_ephemeral_fs_key = \
-                handshake_doc["encryptedEphemeralFsKey"]
-        else:
-            raise exceptions.AgentHandshakeException()
+        #if handshake_doc["version"] == dcm.agent.g_version:
+        self._agent_id = handshake_doc["agentID"]
+        self.cloud_id = handshake_doc["cloudId"]
+        self.customer_id = handshake_doc["customerId"]
+        self.region_id = handshake_doc["regionId"]
+        self.zone_id = handshake_doc["zoneId"]
+        self.server_id = handshake_doc["serverId"]
+        self.server_name = handshake_doc["serverName"]
+        #self.ephemeral_file_system = handshake_doc["ephemeralFileSystem"]
+        #self.encrypted_ephemeral_fs_key = \
+        #    handshake_doc["encryptedEphemeralFsKey"]
+        #else:
+        #    raise exceptions.AgentHandshakeException()
 
     def get_script_dir(self):
         _ROOT = dcm.agent.get_root_location()
