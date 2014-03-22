@@ -123,6 +123,8 @@ class _WSManager(threading.Thread):
         # catastrophic error
 
         try:
+            _g_logger.debug(
+                "Attempting to connect to %s." % self._server_url)
             self._ws = _WebSocketClient(
                 self, self._server_url, self._receive_queue,
                 protocols=['http-only', 'chat'], **self._kwargs)
@@ -134,7 +136,7 @@ class _WSManager(threading.Thread):
             _g_logger.info(
                 "The WS connection to %s succeeded." % self._server_url)
         except Exception as ex:
-            _g_logger.info("An error forming the WS connection to %s occurred"
+            _g_logger.exception("An error forming the WS connection to %s occurred"
                            ": %s" % (self._server_url, ex.message))
             self._set_next_connection_time()
             self._connected = False

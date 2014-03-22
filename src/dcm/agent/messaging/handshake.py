@@ -14,6 +14,7 @@
 import json
 import os
 import socket
+from dcm.agent import cloudmetadata
 
 import dcm.agent
 import dcm.agent.cloudmetadata as cloud_instance
@@ -35,7 +36,7 @@ def _gather_ipv6_addresses():
 
 
 def _get_agent_id(conf):
-    if not os.path.exists(conf.storage_idfile):
+    if not conf.storage_idfile or not os.path.exists(conf.storage_idfile):
         return None
 
     with open(conf.storage_idfile, "r") as fptr:
@@ -48,8 +49,8 @@ def _get_injected_id():
 
 
 def get_handshake(conf):
-    ipv4s = _gather_ipv4_addresses()
-    ipv6s = _gather_ipv6_addresses()
+    ipv4s = cloudmetadata.get_ipv4_addresses(conf)
+    ipv6s = []
     injected_id = _get_injected_id()
     agent_id = _get_agent_id(conf)
     vm_instance = cloud_instance.get_instance_id(conf)

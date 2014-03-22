@@ -11,6 +11,7 @@
 #   this material is strictly forbidden unless prior written permission
 #   is obtained from Dell, Inc.
 #  ======================================================================
+import json
 import logging
 import os
 import subprocess
@@ -95,6 +96,11 @@ def get_cloud_metadata(conf, key):
                 split_name = result.strip().split("-")
                 if len(split_name) > 2:
                     result = split_name[2]
+        elif conf.cloud_type == CLOUD_TYPES.OpenStack:
+            url = conf.cloud_metadata_url
+            json_data = _get_metadata_server_url_data(url)
+            jdict = json.loads(json_data)
+            return jdict[key]
         else:
             # NOTE we may want to log this
             result = None
@@ -106,16 +112,18 @@ def get_instance_id(conf):
     _g_logger.debug("Get instance ID called")
 
     try:
-        if conf.instance_id is None:
+        if conf.instance_id is not None:
             return conf.instance_id
 
         if conf.cloud_type == CLOUD_TYPES.Amazon or\
                         conf.cloud_type == CLOUD_TYPES.Eucalyptus:
-            instance_id = get_cloud_metadata("instance-id")
+            instance_id = get_cloud_metadata(conf, "instance-id")
         elif conf.cloud_type == CLOUD_TYPES.CloudStack:
-            instance_id = get_cloud_metadata("latest/instance-id")
+            instance_id = get_cloud_metadata(conf, "latest/instance-id")
         elif conf.cloud_type == CLOUD_TYPES.CloudStack3:
-            instance_id = get_cloud_metadata("latest/vm-id")
+            instance_id = get_cloud_metadata(conf, "latest/vm-id")
+        elif conf.cloud_type == CLOUD_TYPES.OpenStack:
+            instance_id = get_cloud_metadata(conf, "uuid")
         else:
             instance_id = None
         conf.instance_id = instance_id
@@ -136,6 +144,6 @@ def get_ipv4_addresses(conf):
     (stdout, stderr, rc) = utils.run_script(conf, "getIpAddresses", [])
     for line in stdout.split(os.linesep):
         line = line.strip()
-        if line and     line not in ip_list:
+        if line and line not in ip_list:
             ip_list.append(line)
     return ip_list
