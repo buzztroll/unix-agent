@@ -13,6 +13,10 @@
 #  ======================================================================
 
 import logging
+from dcm.agent import utils
+from dcm.agent.jobs.builtin.add_user import AddUser
+from dcm.agent.jobs.builtin.make_temp import MakeTemp
+from dcm.agent.jobs.builtin.rename import Rename
 
 import dcm.agent.jobs as jobs
 
@@ -26,49 +30,55 @@ class InitializeJob(jobs.Plugin):
         super(InitializeJob, self).__init__(
             conf, job_id, items_map, name, arguments)
 
+        self.rename = Rename(self.conf, self.job_id, {"script_name": "rename"},
+                             "rename",
+                             {"server_name": self.arguments["serverName"]})
+        self.make_temp = MakeTemp(self.conf, self.job_id,
+                                  {"script_name": "makeTemp"}, "make_temp",
+                                  {})
+        self.add_user = AddUser(self.conf, self.job_id,
+                                {"script_name": "addUser"}, "add_user",
+                                {"first_name": "Customer",
+                                 "last_name": "Account",
+                                 "password": None,
+                                 "authentication": None,
+                                 "administrator": "false",
+                                 "user_id": utils.make_id_string(self.conf.customer_id)})
+
     def run(self):
+        _g_logger.debug("Initialize run")
         # verify that the parameters in initialize match what came in on the
         # connection
         try:
-            if self.arguments["cloudId"] != self.conf.cloud_id:
-                raise Exception("cloud ID from initialize does not match "
-                                "the original value received from the "
-                                "connection handshake")
-            if self.arguments["customerId"] != self.conf.customer_id:
-                raise Exception("customer ID from initialize does not match "
-                                "the original value received from the "
-                                "connection handshake")
-            if self.arguments["regionId"] != self.conf.region_id:
-                raise Exception("region ID from initialize does not match "
-                                "the original value received from the "
-                                "connection handshake")
-            if self.arguments["zoneId"] != self.conf.zone_id:
-                raise Exception("zone ID from initialize does not match "
-                                "the original value received from the "
-                                "connection handshake")
-            if self.arguments["serverId"] != self.conf.server_id:
-                raise Exception("server ID from initialize does not match "
-                                "the original value received from the "
-                                "connection handshake")
-            if self.arguments["serverName"] != self.conf.server_name:
-                raise Exception("server name from initialize does not match "
-                                "the original value received from the "
-                                "connection handshake")
-            if self.arguments["ephemeralFileSystem"] !=\
-                    self.conf.ephemeral_file_system:
-                raise Exception("ephemeralFileSystem from initialize does"
-                                "not match "
-                                "the original value received from the "
-                                "connection handshake")
-            if self.arguments["encryptedEphemeralFsKey"] !=\
-                    self.conf.encrypted_ephemeral_fs_key:
-                raise Exception("encryptedEphemeralFsKey from initialize does "
-                                "not match "
-                                "the original value received from the "
-                                "connection handshake")
+            # TODO WALK THE INIT STEPS
+            # rename
+            self.logger.info("Renaming the host to %s" % self.arguments["serverName"])
+            res_doc = self.rename.run()
+            if res_doc["return_code"] != 0:
+                res_doc["message"] = res_doc["message"] + " : rename failed"
+                return res_doc
 
-            # TODO WALK THE INTIT STEPS
+            if self.conf.storage_mount_enabled:
+                self.logger.debug("Mount is enabled")
+                if self.arguments["ephemeralFileSystem"]:
+                    self.logger.info("Attempting to mount the ephemeral file system")
+                    # TODO mount encrypted FS
 
+            # make the temp directory
+            self.logger.info("Create the temporary directory")
+            self.make_temp.run()
+            if res_doc["return_code"] != 0:
+                res_doc["message"] = res_doc["message"] + " : makeTemp failed"
+                return res_doc
+            # add customer user
+            self.logger.info("Adding the user")
+            self.add_user.run()
+            if res_doc["return_code"] != 0:
+                res_doc["message"] = res_doc["message"] + " : addUser failed"
+                return res_doc
+
+            return {"return_code": 0, "message": "",
+                 "error_message": "", "return_type": "void"}
         except Exception as ex:
             return {'return_code': 1, "message": ex.message}
 

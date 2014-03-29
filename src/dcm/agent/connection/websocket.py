@@ -59,6 +59,7 @@ class _WebSocketClient(ws4py_client.WebSocketClient):
             self._cond.release()
 
     def wait_for_handshake(self):
+        _g_logger.debug("Waiting for the handshake...")
         try:
             self._cond.acquire()
             while not self._complete_handshake:
@@ -77,18 +78,29 @@ class _WebSocketClient(ws4py_client.WebSocketClient):
     def closed(self, code, reason=None):
         _g_logger.debug("Web socket %s has been closed %d %s"
                         % (self._url, code, reason))
+        self._cond.acquire()
+        try:
+            if not self._complete_handshake:
+                _g_logger.debug("WS closed before the handshake completed.")
+                self._complete_handshake = True
+                error_doc = {"return_code": code, "message": reason}
+                self._handshake_reply = json.dumps(error_doc)
+                self._cond.notify_all()
+        finally:
+            self._cond.release()
         self.manager.closed(code, reason=reason)
 
     def received_message(self, m):
         _g_logger.debug("WS message received " + m.data)
+        self._cond.acquire()
         try:
-            self._cond.acquire()
             if not self._complete_handshake:
                 _g_logger.debug("Handshake received")
                 self._complete_handshake = True
                 self._handshake_reply = m.data
                 self._cond.notify_all()
             else:
+                _g_logger.debug("New message received")
                 json_doc = json.loads(m.data)
                 self.receive_queue.put(json_doc)
         finally:
@@ -223,7 +235,6 @@ class WebSocketConnection(conn_iface.ConnectionInterface):
         self._send_queue = Queue.Queue()
         self._recv_queue = None
         self._hs_string = None
-
 
         self._ws_manager = None
         self._server_url = server_url

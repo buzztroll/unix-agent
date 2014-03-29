@@ -94,6 +94,11 @@ class ConfigOpt(object):
         try:
             if self.my_type == list:
                 v = v.split(",")
+            elif self.my_type == bool:
+                if type(v) == str:
+                    v = (v.lower() == "true" or v.lower() == "yes")
+                else:
+                    v = bool(v)
             else:
                 v = self.my_type(v)
         except ValueError:
@@ -183,6 +188,8 @@ class AgentConfig(object):
             FilenameOpt("storage", "ephemeral_mountpoint", default="/mnt"),
             FilenameOpt("storage", "operations_path", default="/mnt"),
             FilenameOpt("storage", "idfile", default=None),
+
+            ConfigOpt("storage", "mount_enabled", bool, default=True),
 
             ConfigOpt("cloud", "name", str, default=None),
             ConfigOpt("cloud", "type", str, default=CLOUD_TYPES.Amazon),
@@ -318,6 +325,14 @@ class AgentConfig(object):
         #    handshake_doc["encryptedEphemeralFsKey"]
         #else:
         #    raise exceptions.AgentHandshakeException()
+
+        if self.storage_idfile:
+            try:
+                with open(self.storage_idfile, "w") as fptr:
+                    fptr.write(str(self._agent_id))
+            except Exception as ex:
+                _g_logger.exception("Failed to write the agent ID to "
+                                    "%s" % self._storage_idfile)
 
     def get_script_dir(self):
         _ROOT = dcm.agent.get_root_location()

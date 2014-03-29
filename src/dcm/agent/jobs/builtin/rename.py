@@ -12,6 +12,7 @@
 #   is obtained from Dell, Inc.
 #  ======================================================================
 import logging
+import re
 from dcm.agent import exceptions, cloudmetadata
 
 import dcm.agent.jobs.direct_pass as direct_pass
@@ -20,10 +21,24 @@ import dcm.agent.jobs.direct_pass as direct_pass
 _g_logger = logging.getLogger(__name__)
 
 
+def _is_valid_hostname(hostname):
+    if len(hostname) > 255:
+        return False
+    if hostname[-1] == ".":
+        hostname = hostname[:-1]
+    allowed = re.compile("(?!-)[A-Z\d-]{1,63}(?<!-)$", re.IGNORECASE)
+    return all(allowed.match(x) for x in hostname.split("."))
+
+
 class Rename(direct_pass.DirectPass):
     def __init__(self, conf, job_id, items_map, name, arguments):
         super(Rename, self).__init__(
             conf, job_id, items_map, name, arguments)
+
+        hname = arguments["server_name"]
+        if not _is_valid_hostname(hname):
+            raise exceptions.AgentPluginMessageException(
+                "%s is an invalid hostname" % hname)
 
         try:
             self.ordered_param_list = [arguments["server_name"]]
@@ -41,7 +56,7 @@ class Rename(direct_pass.DirectPass):
             return reply_doc
 
         _g_logger.debug("Acquired ip addr %s" % private_ips[0])
-        self.ordered_param_list.extend(private_ips[0])
+        self.ordered_param_list.append(private_ips[0])
 
         return super(Rename, self).run()
 

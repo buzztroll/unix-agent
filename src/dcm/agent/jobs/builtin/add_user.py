@@ -44,11 +44,13 @@ class AddUser(direct_pass.DirectPass):
             self.conf.storage_temppath, self.arguments["user_id"] + ".pub")
 
         try:
-            with open(key_file, "w") as f:
-                f.write(self.ssh_public_key)
+            if self.ssh_public_key:
+                with open(key_file, "w") as f:
+                    f.write(self.ssh_public_key)
             return super(AddUser, self).run()
         finally:
-            os.remove(key_file)
+            if os.path.exists(key_file):
+                os.remove(key_file)
 
     def cancel(self, reply_rpc, *args, **kwargs):
         pass

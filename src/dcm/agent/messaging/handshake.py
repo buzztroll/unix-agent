@@ -53,6 +53,7 @@ def get_handshake(conf):
     ipv6s = []
     injected_id = _get_injected_id()
     agent_id = _get_agent_id(conf)
+
     vm_instance = cloud_instance.get_instance_id(conf)
 
     handshake_doc = {
@@ -62,6 +63,7 @@ def get_handshake(conf):
         'vm_instance': vm_instance,
         'injected_id': injected_id,
         'version': dcm.agent.g_version,
+        'protocol_version': dcm.agent.g_protocol_version,
         'platform': conf.platform_name
     }
 

@@ -59,13 +59,15 @@ def _run_agent():
     conn.set_receiver(request_listener)
 
     handshake_doc = handshake.get_handshake(_g_conf_object)
+    _g_logger.debug("Using handshake document %s" % str(handshake_doc))
     conn.set_handshake(handshake_doc)
     handshake_reply = conn.connect()
 
     if handshake_reply["return_code"] != 200:
+        _cleanup_agent(_g_conf_object, request_listener, disp, conn)
         raise Exception("handshake failed " + handshake_reply['message'])
 
-    _g_conf_object.set_handshake(handshake_reply["initialize"])
+    _g_conf_object.set_handshake(handshake_reply["handshake"])
 
     disp.start_workers(request_listener)
 
@@ -108,11 +110,13 @@ def main(args=sys.argv):
     except exceptions.AgentOptionException as aoex:
         _g_conf_object.console_log(0, "The agent is misconfigured.")
         _g_conf_object.console_log(0, aoex.message)
+        shutdown_main_loop()
         if _g_conf_object.get_cli_arg("verbose") > 2:
             raise
     except:
         _g_logger = logging.getLogger(__name__)
         _g_logger.exception("An unknown exception bubbled to the top")
+        shutdown_main_loop()
         raise
     return 0
 

@@ -151,3 +151,11 @@ class Lock(object):
                 lock_file_name]
         (stdout, stderr, rc) = run_script("lockServices")
 
+
+def make_friendly_id(id):
+    str_id = "%09d" % id
+    return str_id[0:3] + "-" + str_id[3:6] + "-" + str_id[6:9]
+
+
+def make_id_string(id):
+    return "%03d" % id

@@ -97,10 +97,14 @@ def get_cloud_metadata(conf, key):
                 if len(split_name) > 2:
                     result = split_name[2]
         elif conf.cloud_type == CLOUD_TYPES.OpenStack:
-            url = conf.cloud_metadata_url
-            json_data = _get_metadata_server_url_data(url)
-            jdict = json.loads(json_data)
-            return jdict[key]
+            try:
+                url = conf.cloud_metadata_url
+                json_data = _get_metadata_server_url_data(url)
+                jdict = json.loads(json_data)
+                result = jdict[key]
+            except:
+                _g_logger.exception("Failed to get the OpenStack metadata")
+                result = None
         else:
             # NOTE we may want to log this
             result = None
