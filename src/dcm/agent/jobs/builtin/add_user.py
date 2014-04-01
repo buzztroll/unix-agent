@@ -25,12 +25,12 @@ class AddUser(direct_pass.DirectPass):
             conf, job_id, items_map, name, arguments)
 
         try:
-            self.ordered_param_list = [conf.customer_id,
-                                        arguments["user_id"],
-                                        arguments["first_name"],
-                                        arguments["last_name"],
-                                        arguments["administrator"],
-                                        arguments["password"]]
+            self.ordered_param_list = [arguments["user_id"],
+                                       arguments["user_id"],
+                                       arguments["first_name"],
+                                       arguments["last_name"],
+                                       arguments["administrator"],
+                                       arguments["password"]]
             self.ssh_public_key = arguments["authentication"]
         except KeyError as ke:
             raise exceptions.AgentPluginConfigException(

@@ -43,7 +43,7 @@ class InitializeJob(jobs.Plugin):
                                  "password": None,
                                  "authentication": None,
                                  "administrator": "false",
-                                 "user_id": utils.make_id_string(self.conf.customer_id)})
+                                 "user_id": utils.make_id_string("c", self.conf.customer_id)})
 
     def run(self):
         _g_logger.debug("Initialize run")
