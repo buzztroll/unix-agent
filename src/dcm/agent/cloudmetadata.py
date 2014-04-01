@@ -112,6 +112,7 @@ def get_cloud_metadata(conf, key):
     finally:
         _g_logger.debug("Metadata value of %s is %s" % (key, result))
 
+
 def get_instance_id(conf):
     _g_logger.debug("Get instance ID called")
 
@@ -123,9 +124,9 @@ def get_instance_id(conf):
                         conf.cloud_type == CLOUD_TYPES.Eucalyptus:
             instance_id = get_cloud_metadata(conf, "instance-id")
         elif conf.cloud_type == CLOUD_TYPES.CloudStack:
-            instance_id = get_cloud_metadata(conf, "latest/instance-id")
+            instance_id = get_cloud_metadata(conf, "instance-id")
         elif conf.cloud_type == CLOUD_TYPES.CloudStack3:
-            instance_id = get_cloud_metadata(conf, "latest/vm-id")
+            instance_id = get_cloud_metadata(conf, "vm-id")
         elif conf.cloud_type == CLOUD_TYPES.OpenStack:
             instance_id = get_cloud_metadata(conf, "uuid")
         else:
