@@ -9,6 +9,7 @@ import subprocess
 import sys
 import platform
 import textwrap
+import urlparse
 from dcm.agent import config
 import ConfigParser
 
@@ -217,19 +218,22 @@ def select_cloud():
     return cloud
 
 
-def pick_meta_data(cloud):
+def pick_meta_data(cloud, conf_d):
     if cloud == "Amazon":
-        return "http://169.254.169.254/latest/meta-data/"
+        mu = "http://169.254.169.254/latest/meta-data/"
     elif cloud == "Eucalyptus":
-        return "http://169.254.169.254/1.0/meta-data/"
+        mu = "http://169.254.169.254/1.0/meta-data/"
     elif cloud == "OpenStack":
-        return "http://169.254.169.254/openstack/2012-08-10/meta_data.json"
+        mu = "http://169.254.169.254/openstack/2012-08-10/meta_data.json"
     elif cloud == "CloudStack":
-        return "lastest/instance-id"
+        mu = "lastest/instance-id"
     elif cloud == "CloudStack3":
-        return "latest/local-hostname"
+        mu = "latest/local-hostname"
     else:
         return None
+
+    (h, _) = conf_d["cloud"]["metadata_url"]
+    conf_d["cloud"]["metadata_url"] = (h, mu)
 
 
 def do_py_install(ve_path):
@@ -392,10 +396,17 @@ def get_url():
         return default
 
     # validate
-    la = url.split(":")
-    if len(la) != 2:
-        raise Exception("The format of the agent manager url is no valid. "
-                        "It must include a port.  %s" % url)
+    try:
+        up = urlparse.urlparse(url)
+        int(up.port)
+    except Exception as ex:
+        raise Exception("The agent manager contact %s is not a valid url"
+                        % url)
+    allowed_schemes = ["http", "https", "ws", "wss"]
+    if up.scheme not in allowed_schemes:
+        raise Exception("The url %s does not consist of an allowed scheme. "
+                        "Only the follow schemes are allows %s"
+                        % str(allowed_schemes))
     return url
 
 
@@ -431,6 +442,7 @@ def main():
         conf_d = manage_conf(opts, conf_file_name)
         merge_opts(conf_d, opts)
         set_values(conf_d, opts)
+        pick_meta_data(opts.cloud, conf_d)
         write_conf_file(conf_file_name, conf_d)
         copy_scripts(opts)
 

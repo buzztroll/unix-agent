@@ -84,8 +84,9 @@ def not_implemented_decorator(func):
 
 
 def verify_config_file(opts):
-    must_haves = ["connection_type", "cloud_type", "platform_name"]
-    warn_haves = ["cloud_metadata_url", "connection_agentmanager_url"]
+    must_haves = ["connection_type", "cloud_type", "platform_name",
+                  "connection_agentmanager_url"]
+    warn_haves = ["cloud_metadata_url"]
 
     for must in must_haves:
         try:
@@ -95,8 +96,11 @@ def verify_config_file(opts):
                 must, msg="Please check your config file.")
 
     for warn in warn_haves:
-        _g_logger.warn("Please check the config file.  The value %s is "
-                       "missing and could be needed." % warn)
+        try:
+            getattr(opts, warn)
+        except:
+            _g_logger.warn("Please check the config file.  The value %s is "
+                           "missing and could be needed." % warn)
 
 
 def generate_password(length=None):
