@@ -30,7 +30,6 @@ class RemoteTester(jobs.Plugin):
         self._port = int(items_map['remote_port'])
         self._host = items_map['remote_host']
 
-
         for i in range(3):
             try:
                 self.sock = socket.socket(socket.AF_INET, socket.SOCK_STREAM)

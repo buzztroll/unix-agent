@@ -64,7 +64,7 @@ class JobRunner(threading.Thread):
                 work = self._queue.get(True, 1)
 
                 try:
-                    _g_logger.debug("Running the long job %s:%s" %\
+                    _g_logger.debug("Running the long job %s:%s" %
                                     (work.name, work.request_id))
 
                     job_reply = JobReply(work.job_id)
@@ -149,7 +149,7 @@ class LongRunner(parent_receive_q.ParentReceiveQObserver):
             detached_job = DetachedJob(self._conf, self._job_id,
                                        plugin, name, arguments)
             self._job_table[detached_job.get_job_id()] = detached_job
-            _g_logger.debug("Starting new long job id=%s"\
+            _g_logger.debug("Starting new long job id=%s"
                             % str(detached_job.get_job_id()))
             self._run_queue.put(new_job)
             return detached_job
@@ -183,7 +183,7 @@ class LongRunner(parent_receive_q.ParentReceiveQObserver):
                 jd = self._job_table[job_reply.job_id]
                 jd.update(job_reply)
                 if jd._job_status == JobStatus.ERROR or\
-                                jd._job_status == JobStatus.COMPLETE:
+                         jd._job_status == JobStatus.COMPLETE:
                     self.job_complete(job_reply.job_id)
             except Exception:
                 _g_logger.exception("Failed to update")

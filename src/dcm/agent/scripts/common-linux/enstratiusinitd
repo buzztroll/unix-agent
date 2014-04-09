@@ -1,0 +1,51 @@
+set -u
+
+BASENAME=`basename $0`
+DIRNAME=`dirname $0`
+. "$DIRNAME/common_mod"
+
+. /lib/lsb/init-functions
+
+PIDFILE=$DCM_BASEDIR/dcm-agent.pid
+EXE=/opt/dcm-agent/embedded/bin/dcm-agent
+CONF=$DCM_BASEDIR/etc/agent.conf
+
+
+SELF=$(cd $(dirname $0); pwd -P)/$(basename $0)
+
+case "${1:-''}" in
+  'start')
+    log_daemon_msg "Starting the dcm-agent"
+    if [ -x $DCM_BASEDIR/bin/esboot ] ; then
+        su - $DCM_USER -s "/bin/bash" -c "$DCM_BASEDIR/bin/esboot start"
+    fi
+
+    start-stop-daemon -m -c $DCM_USER --start --quiet -b --oknodo --pidfile $PIDFILE --exec $EXE -- -c $CONF
+    ;;
+
+  'stop')
+    log_daemon_msg "Stopping the dcm-agent"
+    if [ -x $DCM_BASEDIR/bin/esboot ] ; then
+        su - $DCM_USER -s "/bin/bash" -c "$DCM_BASEDIR/bin/esboot stop"
+    fi
+    start-stop-daemon --stop --quiet --oknodo --pidfile $PIDFILE
+    ;;
+    
+  'restart')
+    if [ -x $DCM_BASEDIR/bin/esboot ] ; then
+	    su - $DCM_USER -s "/bin/bash" -c "$DCM_BASEDIR/bin/esboot stop"
+        su - $DCM_USER -s "/bin/bash" -c "$DCM_BASEDIR/bin/esboot start"
+    fi
+    start-stop-daemon --stop --quiet --oknodo --pidfile $PIDFILE
+    start-stop-daemon -m -c $DCM_USER --start --quiet -b --oknodo --pidfile $PIDFILE --exec $EXE -- -c $CONF
+    ;;
+    
+  'reload')
+    ;;
+    
+  *)
+    echo "Usage: $SELF start|stop|restart|reload"
+        exit 1
+        ;;
+    
+esac

@@ -118,7 +118,8 @@ class ReplyRPC(object):
         with tracer.RequestTracer(self._request_id):
             type_to_event = {
                 types.MessageTypes.ACK: states.ReplyEvents.REPLY_ACK_RECEIVED,
-                types.MessageTypes.NACK: states.ReplyEvents.REPLY_NACK_RECEIVED,
+                types.MessageTypes.NACK:
+                    states.ReplyEvents.REPLY_NACK_RECEIVED,
                 types.MessageTypes.REPLY: states.ReplyEvents.USER_REPLIES,
                 types.MessageTypes.CANCEL: states.ReplyEvents.CANCEL_RECEIVED,
                 types.MessageTypes.REQUEST: states.ReplyEvents.REQUEST_RECEIVED
@@ -470,8 +471,8 @@ class RequestListener(object):
 
         with tracer.RequestTracer(incoming_doc['request_id']):
             self._call_reply_observers("incoming_message", incoming_doc)
-            _g_logger.debug("New message type %s :: %s" % (incoming_doc['type'],
-                                                           incoming_doc))
+            _g_logger.debug("New message type %s :: %s" %
+                (incoming_doc['type'], incoming_doc))
 
             if incoming_doc['type'] == types.MessageTypes.REQUEST:
                 # this is new request

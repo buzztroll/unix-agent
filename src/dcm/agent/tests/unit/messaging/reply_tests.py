@@ -5,6 +5,7 @@ import time
 import dcm.agent.exceptions as exceptions
 import dcm.agent.messaging.reply as reply
 import dcm.agent.messaging.types as types
+from dcm.agent import parent_receive_q
 
 
 class TestRequesterStandardPath(unittest.TestCase):
@@ -249,7 +250,7 @@ class TestRequestListener(unittest.TestCase):
 
         reply_listener = reply.RequestListener(conf, conn, disp)
 
-        reqreply = reply_listener.poll()
+        reqreply = parent_receive_q.poll()
         self.assertEqual(request_id, reqreply.get_request_id())
 
     def test_read_request_retrans_request(self):

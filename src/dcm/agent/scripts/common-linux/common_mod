@@ -1,5 +1,8 @@
-DCM_USER=vagrant
-DCM_BASEDIR=/dcm
+#!/usr/bin/env bash
+
+BASENAME=`basename $0`
+DIRNAME=`dirname $0`
+. "$DIRNAME/variables.sh"
 
 # Set of common functions.
 LOGGER=$DCM_BASEDIR/bin/log

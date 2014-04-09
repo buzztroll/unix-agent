@@ -60,9 +60,10 @@ class BackupDataSource(direct_pass.DirectPass):
     def run(self):
         service_dir = self.conf.get_service_directory(self._service_id)
 
-        config_file_path = os.path.join(service_dir, "cfg", "enstratus.cfg")
+        config_file_path = os.path.join(
+            service_dir, "cfg", "enstratiusinitd.cfg")
         if not utils.safe_delete(config_file_path):
-            msg = "Could not overwrite existing enstratus.cfg file."
+            msg = "Could not overwrite existing enstratiusinitd.cfg file."
             _g_logger.warn(msg)
             raise exceptions.AgentJobException(msg)
 
@@ -86,7 +87,6 @@ class BackupDataSource(direct_pass.DirectPass):
                    config_file_path,
                    backup_path]
 
-
         cwd = self.conf.get_service_directory(self._service_id)
         (stdout, stderr, rc) = utils.run_command(self.conf, command, cwd=cwd)
         if rc != 0:
@@ -96,7 +96,7 @@ class BackupDataSource(direct_pass.DirectPass):
             raise exceptions.AgentJobException(msg)
 
         _g_logger.info("Uploading backup %s to primary storage cloud." %
-            backup_path)
+                       backup_path)
 
         storagecloud.upload(
             self._cloud_id,

@@ -83,6 +83,22 @@ def not_implemented_decorator(func):
     return call
 
 
+def verify_config_file(opts):
+    must_haves = ["connection_type", "cloud_type", "platform_name"]
+    warn_haves = ["cloud_metadata_url", "connection_agentmanager_url"]
+
+    for must in must_haves:
+        try:
+            getattr(opts, must)
+        except:
+            raise exceptions.AgentOptionValueNotSetException(
+                must, msg="Please check your config file.")
+
+    for warn in warn_haves:
+        _g_logger.warn("Please check the config file.  The value %s is "
+                       "missing and could be needed." % warn)
+
+
 def generate_password(length=None):
     if length is None:
         length = 8 + random.randint(0, 10)
@@ -142,7 +158,8 @@ class Lock(object):
         pass
 
     def _lock_service(self):
-        (os_fd, lock_file_name) = tempfile.mkstemp(suffix=".lock", prefix="dcm")
+        (os_fd, lock_file_name) = tempfile.mkstemp(suffix=".lock",
+                                                   prefix="dcm")
         os.close(os_fd)
         (_, _, _, _, _, _, _, _, mtime, _) = os.stat(lock_file_name)
 

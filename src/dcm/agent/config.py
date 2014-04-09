@@ -20,6 +20,13 @@ _g_logger = logging.getLogger(__name__)
 _g_conf_file_env = "DCM_AGENT_CONF"
 
 
+def get_python_script_dir():
+    # we allow it to pull out of the python package for tests and
+    # installs that are done from something other than out packaging
+    _ROOT = dcm.agent.get_root_location()
+    return os.path.join(_ROOT, 'scripts')
+
+
 class AgentToken(object):
     def __init__(self, encrypted_token, date_string):
         self.encrypted_token = encrypted_token
@@ -51,9 +58,13 @@ def get_connection_object(conf):
     elif con_type == "dummy":
         con = dummy_con.DummyConnection()
     elif con_type == "ws":
-        con = websocket.WebSocketConnection(conf.enstratius_agentmanager_url)
+        if not conf.connection_agentmanager_url:
+            raise exceptions.AgentOptionValueNotSetException(
+                "[connection]agentmanager_url")
+        con = websocket.WebSocketConnection(conf.connection_agentmanager_url)
     else:
-        raise Exception("Unknown connection type")
+        raise exceptions.AgentOptionValueException(
+            "[connection]type", con_type, "ws,success_tester,dummy")
     return con
 
 
@@ -111,7 +122,7 @@ class ConfigOpt(object):
                 vx = vx.lower()
                 if vx not in self.options:
                     raise exceptions.AgentOptionValueException(
-                        self.name, self.options, self.v)
+                        self.name, self.options, v)
 
         if self.my_type == int or self.my_type == float:
             if self.minv is not None and v < self.minv:
@@ -148,6 +159,7 @@ class AgentConfig(object):
         self._agent_id = None
         self.instance_id = None
         self._init_file_options()
+        self.jr = None
 
     def _init_file_options(self):
         self.option_list = [
@@ -169,14 +181,13 @@ class AgentConfig(object):
             ConfigOpt("connection", "type", str, default=None, options=None,
                       help="The type of connection object to use.  Supported "
                            "types are ws and fallback"),
-
-            ConfigOpt("connection", "hostname", str, default=None),
             FilenameOpt("connection", "source_file", default=None),
             FilenameOpt("connection", "dest_file", default=None),
-            ConfigOpt("connection", "port", int, default=5309, options=None),
-
+            ConfigOpt("connection", "agentmanager_url", str, default=None,
+                      help="The url of the agent manager with which this "
+                           "agent will communicate."),
             FilenameOpt("logging", "configfile", default=None,
-                        help ="The location of the log configuration file"),
+                        help="The location of the log configuration file"),
 
             FilenameOpt("plugin", "configfile",
                         help="The location of the plugin configuration file"),
@@ -184,26 +195,35 @@ class AgentConfig(object):
             FilenameOpt("storage", "temppath", default="/tmp"),
             FilenameOpt("storage", "services_dir", default="/mnt/services"),
             FilenameOpt("storage", "base_dir", default="/dcm"),
-            FilenameOpt("storage", "binaries_path", default="/dcm/bin"),
+            FilenameOpt("storage", "binaries_path", default=None),
             FilenameOpt("storage", "ephemeral_mountpoint", default="/mnt"),
             FilenameOpt("storage", "operations_path", default="/mnt"),
             FilenameOpt("storage", "idfile", default=None),
+            FilenameOpt("storage", "script_dir", default=None),
 
             ConfigOpt("storage", "mount_enabled", bool, default=True),
 
-            ConfigOpt("cloud", "name", str, default=None),
-            ConfigOpt("cloud", "type", str, default=CLOUD_TYPES.Amazon),
+            ConfigOpt("cloud", "type", str, default=CLOUD_TYPES.Amazon,
+                      help="The type of cloud on which this agent is running"),
+                      #options=[i for i in dir(CLOUD_TYPES)
+                      #         if not i.startswith("_")]),
             ConfigOpt("cloud", "metadata_url", str,
-                      default="http://169.254.169.254/1.0/meta-data"),
+                      default=None,
+                      help="The url of the metadata server.  Not applicable "
+                           "to all clouds."),
 
             ConfigOpt("messaging", "retransmission_timeout", float,
                       default=5),
-            ConfigOpt("messaging", "max_at_once", int, default=-1),
+            ConfigOpt("messaging", "max_at_once", int, default=-1,
+                      help="The maximum number of commands that can be "
+                           "outstanding at once.  -1 means infinity."),
 
-            ConfigOpt("enstratius", "agentmanager_url", str, default=None),
             ConfigOpt("platform", "script_locations", list,
                       default="common-linux"),
-            ConfigOpt("platform", "name", str, default="python"),
+            ConfigOpt("platform", "name", str, default=None,
+                      help="The platform/distribution on which this agent is"
+                           "being installed.",
+                      options=["ubuntu", "el", "suse", "debian"]),
             ConfigOpt("jobs", "retain_job_time", int, default=3600),
         ]
         for o in self.option_list:
@@ -296,13 +316,13 @@ class AgentConfig(object):
             for conf_file in config_files:
                 self._parse_config_file(conf_file)
         self._setup_logging()
+        self._set_from_base()
 
     def console_log(self, level, msg, **kwargs):
-        # vb_level = self.get_cli_arg("verbose")
-        # if level > vb_level:
-        #     return
-        # print >> sys.stderr, msg % kwargs
-        return
+        vb_level = self.get_cli_arg("verbose")
+        if level > vb_level:
+            return
+        print >> sys.stderr, msg % kwargs
 
     def set_agent_id(self, agent_id):
         # TODO write to a file
@@ -332,14 +352,13 @@ class AgentConfig(object):
                     fptr.write(str(self._agent_id))
             except Exception as ex:
                 _g_logger.exception("Failed to write the agent ID to "
-                                    "%s" % self._storage_idfile)
-
-    def get_script_dir(self):
-        _ROOT = dcm.agent.get_root_location()
-        return os.path.join(_ROOT, 'scripts')
+                                    "%s" % self.storage_idfile)
 
     def get_script_location(self, name):
-        script_dir = self.get_script_dir()
+        if self.storage_script_dir is not None:
+            return self.storage_script_dir
+
+        script_dir = get_python_script_dir()
         _g_logger.debug("Script Dir %s" % script_dir)
         for platform in self.platform_script_locations:
             _g_logger.debug("Script platform %s" % platform)
@@ -371,3 +390,13 @@ class AgentConfig(object):
         new_dir = tempfile.mkdtemp(dir=self.storage_temppath)
         return os.path.join(new_dir, filename)
 
+    def _set_from_base(self):
+        if self.storage_binaries_path is None:
+            self.storage_binaries_path = \
+                os.path.join(self.storage_base_dir, "bin")
+        if self.storage_idfile is None:
+            self.storage_idfile = \
+                os.path.join(self.storage_base_dir, "etc", "agentid.txt")
+        if self.storage_script_dir is None:
+            self.storage_script_dir = \
+                os.path.join(self.storage_base_dir, "bin")

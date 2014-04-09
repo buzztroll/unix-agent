@@ -24,7 +24,7 @@ class GetAgentData(jobs.Plugin):
             conf, job_id, items_map, name, arguments)
 
     def run(self):
-        load = psutil.cpu_percent(1.0) # NOTE(buzztroll) this will block for 1s
+        load = psutil.cpu_percent(1.0)  # NOTE(buzztroll) blocks for 1s
         (total_ram, used_ram, f, p) = psutil.phymem_usage()
         reply_object = {
             "cpu_count": multiprocessing.cpu_count(),

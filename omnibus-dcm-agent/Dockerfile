@@ -13,7 +13,7 @@ ADD install-agent.sh /agent/pkg/
 RUN cd /agent/pkg; ./install-agent.sh
 RUN /usr/sbin/enable_insecure_key
 
-RUN mkdir -p /etc/service/es-ex-pyagent
-ADD runagent.sh /etc/service/es-ex-pyagent/run
+RUN mkdir -p /etc/service/dcm-agent
+ADD runagent.sh /etc/service/dcm-agent/run
 
 RUN apt-get clean && rm -rf /var/lib/apt/lists/* /tmp/* /var/tmp/*

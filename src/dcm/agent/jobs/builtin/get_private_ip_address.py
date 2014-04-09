@@ -19,6 +19,7 @@ import dcm.agent.jobs.direct_pass as direct_pass
 
 _g_logger = logging.getLogger(__name__)
 
+
 class GetPrivateIpAddress(direct_pass.DirectPass):
 
     def __init__(self, conf, job_id, items_map, name, arguments):

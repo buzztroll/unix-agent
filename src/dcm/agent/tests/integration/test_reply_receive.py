@@ -259,11 +259,11 @@ class TestSimpleSingleCommands(unittest.TestCase):
         service_dir = self.conf_obj.get_service_directory(service_id)
         self.assertTrue(os.path.exists(service_dir))
         self.assertTrue(os.path.exists(
-            os.path.join(service_dir, "bin/enstratus-configure")))
+            os.path.join(service_dir, "bin/enstratiusinitd-configure")))
         self.assertTrue(os.path.exists(os.path.join(service_dir,
-                                                    "bin/enstratus-stop")))
+                                                    "bin/enstratiusinitd-stop")))
         self.assertTrue(os.path.exists(os.path.join(service_dir,
-                                                    "bin/enstratus-start")))
+                                                    "bin/enstratiusinitd-start")))
 
         # test start
         arguments = {
@@ -319,7 +319,7 @@ class TestSimpleSingleCommands(unittest.TestCase):
         tm = datetime.datetime.utcfromtimestamp(float(secs))
         self.assertTrue(tm > start_time)
 
-        cfg_file = os.path.join(service_dir, "cfg", "enstratus.cfg")
+        cfg_file = os.path.join(service_dir, "cfg", "enstratiusinitd.cfg")
         self.assertTrue(os.path.exists(cfg_file))
 
         with open(cfg_file, "r") as fptr:
@@ -363,7 +363,7 @@ class TestSimpleSingleCommands(unittest.TestCase):
         tm = datetime.datetime.utcfromtimestamp(float(secs))
         self.assertTrue(tm > start_time)
 
-        cfg_file = os.path.join(service_dir, "cfg", "enstratus.cfg")
+        cfg_file = os.path.join(service_dir, "cfg", "enstratiusinitd.cfg")
         self.assertTrue(os.path.exists(cfg_file))
 
         with open(cfg_file, "r") as fptr:
@@ -480,11 +480,11 @@ class TestSimpleSingleCommands(unittest.TestCase):
         service_dir = self.conf_obj.get_service_directory(service_id)
         self.assertTrue(os.path.exists(service_dir))
         self.assertTrue(os.path.exists(os.path.join(service_dir,
-                                                    "bin/enstratus-configure")))
+                                                    "bin/enstratiusinitd-configure")))
         self.assertTrue(os.path.exists(os.path.join(service_dir,
-                                                    "bin/enstratus-stop")))
+                                                    "bin/enstratiusinitd-stop")))
         self.assertTrue(os.path.exists(os.path.join(service_dir,
-                                                    "bin/enstratus-start")))
+                                                    "bin/enstratiusinitd-start")))
 
         configuration_data = """
         This is some configuration data.

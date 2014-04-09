@@ -143,7 +143,6 @@ class ReqRepQHolder(object):
         self._req_recv_q = parent_receive_q.create_put_q("test_req_q_recv")
         self._req_send_q = parent_receive_q.create_put_q("test_req_q_send")
 
-
     class TestCon(conniface.ConnectionInterface):
         def __init__(self, sq, rq):
             self._send_q = sq

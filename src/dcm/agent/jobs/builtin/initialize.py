@@ -43,7 +43,8 @@ class InitializeJob(jobs.Plugin):
                                  "password": None,
                                  "authentication": None,
                                  "administrator": "false",
-                                 "user_id": utils.make_id_string("c", self.conf.customer_id)})
+                                 "user_id": utils.make_id_string(
+                                     "c", self.conf.customer_id)})
 
     def run(self):
         _g_logger.debug("Initialize run")
@@ -52,7 +53,8 @@ class InitializeJob(jobs.Plugin):
         try:
             # TODO WALK THE INIT STEPS
             # rename
-            self.logger.info("Renaming the host to %s" % self.arguments["serverName"])
+            self.logger.info("Renaming the host to %s"
+                             % self.arguments["serverName"])
             res_doc = self.rename.run()
             if res_doc["return_code"] != 0:
                 res_doc["message"] = res_doc["message"] + " : rename failed"
@@ -61,7 +63,8 @@ class InitializeJob(jobs.Plugin):
             if self.conf.storage_mount_enabled:
                 self.logger.debug("Mount is enabled")
                 if self.arguments["ephemeralFileSystem"]:
-                    self.logger.info("Attempting to mount the ephemeral file system")
+                    self.logger.info(
+                        "Attempting to mount the ephemeral file system")
                     # TODO mount encrypted FS
 
             # make the temp directory
@@ -78,7 +81,7 @@ class InitializeJob(jobs.Plugin):
                 return res_doc
 
             return {"return_code": 0, "message": "",
-                 "error_message": "", "return_type": "void"}
+                    "error_message": "", "return_type": "void"}
         except Exception as ex:
             return {'return_code': 1, "message": ex.message}
 

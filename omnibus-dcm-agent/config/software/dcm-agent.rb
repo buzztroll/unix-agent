@@ -1,4 +1,4 @@
-name "es-ex-pyagent"
+name "dcm-agent"
 version "3.10"
 
 dependency "python"

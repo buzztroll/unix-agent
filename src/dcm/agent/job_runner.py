@@ -25,35 +25,38 @@ class JobRunnerWorker(multiprocessing.Process):
                 if self._pipe.poll(1):
                     wrk = self._pipe.recv()
                     if wrk is None:
-                        continue;
+                        continue
                     (cmd, cwd) = wrk
                     try:
-                        _g_logger.debug("Child runner starting the script %s" % cmd)
+                        _g_logger.debug("Child runner starting the script %s"
+                                        % cmd)
 
                         process = subprocess.Popen(cmd,
-                                           shell=True,
-                                           stdout=subprocess.PIPE,
-                                           stderr=subprocess.PIPE,
-                                           cwd=cwd)
+                                                   shell=True,
+                                                   stdout=subprocess.PIPE,
+                                                   stderr=subprocess.PIPE,
+                                                   cwd=cwd)
                         stdout, stderr = process.communicate()
                         rc = process.returncode
 
-                        _g_logger.info("command %s:  STDOUT: %s" %(cmd, stdout))
+                        _g_logger.info("command %s:  STDOUT: %s" %
+                                       (cmd, stdout))
                         _g_logger.info("STDERR: %s " % stderr)
                         _g_logger.info("Return code: " + str(rc))
                     except Exception as ex:
-                        _g_logger.exception("Failed to run the script %s : %s" %
-                                   (str(cmd), str(ex)))
+                        _g_logger.exception("Failed to run the script %s : %s"
+                                            % (str(cmd), str(ex)))
                         rc = 1
                         stdout = None
                         stderr = ex.message
 
                     except:
-                        _g_logger.exception("Failed to run the script %s" % cmd)
+                        _g_logger.exception("Failed to run the script %s"
+                                            % cmd)
                         rc = 2
                         stdout = None
-                        stderr = "An unknown error occurred when attempting to " \
-                                 "run %s" % cmd
+                        stderr = "An unknown error occurred when attempting " \
+                                 "to run %s" % cmd
                     finally:
                         _g_logger.debug("Completed the script %s" % cmd)
 
@@ -92,4 +95,3 @@ class JobRunner(object):
         self._parent_conn.close()
         self._child_conn.close()
         self._child.join()
-

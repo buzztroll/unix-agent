@@ -1,0 +1,11 @@
+#!/bin/bash
+#
+# Perform necessary dcm-agent removal steps
+# after package is uninstalled.
+#
+
+rm -rf /dcm
+
+echo "dcm-agent has been uninstalled!"
+
+exit 0

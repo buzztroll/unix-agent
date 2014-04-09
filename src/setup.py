@@ -2,7 +2,7 @@ from setuptools import setup, find_packages
 
 Version=0.2
 
-setup(name='es-ex-pyagent',
+setup(name='dcm-agent',
       version=Version,
       description="Agent for DCM run VMs",
       author="Dell Software Group",

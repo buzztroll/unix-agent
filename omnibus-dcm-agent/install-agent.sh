@@ -6,7 +6,7 @@ if [ $? -eq 0 ]; then
     pkg_name=`basename $p`
 
     dpkg -i $pkg_name
-    /opt/es-ex-pyagent/embedded/bin/dcm-agent-configure -v -u http://172.16.129.19:76309 --cloud OpenStack
+    /opt/dcm-agent/embedded/bin/dcm-agent-configure -v -u http://172.16.129.19:76309 --cloud OpenStack
 else
     echo "No package found"
     pwd

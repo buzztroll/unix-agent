@@ -26,6 +26,5 @@ class Terminate(direct_pass.DirectPass):
                 "The plugin %s requires the option %s" % (name, ke.message))
 
 
-
 def load_plugin(conf, job_id, items_map, name, arguments):
     return Terminate(conf, job_id, items_map, name, arguments)

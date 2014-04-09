@@ -1,12 +1,12 @@
 #!/bin/bash
 #
-# Install a full es-ex-pyagent
+# Install a full dcm-agent
 #
 
 PROGNAME=`basename $0`
 INSTALLER_DIR=`dirname $0`
-DEST_DIR=/opt/es-ex-pyagent
-CONFIG_DIR=/etc/es-ex-pyagent
+DEST_DIR=/opt/dcm-agent
+CONFIG_DIR=/etc/dcm-agent
 USAGE="usage: $0"
 
 error_exit()
@@ -22,6 +22,6 @@ cp -R $INSTALLER_DIR $DEST_DIR || error_exit "Cannot install to $DEST_DIR"
 rm -f $DEST_DIR/$PROGNAME
 
 # You may want to symlink your packages bin files into /usr/bin
-# ln -sf $DEST_DIR/bin/es-ex-pyagent /usr/bin || error_exit "Cannot link es-ex-pyagent to /usr/bin"
+# ln -sf $DEST_DIR/bin/dcm-agent /usr/bin || error_exit "Cannot link dcm-agent to /usr/bin"
 
 exit 0

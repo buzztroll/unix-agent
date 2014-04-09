@@ -1,6 +1,6 @@
 #!/bin/bash
 #
-# Perform necessary es-ex-pyagent setup steps
+# Perform necessary dcm-agent setup steps
 # prior to installing package.
 #
 

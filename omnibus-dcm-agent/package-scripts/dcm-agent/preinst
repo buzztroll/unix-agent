@@ -17,10 +17,10 @@ PATH=/usr/sbin:/bin:${PATH}
 USERNAME="dcm"
 BASEDIRNAME="/dcm"
 
-echo "Install es-ex-pyagent..."
+echo "Install dcm-agent..."
 
 # Create directories.
-needed_directories="$BASEDIRNAME $BASEDIRNAME/etc $BASEDIRNAME/logs $BASEDIRNAME/home $BASEDIRNAME/custom/bin $BASEDIRNAME/cfg"
+needed_directories="$BASEDIRNAME $BASEDIRNAME/etc $BASEDIRNAME/bin $BASEDIRNAME/logs $BASEDIRNAME/home $BASEDIRNAME/custom/bin $BASEDIRNAME/cfg"
 for d in $needed_directories
 do
     echo "Creating directory at $d..."

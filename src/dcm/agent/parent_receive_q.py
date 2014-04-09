@@ -36,12 +36,10 @@ class UserCallback(object):
                             % self._func.__name__)
 
 
-
 class ParentReceiveQObserver(object):
     @agent_util.not_implemented_decorator
     def incoming_parent_q_message(self, obj):
         pass
-
 
 
 class CBCallerFromQ(ParentReceiveQObserver):

@@ -15,34 +15,38 @@ PATH=/bin:${PATH}
 
 set -u
 
-USERNAME="dcm"
+DCM_USERNAME="dcm"
 BASEDIRNAME="/dcm"
 
-echo "Setting $USERNAME permissions..."
-chown -R $USERNAME:$USERNAME $BASEDIRNAME
+echo "Setting $DCM_USERNAME permissions..."
+chown -R $DCM_USERNAME:$DCM_USERNAME $BASEDIRNAME
 chmod 775 $BASEDIRNAME
 chmod 750 $BASEDIRNAME/bin
 chmod 550 $BASEDIRNAME/bin/*
 chmod 755 $BASEDIRNAME/custom/bin
 chmod -R 750 $BASEDIRNAME/home
-chown -R $USERNAME:$USERNAME $BASEDIRNAME/home
+chown -R $DCM_USERNAME:$DCM_USERNAME $BASEDIRNAME/home
 chmod 750 $BASEDIRNAME/cfg
 chmod 640 $BASEDIRNAME/cfg/*
 
 mkdir -p /mnt/services
-chown -R $USERNAME:$USERNAME /mnt/services
+chown -R $DCM_USERNAME:$DCM_USERNAME /mnt/services
 
 echo "Done."
 
 echo "Create the configuration file"
 
-/opt/es-ex-pyagent/embedded/bin/dcm-agent-configure -v -I
+/opt/dcm-agent/embedded/bin/dcm-agent-configure -v -I -U $DCM_USERNAME -p $BASEDIRNAME
+if [ $? -ne 0 ]; then
+    echo "The default configuration failed"
+    exit 1
+fi
 
 echo "Done"
 
 echo "Setting /mnt/tmp and /tmp permissions..."
 mkdir -p /mnt/tmp 2>&1 > /dev/null
-chown -R $USERNAME:$USERNAME /mnt/tmp 2>&1 > /dev/null
+chown -R $DCM_USERNAME:$DCM_USERNAME /mnt/tmp 2>&1 > /dev/null
 chown root:root /tmp 2>&1 > /dev/null
 chmod 1777 /tmp 2>&1 > /dev/null
 echo "Done."
@@ -56,18 +60,18 @@ if [ -d /etc/sudoers.d ]; then
 	if [ $? -ne 0 ]; then
 		echo "#includedir /etc/sudoers.d" >> /etc/sudoers
 	fi
-	sed -i "/$USERNAME/d" /etc/sudoers
-	echo "Defaults:$USERNAME !requiretty" > /tmp/ens-sudoers
-	echo "$USERNAME ALL=(ALL) NOPASSWD: ALL" >> /tmp/ens-sudoers
+	sed -i "/$DCM_USERNAME/d" /etc/sudoers
+	echo "Defaults:$DCM_USERNAME !requiretty" > /tmp/ens-sudoers
+	echo "$DCM_USERNAME ALL=(ALL) NOPASSWD: ALL" >> /tmp/ens-sudoers
 	chown root:root /tmp/ens-sudoers
 	chmod 0440 /tmp/ens-sudoers
-	mv /tmp/ens-sudoers /etc/sudoers.d/$USERNAME
+	mv /tmp/ens-sudoers /etc/sudoers.d/$DCM_USERNAME
 elif [ -f /etc/sudoers ]; then
 	# For distros that do not have the latest sudo package.
 	chmod u+w /etc/sudoers
-	sed -i "/$USERNAME/d" /etc/sudoers
-	echo "Defaults:$USERNAME !requiretty" >> /etc/sudoers
-	echo "$USERNAME ALL=(ALL) NOPASSWD: ALL" >> /etc/sudoers
+	sed -i "/$DCM_USERNAME/d" /etc/sudoers
+	echo "Defaults:$DCM_USERNAME !requiretty" >> /etc/sudoers
+	echo "$DCM_USERNAME ALL=(ALL) NOPASSWD: ALL" >> /etc/sudoers
 	chmod u-w /etc/sudoers
 else
 	echo "error. sudoers not found."
@@ -77,16 +81,14 @@ echo "Done."
 
 echo "Attempting to install startup scripts..."
 
-echo "Attempting to install startup scripts..."
-
-startup_fname="/etc/init.d/es-ex-pyagent"
+startup_fname="/etc/init.d/dcm-agent"
 echo "#!/usr/bin/env bash" > $startup_fname
 
 if [ -f /usr/sbin/update-rc.d ] ; then
 
 	echo "#" >> $startup_fname
 	echo "### BEGIN INIT INFO" >> $startup_fname
-	echo "# Provides:          es-ex-pyagent" >> $startup_fname
+	echo "# Provides:          dcm-agent" >> $startup_fname
 	echo "# Required-Start:    \$remote_fs \$syslog" >> $startup_fname
 	echo "# Required-Stop:     \$remote_fs \$syslog" >> $startup_fname
 	echo "# Should-Start:      \$network \$named" >> $startup_fname
@@ -97,21 +99,17 @@ if [ -f /usr/sbin/update-rc.d ] ; then
 	echo "# Description:       Starts and stops the enStratus agent Tomcat service." >> $startup_fname
 	echo "### END INIT INFO" >> $startup_fname
 
-	#echo "/opt/es-ex-pyagent/embedded/bin/dcm-agent -c /dcm/etc/agent.conf" >> $startup_fname
+	echo "$BASEDIRNAME/bin/enstratiusinitd " '$@' >> $startup_fname
 
 	chmod 755 $startup_fname
-
-	update-rc.d es-ex-pyagent defaults
 
 elif [ -x /sbin/chkconfig ] ; then
 
 	echo "# chkconfig: 2345 60 40" >> $startup_fname
 	echo "# description: Manages the enStratus agent." >> $startup_fname
+	echo "$BASEDIRNAME/bin/enstratiusinitd " '$@' >> $startup_fname
 
-	#echo "/opt/es-ex-pyagent/embedded/bin/dcm-agent -c /dcm/etc/agent.conf" >> $startup_fname
-
-	chmod 755 $startup_fname
-	chkconfig --add es-ex-pyagent
+    chmod 755 $startup_fname
 
 else
 	echo "Could not identify startup protocols. Contact enStratus support at support@enstratus.com."
@@ -122,5 +120,6 @@ echo "Done."
 echo "======================================================="
 echo "The installation of the DCM Agent has completed."
 echo "To start the agent, run the following command."
+echo "$startup_fname start"
 echo "======================================================="
 exit 0

@@ -27,7 +27,7 @@ class AgentOptionSectionNotFoundException(AgentOptionException):
 class AgentOptionValueException(AgentOptionException):
     def __init__(self, name, given_value, expected_values):
         message = ("The config option %(name)s must have one of the "
-                   "values %(expected_values)s not %(given_value)" % locals())
+                   "values %(expected_values)s not %(given_value)s" % locals())
         super(AgentOptionValueException, self).__init__(message)
 
 
@@ -151,6 +151,7 @@ class AgentExecutableException(Exception):
 class AgentJobException(Exception):
     def __init__(self, message):
         super(AgentJobException, self).__init__(message)
+
 
 class AgentUnsupportedCloudFeature(Exception):
     pass

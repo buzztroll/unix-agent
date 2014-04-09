@@ -154,11 +154,14 @@ class _WSManager(threading.Thread):
             self._connected = False
 
     def connect(self):
-        while not self._connected:
+        while not self._connected and not self._done:
             self._connect()
             diff = self._next_connection_time - datetime.datetime.now()
             if diff.total_seconds() > 0:
                 time.sleep(diff.total_seconds())
+        # NOTE(jbresnahan) we should probably have a lock here
+        if self._done:
+            return None
         self.start()
         return json.loads(self._ws._handshake_reply)
 

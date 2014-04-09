@@ -1,7 +1,7 @@
-# es-ex-pyagent Omnibus project
+# dcm-agent Omnibus project
 
 This project creates full-stack platform-specific packages for
-`es-ex-pyagent`!
+`dcm-agent`!
 
 ## Installation
 
@@ -19,7 +19,7 @@ $ bundle install --binstubs
 You create a platform-specific package using the `build project` command:
 
 ```shell
-$ bin/omnibus build project es-ex-pyagent
+$ bin/omnibus build project dcm-agent
 ```
 
 The platform/architecture type of the package created will match the platform
@@ -37,7 +37,7 @@ $ bin/omnibus clean
 ```
 
 Adding the `--purge` purge option removes __ALL__ files generated during the
-build including the project install directory (`/opt/es-ex-pyagent`) and
+build including the project install directory (`/opt/dcm-agent`) and
 the package cache directory (`/var/cache/omnibus/pkg`):
 
 ```shell

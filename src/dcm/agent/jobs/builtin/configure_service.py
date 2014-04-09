@@ -102,7 +102,7 @@ class ConfigureService(jobs.Plugin):
             config_file_name = os.path.join(
                 self.conf.get_service_directory(self._service_id),
                 "cfg",
-                "enstratus.cfg")
+                "enstratiusinitd.cfg")
             self._safe_write(config_file_name, self._configuration_data)
 
             cmd_list = [self.exe,

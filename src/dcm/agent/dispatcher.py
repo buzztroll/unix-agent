@@ -95,7 +95,7 @@ class Worker(threading.Thread):
                     "Something went wrong processing the queue")
                 raise
 
-        _g_logger.info("Worker %s thread ending." %  self.getName())
+        _g_logger.info("Worker %s thread ending." % self.getName())
 
 
 # TODO verify stopping behavior
@@ -144,11 +144,11 @@ class Dispatcher(object):
 
         if "longer_runner" in items_map:
             dj = self._long_runner.start_new_job(
-                    self._conf,
-                    request_id,
-                    items_map,
-                    payload["command"],
-                    payload["arguments"])
+                self._conf,
+                request_id,
+                items_map,
+                payload["command"],
+                payload["arguments"])
             payload_doc = dj.get_message_payload()
             reply_doc = {
                 "return_code": 0,
@@ -179,5 +179,5 @@ class Dispatcher(object):
             "The request %s has been set to send an ACK" % request_id)
 
     def incoming_parent_q_message(self, work_reply):
-        self.request_listener.reply(work_reply.request_id, work_reply.reply_doc)
-
+        self.request_listener.reply(work_reply.request_id,
+                                    work_reply.reply_doc)
