@@ -18,41 +18,28 @@ set -u
 DCM_USERNAME="dcm"
 BASEDIRNAME="/dcm"
 
-echo "Setting $DCM_USERNAME permissions..."
-chown -R $DCM_USERNAME:$DCM_USERNAME $BASEDIRNAME
-chmod 775 $BASEDIRNAME
-chmod 750 $BASEDIRNAME/bin
-chmod 550 $BASEDIRNAME/bin/*
-chmod 755 $BASEDIRNAME/custom/bin
-chmod -R 750 $BASEDIRNAME/home
-chown -R $DCM_USERNAME:$DCM_USERNAME $BASEDIRNAME/home
-chmod 750 $BASEDIRNAME/cfg
-chmod 640 $BASEDIRNAME/cfg/*
-
-mkdir -p /mnt/services
-chown -R $DCM_USERNAME:$DCM_USERNAME /mnt/services
-
-echo "Done."
-
-echo "Create the configuration file"
-
-/opt/dcm-agent/embedded/bin/dcm-agent-configure -v -I -U $DCM_USERNAME -p $BASEDIRNAME
-if [ $? -ne 0 ]; then
-    echo "The default configuration failed"
-    exit 1
+mkdir $BASEDIRNAME
+echo "Creating user and group..."
+# Create user/group group.
+grep -q $DCM_USERNAME /etc/group
+if [ $? != 0 ] ; then
+	groupadd $DCM_USERNAME
+	if [ $? != 0 ] ; then
+		echo "Failed to add $DCM_USERNAME group."
+		exit 40
+	fi
 fi
-
-echo "Done"
-
-echo "Setting /mnt/tmp and /tmp permissions..."
-mkdir -p /mnt/tmp 2>&1 > /dev/null
-chown -R $DCM_USERNAME:$DCM_USERNAME /mnt/tmp 2>&1 > /dev/null
-chown root:root /tmp 2>&1 > /dev/null
-chmod 1777 /tmp 2>&1 > /dev/null
+# Create user.
+grep -q $DCM_USERNAME /etc/passwd
+if [ $? != 0 ] ; then
+	useradd -d $BASEDIRNAME/home -g $DCM_USERNAME -s /bin/false -m $DCM_USERNAME
+	if [ $? != 0 ] ; then
+		echo "Failed to add $DCM_USERNAME user."
+		exit 41
+	fi
+fi
 echo "Done."
-
 echo "Adding user to sudoers..."
-
 # Update sudoers.
 if [ -d /etc/sudoers.d ]; then
 	# For distros that have the latest sudo package which uses sudoers.d directory.
@@ -117,9 +104,19 @@ else
 fi
 echo "Done."
 
+
+echo "Create the configuration file"
+/opt/dcm-agent/embedded/bin/dcm-agent-configure -v -I -U $DCM_USERNAME -p $BASEDIRNAME
+if [ $? -ne 0 ]; then
+    echo "The default configuration failed"
+    exit 1
+fi
+echo "Done"
+
 echo "======================================================="
 echo "The installation of the DCM Agent has completed."
 echo "To start the agent, run the following command."
+echo "To configure the agent run $BASEDIRNAME/bin/dcm-configure.sh -i -r $BASEDIRNAME/etc/agent.conf"
 echo "$startup_fname start"
 echo "======================================================="
 exit 0

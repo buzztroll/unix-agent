@@ -69,6 +69,10 @@ class AgentPluginMessageException(Exception):
     pass
 
 
+class AgentPluginOperationException(Exception):
+    pass
+
+
 class StateMachineException(Exception):
     pass
 

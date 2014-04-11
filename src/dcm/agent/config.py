@@ -160,6 +160,7 @@ class AgentConfig(object):
         self.instance_id = None
         self._init_file_options()
         self.jr = None
+        self.state = "STARTING"
 
     def _init_file_options(self):
         self.option_list = [
@@ -195,13 +196,13 @@ class AgentConfig(object):
             FilenameOpt("storage", "temppath", default="/tmp"),
             FilenameOpt("storage", "services_dir", default="/mnt/services"),
             FilenameOpt("storage", "base_dir", default="/dcm"),
-            FilenameOpt("storage", "binaries_path", default=None),
             FilenameOpt("storage", "ephemeral_mountpoint", default="/mnt"),
             FilenameOpt("storage", "operations_path", default="/mnt"),
             FilenameOpt("storage", "idfile", default=None),
             FilenameOpt("storage", "script_dir", default=None),
 
             ConfigOpt("storage", "mount_enabled", bool, default=True),
+            ConfigOpt("system", "user", str, default="dcm"),
 
             ConfigOpt("cloud", "type", str, default=CLOUD_TYPES.Amazon,
                       help="The type of cloud on which this agent is running"),
@@ -324,14 +325,11 @@ class AgentConfig(object):
             return
         print >> sys.stderr, msg % kwargs
 
-    def set_agent_id(self, agent_id):
-        # TODO write to a file
-        self._agent_id = agent_id
-
     def get_agent_id(self):
         return self._agent_id
 
     def set_handshake(self, handshake_doc):
+        self.state = "WAITING"
         #if handshake_doc["version"] == dcm.agent.g_version:
         self._agent_id = handshake_doc["agentID"]
         self.cloud_id = handshake_doc["cloudId"]
@@ -356,7 +354,12 @@ class AgentConfig(object):
 
     def get_script_location(self, name):
         if self.storage_script_dir is not None:
-            return self.storage_script_dir
+            path = os.path.join(self.storage_script_dir, name)
+            _g_logger.debug("Script location %s" % path)
+            if not os.path.exists(path):
+                raise exceptions.AgentPluginConfigException(
+                    "There is no proper configuration for %s" % name)
+            return path
 
         script_dir = get_python_script_dir()
         _g_logger.debug("Script Dir %s" % script_dir)
@@ -386,14 +389,13 @@ class AgentConfig(object):
     def start_job_runner(self):
         self.jr = job_runner.JobRunner()
 
-    def get_temp_file(self, filename):
+    def get_temp_file(self, filename, isdir=False):
         new_dir = tempfile.mkdtemp(dir=self.storage_temppath)
+        if isdir:
+            return new_dir
         return os.path.join(new_dir, filename)
 
     def _set_from_base(self):
-        if self.storage_binaries_path is None:
-            self.storage_binaries_path = \
-                os.path.join(self.storage_base_dir, "bin")
         if self.storage_idfile is None:
             self.storage_idfile = \
                 os.path.join(self.storage_base_dir, "etc", "agentid.txt")

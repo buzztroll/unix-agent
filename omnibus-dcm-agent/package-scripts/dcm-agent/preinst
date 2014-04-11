@@ -12,45 +12,4 @@
 
 set -u
 
-PATH=/usr/sbin:/bin:${PATH}
-
-USERNAME="dcm"
-BASEDIRNAME="/dcm"
-
-echo "Install dcm-agent..."
-
-# Create directories.
-needed_directories="$BASEDIRNAME $BASEDIRNAME/etc $BASEDIRNAME/bin $BASEDIRNAME/logs $BASEDIRNAME/home $BASEDIRNAME/custom/bin $BASEDIRNAME/cfg"
-for d in $needed_directories
-do
-    echo "Creating directory at $d..."
-    if [ ! -d $d ] ; then
-	    mkdir -p $d
-	    if [ $? != 0 ] ; then
-		    echo "Could not create $d directory. Are you running this as root?"
-    		exit 30
-	    fi
-    fi
-    echo "Done."
-done
-
-echo "Creating user and group..."
-# Create user/group group.
-grep -q $USERNAME /etc/group
-if [ $? != 0 ] ; then
-	groupadd $USERNAME
-	if [ $? != 0 ] ; then
-		echo "Failed to add $USERNAME group."
-		exit 40
-	fi
-fi
-# Create user.
-grep -q $USERNAME /etc/passwd
-if [ $? != 0 ] ; then
-	useradd -d $BASEDIRNAME/home -g $USERNAME -s /bin/false -m $USERNAME
-	if [ $? != 0 ] ; then
-		echo "Failed to add $USERNAME user."
-		exit 41
-	fi
-fi
-echo "Done."
+exit 0

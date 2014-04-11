@@ -1,2 +1,0 @@
-DCM_USER=vagrant
-DCM_BASEDIR=/dcm

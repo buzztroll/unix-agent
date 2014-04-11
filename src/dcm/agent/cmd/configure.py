@@ -21,17 +21,9 @@ cloud_choice = None
 platform_cloice = None
 
 
-# below are the variables that have predetermined defaults
-default_binaries_path = "/dcm/bin"
-default_ephemeral_mountpoint = "/mnt"
-default_base_path = "/dcm"
-default_operations_path = "/mnt"
-default_services_path = "/mnt/services"
-default_temp_path = "/mnt/tmp"
-
-
 platform_choices = ["ubuntu", "el", "debian", "suse"]
-
+g_user_env_str = "DCM_USER"
+g_basedir_env_str = "DCM_BASEDIR"
 
 cloud_choices = {
     1: "Amazon",
@@ -68,7 +60,6 @@ def setup_command_line_parser():
                             cloud_choices.values()))
                         # choices=cloud_choices.values())
     parser.add_argument("--url", "-u", dest="url",
-                        default=None,
                         help="The location of the dcm web socket listener")
 
     parser.add_argument("--verbose", "-v", dest="verbose",
@@ -82,40 +73,26 @@ def setup_command_line_parser():
                         default=False,
                         help=argparse.SUPPRESS),
 
-    parser.add_argument("--binaries-path", "-b",
-                        metavar=default_binaries_path,
-                        default=default_binaries_path,
-                        dest="binaries_path",
-                        help="The location of binary files relevant to the "
-                             "agent.")
-
-    parser.add_argument("--ephemeral-mountpoint", "-e",
-                        metavar=default_ephemeral_mountpoint,
-                        default=default_ephemeral_mountpoint,
-                        dest="ephemeral_mountpoint",
-                        help="The location of ephemeral mount point.")
+    parser.add_argument("--interactive", "-i", dest="interactive",
+                        action='store_true',
+                        default=False,
+                        help="Run an interactive session where questions "
+                             "will be asked and answered vi stdio."),
 
     parser.add_argument("--base-path", "-p",
-                        metavar=default_base_path,
-                        default=default_base_path,
                         dest="base_path",
                         help="The path to enstratius")
 
-    parser.add_argument("--operations-path", "-o",
-                        metavar=default_operations_path,
-                        default=default_operations_path,
-                        dest="operations_path",
-                        help="The operations path")
-
     parser.add_argument("--services-path", "-s",
-                        metavar=default_services_path,
-                        default=default_services_path,
                         dest="services_path",
                         help="The services path")
 
+    parser.add_argument("--reload-conf", "-r",
+                        dest="reload",
+                        help="The previous config file that will be used "
+                             "to populate defaults.")
+
     parser.add_argument("--temp-path", "-t",
-                        metavar=default_temp_path,
-                        default=default_temp_path,
                         dest="temp_path",
                         help="The temp path")
 
@@ -128,14 +105,12 @@ def setup_command_line_parser():
 
     parser.add_argument("--user", "-U",
                         dest="user",
-                        help="The system user that will run the agent.",
-                        default="dcm")
+                        help="The system user that will run the agent.")
 
     parser.add_argument("--connection-type", "-C",
                         dest="con_type",
                         help="The type of connection that will be formed "
-                             "with the agent manager.",
-                        default="ws")
+                             "with the agent manager.")
     return parser
 
 
@@ -202,14 +177,19 @@ def identify_platform(opts):
     raise Exception("The platform could not be determined")
 
 
-def select_cloud():
+def select_cloud(default="Amazon"):
     for c in sorted(cloud_choices.keys()):
         col = "%2d) %-13s" % (c, cloud_choices[c])
         print col
 
     cloud = None
     while cloud is None:
-        input = raw_input("Select your cloud: ")
+        input = raw_input("Select your cloud (%s): " % default)
+        input = input.strip()
+        if not input:
+            input = default
+        if input in [i.lower() for i in cloud_choices.values()]:
+            return input
         try:
             ndx = int(input)
             cloud = cloud_choices[ndx]
@@ -218,7 +198,8 @@ def select_cloud():
     return cloud
 
 
-def pick_meta_data(cloud, conf_d):
+def pick_meta_data(conf_d):
+    (_, cloud) = conf_d["cloud"]["type"]
     if cloud == "Amazon":
         mu = "http://169.254.169.254/latest/meta-data/"
     elif cloud == "Eucalyptus":
@@ -236,15 +217,7 @@ def pick_meta_data(cloud, conf_d):
     conf_d["cloud"]["metadata_url"] = (h, mu)
 
 
-def do_py_install(ve_path):
-    command = "%s %s" % (os.path.join(
-        os.getcwd(), "install-py-mod.sh"), ve_path)
-    (rc, stdout, stderr) = run_command(command)
-    if rc != 0:
-        raise Exception(stderr)
-
-
-def _default_conf_dict():
+def get_default_conf_dict():
 
     conf_dict = {}
     conf = config.AgentConfig()
@@ -260,8 +233,8 @@ def _default_conf_dict():
     return conf_dict
 
 
-def _update_conf_dict(conf_file, conf_dict):
-
+def update_from_config_file(conf_file, conf_dict):
+    # pull from the existing config file
     parser = ConfigParser.SafeConfigParser()
     parser.read([conf_file])
 
@@ -305,12 +278,58 @@ def write_conf_file(dest_filename, conf_dict):
             fptr.write(os.linesep)
 
 
-def manage_conf(opts, conf_file_name):
+def make_dirs(conf_d):
+    print "Making the needed directories..."
 
-    conf_d = _default_conf_dict()
-    _update_conf_dict(conf_file_name, conf_d)
+    (_, base_path) = conf_d["storage"]["base_dir"]
 
-    return conf_d
+    dirs_to_make = [
+        (base_path, 0755),
+        (os.path.join(base_path, "bin"), 0750),
+        (os.path.join(base_path, "custom"), 0755),
+        (os.path.join(base_path, "custom", "bin"), 0755),
+        (os.path.join(base_path, "etc"), 0755),
+        (os.path.join(base_path, "logs"), 0755),
+        (os.path.join(base_path, "home"), 0750),
+        (os.path.join(base_path, "cfg"), 0750),
+        (os.path.join("/mnt", "services"), 0755),
+        (os.path.join("/mnt", "tmp"), 0750),
+        ("/tmp", 01777),
+    ]
+
+    for (dir, mod) in dirs_to_make:
+        try:
+            print "    %s" % dir
+            os.mkdir(dir)
+        except OSError as ex:
+            if ex.errno != 17:
+                raise
+        os.chmod(dir, mod)
+
+    print "...Done."
+
+
+def do_set_owner_and_perms(conf_d):
+    (_, script_dir) = conf_d["storage"]["script_dir"]
+    (_, base_path) = conf_d["storage"]["base_dir"]
+    (_, user) = conf_d["system"]["user"]
+
+    for f in os.listdir(script_dir):
+        os.chmod(os.path.join(script_dir, f), 0550)
+    cfg_dir = os.path.join(base_path, "cfg")
+    for f in os.listdir(cfg_dir):
+        os.chmod(os.path.join(cfg_dir, f), 0640)
+
+    with open(os.path.join(base_path, "variables.sh"), "w") as fptr:
+        fptr.write("DCM_USER=%s" % user)
+        fptr.write(os.linesep)
+        fptr.write("DCM_BASEDIR=%s" % base_path)
+        fptr.write(os.linesep)
+
+    print "Changing ownership to %s:%s" % (user, user)
+    os.system("chown -R %s:%s %s" % (user, user, base_path))
+    os.system("chown -R %s:%s /mnt/tmp" % (user, user))
+    os.system("chown -R root:root /tmp")
 
 
 def merge_opts(conf_d, opts):
@@ -318,10 +337,7 @@ def merge_opts(conf_d, opts):
     map_opts_to_conf = {
         "cloud": ("cloud", "type"),
         "url": ("connection", "agentmanager_url"),
-        "binaries_path": ("storage", "binaries_path"),
-        "ephemeral_mountpoint": ("storage", "ephemeral_mountpoint"),
         "base_path": ("storage", "base_dir"),
-        "operations_path": ("storage", "operations_path"),
         "services_path": ("storage", "services_dir"),
         "temp_path": ("storage", "temppath"),
         "platform": ("platform", "name"),
@@ -340,9 +356,10 @@ def merge_opts(conf_d, opts):
             sd[i] = (h, v)
 
 
-def do_plugin(opts):
-    dest_plugin_path = os.path.join(opts.base_path, "etc", "plugin.conf")
-    dest_logging_path = os.path.join(opts.base_path, "etc", "logging.yaml")
+def do_plugin_and_logging_conf(conf_d):
+    (_, base_dir) = conf_d["storage"]["base_dir"]
+    (_, dest_plugin_path) = conf_d["plugin"]["configfile"]
+    (_, dest_logging_path) = conf_d["logging"]["configfile"]
 
     root_dir = dcm.agent.get_root_location()
 
@@ -352,44 +369,40 @@ def do_plugin(opts):
     shutil.copy(src_pluggin_path, dest_plugin_path)
     shutil.copy(src_logging_path, dest_logging_path)
 
-    log_file = os.path.join(opts.base_path, "logs", "agent.log")
+    log_file = os.path.join(base_dir, "logs", "agent.log")
 
     os.system("sed -i 's^@LOGFILE_PATH@^%s^' %s" % (log_file,
                                                     dest_logging_path))
 
 
-def copy_scripts(opts):
+def copy_scripts(conf_d):
+    (h, dest_dir) = conf_d["storage"]["script_dir"]
     src_script_dir = config.get_python_script_dir()
-    dest_dir = os.path.join(opts.base_path, "bin")
     os.system("cp %s %s" % (os.path.join(src_script_dir, 'common-linux', '*'),
                             dest_dir))
 
-    # set common_mod variables
-    with open(os.path.join(dest_dir, "variables.sh"), "w") as fptr:
-        fptr.write("DCM_USER=%s" % opts.user)
-        fptr.write(os.linesep)
-        fptr.write("DCM_BASEDIR=%s" % opts.base_path)
-        fptr.write(os.linesep)
+
+def update_relative_paths(conf_d):
+    (_, base_dir) = conf_d["storage"]["base_dir"]
+
+    def _val_update(section_name, item_name, default_val):
+        h = ""
+        try:
+            (h, val) = conf_d[section_name][item_name]
+        except:
+            val = None
+        if val is None:
+            val = os.path.join(base_dir, default_val)
+            conf_d[section_name][item_name] = (h, val)
+
+    _val_update("logging", "configfile", "etc/logging.yaml")
+    _val_update("plugin", "configfile", "etc/plugin.conf")
+    _val_update("storage", "script_dir", "bin")
 
 
-def set_values(conf_d, opts):
-    #  This function sets the cinfiguration forced values
-    forced_values = {
-        "logging": {"configfile":
-                    os.path.join(opts.base_path, "etc", "logging.yaml")},
-        "connection": {"type": "ws"},
-        "storage": {"script_dir": os.path.join(opts.base_path, "bin")}
-    }
-
-    for section in forced_values:
-        for item in forced_values[section]:
-            (h, _) = conf_d[section][item]
-            forced = forced_values[section][item]
-            conf_d[section][item] = (h, forced)
-
-
-def get_url():
-    default = "wss://provisioning.enstratius.com:16309/ws"
+def get_url(default=None):
+    if not default:
+        default = "wss://provisioning.enstratius.com:16309/ws"
     print "Please enter the contact string of the agent manager (%s)" % default
     url = sys.stdin.readline().strip()
     if not url:
@@ -413,39 +426,68 @@ def get_url():
 def enable_start_agent(opts):
     print "Would you like to start the agent on boot? (Y/n)"
     ans = sys.stdin.readline().strip()
-    if ans == "" or ans.lower() == "y" or ans.lower == "yes":
+    if ans == "" or ans.lower() == "y" or ans.lower() == "yes":
         if os.path.exists("/usr/sbin/update-rc.d"):
             os.system("update-rc.d dcm-agent defaults")
-            os.system("/etc/init.d/dcm-agent start")
         # TODO other platforms
+
+
+def do_interactive(opts, conf_d):
+    if not opts.interactive:
+        return
+    (h, cloud_type) = conf_d["cloud"]["type"]
+    cloud_type = select_cloud(default=cloud_type)
+    conf_d["cloud"]["type"] = (h, cloud_type)
+    (h, url) = conf_d["connection"]["agentmanager_url"]
+    url = get_url(default=url)
+    conf_d["connection"]["agentmanager_url"] = (h, url)
+
+
+def gather_values(opts):
+    # get the default values based on the defaults set in the config object
+    conf_d = get_default_conf_dict()
+    # if we are reloading from a file overide the defaults with what is in
+    # that file
+    if opts.reload:
+        update_from_config_file(opts.reload, conf_d)
+    # override any values passed in via options
+    merge_opts(conf_d, opts)
+    # set defaults for relative paths
+    update_relative_paths(conf_d)
+    (h, plat) = conf_d["platform"]["name"]
+    if not plat:
+        plat = identify_platform(opts)
+        conf_d["platform"]["name"] = (h, plat)
+
+    return conf_d
 
 
 def main():
     parser = setup_command_line_parser()
     opts = parser.parse_args(args=sys.argv[1:])
 
+    conf_d = gather_values(opts)
+    do_interactive(opts, conf_d)
+    pick_meta_data(conf_d)
+
+    # before writing anything make sure that all the needed values are
+    # set
+    if not opts.initial:
+        if not conf_d["system"]["user"]:
+            raise Exception("You must set the user name that will run "
+                            "this service.")
+        if not conf_d["storage"]["base_dir"]:
+            raise Exception("You must set the base dir for this service "
+                            "installation.")
+
     try:
-        if opts.cloud is not None and opts.cloud not in cloud_choices.values():
-            raise Exception("%s is not a valid cloud choice.  It must be one "
-                            "of %s" % (opts.cloud,
-                                       str(cloud_choices.values())))
-        if opts.platform is None:
-            opts.platform = identify_platform(opts)
-        if opts.cloud is None and not opts.initial:
-            opts.cloud = select_cloud()
-        if opts.url is None and not opts.initial:
-            opts.url = get_url()
-
-        do_plugin(opts)
-
-        conf_file_name = os.path.join(opts.base_path, "etc", "agent.conf")
-        conf_d = manage_conf(opts, conf_file_name)
-        merge_opts(conf_d, opts)
-        set_values(conf_d, opts)
-        pick_meta_data(opts.cloud, conf_d)
+        make_dirs(conf_d)
+        copy_scripts(conf_d)
+        do_plugin_and_logging_conf(conf_d)
+        (_, base_dir) = conf_d["storage"]["base_dir"]
+        conf_file_name = os.path.join(base_dir, "etc", "agent.conf")
         write_conf_file(conf_file_name, conf_d)
-        copy_scripts(opts)
-
+        do_set_owner_and_perms(conf_d)
         if not opts.initial:
             enable_start_agent(opts)
 

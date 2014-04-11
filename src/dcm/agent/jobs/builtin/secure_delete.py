@@ -35,6 +35,7 @@ class SecureDelete(direct_pass.DirectPass):
         # touch the file
         if os.path.exists(filename):
             os.remove(filename)
+        return reply
 
 
 def load_plugin(conf, job_id, items_map, name, arguments):

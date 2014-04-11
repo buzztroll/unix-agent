@@ -125,16 +125,21 @@ def setup_remote_pydev(host, port):
         return False
 
 
-def run_command(conf, cmd_line, cwd=None):
+def run_command(conf, cmd_line, cwd=None, env=None):
+    if env is None:
+        env = {"DCM_USER": conf.system_user,
+               "DCM_BASEDIR": conf.storage_base_dir}
     if type(cmd_line) == list or type(cmd_line) == tuple:
         " ".join([str(i) for i in cmd_line])
-    return conf.jr.run_command(cmd_line, cwd=cwd)
+    return conf.jr.run_command(cmd_line, cwd=cwd, env=env)
 
 
 def run_script(conf, name, args):
     cmd = conf.get_script_location(name)
     args.insert(0, cmd)
-    return run_command(conf, args)
+    env = {"DCM_USER": conf.system_user,
+           "DCM_BASEDIR": conf.storage_base_dir}
+    return run_command(conf, args, env=env)
 
 
 def safe_delete(fname):

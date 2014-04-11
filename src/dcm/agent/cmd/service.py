@@ -28,6 +28,7 @@ def shutdown_main_loop():
     if _g_conn_for_shutdown:
         _g_conn_for_shutdown.close()
     _g_conf_object.console_log(0, "Shutting down.")
+    _g_conf_object.conf.state = "STOPPING"
     _g_shutting_down = True
     parent_receive_q.wakeup()
 
@@ -71,7 +72,8 @@ def _run_agent():
         conn.set_handshake(handshake_doc)
         _g_conn_for_shutdown = conn
         handshake_reply = conn.connect()
-
+        if handshake_reply is None:
+            raise Exception("The agent was unable to connect to the agent manager")
         if handshake_reply["return_code"] != 200:
             raise Exception("handshake failed " + handshake_reply['message'])
 

@@ -25,7 +25,7 @@ class Heartbeat(jobs.Plugin):
         reply_doc = {
             "return_code": 0,
             "reply_type": "string",
-            "reply_object": "pong"
+            "reply_object": self.conf.state
         }
         return reply_doc
 

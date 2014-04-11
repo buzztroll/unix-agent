@@ -1,7 +1,10 @@
+#!/usr/bin/env bash
+
 set -u
 
 BASENAME=`basename $0`
 DIRNAME=`dirname $0`
+. $DIRNAME/variables.sh
 . "$DIRNAME/common_mod"
 
 . /lib/lsb/init-functions

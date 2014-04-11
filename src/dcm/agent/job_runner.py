@@ -26,16 +26,18 @@ class JobRunnerWorker(multiprocessing.Process):
                     wrk = self._pipe.recv()
                     if wrk is None:
                         continue
-                    (cmd, cwd) = wrk
+                    (cmd, cwd, env) = wrk
                     try:
-                        _g_logger.debug("Child runner starting the script %s"
-                                        % cmd)
+                        _g_logger.debug("Child runner starting the script %s ;"
+                                        " env=%s"
+                                        % (cmd, env))
 
                         process = subprocess.Popen(cmd,
                                                    shell=True,
                                                    stdout=subprocess.PIPE,
                                                    stderr=subprocess.PIPE,
-                                                   cwd=cwd)
+                                                   cwd=cwd,
+                                                   env=env)
                         stdout, stderr = process.communicate()
                         rc = process.returncode
 
@@ -80,12 +82,12 @@ class JobRunner(object):
         self._child = JobRunnerWorker(self._child_conn)
         self._child.start()
 
-    def run_command(self, cmd, cwd=None):
+    def run_command(self, cmd, cwd=None, env=None):
         if type(cmd) == list or type(cmd) == tuple:
             cmd = " ".join([str(i) for i in cmd])
 
         _g_logger.debug("Sending the command %s to the child runner" % cmd)
-        self._parent_conn.send((cmd, cwd))
+        self._parent_conn.send((cmd, cwd, env))
         (rc, stdout, stderr) = self._parent_conn.recv()
         return (stdout, stderr, rc)
 

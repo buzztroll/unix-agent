@@ -80,6 +80,7 @@ class InitializeJob(jobs.Plugin):
                 res_doc["message"] = res_doc["message"] + " : addUser failed"
                 return res_doc
 
+            self.conf.state = "RUNNING"
             return {"return_code": 0, "message": "",
                     "error_message": "", "return_type": "void"}
         except Exception as ex:

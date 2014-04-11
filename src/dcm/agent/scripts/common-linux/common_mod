@@ -2,7 +2,15 @@
 
 BASENAME=`basename $0`
 DIRNAME=`dirname $0`
-. "$DIRNAME/variables.sh"
+
+if [ -z "$DCM_USER" ]; then
+    echo "The environment variable DCM_USER must be set."
+    exit 1
+fi
+if [ -z "DCM_BASEDIR" ]; then
+    echo "The environment variable DCM_BASEDIR must be set."
+    exit 1
+fi
 
 # Set of common functions.
 LOGGER=$DCM_BASEDIR/bin/log
