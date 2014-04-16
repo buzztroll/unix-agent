@@ -22,6 +22,8 @@ _g_logger = logging.getLogger(__name__)
 
 
 class GetServiceStates(jobs.Plugin):
+    protocol_arguments = {}
+
     def __init__(self, conf, job_id, items_map, name, arguments):
         super(GetServiceStates, self).__init__(
             conf, job_id, items_map, name, arguments)

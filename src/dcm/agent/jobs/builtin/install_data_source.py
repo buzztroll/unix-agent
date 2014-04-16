@@ -18,6 +18,47 @@ from dcm.agent import storagecloud, utils
 
 class InstallDataSource(direct_pass.DirectPass):
 
+    protocol_arguments = {
+        "customerId":
+            ("The ID of the customer invoking the command.", True, str),
+        "serviceId":
+            ("The service ID for which this data source is being installed.",
+             True, str),
+        "imageDirectory":
+            ("The directory or bucket that is holding the data in the storage "
+             "cloud.", True, str),
+        "dataSourceImage":
+            ("The name of the data source image.", True, str),
+        "cloudId":
+            ("The ID or delegate of the cloud holding the data.", True, str),
+        "apiAccessKey":
+            ("The cloud API access key.", True, str),
+        "apiSecretKey":
+            ("The cloud API secret key.", True, str),
+        "configuration":
+            ("The configuration data used to install the data source.  This "
+             "is written to a file and passed to the installer script.",
+             True, str),
+        "regionId":
+            ("The cloud region ID that is holding the data.", False, str),
+        "apiEndpoint":
+            ("The cloud API endpoint contact string.", False, str),
+        "apiAccount":
+            ("The cloud account.", False, str),
+        "storageDelegate":
+            ("For clouds that have a separate storage cloud contact, this "
+             "value servers as the cloud ID", False, str),
+        "storageEndpoint":
+            ("The separate storage cloud endpoint contact string.",
+             False, str),
+        "storageAccount":
+            ("The separate storage cloud account.", False, str),
+        "storagePublicKey":
+            ("The separate storage cloud API access key.", False, str),
+        "storagePrivateKey":
+            ("The separate storage cloud API secret key.", False, str)
+    }
+
     def __init__(self, conf, job_id, items_map, name, arguments):
         super(InstallDataSource, self).__init__(
             conf, job_id, items_map, name, arguments)
@@ -26,14 +67,22 @@ class InstallDataSource(direct_pass.DirectPass):
         service_id = self.arguments["serviceId"]
         object_name = self.arguments["dataSourceImage"]
         container_name = self.arguments["imageDirectory"]
-        cloud_id = self.arguments["fromCloudId"]
-        access_key = self.arguments["storageAccessKey"]
-        secret_key = self.arguments["storageSecretKey"]
         configuration = self.arguments["configuration"]
-        delegate = self.arguments.get("deletegate", None)
-        endpoint = self.arguments.get("endpoint", None)
-        account = self.arguments.get("account", None)
-        region_id = self.arguments.get("providerRegionId", self.conf.region_id)
+
+        endpoint = self.arguments.get("apiEndpoint", None)
+        account = self.arguments.get("apiAccount", None)
+        cloud_id = self.arguments["cloudId"]
+        access_key = self.arguments["apiAccessKey"]
+        secret_key = self.arguments["apiSecretKey"]
+        region_id = self.arguments.get("regionId", self.conf.region_id)
+
+        if "storageDelegate" in self.arguments:
+            endpoint = self.arguments.get("storageEndpoint", None)
+            account = self.arguments.get("storageAccount", None)
+            cloud_id = self.arguments["storageDelegate"]
+            region_id = self.arguments.get("regionId", self.conf.region_id)
+            access_key = self.arguments["storagePublicKey"]
+            secret_key = self.arguments["storagePrivateKey"]
 
         conf_file = self.conf.get_temp_file("installds.cfg")
         restore_file = self.conf.get_temp_file(object_name)
@@ -42,11 +91,13 @@ class InstallDataSource(direct_pass.DirectPass):
                 fptr.write(configuration)
 
             storagecloud.download(
-                cloud_id, container_name, object_name,
-                access_key, secret_key,
+                cloud_id,
+                container_name,
+                object_name,
+                access_key,
+                secret_key,
                 restore_file,
                 region_id=region_id,
-                delegate=delegate,
                 endpoint=endpoint,
                 account=account)
 

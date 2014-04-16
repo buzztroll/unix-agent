@@ -100,7 +100,6 @@ def _map_cloud_name_to_provider(cloud_type, region_id):
 def download(cloud_id, container_name, object_name,
              storage_access_key, storage_secret_key,
              destination_file, region_id=None,
-             delegate=None,
              endpoint=None,
              account=None):
     try:
@@ -120,12 +119,13 @@ def download(cloud_id, container_name, object_name,
         raise exceptions.AgentStorageCloudException(str(ex))
 
 
-def upload(cloud_id, source_path, container_name, object_name,
-           storage_access_key, storage_secret_key,
-           region_id=None,
-           delegate=None,
-           endpoint=None,
-           account=None):
+def upload(cloud_id,
+           source_path,
+           container_name,
+           object_name,
+           storage_access_key,
+           storage_secret_key,
+           region_id=None):
 
     try:
         cloud_type = _map_cloud_id_to_type[cloud_id]
@@ -143,14 +143,22 @@ def upload(cloud_id, source_path, container_name, object_name,
     driver.upload_object(source_path, container, object_name)
 
 
-def get_cloud_driver(cloud_id, storage_access_key, storage_secret_key,
+
+
+def get_cloud_driver(cloud_id,
+                     access_key,
+                     secret_key,
                      region_id=None,
-                     delegate=None,
                      endpoint=None,
-                     account=None):
+                     account=None,
+                     storage_id=None,
+                     storage_endpoint=None,
+                     storage_account=None,
+                     storage_api_key=None,
+                     storage_secret_key=None):
 
     cloud_type = _map_cloud_id_to_type[cloud_id]
     driver_cls = _map_cloud_name_to_provider(cloud_type, region_id)
 
-    driver = driver_cls(storage_access_key, storage_secret_key)
+    driver = driver_cls(access_key, secret_key)
     return driver

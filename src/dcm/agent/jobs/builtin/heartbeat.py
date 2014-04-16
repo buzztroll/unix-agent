@@ -17,6 +17,8 @@ import dcm.agent.jobs as jobs
 
 class Heartbeat(jobs.Plugin):
 
+    protocol_arguments = {}
+
     def __init__(self, conf, job_id, items_map, name, arguments):
         super(Heartbeat, self).__init__(
             conf, job_id, items_map, name, arguments)

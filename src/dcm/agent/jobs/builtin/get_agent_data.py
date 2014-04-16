@@ -19,6 +19,9 @@ import psutil
 
 
 class GetAgentData(jobs.Plugin):
+
+    protocol_arguments = {}
+
     def __init__(self, conf, job_id, items_map, name, arguments):
         super(GetAgentData, self).__init__(
             conf, job_id, items_map, name, arguments)

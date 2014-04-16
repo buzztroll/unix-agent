@@ -25,6 +25,9 @@ class DeviceTypes(object):
 
 
 class GetDeviceMappings(jobs.Plugin):
+
+    protocol_arguments = {}
+
     def __init__(self, conf, job_id, items_map, name, arguments):
         super(GetDeviceMappings, self).__init__(
             conf, job_id, items_map, name, arguments)

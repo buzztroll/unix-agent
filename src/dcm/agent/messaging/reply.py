@@ -1,5 +1,6 @@
 import logging
 import threading
+import time
 from dcm.agent import parent_receive_q
 
 import dcm.agent.exceptions as exceptions
@@ -474,15 +475,18 @@ class RequestListener(object):
             _g_logger.debug("New message type %s :: %s" %
                 (incoming_doc['type'], incoming_doc))
 
+            if 'entity' not in incoming_doc:
+                pass
+
             if incoming_doc['type'] == types.MessageTypes.REQUEST:
                 # this is new request
                 request_id = incoming_doc['request_id']
                 if request_id in self._expired_requests:
-                    # this are old requests
+                    # this is an old requests
                     nack_doc = {'type': types.MessageTypes.NACK,
                                 'message_id': incoming_doc['message_id'],
                                 'request_id': request_id,
-                                'agent_id': self._conf.get_agent_id()}
+                                'agent_id': self._conf.agent_id}
                     self._conn.send(nack_doc)
                 elif request_id in self._requests:
                     _g_logger.debug("Retransmission found")
@@ -500,7 +504,7 @@ class RequestListener(object):
                             'type': types.MessageTypes.NACK,
                             'message_id': incoming_doc['message_id'],
                             'request_id': request_id,
-                            'agent_id': self._conf.get_agent_id(),
+                            'agent_id': self._conf.agent_id,
                             'exception': ("The agent can only handle %d "
                                           "commands at once"
                                           % self._conf.messaging_max_at_once)}
@@ -509,7 +513,7 @@ class RequestListener(object):
                         message_id = incoming_doc['message_id']
                         payload = incoming_doc['payload']
                         msg = ReplyRPC(
-                            self, self._conf.get_agent_id(),
+                            self, self._conf.agent_id,
                             self._conn, request_id, message_id, payload,
                             timeout=self._timeout)
                         self._call_reply_observers("new_message", msg)
@@ -525,10 +529,11 @@ class RequestListener(object):
             else:
                 request_id = incoming_doc['request_id']
                 if request_id not in self._requests:
+                    # an unknown request should only be requesting
                     nack_doc = {'type': types.MessageTypes.NACK,
                                 'message_id': incoming_doc['message_id'],
                                 'request_id': request_id,
-                                'agent_id': self._conf.get_agent_id()}
+                                'agent_id': self._conf.agent_id}
                     self._conn.send(nack_doc)
                 else:
                     # get the message
@@ -557,7 +562,7 @@ class RequestListener(object):
                     'message_id': message_id,
                     'request_id': request_id,
                     'error_message': message,
-                    'agent_id': self._conf.get_agent_id()}
+                    'agent_id': self._conf.agent_id}
         self._conn.send(nack_doc)
 
     def message_done(self, reply_message):
@@ -611,6 +616,11 @@ class RequestListener(object):
             timer.cancel()
         for req in self._requests.values():
             req.kill()
+
+    def wait_for_all_nicely(self):
+        pass
+        while(self._requests):
+            parent_receive_q.poll()
 
     def reply(self, request_id, reply_doc):
         reply_req = self._requests[request_id]

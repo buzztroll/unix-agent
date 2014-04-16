@@ -49,6 +49,19 @@ def _get_injected_id():
 
 
 def get_handshake(conf):
+    if conf.test_skip_handshake:
+        # TODO make this configurable from the test conf files
+        return {
+            'ipv4': ["127.0.0.1"],
+            'ipv6': [],
+            'agent_id': "test-agent",
+            'vm_instance': "vdeadbeef",
+            'injected_id': "ideadbeef",
+            'version': dcm.agent.g_version,
+            'protocol_version': dcm.agent.g_protocol_version,
+            'platform': conf.platform_name
+        }
+
     ipv4s = cloudmetadata.get_ipv4_addresses(conf)
     ipv6s = []
     injected_id = _get_injected_id()

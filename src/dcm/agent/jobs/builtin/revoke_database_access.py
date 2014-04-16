@@ -13,22 +13,35 @@
 #  ======================================================================
 
 import os
+from dcm.agent import exceptions
 import dcm.agent.jobs.direct_pass as direct_pass
 
 
 class RevokeDBAccess(direct_pass.DirectPass):
+
+    protocol_arguments = {
+        "serviceId":
+            ("The ID of the service that will have its rights revoked.",
+             True, str),
+        "configurationData":
+            ("The configuration data that will be written to a file and "
+             "passed into the revokeDatabaseAccess script",
+             True, str)
+    }
 
     def __init__(self, conf, job_id, items_map, name, arguments):
         super(RevokeDBAccess, self).__init__(
             conf, job_id, items_map, name, arguments)
 
     def run(self):
-        # TODO do not allow if imaging
+        if self.conf.is_imaging:
+            raise exceptions.AgentPluginOperationIsImagingException(
+                operation_name=self.name)
         config_file = self.conf.get_temp_file("database.cfg")
         with open(config_file, "w") as fptr:
-            fptr.write(self.arguments["configurationData"])
+            fptr.write(self.arguments["configurationData"].decode("utf-8"))
         try:
-            self.ordered_param_list = [self.arguments[""],
+            self.ordered_param_list = [self.arguments["serviceId"],
                                        config_file]
             return super(RevokeDBAccess, self).run()
         finally:

@@ -17,6 +17,14 @@ import dcm.agent.jobs.direct_pass as direct_pass
 
 
 class RemoveUser(direct_pass.DirectPass):
+
+
+    protocol_arguments = {
+        "userId":
+            ("The unix account name of the user to remove",
+             True, str)
+    }
+
     def __init__(self, conf, job_id, items_map, name, arguments):
         super(RemoveUser, self).__init__(
             conf, job_id, items_map, name, arguments)

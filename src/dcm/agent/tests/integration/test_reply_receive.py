@@ -5,6 +5,7 @@ import socket
 import unittest
 import pwd
 import datetime
+import uuid
 from dcm.agent.cmd import service
 from dcm.agent import config, dispatcher, storagecloud, parent_receive_q
 from dcm.agent.messaging import reply, request
@@ -16,9 +17,12 @@ class TestSimpleSingleCommands(unittest.TestCase):
 
     def setUp(self):
         service._g_shutting_down = False # this has to be the worst thing I have ever done
+        service._g_conn_for_shutdown = None # and this
 
-        self.conf_obj = config.AgentConfig()
         test_conf_path = test_utils.get_conf_file("agent.realplugins.conf")
+        self.conf_obj = config.AgentConfig([test_conf_path])
+        # script_dir must be forced to None so that we get the built in dir
+        self.conf_obj.storage_script_dir = None
         service._pre_threads(self.conf_obj, ["-c", test_conf_path])
         self.disp = dispatcher.Dispatcher(self.conf_obj)
 
@@ -31,7 +35,7 @@ class TestSimpleSingleCommands(unittest.TestCase):
             self.conf_obj, self.reply_conn, self.disp)
         self.reply_conn.set_receiver(self.request_listener)
 
-        self.agent_id = "theAgentID"
+        self.agent_id = "theAgentID" + str(uuid.uuid4())
         self.customer_id = 50
 
         handshake_doc = {}
@@ -83,6 +87,7 @@ class TestSimpleSingleCommands(unittest.TestCase):
         return reqRPC
 
     def tearDown(self):
+        self.request_listener.wait_for_all_nicely()
         service._cleanup_agent(
             self.conf_obj, self.request_listener, self.disp, self.reply_conn)
         self.req_conn.close()

@@ -70,6 +70,7 @@ class MessageTimer(object):
                                       args=[self])
         self.message_id = new_message_id()
         self._send_doc["message_id"] = self.message_id
+        self._send_doc['entity'] = "timer"
         conn.send(self._send_doc)
         self._timer.start()
 

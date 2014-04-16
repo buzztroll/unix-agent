@@ -14,15 +14,15 @@
 
 import os
 import tempfile
-import sys
+import datetime
 import exceptions
 import logging
 import random
 import string
-import subprocess
 
 
 _g_logger = logging.getLogger(__name__)
+_g_conf_file_env = "DCM_AGENT_CONF"
 
 
 class OperationalState(object):
@@ -185,3 +185,44 @@ def make_friendly_id(prefix, id):
 
 def make_id_string(prefix, id):
     return "%s%03d" % (prefix, id)
+
+
+def get_config_files(base_dir=None, conffile=None):
+    candidates = ["/etc/dcm/agent.conf",
+                  os.path.expanduser("~/.dcm/agent.conf")]
+    if base_dir:
+        candidates.append(os.path.join(base_dir, "etc", "agent.conf"))
+    if _g_conf_file_env in os.environ:
+        candidates.append(os.environ[_g_conf_file_env])
+    if conffile:
+        candidates.append(conffile)
+
+    locations = []
+    for f in candidates:
+        f = os.path.abspath(f)
+        if os.path.exists(f):
+            locations.append(f)
+        else:
+            # todo log a warning
+            pass
+
+    return locations
+
+
+def get_time_backup_string():
+    nw = datetime.datetime.now()
+    tm_str = nw.strftime("%Y%m%d.%H%M%S.%f")
+    return tm_str
+
+
+def secure_delete(conf, file_name):
+    exe_path = conf.get_script_location("secureDelete")
+    (stdout, stderr, rc) = run_command(conf, [exe_path, file_name])
+    _g_logger.debug("Secure delete executed with %d %s %s" % (rc,
+                                                              stdout,
+                                                              stderr))
+    with open(file_name, "w") as fptr:
+        fptr.write("*" * 100)
+    if os.path.exists(file_name):
+        os.remove(file_name)
+

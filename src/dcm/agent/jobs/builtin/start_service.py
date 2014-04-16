@@ -18,6 +18,14 @@ import dcm.agent.jobs as jobs
 
 
 class StartService(jobs.Plugin):
+
+    protocol_arguments = {
+        "customerId":
+            ("The ID of the customer envoking the command.", True, str),
+        "serviceId":
+            ("The ID of the service to start.", True, str)
+    }
+
     def __init__(self, conf, job_id, items_map, name, arguments):
         super(StartService, self).__init__(
             conf, job_id, items_map, name, arguments)

@@ -20,7 +20,6 @@ class RequestRPC(object):
         self._request_id = str(uuid.uuid4())
         self._sm = states.StateMachine(states.RequesterStates.REQUEST_NEW)
         self._timeout = timeout
-        self._message_resend_timer = None
         self._reply_callback = reply_callback
         self._reply_args = reply_args
         if reply_args is None:
@@ -36,6 +35,7 @@ class RequestRPC(object):
         self._message_timer = None
 
         self._setup_states()
+        self.ack_sender = 0
 
     def get_reply(self):
         return self._reply_doc
@@ -93,11 +93,16 @@ class RequestRPC(object):
     def _send_reply_ack(self):
         # the ack reuses the message id that it is acknowledging
         # this is here just to help track exchanges
+        self.ack_sender = self.ack_sender + 1
+        if self.ack_sender > 1:
+            pass
         message_id = self._reply_doc['message_id']
         reply_ack_doc = {'request_id': self._request_id,
                          'message_id': message_id,
+                         'what': 'REPLY_ACK',
+                         'ack_sender': self.ack_sender,
                          'type': types.MessageTypes.ACK}
-        self._conn.send(reply_ack_doc)
+        self.send_doc(reply_ack_doc)
         if self._completion_timer is not None:
             self._completion_timer.cancel()
         self._completion_timer = utils.AckCleanupTimer(self._cleanup_timeout,
@@ -106,6 +111,10 @@ class RequestRPC(object):
 
     def cleanup(self):
         self._session_complete()
+
+    def send_doc(self, doc):
+        doc['entity'] = "requester"
+        self._conn.send(doc)
 
     def _session_complete(self):
         # this is called when we know the session is over and it
@@ -270,15 +279,17 @@ class RequestRPC(object):
         with the message.  The message is considered failed and the user
         is notified.
         """
+        # TODO FIX THIS
         self._register_failed_callback()
 
     def _sm_requested_nack_received(self, **kwargs):
         """
-        This happens when request has been successfully recevieved yet the
+        This happens when request has been successfully received yet the
         target (or the messaging channel) decides to cancel the connection.
         A NACK can be received at any time and it signals that the session
         has irrecoverably failed.
         """
+        # TODO FIX THIS
         self._register_failed_callback()
 
     def _sm_send_cancel(self, **kwargs):
@@ -291,7 +302,7 @@ class RequestRPC(object):
         cancel_doc = {'request_id': self._request_id,
                       'message_id': message_id,
                       'type': types.MessageTypes.CANCEL}
-        self._conn.send(cancel_doc)
+        self.send_doc(cancel_doc)
 
     def _sm_cancel_requested_when_closing(self, **kwargs):
         """

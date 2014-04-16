@@ -1,3 +1,4 @@
+import argparse
 import logging
 import os
 import signal
@@ -13,9 +14,15 @@ import dcm.agent.messaging.reply as reply
 from dcm.agent import parent_receive_q
 
 
-_g_conf_object = config.AgentConfig()
 _g_shutting_down = False
 _g_conn_for_shutdown = None
+
+
+def console_log(cli_args, level, msg, **kwargs):
+    vb_level = getattr(cli_args, "verbose", 0)
+    if level > vb_level:
+        return
+    print >> sys.stderr, msg % kwargs
 
 
 def kill_handler(signum, frame):
@@ -27,8 +34,6 @@ def shutdown_main_loop():
 
     if _g_conn_for_shutdown:
         _g_conn_for_shutdown.close()
-    _g_conf_object.console_log(0, "Shutting down.")
-    _g_conf_object.conf.state = "STOPPING"
     _g_shutting_down = True
     parent_receive_q.wakeup()
 
@@ -37,11 +42,10 @@ def _pre_threads(conf, args):
     signal.signal(signal.SIGINT, kill_handler)
     signal.signal(signal.SIGTERM, kill_handler)
     # def setup config object
-    conf.setup(clioptions=True, args=args)
 
     if conf.pydev_host:
-        utils.setup_remote_pydev(_g_conf_object.pydev_host,
-                                 _g_conf_object.pydev_port)
+        utils.setup_remote_pydev(conf.pydev_host,
+                                 conf.pydev_port)
 
     if 'PYDEVD_DEBUG_HOST' in os.environ:
         pydev = os.environ['PYDEVD_DEBUG_HOST']
@@ -50,7 +54,7 @@ def _pre_threads(conf, args):
         utils.setup_remote_pydev(h, int(p))
 
 
-def _run_agent():
+def _run_agent(conf):
     _g_logger = logging.getLogger(__name__)
 
     request_listener = None
@@ -60,12 +64,12 @@ def _run_agent():
     try:
         # def get a connection object
         global _g_conn_for_shutdown
-        conn = config.get_connection_object(_g_conf_object)
-        disp = dispatcher.Dispatcher(_g_conf_object)
-        request_listener = reply.RequestListener(_g_conf_object, conn, disp)
+        conn = config.get_connection_object(conf)
+        disp = dispatcher.Dispatcher(conf)
+        request_listener = reply.RequestListener(conf, conn, disp)
         conn.set_receiver(request_listener)
 
-        handshake_doc = handshake.get_handshake(_g_conf_object)
+        handshake_doc = handshake.get_handshake(conf)
         if handshake_doc is None:
             raise Exception("A connection could not be made.")
         _g_logger.debug("Using handshake document %s" % str(handshake_doc))
@@ -77,13 +81,13 @@ def _run_agent():
         if handshake_reply["return_code"] != 200:
             raise Exception("handshake failed " + handshake_reply['message'])
 
-        _g_conf_object.set_handshake(handshake_reply["handshake"])
+        conf.set_handshake(handshake_reply["handshake"])
 
         disp.start_workers(request_listener)
 
-        rc = _agent_main_loop(_g_conf_object, request_listener, disp, conn)
+        rc = _agent_main_loop(conf, request_listener, disp, conn)
     finally:
-        _cleanup_agent(_g_conf_object, request_listener, disp, conn)
+        _cleanup_agent(conf, request_listener, disp, conn)
 
 
 def _agent_main_loop(conf, request_listener, disp, conn):
@@ -114,25 +118,47 @@ def _cleanup_agent(conf, request_listener, disp, conn):
     logger.debug("Service closed")
 
 
+def parse_command_line(argv):
+    conf_parser = argparse.ArgumentParser(description="Start the agent")
+    conf_parser.add_argument(
+        "-c", "--conffile", help="Specify config file", metavar="FILE",
+        default=None)
+    conf_parser.add_argument("-v", "--verbose", action="count",
+                             help="Display more output on the console.",
+                             default=0)
+    conf_parser.add_argument("-V", "--version", action="store_true",
+                             help="Display just the version of this "
+                                  "agent installation.",
+                             dest="version",
+                             default=False)
+    return conf_parser.parse_known_args(args=argv)
+
+
 def main(args=sys.argv):
     try:
-        _pre_threads(_g_conf_object, args)
-        if(_g_conf_object.get_cli_arg("version")):
+        cli_args, remaining_argv = parse_command_line(args)
+
+        config_files = utils.get_config_files(conffile=cli_args.conffile)
+        conf = config.AgentConfig(config_files)
+
+        _pre_threads(conf, args)
+        if cli_args.version:
             print "Version %s" % dcm.agent.g_version
             return 0
-        utils.verify_config_file(_g_conf_object)
-        _g_conf_object.start_job_runner()
-        _run_agent()
+        utils.verify_config_file(conf)
+        conf.start_job_runner()
+        _run_agent(conf)
     except exceptions.AgentOptionException as aoex:
-        _g_conf_object.console_log(0, "The agent is not configured properly. "
+        console_log(cli_args, 0, "The agent is not configured properly. "
                                       "please check the config file.")
-        _g_conf_object.console_log(0, aoex.message)
+        console_log(cli_args, 0, aoex.message)
         shutdown_main_loop()
-        if _g_conf_object.get_cli_arg("verbose") > 2:
+        if getattr(cli_args, "verbose", 0) > 2:
             raise
     except:
         _g_logger = logging.getLogger(__name__)
-        _g_conf_object.console_log(
+        console_log(
+            cli_args,
             0, "Shutting down due to a top level exception")
         _g_logger.exception("An unknown exception bubbled to the top")
         shutdown_main_loop()

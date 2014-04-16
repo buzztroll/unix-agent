@@ -141,7 +141,7 @@ class ReqRepQHolder(object):
 
     def __init__(self):
         self._req_recv_q = parent_receive_q.create_put_q("test_req_q_recv")
-        self._req_send_q = parent_receive_q.create_put_q("test_req_q_send")
+        self._req_send_q = parent_receive_q.create_put_q("test_req_q_send") # + str(uuid.uuid4()))
 
     class TestCon(conniface.ConnectionInterface):
         def __init__(self, sq, rq):
@@ -157,11 +157,11 @@ class ReqRepQHolder(object):
         def close(self):
             try:
                 parent_receive_q.unregister_put_queue(self._recv_q)
-            except:
+            except Exception as ex:
                 pass
             try:
                 parent_receive_q.unregister_put_queue(self._send_q)
-            except:
+            except Exception as ex:
                 pass
 
     def get_req_conn(self):

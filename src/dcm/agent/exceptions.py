@@ -69,8 +69,24 @@ class AgentPluginMessageException(Exception):
     pass
 
 
+class AgentPluginParameterException(Exception):
+    def __init__(self, command_name, argument_name):
+        message = ("The command %(command_name)s requires the arguments "
+                   "%(argument_name)s and it was not found."
+                   % locals())
+        super(AgentPluginParameterException, self).__init__(message)
+
+
 class AgentPluginOperationException(Exception):
     pass
+
+
+class AgentPluginOperationIsImagingException(AgentPluginOperationException):
+    message = "The %(operation_name)s command cannot be run while the agent " \
+              "is imaging the service."
+
+    def __init__(self, operation_name):
+        super(AgentPluginOperationIsImagingException, self.message % locals())
 
 
 class StateMachineException(Exception):

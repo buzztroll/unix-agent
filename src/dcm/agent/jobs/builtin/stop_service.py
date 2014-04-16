@@ -16,6 +16,14 @@ import dcm.agent.jobs.direct_pass as direct_pass
 
 
 class StopService(direct_pass.DirectPass):
+
+    protocol_arguments = {
+        "customerId":
+            ("The customer ID that is invoking the command.", True, long),
+        "serviceId" :
+            ("The ID of the service to stop.", True, str)
+    }
+
     def __init__(self, conf, job_id, items_map, name, arguments):
         super(StopService, self).__init__(
             conf, job_id, items_map, name, arguments)

@@ -10,8 +10,22 @@ from dcm.agent import exceptions, utils
 _g_logger = logging.getLogger(__name__)
 
 
+class ArgHolder(object):
+    pass
+
+
 # The abstract object for plugins.
 class Plugin(object):
+
+    # The following class variables will help with self documentation of
+    # the protocol.
+    #
+    # the protocol arguments will be the command arguments that the protocol
+    # supports.  It is a mapping from name to the tuple:
+    # (help message, required)
+    protocol_arguments = {}
+    # the command name is the wire protocol name of the command
+    command_name = None
 
     def __init__(self, conf, request_id, items_map, name, arguments):
         logname = __name__ + "." + name
@@ -22,6 +36,24 @@ class Plugin(object):
         self.conf = conf
         self.items_map = items_map
         self.arguments = arguments
+        self.args = ArgHolder()
+        self._validate_arguments()
+
+    def _validate_arguments(self):
+        # validate that all of the required arguments were sent
+        for arg in self.protocol_arguments:
+            help, mandatory = self.protocol_arguments[arg]
+            if mandatory and arg not in self.arguments:
+                raise exceptions.AgentPluginParameterException(self.name, arg)
+            setattr(self.args, arg, None)
+
+        # validate that nothing extra was sent
+        for arg in self.arguments:
+            if arg not in self.protocol_arguments:
+                _g_logger.warn("The argument %s was sent from the agent "
+                               "manager but is not understood by this command.")
+            else:
+                setattr(self.args, arg, self.arguments[arg])
 
     @utils.not_implemented_decorator
     def run(self):

@@ -18,6 +18,21 @@ import dcm.agent.jobs.direct_pass as direct_pass
 
 class GrantDBAccess(direct_pass.DirectPass):
 
+    protocol_arguments = {
+        "customerId":
+            ("Not currently used.",
+             True, str),
+        "serviceId":
+            ("The installed service whose enstratus-dbgrant program will be "
+             "called.",
+             True, str),
+        "configuration":
+            ("The configuration information to be passed to the services "
+             "enstratus-dbgrant program",
+             True, str)
+    }
+
+
     def __init__(self, conf, job_id, items_map, name, arguments):
         super(GrantDBAccess, self).__init__(
             conf, job_id, items_map, name, arguments)
@@ -26,7 +41,7 @@ class GrantDBAccess(direct_pass.DirectPass):
         # TODO do not allow if imaging
         config_file = self.conf.get_temp_file("database.cfg")
         with open(config_file, "w") as fptr:
-            fptr.write(self.arguments["configuration"])
+            fptr.write(self.arguments["configuration"].decode("utf-8"))
         try:
             self.ordered_param_list = [self.arguments[""],
                                        config_file]

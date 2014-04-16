@@ -16,13 +16,18 @@ import dcm.agent.jobs.direct_pass as direct_pass
 
 
 class StopProxy(direct_pass.DirectPass):
+
+    protocol_arguments = {
+        "toAddress":
+            ("The address of the proxy to stop.", True, str)
+    }
+
     def __init__(self, conf, job_id, items_map, name, arguments):
         super(StopProxy, self).__init__(
             conf, job_id, items_map, name, arguments)
 
         try:
-            self.ordered_param_list = [conf.storage_base_dir,
-                                       arguments["toAddress"]]
+            self.ordered_param_list = [arguments["toAddress"]]
         except KeyError as ke:
             raise exceptions.AgentPluginConfigException(
                 "The plugin %s requires the option %s" % (name, ke.message))

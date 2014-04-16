@@ -31,11 +31,18 @@ def _is_valid_hostname(hostname):
 
 
 class Rename(direct_pass.DirectPass):
+
+    protocol_arguments = {
+        "serverName":
+            ("The host name to which this server will be set.",
+             True, str)
+    }
+
     def __init__(self, conf, job_id, items_map, name, arguments):
         super(Rename, self).__init__(
             conf, job_id, items_map, name, arguments)
 
-        hname = arguments["server_name"]
+        hname = arguments["serverName"]
         if not _is_valid_hostname(hname):
             raise exceptions.AgentPluginMessageException(
                 "%s is an invalid hostname" % hname)
