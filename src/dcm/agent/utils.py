@@ -286,6 +286,43 @@ def unmount(conf, mount_point):
     command = [conf.get_script_location("unmount"), mount_point]
     (stdout, stderr, rc) = run_command(conf, command)
     if rc != 0:
-        raise exceptions.AgentExecutableException("listDevices failed: " + stderr)
+        raise exceptions.AgentExecutableException("unmount failed: " + stderr)
 
+    return rc
+
+
+def mount(conf, device_id, file_system, mount_point):
+    if device_id.startswith("es"):
+        device_id = "mapper/" + device_id
+
+    command = [conf.get_script_location("mount"),
+               device_id, file_system, mount_point]
+    (stdout, stderr, rc) = run_command(conf, command)
+    if rc != 0:
+        raise exceptions.AgentExecutableException("mount failed: " + stderr)
+    return rc
+
+
+def format(conf, device_id, file_system, mount_point, encryption_key):
+    enc_str = str(encryption_key is None).lower()
+    command = [conf.get_script_location("format"),
+               device_id,
+               file_system,
+               mount_point,
+               enc_str]
+    (stdout, stderr, rc) = run_command(conf, command)
+    if rc != 0:
+        raise exceptions.AgentExecutableException("format failed: " + stderr)
+    return rc
+
+
+def open_encrypted_device(conf, raw_device_id, encrypted_device_id, key_file):
+    command = [conf.get_script_location("openEncryption"),
+               raw_device_id,
+               encrypted_device_id,
+               key_file]
+    (stdout, stderr, rc) = run_command(conf, command)
+    if rc != 0:
+        raise exceptions.AgentExecutableException(
+            "open_encrypted_device failed: " + stderr)
     return rc

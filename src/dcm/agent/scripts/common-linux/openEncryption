@@ -1,18 +1,15 @@
 #!/usr/bin/env bash
 
 set -u
+PATH=/usr/local/sbin:/usr/local/bin:/sbin:/bin:/usr/sbin:/usr/bin:/enstratus/bin
 
-BASENAME=`basename $0`
-DIRNAME=`dirname $0`
-. "$DIRNAME/common_mod"
-
-PATH=/usr/local/sbin:/usr/local/bin:/sbin:/bin:/usr/sbin:/usr/bin:$DCM_BASEDIR/bin
+. "/enstratus/bin/common_mod"
 
 logTag="openEncryption"
-LOGGER=$DIRNAME/log
+LOGGER=/enstratus/bin/log
 
 BASENAME=`basename $0`
-CUSTOM="$DCM_BASEDIR/custom/bin/$BASENAME"
+CUSTOM="/enstratus/custom/bin/$BASENAME"
 
 if [ $# -lt 3 ] ; then
    $LOGGER -t "$logTag" Syntax: openEncryption RAW_DEVICE ENCRYPTED_DEVICE KEY_FILE

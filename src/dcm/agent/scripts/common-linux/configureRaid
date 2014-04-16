@@ -3,15 +3,13 @@
 set -u
 PATH=/sbin:${PATH}
 
-BASENAME=`basename $0`
-DIRNAME=`dirname $0`
-. "$DIRNAME/common_mod"
+. "/enstratus/bin/common_mod"
 
-LOGGER=$DIRNAME/log
+LOGGER=/enstratus/bin/log
 logTag="configureRaid"
 
 BASENAME=`basename $0`
-CUSTOM="$DCM_BASEDIR/custom/bin/$BASENAME"
+CUSTOM="/enstratus/custom/bin/$BASENAME"
 
 $LOGGER -t "$logTag" configureRaid "$@"
 

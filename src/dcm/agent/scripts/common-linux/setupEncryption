@@ -2,16 +2,13 @@
 
 set -u
 PATH=/usr/local/sbin:/usr/local/bin:/sbin:/bin:/usr/sbin:/usr/bin:/enstratus/bin
-
-DIRNAME=`dirname $0`
-. "$DIRNAME/common_mod"
-BASENAME=`basename $0`
+. "/enstratus/bin/common_mod"
 
 logTag="setupEncryption"
-LOGGER=$DIRNAME/bin/log
+LOGGER=/enstratus/bin/log
 
 BASENAME=`basename $0`
-CUSTOM="$DCM_BASEDIR/custom/bin/$BASENAME"
+CUSTOM="/enstratus/custom/bin/$BASENAME"
 
 if [ $# -lt 2 ] ; then
    $LOGGER -t "$logTag" Syntax: setupEncryption RAW_DEVICE KEY_FILE

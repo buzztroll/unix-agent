@@ -333,7 +333,7 @@ def _build_options_list():
                   options=["ubuntu", "el", "suse", "debian"]),
         ConfigOpt("jobs", "retain_job_time", int, default=3600),
         ConfigOpt("test", "skip_handshake", bool, default=False),
-        sw]
+    ]
 
     return option_list
 

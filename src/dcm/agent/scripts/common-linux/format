@@ -2,15 +2,13 @@
 
 set -u
 
-BASENAME=`basename $0`
-DIRNAME=`dirname $0`
-. "$DIRNAME/common_mod"
+. "/enstratus/bin/common_mod"
 
 logTag="format"
-LOGGER=$DIRNAME/log
+LOGGER=/enstratus/bin/log
 
 BASENAME=`basename $0`
-CUSTOM="$DCM_BASEDIR/custom/bin/$BASENAME"
+CUSTOM="/enstratus/custom/bin/$BASENAME"
 
 if [ $# -lt 4 ] ; then
    $LOGGER -t "$logTag" Syntax: format DEVICE_ID FILE_SYSTEM MOUNT_POINT ENCRYPTED
