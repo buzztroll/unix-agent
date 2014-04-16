@@ -306,6 +306,8 @@ def _build_options_list():
         FilenameOpt("storage", "script_dir", default=None),
 
         ConfigOpt("storage", "mount_enabled", bool, default=True),
+        ConfigOpt("storage", "default_filesystem", str, default="ext3"),
+
         ConfigOpt("system", "user", str, default="dcm"),
 
         ConfigOpt("cloud", "type", str, default=CLOUD_TYPES.Amazon,
@@ -331,7 +333,7 @@ def _build_options_list():
                   options=["ubuntu", "el", "suse", "debian"]),
         ConfigOpt("jobs", "retain_job_time", int, default=3600),
         ConfigOpt("test", "skip_handshake", bool, default=False),
-        ]
+        sw]
 
     return option_list
 

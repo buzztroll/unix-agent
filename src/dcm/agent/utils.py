@@ -226,3 +226,66 @@ def secure_delete(conf, file_name):
     if os.path.exists(file_name):
         os.remove(file_name)
 
+
+class DeviceTypes(object):
+    ROOT = "ROOT"
+    EPHEMERAL = "EPHEMERAL"
+    SERVICE = "SERVICE"
+    CUSTOM = "CUSTOM"
+
+
+def get_device_mappings(conf):
+    command = [conf.get_script_location("listDevices")]
+
+    (stdout, stderr, rc) = run_command(conf, command)
+    if rc != 0:
+        raise exceptions.AgentExecutableException("listDevices failed")
+
+    device_mapping_list = []
+    lines = stdout.split(os.linesep)
+    for line in lines:
+        parts = line.split()
+        if len(parts) != 5:
+            continue
+
+        elements = parts[0].split("/")
+        device_id = elements[len(elements) - 1]
+        file_system = parts[1]
+        mount_point = parts[2]
+        size = int(parts[3])
+        used = int(parts[4])
+        if parts[0].startswith("/dev/mapper"):
+            encrypted = True
+        else:
+            encrypted = False
+
+        if mount_point == "/":
+            device_type = DeviceTypes.ROOT
+        elif mount_point == conf.storage_services_dir:
+            device_type = DeviceTypes.SERVICE
+        elif mount_point == conf.storage_ephemeral_mountpoint:
+            device_type = DeviceTypes.EPHEMERAL
+        else:
+            device_type = DeviceTypes.CUSTOM
+
+        device_mapping = {
+            "device_id": device_id,
+            "encrypted": encrypted,
+            "file_system": file_system,
+            "mount_point": mount_point,
+            "size":  size,
+            "used": used,
+            "device_type": device_type
+        }
+        device_mapping_list.append(device_mapping)
+
+    return device_mapping_list
+
+
+def unmount(conf, mount_point):
+    command = [conf.get_script_location("unmount"), mount_point]
+    (stdout, stderr, rc) = run_command(conf, command)
+    if rc != 0:
+        raise exceptions.AgentExecutableException("listDevices failed: " + stderr)
+
+    return rc

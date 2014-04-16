@@ -11,48 +11,34 @@
 #   this material is strictly forbidden unless prior written permission
 #   is obtained from Dell, Inc.
 #  ======================================================================
-import os
-from dcm.agent import exceptions
-
-import dcm.agent.utils as utils
+import dcm.agent.exceptions as exceptions
 import dcm.agent.jobs as jobs
+import dcm.agent.utils as utils
 
 
-class DeviceTypes(object):
-    ROOT = "ROOT"
-    EPHEMERAL = "EPHEMERAL"
-    SERVICE = "SERVICE"
-    CUSTOM = "CUSTOM"
+class UnmountVolume(jobs.Plugin):
 
-
-class GetDeviceMappings(jobs.Plugin):
-
-    protocol_arguments = {}
+    protocol_arguments = {
+        "deviceId":
+            ("The device ID to unmount.", True, str),
+    }
 
     def __init__(self, conf, job_id, items_map, name, arguments):
-        super(GetDeviceMappings, self).__init__(
+        super(UnmountVolume, self).__init__(
             conf, job_id, items_map, name, arguments)
-
-        script_name = items_map["script_name"]
-        self.command = [conf.get_script_location(script_name)]
 
     def run(self):
         try:
-            device_mapping_list = utils.get_device_mappings(self.conf)
-        except exceptions.AgentExecutableException as ex:
-            reply_doc = {
-                "return_code": 1,
-                "message": ex.message
-            }
-            return reply_doc
+            utils.unmount(self.args.deviceId)
+            return {"return_code": 0, "message": "",
+                    "error_message": "", "return_type": "void"}
+        except exceptions.AgentExecutableException as aex:
+            return {"return_code": 1, "message": "",
+                    "error_message": aex.message, "return_type": "void"}
 
-        reply_doc = {
-            "return_code": 0,
-            "reply_type": "device_mapping_array",
-            "reply_object": device_mapping_list
-        }
-        return reply_doc
+    def cancel(self, reply_rpc, *args, **kwargs):
+        pass
 
 
 def load_plugin(conf, job_id, items_map, name, arguments):
-    return GetDeviceMappings(conf, job_id, items_map, name, arguments)
+    return UnmountVolume(conf, job_id, items_map, name, arguments)
