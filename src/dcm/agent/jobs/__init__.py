@@ -42,7 +42,7 @@ class Plugin(object):
     def _validate_arguments(self):
         # validate that all of the required arguments were sent
         for arg in self.protocol_arguments:
-            help, mandatory = self.protocol_arguments[arg]
+            h, mandatory, t = self.protocol_arguments[arg]
             if mandatory and arg not in self.arguments:
                 raise exceptions.AgentPluginParameterException(self.name, arg)
             setattr(self.args, arg, None)
@@ -53,7 +53,8 @@ class Plugin(object):
                 _g_logger.warn("The argument %s was sent from the agent "
                                "manager but is not understood by this command.")
             else:
-                setattr(self.args, arg, self.arguments[arg])
+                h, mandatory, t = self.protocol_arguments[arg]
+                setattr(self.args, arg, t(self.arguments[arg]))
 
     @utils.not_implemented_decorator
     def run(self):

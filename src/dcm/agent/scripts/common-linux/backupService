@@ -47,7 +47,7 @@ if [ -x "${CUSTOM}-pre" ] ; then
 	exit_if_pipe_false
 fi
 
-BACKUP="/mnt/services/$serviceId/bin/enstratus-backupService"
+BACKUP="$DCM_SERVICES_DIR/$serviceId/bin/enstratus-backupService"
 
 if [ -x "$BACKUP" ] ; then
 	"$BACKUP" $serviceId $backupFile 2>&1 | $LOGGER -t "$logTag"

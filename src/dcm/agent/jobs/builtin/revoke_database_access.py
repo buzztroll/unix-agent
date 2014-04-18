@@ -34,7 +34,7 @@ class RevokeDBAccess(direct_pass.DirectPass):
             conf, job_id, items_map, name, arguments)
 
     def run(self):
-        if self.conf.is_imaging:
+        if self.conf.is_imaging():
             raise exceptions.AgentPluginOperationIsImagingException(
                 operation_name=self.name)
         config_file = self.conf.get_temp_file("database.cfg")
@@ -47,9 +47,6 @@ class RevokeDBAccess(direct_pass.DirectPass):
         finally:
             if os.path.exists(config_file):
                 os.remove(config_file)
-
-    def cancel(self, reply_rpc, *args, **kwargs):
-        pass
 
 
 def load_plugin(conf, job_id, items_map, name, arguments):

@@ -34,7 +34,7 @@ fi
 serviceId=$1
 configFile=$2
 
-REVOKE=/mnt/services/${serviceId}/bin/enstratus-dbrevoke
+REVOKE=$DCM_SERVICES_DIR/${serviceId}/bin/enstratus-dbrevoke
 
 if [ ! -x "$REVOKE" ] ; then
 	if [ -f "$REVOKE" ] ; then

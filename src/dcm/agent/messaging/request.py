@@ -216,18 +216,17 @@ class RequestRPC(object):
         # note: was are canceling the message but due to various
         # races it is still possible for timeout to occur.  The
         # state machine should account for this.
-        self._message_timer.cancel()
-        self._message_timer = None
+        if self._message_timer is not None:
+            self._message_timer.cancel()
+            self._message_timer = None
+        else:
+            pass
+
 
         if self._reply_callback is not None:
             args = [message]
             if self._reply_args:
                 args.extend(self._reply_args)
-
-            parent_receive_q.register_user_callback(
-                self._cancel_callback,
-                self._cancel_callback_args,
-                self._cancel_callback_kwargs)
 
             parent_receive_q.UserCallback(self._user_reply_callback, None, None)
 

@@ -11,7 +11,7 @@ logTag="installService"
 LOGGER=$DIRNAME/log
 
 FILE_TYPES=".tar.gz .tar.bz2 .tgz .zip"
-SERVICE_DIR='/mnt/services'
+SERVICE_DIR=$DCM_SERVICES_DIR
 
 if [ $# -lt 4 ] ; then
    $LOGGER -t "$logTag" "Syntax: installService SERVICE_ID CUSTOMER_ID USER_ID SERVICE_IMAGE_FILE"

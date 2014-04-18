@@ -36,7 +36,7 @@ $LOGGER -t "$logTag" "grantDatabaseAccess $serviceId $configFile"
 
 sudo chmod 750 "$configFile"
 
-GRANT="/mnt/services/${serviceId}/bin/enstratus-dbgrant"
+GRANT="$DCM_SERVICES_DIR/${serviceId}/bin/enstratus-dbgrant"
 
 if [ ! -x "$GRANT" ] ; then
 	if [ -f "$GRANT" ] ; then

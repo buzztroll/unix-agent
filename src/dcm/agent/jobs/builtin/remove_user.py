@@ -18,7 +18,6 @@ import dcm.agent.jobs.direct_pass as direct_pass
 
 class RemoveUser(direct_pass.DirectPass):
 
-
     protocol_arguments = {
         "userId":
             ("The unix account name of the user to remove",
@@ -28,11 +27,7 @@ class RemoveUser(direct_pass.DirectPass):
     def __init__(self, conf, job_id, items_map, name, arguments):
         super(RemoveUser, self).__init__(
             conf, job_id, items_map, name, arguments)
-        try:
-            self.ordered_param_list = [arguments["user_id"]]
-        except KeyError as ke:
-            raise exceptions.AgentPluginConfigException(
-                "The plugin %s requires the option %s" % (name, ke.message))
+        self.ordered_param_list = [self.args.userId]
 
 
 def load_plugin(conf, job_id, items_map, name, arguments):

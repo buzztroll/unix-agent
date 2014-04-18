@@ -34,7 +34,7 @@ serviceId=${1}
 
 $LOGGER -t "$logTag" "startService $@"
 
-START="/mnt/services/$serviceId/bin/enstratus-start"
+START="$DCM_SERVICES_DIR/$serviceId/bin/enstratus-start"
 
 if [ ! -x "$START" ] ; then
 	$LOGGER -t "$logTag" "Service start failed for $serviceId - Unable to find custom start script ${START}"

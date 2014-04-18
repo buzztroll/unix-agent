@@ -36,7 +36,7 @@ serviceId=${1}
 
 echo "stopService $serviceId" >> "$LOGFILE" 2>&1
 
-STOP="/mnt/services/$serviceId/bin/enstratus-stop"
+STOP="$DCM_SERVICES_DIR/$serviceId/bin/enstratus-stop"
 
 if [ ! -x "$STOP" ] ; then
 	echo "Unable to find custom stop script ${STOP}. Fail." >> "$LOGFILE" 2>&1

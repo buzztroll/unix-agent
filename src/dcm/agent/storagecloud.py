@@ -102,6 +102,10 @@ def download(cloud_id, container_name, object_name,
              destination_file, region_id=None,
              endpoint=None,
              account=None):
+    # for now just cast to an int.  in the future we need to turn
+    # delegate strings into a libcloud driver TODO
+    cloud_id = int(cloud_id)
+
     try:
         cloud_type = _map_cloud_id_to_type[cloud_id]
         driver_cls = _map_cloud_name_to_provider(cloud_type, region_id)
@@ -125,7 +129,9 @@ def upload(cloud_id,
            object_name,
            storage_access_key,
            storage_secret_key,
-           region_id=None):
+           region_id=None,
+           endpoint=None,
+           account=None):
 
     try:
         cloud_type = _map_cloud_id_to_type[cloud_id]

@@ -61,19 +61,19 @@ class InitializeJob(jobs.Plugin):
 
         self.rename = Rename(self.conf, self.job_id, {"script_name": "rename"},
                              "rename",
-                             {"server_name": self.arguments["serverName"]})
+                             {"serverName": self.arguments["serverName"]})
         self.make_temp = MakeTemp(self.conf, self.job_id,
                                   {"script_name": "makeTemp"}, "make_temp",
                                   {})
         self.add_user = AddUser(self.conf, self.job_id,
                                 {"script_name": "addUser"}, "add_user",
-                                {"first_name": "Customer",
-                                 "last_name": "Account",
+                                {"firstName": "Customer",
+                                 "lastName": "Account",
                                  "password": None,
                                  "authentication": None,
                                  "administrator": "false",
-                                 "user_id": utils.make_id_string(
-                                     "c", self.conf.customer_id)})
+                                 "userId": utils.make_id_string(
+                                     "c", self.args.customerId)})
 
     def run(self):
         _g_logger.debug("Initialize run")
@@ -83,7 +83,7 @@ class InitializeJob(jobs.Plugin):
             # TODO WALK THE INIT STEPS
             # rename
             self.logger.info("Renaming the host to %s"
-                             % self.arguments["serverName"])
+                             % self.args.serverName)
             res_doc = self.rename.run()
             if res_doc["return_code"] != 0:
                 res_doc["message"] = res_doc["message"] + " : rename failed"
@@ -91,20 +91,20 @@ class InitializeJob(jobs.Plugin):
 
             if self.conf.storage_mount_enabled:
                 self.logger.debug("Mount is enabled")
-                if self.arguments["ephemeralFileSystem"]:
+                if self.args.encryptedEphemeralFsKey:
                     self.logger.info(
                         "Attempting to mount the ephemeral file system")
                     # TODO mount encrypted FS
 
             # make the temp directory
             self.logger.info("Create the temporary directory")
-            self.make_temp.run()
+            res_doc = self.make_temp.run()
             if res_doc["return_code"] != 0:
                 res_doc["message"] = res_doc["message"] + " : makeTemp failed"
                 return res_doc
             # add customer user
             self.logger.info("Adding the user")
-            self.add_user.run()
+            res_doc = self.add_user.run()
             if res_doc["return_code"] != 0:
                 res_doc["message"] = res_doc["message"] + " : addUser failed"
                 return res_doc
@@ -113,10 +113,8 @@ class InitializeJob(jobs.Plugin):
             return {"return_code": 0, "message": "",
                     "error_message": "", "return_type": "void"}
         except Exception as ex:
+            _g_logger.exception("initialize faild: " + str(ex))
             return {'return_code': 1, "message": ex.message}
-
-    def cancel(self, reply_rpc, *args, **kwargs):
-        pass
 
 
 def load_plugin(conf, job_id, items_map, name, arguments):

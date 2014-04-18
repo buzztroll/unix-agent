@@ -83,6 +83,12 @@ def setup_command_line_parser():
                         dest="base_path",
                         help="The path to enstratius")
 
+    parser.add_argument("--on-boot", "-B",
+                        dest="on_boot",
+                        action='store_true',
+                        default=False,
+                        help="The path to enstratius")
+
     parser.add_argument("--services-path", "-s",
                         dest="services_path",
                         help="The services path")
@@ -111,6 +117,9 @@ def setup_command_line_parser():
                         dest="con_type",
                         help="The type of connection that will be formed "
                              "with the agent manager.")
+
+    parser.add_argument("--logfile", "-l",
+                        dest="logfile")
     return parser
 
 
@@ -218,10 +227,10 @@ def pick_meta_data(conf_d):
 
 
 def get_default_conf_dict():
-
     conf_dict = {}
-    conf = config.AgentConfig()
-    for c in conf.option_list:
+    option_list = config._build_options_list()
+
+    for c in option_list:
 
         s_d = {}
         if c.section in conf_dict:
@@ -286,15 +295,18 @@ def make_dirs(conf_d):
     dirs_to_make = [
         (base_path, 0755),
         (os.path.join(base_path, "bin"), 0750),
+        (conf_d["storage"]["script_dir"][1], 0750),
         (os.path.join(base_path, "custom"), 0755),
         (os.path.join(base_path, "custom", "bin"), 0755),
         (os.path.join(base_path, "etc"), 0755),
         (os.path.join(base_path, "logs"), 0755),
         (os.path.join(base_path, "home"), 0750),
         (os.path.join(base_path, "cfg"), 0750),
-        (os.path.join("/mnt", "services"), 0755),
+        (conf_d["storage"]["services_dir"][1], 0755),
+        (conf_d["storage"]["operations_path"][1], 0750),
+        (conf_d["storage"]["ephemeral_mountpoint"][1], 0750),
         (os.path.join("/mnt", "tmp"), 0750),
-        ("/tmp", 01777),
+        (conf_d["storage"]["temppath"][1], 01777),
     ]
 
     for (dir, mod) in dirs_to_make:
@@ -312,6 +324,7 @@ def make_dirs(conf_d):
 def do_set_owner_and_perms(conf_d):
     (_, script_dir) = conf_d["storage"]["script_dir"]
     (_, base_path) = conf_d["storage"]["base_dir"]
+    (_, services_path) = conf_d["storage"]["services_dir"]
     (_, user) = conf_d["system"]["user"]
 
     for f in os.listdir(script_dir):
@@ -325,6 +338,8 @@ def do_set_owner_and_perms(conf_d):
         fptr.write(os.linesep)
         fptr.write("DCM_BASEDIR=%s" % base_path)
         fptr.write(os.linesep)
+        fptr.write("DCM_SERVICES_DIR=%s" % services_path)
+        fptr.write(os.linesep)
 
     print "Changing ownership to %s:%s" % (user, user)
     os.system("chown -R %s:%s %s" % (user, user, base_path))
@@ -336,6 +351,7 @@ def merge_opts(conf_d, opts):
 
     map_opts_to_conf = {
         "cloud": ("cloud", "type"),
+        "user": ("system", "user"),
         "url": ("connection", "agentmanager_url"),
         "base_path": ("storage", "base_dir"),
         "services_path": ("storage", "services_dir"),
@@ -356,7 +372,7 @@ def merge_opts(conf_d, opts):
             sd[i] = (h, v)
 
 
-def do_plugin_and_logging_conf(conf_d):
+def do_plugin_and_logging_conf(conf_d, opts):
     (_, base_dir) = conf_d["storage"]["base_dir"]
     (_, dest_plugin_path) = conf_d["plugin"]["configfile"]
     (_, dest_logging_path) = conf_d["logging"]["configfile"]
@@ -369,7 +385,10 @@ def do_plugin_and_logging_conf(conf_d):
     shutil.copy(src_pluggin_path, dest_plugin_path)
     shutil.copy(src_logging_path, dest_logging_path)
 
-    log_file = os.path.join(base_dir, "logs", "agent.log")
+    if opts.logfile is None:
+        log_file = os.path.join(base_dir, "logs", "agent.log")
+    else:
+        log_file = opts.logfile
 
     os.system("sed -i 's^@LOGFILE_PATH@^%s^' %s" % (log_file,
                                                     dest_logging_path))
@@ -424,9 +443,16 @@ def get_url(default=None):
 
 
 def enable_start_agent(opts):
-    print "Would you like to start the agent on boot? (Y/n)"
-    ans = sys.stdin.readline().strip()
-    if ans == "" or ans.lower() == "y" or ans.lower() == "yes":
+    ask = opts.interactive
+    on_boot = opts.on_boot
+    if on_boot:
+        ask = False
+
+    if ask:
+        print "Would you like to start the agent on boot? (Y/n)"
+        ans = sys.stdin.readline().strip()
+        on_boot = ans == "" or ans.lower() == "y" or ans.lower() == "yes"
+    if on_boot:
         if os.path.exists("/usr/sbin/update-rc.d"):
             os.system("update-rc.d dcm-agent defaults")
         # TODO other platforms
@@ -462,9 +488,9 @@ def gather_values(opts):
     return conf_d
 
 
-def main():
+def main(argv=sys.argv[1:]):
     parser = setup_command_line_parser()
-    opts = parser.parse_args(args=sys.argv[1:])
+    opts = parser.parse_args(args=argv)
 
     conf_d = gather_values(opts)
     do_interactive(opts, conf_d)
@@ -483,7 +509,7 @@ def main():
     try:
         make_dirs(conf_d)
         copy_scripts(conf_d)
-        do_plugin_and_logging_conf(conf_d)
+        do_plugin_and_logging_conf(conf_d, opts)
         (_, base_dir) = conf_d["storage"]["base_dir"]
         conf_file_name = os.path.join(base_dir, "etc", "agent.conf")
         write_conf_file(conf_file_name, conf_d)
@@ -495,6 +521,7 @@ def main():
         print >> sys.stderr, ex.message
         if opts.verbose:
             raise
+    return 0
 
 
 if __name__ == "__main__":

@@ -43,9 +43,6 @@ class GetJobDescription(jobs.Plugin):
                 'reply_object': job_description.get_message_payload(),
                 'reply_type': 'job_description'}
 
-    def cancel(self, reply_rpc, *args, **kwargs):
-        pass
-
 
 def load_plugin(conf, job_id, items_map, name, arguments):
     _g_logger.debug("loading %s" % __name__)

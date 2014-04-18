@@ -29,7 +29,7 @@ if [ -x ${CUSTOM}-pre ] ; then
 	exit_if_pipe_false
 fi
 
-for file in /mnt/services/* ; do
+for file in $DCM_SERVICES_DIR/* ; do
 	if [ -d "$file" ] ; then
 		svcid=`basename "$file"`
 		svc="${file}/bin/enstratus-stop"

@@ -96,7 +96,7 @@ def _agent_main_loop(conf, request_listener, disp, conn):
     while not _g_shutting_down:
         try:
             parent_receive_q.poll()
-        except:
+        except Exception as ex:
             logger.exception("A top level exception occurred")
 
 

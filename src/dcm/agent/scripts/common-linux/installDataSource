@@ -39,7 +39,7 @@ imageFile="$3"
 sudo chmod 750 "$configFile"
 sudo chmod 750 "$imageFile"
 
-SCRIPT="/mnt/services/${serviceId}/bin/enstratus-installds"
+SCRIPT="$DCM_SERVICES_DIR/${serviceId}/bin/enstratus-installds"
 
 if [ ! -f "$SCRIPT" ] ; then
 	exit 0

@@ -47,11 +47,7 @@ class Rename(direct_pass.DirectPass):
             raise exceptions.AgentPluginMessageException(
                 "%s is an invalid hostname" % hname)
 
-        try:
-            self.ordered_param_list = [arguments["server_name"]]
-        except KeyError as ke:
-            raise exceptions.AgentPluginConfigException(
-                "The plugin %s requires the option %s" % (name, ke.message))
+        self.ordered_param_list = [self.args.serverName]
 
     def run(self):
         private_ips = cloudmetadata.get_ipv4_addresses(self.conf)

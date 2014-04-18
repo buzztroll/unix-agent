@@ -51,7 +51,7 @@ class AddUser(direct_pass.DirectPass):
 
     def run(self):
         key_file = os.path.join(
-            self.conf.storage_temppath, self.arguments["user_id"] + ".pub")
+            self.conf.storage_temppath, self.arguments["userId"] + ".pub")
 
         try:
             if self.ssh_public_key:
@@ -61,9 +61,6 @@ class AddUser(direct_pass.DirectPass):
         finally:
             if os.path.exists(key_file):
                 os.remove(key_file)
-
-    def cancel(self, reply_rpc, *args, **kwargs):
-        pass
 
 
 def load_plugin(conf, job_id, items_map, name, arguments):

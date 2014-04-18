@@ -53,8 +53,8 @@ case  $#  in  #check the number of command line arguments, fail if there is an i
 esac
 
 
-CONFIGURE="/mnt/services/${SERVICE_ID}/bin/enstratus-configure"
-PROPS="/mnt/services/${SERVICE_ID}/cfg/enstratus.cfg"
+CONFIGURE="$DCM_SERVICES_DIR/${SERVICE_ID}/bin/enstratus-configure"
+PROPS="$DCM_SERVICES_DIR/${SERVICE_ID}/cfg/enstratus.cfg"
 
 if [ -r "$PROPS" ] ; then
 	sudo bash -c "tr -d '\015' < $PROPS > ${PROPS}.tmp && mv ${PROPS}.tmp $PROPS"

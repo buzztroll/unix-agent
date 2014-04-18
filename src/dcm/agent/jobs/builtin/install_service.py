@@ -71,7 +71,7 @@ class InstallService(direct_pass.DirectPass):
             conf, job_id, items_map, name, arguments)
 
     def run(self):
-        if not os.path.exists(self.conf.services_dir):
+        if not os.path.exists(self.conf.storage_services_dir):
             raise exceptions.AgentPluginOperationException(
                 "The services directory does not exist.  The agent is not "
                 "properly configured.")

@@ -36,9 +36,6 @@ class UnmountVolume(jobs.Plugin):
             return {"return_code": 1, "message": "",
                     "error_message": aex.message, "return_type": "void"}
 
-    def cancel(self, reply_rpc, *args, **kwargs):
-        pass
-
 
 def load_plugin(conf, job_id, items_map, name, arguments):
     return UnmountVolume(conf, job_id, items_map, name, arguments)

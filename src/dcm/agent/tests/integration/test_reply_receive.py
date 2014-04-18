@@ -1,28 +1,113 @@
+import getpass
 import os
 import random
 import shutil
 import socket
+import tarfile
+import tempfile
+import threading
 import unittest
 import pwd
 import datetime
 import uuid
-from dcm.agent.cmd import service
+from libcloud.common.types import LibcloudError
+
+import dcm.agent.utils as utils
+from dcm.agent.cmd import service, configure
 from dcm.agent import config, dispatcher, storagecloud, parent_receive_q
 from dcm.agent.messaging import reply, request
 import dcm.agent.tests.utils as test_utils
 import dcm.agent.tests.utils.test_connection as test_conn
 
 
-class TestSimpleSingleCommands(unittest.TestCase):
+class TestProtocolCommands(unittest.TestCase, reply.ReplyObserverInterface):
+
+    def new_message(self, reply):
+        pass
+
+    def message_done(self, reply):
+        self._event.set()
+
+    def incoming_message(self, incoming_doc):
+        pass
+
+    @classmethod
+    def _setup_s3(cls):
+        if "S3_SECRET_KEY" not in os.environ or "S3_ACCESS_KEY" not in os.environ:
+            return
+
+        cls.backup_bucket = "enstartiustestone"
+        cls.backup_bucket2 = "enstartiustesttwo"
+        cls.default_s3_region = "us_west_oregon"
+        cls.simple_service = "asimple_service.tar.gz"
+
+        cloud = storagecloud.get_cloud_driver(
+            1,
+            os.environ["S3_ACCESS_KEY"],
+            os.environ["S3_SECRET_KEY"],
+            region_id=cls.default_s3_region)
+        try:
+            cloud.create_container(cls.backup_bucket)
+        except LibcloudError as ex:
+            pass
+
+        try:
+            cloud.create_container(cls.backup_bucket2)
+        except LibcloudError as ex:
+            pass
+
+        # create the service tarball
+        etc_dir = os.path.dirname(os.path.dirname(__file__))
+        tar_dir = tempfile.mkdtemp()
+        tar_path = os.path.join(tar_dir, cls.simple_service)
+        with tarfile.open(tar_path, "w:gz") as tar:
+            for fname in os.listdir(os.path.join(etc_dir, "etc", "simple_service")):
+                tar.add(os.path.join(etc_dir, "etc", "simple_service", fname), arcname=fname)
+        print tar_path
+
+        container = cloud.get_container(cls.backup_bucket)
+        cloud.upload_object(tar_path, container, cls.simple_service)
+        shutil.rmtree(tar_dir)
+
+    @classmethod
+    def setUpClass(cls):
+        PYDEVD_CONTACT = "PYDEVD_CONTACT"
+        if PYDEVD_CONTACT in os.environ:
+            pydev_contact = os.environ[PYDEVD_CONTACT]
+            host, port = pydev_contact.split(":", 1)
+            utils.setup_remote_pydev(host, int(port))
+        # create the config file and other needed dirs
+
+        cls.run_as_user = getpass.getuser()
+        cls.test_base_path = tempfile.mkdtemp()
+        conf_args = ["-c", "Amazon",
+                     "-u", "http://doesntmatter.org/ws",
+                     "-p", cls.test_base_path,
+                     "-s", os.path.join(cls.test_base_path, "services"),
+                     "-t", os.path.join(cls.test_base_path, "tmp"),
+                     "-C", "success_tester",
+                     "-U", cls.run_as_user,
+                     "-l", "/tmp/agent_test_log.log"]
+        rc = configure.main(conf_args)
+        if rc != 0:
+            raise Exception("We could not configure the test env")
+        try:
+            cls._setup_s3()
+        except Exception as ex:
+            pass
+
+    @classmethod
+    def tearDownClass(cls):
+        shutil.rmtree(cls.test_base_path)
 
     def setUp(self):
-        service._g_shutting_down = False # this has to be the worst thing I have ever done
         service._g_conn_for_shutdown = None # and this
 
-        test_conf_path = test_utils.get_conf_file("agent.realplugins.conf")
+        self._event = threading.Event()
+
+        test_conf_path = os.path.join(self.test_base_path, "etc", "agent.conf")
         self.conf_obj = config.AgentConfig([test_conf_path])
         # script_dir must be forced to None so that we get the built in dir
-        self.conf_obj.storage_script_dir = None
         service._pre_threads(self.conf_obj, ["-c", test_conf_path])
         self.disp = dispatcher.Dispatcher(self.conf_obj)
 
@@ -33,6 +118,8 @@ class TestSimpleSingleCommands(unittest.TestCase):
 
         self.request_listener = reply.RequestListener(
             self.conf_obj, self.reply_conn, self.disp)
+        observers = self.request_listener.get_reply_observers()
+        observers.append(self)
         self.reply_conn.set_receiver(self.request_listener)
 
         self.agent_id = "theAgentID" + str(uuid.uuid4())
@@ -43,7 +130,7 @@ class TestSimpleSingleCommands(unittest.TestCase):
         handshake_doc["agentID"] = self.agent_id
         handshake_doc["cloudId"] = "Amazon"
         handshake_doc["customerId"] = self.customer_id
-        handshake_doc["regionId"] = "us_west_oregon"
+        handshake_doc["regionId"] = self.default_s3_region
         handshake_doc["zoneId"] = "rack2"
         handshake_doc["serverId"] = "thisServer"
         handshake_doc["serverName"] = "dcm.testagent.com"
@@ -71,7 +158,8 @@ class TestSimpleSingleCommands(unittest.TestCase):
                 self.req.incoming_message(obj)
 
         def reply_callback():
-            service.shutdown_main_loop()
+            service._g_shutting_down = True
+            parent_receive_q.wakeup()
 
         reqRPC = request.RequestRPC(doc, self.req_conn, self.agent_id,
                                     reply_callback=reply_callback)
@@ -80,9 +168,13 @@ class TestSimpleSingleCommands(unittest.TestCase):
 
         reqRPC.send()
 
-        self._run_main_loop()
+        # wait for message completion:
+        while not self._event.isSet():
+            parent_receive_q.poll()
+        self._event.clear()
 
         reqRPC.cleanup()
+        service._g_shutting_down = False
 
         return reqRPC
 
@@ -131,12 +223,11 @@ class TestSimpleSingleCommands(unittest.TestCase):
 
         doc = {
             "command": "add_user",
-            "arguments": {"agent_token": None,
-                          "customer_id": self.customer_id,
-                          "user_id": user_name,
+            "arguments": {"customerId": self.customer_id,
+                          "userId": user_name,
                           "password": None,
-                          "first_name": "buzz",
-                          "last_name": "troll",
+                          "firstName": "buzz",
+                          "lastName": "troll",
                           "authentication": "public key data",
                           "administrator": False}}
         req_rpc = self._rpc_wait_reply(doc)
@@ -149,18 +240,40 @@ class TestSimpleSingleCommands(unittest.TestCase):
 
         doc = {
             "command": "remove_user",
-            "arguments": {"agent_token": None,
-                          "user_id": user_name}}
+            "arguments": {"userId": user_name}}
 
         req_rpc = self._rpc_wait_reply(doc)
         r = req_rpc.get_reply()
         self.assertEquals(r["payload"]["return_code"], 0)
         self.assertRaises(KeyError, pwd.getpwnam, user_name)
 
+    @test_utils.system_changing
+    def test_initialize(self):
+        cust = 10l
+        orig_hostname = socket.gethostname()
+        new_hostname = "testdcmagent"
+        doc = {
+            "command": "initialize",
+            "arguments": {"cloudId": "3",
+                          "customerId": cust,
+                          "regionId": None,
+                          "zoneId": None,
+                          "serverId": self.agent_id,
+                          "serverName": new_hostname,
+                          "encryptedEphemeralFsKey": None}}
+        req_rpc = self._rpc_wait_reply(doc)
+        r = req_rpc.get_reply()
+        self.assertEquals(r["payload"]["return_code"], 0)
+        self.assertEquals(socket.gethostname(), new_hostname)
+
+        customer_user = utils.make_id_string("c", cust)
+        pw_ent = pwd.getpwnam(customer_user)
+        self.assertEquals(pw_ent.pw_name, customer_user)
+
     def test_list_devices(self):
         doc = {
             "command": "list_devices",
-            "arguments": {"agent_token": None}
+            "arguments": {}
         }
         req_reply = self._rpc_wait_reply(doc)
         r = req_reply.get_reply()
@@ -186,7 +299,7 @@ class TestSimpleSingleCommands(unittest.TestCase):
         new_hostname = "buzztroll.net"
         doc = {
             "command": "rename",
-            "arguments": {"agent_token": None, "server_name": new_hostname}
+            "arguments": {"serverName": new_hostname}
         }
         req_reply = self._rpc_wait_reply(doc)
         r = req_reply.get_reply()
@@ -196,7 +309,7 @@ class TestSimpleSingleCommands(unittest.TestCase):
 
         doc = {
             "command": "rename",
-            "arguments": {"agent_token": None, "server_name": orig_hostname}
+            "arguments": {"serverName": orig_hostname}
         }
         req_reply = self._rpc_wait_reply(doc)
         r = req_reply.get_reply()
@@ -206,7 +319,6 @@ class TestSimpleSingleCommands(unittest.TestCase):
 
     def _get_job_description(self, job_id):
         arguments = {
-            "agent_token": None,
             "jobId": job_id
         }
         doc = {
@@ -222,30 +334,22 @@ class TestSimpleSingleCommands(unittest.TestCase):
 
         return jd
 
-
-    @test_utils.system_changing
-    def test_install_start_stop_configure_service(self):
-        """
-        install a service, start it, configure it in two ways, stop it, then
-        delete the directory it was put into
-        """
-        service_id = "asuccess_service"
-
+    def _install_service(self, service_id, bucket, fname, other_storage=False):
         # test install
         arguments = {
-            "agent_token": None,
             "customerId": self.customer_id,
             "serviceId": service_id,
-            "fromCloudId": 1,
-            "runAsUser": "vagrant",
-            "storageAccessKey": os.environ["S3_ACCESS_KEY"],
-            "storageSecretKey": os.environ["S3_SECRET_KEY"],
-            "encryption": "not_used",
-            "encryptionPublicKey": "not_used",
-            "encryptionPrivateKey": "not_user",
-            "serviceImageDirectory": "enstratiustests",
-            "serviceImageFile": "success_service.tar.gz"
+            "cloudId": 1,
+            "runAsUser": self.run_as_user,
+            "apiAccessKey": os.environ["S3_ACCESS_KEY"],
+            "apiSecretKey": os.environ["S3_SECRET_KEY"],
+            "serviceImageDirectory": bucket,
+            "serviceImageFile": fname
         }
+        if other_storage:
+            arguments["storageAccessKey"] = os.environ["S3_ACCESS_KEY"]
+            arguments["storageSecretKey"] = os.environ["S3_SECRET_KEY"]
+            arguments["storageDelegate"] = 1
 
         doc = {
             "command": "install_service",
@@ -264,15 +368,42 @@ class TestSimpleSingleCommands(unittest.TestCase):
         service_dir = self.conf_obj.get_service_directory(service_id)
         self.assertTrue(os.path.exists(service_dir))
         self.assertTrue(os.path.exists(
-            os.path.join(service_dir, "bin/enstratiusinitd-configure")))
+            os.path.join(service_dir, "bin/enstratus-configure")))
         self.assertTrue(os.path.exists(os.path.join(service_dir,
-                                                    "bin/enstratiusinitd-stop")))
+                                                    "bin/enstratus-stop")))
         self.assertTrue(os.path.exists(os.path.join(service_dir,
-                                                    "bin/enstratiusinitd-start")))
+                                                    "bin/enstratus-start")))
+
+    @test_utils.system_changing
+    @test_utils.s3_needed
+    def test_alt_service_install(self):
+        service_id = "asuccess_service_two"
+        self._install_service(service_id, self.backup_bucket,
+                              self.simple_service, other_storage=True)
+
+    @test_utils.system_changing
+    @test_utils.s3_needed
+    def test_install_start_stop_configure_service(self):
+        """
+        install a service, start it, configure it in two ways, stop it, then
+        delete the directory it was put into
+        """
+        service_id = "asuccess_service"
+        self._install_service(service_id,
+                              self.backup_bucket,
+                              self.simple_service)
+
+        service_dir = self.conf_obj.get_service_directory(service_id)
+        self.assertTrue(os.path.exists(service_dir))
+        self.assertTrue(os.path.exists(
+            os.path.join(service_dir, "bin/enstratus-configure")))
+        self.assertTrue(os.path.exists(os.path.join(service_dir,
+                                                    "bin/enstratus-stop")))
+        self.assertTrue(os.path.exists(os.path.join(service_dir,
+                                                    "bin/enstratus-start")))
 
         # test start
         arguments = {
-            "agent_token": None,
             "customerId": self.customer_id,
             "serviceId": service_id
         }
@@ -280,7 +411,7 @@ class TestSimpleSingleCommands(unittest.TestCase):
             "command": "start_service",
             "arguments": arguments
         }
-        start_time = datetime.datetime.now()
+        start_time = datetime.datetime.now().replace(microsecond=0)
         req_reply = self._rpc_wait_reply(doc)
         r = req_reply.get_reply()
         self.assertEquals(r["payload"]["return_code"], 0)
@@ -289,7 +420,7 @@ class TestSimpleSingleCommands(unittest.TestCase):
         with open("/tmp/service_start", "r") as fptr:
             secs = fptr.readline()
         tm = datetime.datetime.utcfromtimestamp(float(secs))
-        self.assertTrue(tm > start_time)
+        self.assertTrue(tm >= start_time)
 
         configuration_data = """
         This is some configuration data.
@@ -298,17 +429,16 @@ class TestSimpleSingleCommands(unittest.TestCase):
 
         # test configure
         arguments = {
-            "agent_token": None,
             "forCustomerId": self.customer_id,
             "serviceId": service_id,
-            "runAsUser": "vagrant",
+            "runAsUser": self.run_as_user,
             "configurationData": configuration_data
         }
         doc = {
             "command": "configure_service",
             "arguments": arguments
         }
-        start_time = datetime.datetime.now()
+        start_time = datetime.datetime.now().replace(microsecond=0)
         req_reply = self._rpc_wait_reply(doc)
         r = req_reply.get_reply()
         self.assertEquals(r["payload"]["return_code"], 0)
@@ -321,8 +451,11 @@ class TestSimpleSingleCommands(unittest.TestCase):
 
         with open("/tmp/service_configure", "r") as fptr:
             secs = fptr.readline()
+            params = fptr.readline()
         tm = datetime.datetime.utcfromtimestamp(float(secs))
-        self.assertTrue(tm > start_time)
+        self.assertTrue(tm >= start_time)
+        p_a = params.split()
+        self.assertEqual(len(p_a), 2)
 
         cfg_file = os.path.join(service_dir, "cfg", "enstratiusinitd.cfg")
         self.assertTrue(os.path.exists(cfg_file))
@@ -337,12 +470,10 @@ class TestSimpleSingleCommands(unittest.TestCase):
 
         # test with ssl configure
         arguments = {
-            "agent_token": None,
             "forCustomerId": self.customer_id,
             "serviceId": service_id,
-            "runAsUser": "vagrant",
+            "runAsUser": self.run_as_user,
             "configurationData": configuration_data,
-
             "address": "http://someplacefcdx.com",
             "sslPublic": ssl_public,
             "sslPrivate": ssl_private,
@@ -352,7 +483,7 @@ class TestSimpleSingleCommands(unittest.TestCase):
             "command": "configure_service_with_ssl",
             "arguments": arguments
         }
-        start_time = datetime.datetime.now()
+        start_time = datetime.datetime.now().replace(microsecond=0)
         req_reply = self._rpc_wait_reply(doc)
         r = req_reply.get_reply()
         self.assertEquals(r["payload"]["return_code"], 0)
@@ -365,8 +496,11 @@ class TestSimpleSingleCommands(unittest.TestCase):
 
         with open("/tmp/service_configure", "r") as fptr:
             secs = fptr.readline()
+            params = fptr.readline()
         tm = datetime.datetime.utcfromtimestamp(float(secs))
-        self.assertTrue(tm > start_time)
+        self.assertTrue(tm >= start_time)
+        p_a = params.split()
+        self.assertEqual(len(p_a), 5)
 
         cfg_file = os.path.join(service_dir, "cfg", "enstratiusinitd.cfg")
         self.assertTrue(os.path.exists(cfg_file))
@@ -393,13 +527,12 @@ class TestSimpleSingleCommands(unittest.TestCase):
 
         # install data source
         arguments = {
-            "agent_token": None,
             "customerId": self.customer_id,
             "serviceId": service_id,
-            "fromCloudId": 1,
-            "runAsUser": "vagrant",
-            "storageAccessKey": os.environ["S3_ACCESS_KEY"],
-            "storageSecretKey": os.environ["S3_SECRET_KEY"],
+            "cloudId": 1,
+            "runAsUser": self.run_as_user,
+            "apiAccessKey": os.environ["S3_ACCESS_KEY"],
+            "apiSecretKey": os.environ["S3_SECRET_KEY"],
             "configuration": configuration_data,
             "imageDirectory": "enstratiustests",
             "dataSourceImage": "success_service.tar.gz"
@@ -419,7 +552,6 @@ class TestSimpleSingleCommands(unittest.TestCase):
 
         # test stop
         arguments = {
-            "agent_token": None,
             "customerId": self.customer_id,
             "serviceId": service_id
         }
@@ -427,7 +559,7 @@ class TestSimpleSingleCommands(unittest.TestCase):
             "command": "stop_service",
             "arguments": arguments
         }
-        start_time = datetime.datetime.now()
+        start_time = datetime.datetime.now().replace(microsecond=0)
         req_reply = self._rpc_wait_reply(doc)
         r = req_reply.get_reply()
         self.assertEquals(r["payload"]["return_code"], 0)
@@ -436,40 +568,31 @@ class TestSimpleSingleCommands(unittest.TestCase):
         with open("/tmp/service_stop", "r") as fptr:
             secs = fptr.readline()
         tm = datetime.datetime.utcfromtimestamp(float(secs))
-        self.assertTrue(tm > start_time)
+        self.assertTrue(tm >= start_time)
         shutil.rmtree(service_dir)
 
-    @test_utils.system_changing
-    def test_install_backup_data_set_service(self):
-        """
-        install a service, start it, configure it in two ways, stop it, then
-        delete the directory it was put into
-        """
-        service_id = "asuccess_service"
+    def _backup_data(self, cfg, s_id, u, bucket_name, object_name, file_path,
+                     secondary_name=None):
 
-        nw = datetime.datetime.now()
-        tm_str = nw.strftime("%Y%m%d%H%M%S")
-        container_name = "enstratiustests"
-        dataSourceName = "somename%d" % random.randint(0, 1000) + tm_str
-
-        # test install
         arguments = {
-            "agent_token": None,
-            "customerId": self.customer_id,
-            "serviceId": service_id,
-            "fromCloudId": 1,
-            "runAsUser": "vagrant",
-            "storageAccessKey": os.environ["S3_ACCESS_KEY"],
-            "storageSecretKey": os.environ["S3_SECRET_KEY"],
-            "encryption": "not_used",
-            "encryptionPublicKey": "not_used",
-            "encryptionPrivateKey": "not_user",
-            "serviceImageDirectory": container_name,
-            "serviceImageFile": "success_service.tar.gz"
+            "configuration": cfg,
+            "serviceId": s_id,
+            "primaryCloudId": 1,
+            "runAsUser": u,
+            "primaryApiKey": os.environ["S3_ACCESS_KEY"],
+            "primarySecretKey": os.environ["S3_SECRET_KEY"],
+            "toBackupDirectory": bucket_name,
+            "serviceImageFile": file_path,
+            "dataSourceName": object_name
         }
+        if secondary_name is not None:
+            arguments["secondaryCloudId"] = 1
+            arguments["secondaryRegionId"] = None
+            arguments["secondaryApiKey"] = os.environ["S3_ACCESS_KEY"]
+            arguments["secondarySecretKey"] = os.environ["S3_SECRET_KEY"]
 
         doc = {
-            "command": "install_service",
+            "command": "backup_data_source",
             "arguments": arguments
         }
         req_reply = self._rpc_wait_reply(doc)
@@ -482,36 +605,48 @@ class TestSimpleSingleCommands(unittest.TestCase):
             jd = self._get_job_description(jd["job_id"])
         self.assertEqual(jd["job_status"], "COMPLETE")
 
+    @test_utils.system_changing
+    @test_utils.s3_needed
+    def test_install_backup_data_set_service(self):
+        """
+        install a service, start it, configure it in two ways, stop it, then
+        delete the directory it was put into
+        """
+        service_id = "asuccess_service"
+
+        nw = datetime.datetime.now()
+        tm_str = nw.strftime("%Y%m%d%H%M%S")
+        container_name = "enstratiustests"
+        dataSourceName = "somename%d" % random.randint(0, 1000) + tm_str
+
+        service_id = "asuccess_service"
+        self._install_service(service_id,
+                              self.backup_bucket,
+                              self.simple_service)
+
         service_dir = self.conf_obj.get_service_directory(service_id)
         self.assertTrue(os.path.exists(service_dir))
         self.assertTrue(os.path.exists(os.path.join(service_dir,
-                                                    "bin/enstratiusinitd-configure")))
+                                                    "bin/enstratus-configure")))
         self.assertTrue(os.path.exists(os.path.join(service_dir,
-                                                    "bin/enstratiusinitd-stop")))
+                                                    "bin/enstratus-stop")))
         self.assertTrue(os.path.exists(os.path.join(service_dir,
-                                                    "bin/enstratiusinitd-start")))
+                                                    "bin/enstratus-start")))
 
         configuration_data = """
         This is some configuration data.
         That will be writen over there
         """
 
-         # test install
         arguments = {
-            "agent_token": None,
             "configuration": configuration_data,
-            "customerId": self.customer_id,
             "serviceId": service_id,
-            "inCloudId": 1,
-            "runAsUser": "vagrant",
-            "cloudAccessKey": os.environ["S3_ACCESS_KEY"],
-            "cloudSecretKey": os.environ["S3_SECRET_KEY"],
-            "encryption": "not_used",
-            "encryptionPublicKey": "not_used",
-            "encryptionPrivateKey": "not_used",
+            "primaryCloudId": 1,
+            "runAsUser": self.run_as_user,
+            "primaryApiKey": os.environ["S3_ACCESS_KEY"],
+            "primarySecretKey": os.environ["S3_SECRET_KEY"],
             "toBackupDirectory": "enstratiustests",
             "serviceImageFile": "success_service.tar.gz",
-            "providerRegionId": "us_west_oregon",
             "dataSourceName": dataSourceName
         }
         doc = {
@@ -530,10 +665,10 @@ class TestSimpleSingleCommands(unittest.TestCase):
         shutil.rmtree(service_dir)
 
         cloud = storagecloud.get_cloud_driver(
-            arguments["inCloudId"],
-            arguments["cloudAccessKey"],
-            arguments["cloudSecretKey"],
-            region_id=arguments["providerRegionId"])
+            arguments["primaryCloudId"],
+            arguments["primaryApiKey"],
+            arguments["primarySecretKey"],
+            region_id="us_west_oregon")
 
         container = cloud.get_container(arguments["toBackupDirectory"])
         obj_list = cloud.list_container_objects(container)
@@ -546,3 +681,79 @@ class TestSimpleSingleCommands(unittest.TestCase):
                 cloud.delete_object(o)
 
         self.assertTrue(found)
+
+
+    @test_utils.system_changing
+    @test_utils.s3_needed
+    def test_grant_db_revoke_db(self):
+        """
+        install a service, start it, configure it in two ways, stop it, then
+        delete the directory it was put into
+        """
+        service_id = "asuccess_service" + str(uuid.uuid4())
+        self._install_service(service_id,
+                              self.backup_bucket,
+                              self.simple_service)
+
+        service_dir = self.conf_obj.get_service_directory(service_id)
+        self.assertTrue(os.path.exists(service_dir))
+        self.assertTrue(os.path.exists(
+            os.path.join(service_dir, "bin/enstratus-dbgrant")))
+
+
+        cfg_data =\
+        """
+        This is some sample configuration data that will be passed to the
+        dbgrant file.
+        """ + str(uuid.uuid4())
+
+        arguments = {
+            "customerId": self.customer_id,
+            "configuration": bytearray(cfg_data),
+            "serviceId": service_id
+        }
+        doc = {
+            "command": "grant_database_access",
+            "arguments": arguments
+        }
+        start_time = datetime.datetime.now().replace(microsecond=0)
+        req_reply = self._rpc_wait_reply(doc)
+        r = req_reply.get_reply()
+        self.assertEquals(r["payload"]["return_code"], 0)
+        self.assertTrue(os.path.exists("/tmp/service_start"))
+
+        with open("/tmp/enstratus_dbgrant", "r") as fptr:
+            secs = fptr.readline()
+            parameters = fptr.readline()
+        tm = datetime.datetime.utcfromtimestamp(float(secs))
+        self.assertTrue(tm >= start_time)
+
+        with open("/tmp/enstratus_dbgrant.cfg", "r") as fptr:
+            cfg_data_back = fptr.read()
+        self.assertEqual(cfg_data_back, cfg_data)
+
+        # test revoke
+        arguments = {
+            "configurationData": bytearray(cfg_data),
+            "serviceId": service_id
+        }
+        doc = {
+            "command": "revoke_database_access",
+            "arguments": arguments
+        }
+        start_time = datetime.datetime.now().replace(microsecond=0)
+        req_reply = self._rpc_wait_reply(doc)
+        r = req_reply.get_reply()
+        with open("/tmp/enstratus_dbrevoke", "r") as fptr:
+            secs = fptr.readline()
+            parameters = fptr.readline()
+        tm = datetime.datetime.utcfromtimestamp(float(secs))
+        self.assertTrue(tm >= start_time)
+
+        with open("/tmp/enstratus_dbrevoke.cfg", "r") as fptr:
+            cfg_data_back = fptr.read()
+        self.assertEqual(cfg_data_back, cfg_data)
+
+
+
+

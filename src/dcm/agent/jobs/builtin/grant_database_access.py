@@ -13,6 +13,7 @@
 #  ======================================================================
 
 import os
+from dcm.agent import exceptions
 import dcm.agent.jobs.direct_pass as direct_pass
 
 
@@ -38,20 +39,19 @@ class GrantDBAccess(direct_pass.DirectPass):
             conf, job_id, items_map, name, arguments)
 
     def run(self):
-        # TODO do not allow if imaging
+        if self.conf.is_imaging():
+            raise exceptions.AgentPluginOperationIsImagingException(
+                operation_name=self.name)
         config_file = self.conf.get_temp_file("database.cfg")
         with open(config_file, "w") as fptr:
             fptr.write(self.arguments["configuration"].decode("utf-8"))
         try:
-            self.ordered_param_list = [self.arguments[""],
+            self.ordered_param_list = [self.arguments["serviceId"],
                                        config_file]
             return super(GrantDBAccess, self).run()
         finally:
             if os.path.exists(config_file):
                 os.remove(config_file)
-
-    def cancel(self, reply_rpc, *args, **kwargs):
-        pass
 
 
 def load_plugin(conf, job_id, items_map, name, arguments):

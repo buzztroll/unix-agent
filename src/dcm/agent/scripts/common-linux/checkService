@@ -20,7 +20,7 @@ fi
 
 serviceId=$1
 
-    CHECK="/mnt/services/$serviceId/bin/enstratus-check"
+    CHECK="$DCM_SERVICES_DIR/$serviceId/bin/enstratus-check"
 
 if [ -x "$CHECK" ] ; then
 	status=$("$CHECK" $serviceId)

@@ -67,9 +67,6 @@ class RemoteTester(jobs.Plugin):
             _g_logger.exception("Something went wrong here")
             return {'return_code': 1}
 
-    def cancel(self, reply_rpc, *args, **kwargs):
-        pass
-
 
 def load_plugin(conf, job_id, items_map, name, arguments):
     _g_logger.debug("IN TESTER LOAD")

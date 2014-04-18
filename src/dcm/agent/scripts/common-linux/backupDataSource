@@ -36,7 +36,7 @@ backupFile="$4"
 
 $LOGGER -t "$logTag" backupDataSource "$@"
 
-BACKUP="/mnt/services/$serviceId/bin/enstratus-backupDataSource"
+BACKUP="$DCM_SERVICES_DIR/$serviceId/bin/enstratus-backupDataSource"
 
 if [ ! -x "$BACKUP" ] ; then
 	$LOGGER -t "$logTag" "Unable to find custom backup script ${BACKUP}. Fail."

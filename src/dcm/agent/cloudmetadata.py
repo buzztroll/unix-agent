@@ -84,6 +84,9 @@ def get_cloud_metadata(conf, key):
     try:
         result = None
         if conf.cloud_type == CLOUD_TYPES.Amazon or conf.cloud_type == CLOUD_TYPES.Eucalyptus:
+            if conf.cloud_metadata_url is None:
+                _g_logger.warn("The metadata server is None")
+                return None
             url = conf.cloud_metadata_url + "/" + key
             data = _get_metadata_server_url_data(url)
             result = data
@@ -98,6 +101,9 @@ def get_cloud_metadata(conf, key):
                     result = split_name[2]
         elif conf.cloud_type == CLOUD_TYPES.OpenStack:
             try:
+                if conf.cloud_metadata_url is None:
+                    _g_logger.warn("The metadata server is None")
+                    return None
                 url = conf.cloud_metadata_url
                 json_data = _get_metadata_server_url_data(url)
                 jdict = json.loads(json_data)

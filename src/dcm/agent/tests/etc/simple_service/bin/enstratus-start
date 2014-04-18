@@ -1,0 +1,7 @@
+#!/usr/bin/env bash
+
+fname="/tmp/service_start"
+
+date +%s > $fname
+echo $@ >> $fname
+exit 0

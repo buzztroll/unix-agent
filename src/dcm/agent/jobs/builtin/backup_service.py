@@ -192,9 +192,6 @@ class BackupService(direct_pass.DirectPass):
                  "error_message": "", "return_type": "void"}
         return reply
 
-    def cancel(self, reply_rpc, *args, **kwargs):
-        pass
-
 
 def load_plugin(conf, job_id, items_map, name, arguments):
     return BackupService(conf, job_id, items_map, name, arguments)

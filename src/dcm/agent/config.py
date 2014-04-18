@@ -165,7 +165,6 @@ class AgentConfig(object):
         self.instance_id = None
         self.jr = None
         self.state = "STARTING"
-        self._imaging = False
 
         self.agent_id = None
         self.cloud_id = None
@@ -211,7 +210,7 @@ class AgentConfig(object):
         if self.storage_idfile:
             try:
                 with open(self.storage_idfile, "w") as fptr:
-                    fptr.write(str(self._agent_id))
+                    fptr.write(str(self.agent_id))
             except Exception as ex:
                 _g_logger.exception("Failed to write the agent ID to "
                                     "%s" % self.storage_idfile)

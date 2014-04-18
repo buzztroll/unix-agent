@@ -115,9 +115,6 @@ class ImageServer(direct_pass.DirectPass):
         self._run_with_reties(self.conf.image_server_retrys_max)
         return local_path
 
-    def cancel(self, reply_rpc, *args, **kwargs):
-        pass
-
     def _run_with_reties(self, max_tries):
         tries = 0
         done = False

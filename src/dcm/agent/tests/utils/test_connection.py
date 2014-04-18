@@ -149,7 +149,7 @@ class ReqRepQHolder(object):
             self._recv_q = rq
 
         def set_receiver(self, receive_object):
-            parent_receive_q.register_put_queue(self._recv_q, receive_object)
+            parent_receive_q.set_put_queue(self._recv_q, receive_object)
 
         def send(self, doc):
             self._send_q.put(doc)

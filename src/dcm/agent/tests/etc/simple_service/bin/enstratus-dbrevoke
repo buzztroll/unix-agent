@@ -1,0 +1,13 @@
+#!/usr/bin/env bash
+
+fname="/tmp/enstratus_dbrevoke"
+
+serviceId=$1
+configFile=$2
+
+date +%s > $fname
+echo $@ >> $fname
+
+cp $configFile $fname.cfg
+
+exit 0

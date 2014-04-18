@@ -95,10 +95,10 @@ class BackupDataSource(direct_pass.DirectPass):
             self._service_id = arguments["serviceId"]
             self._config_data = arguments["configuration"]
             self._data_source_name = arguments["dataSourceName"]
-            self._container_name = ["toBackupDirectory"]
+            self._container_name = arguments["toBackupDirectory"]
 
             self.primary_cloud_id = arguments["primaryCloudId"]
-            self.primary_region = getattr(arguments, "primaryRegionId", None)
+            self.primary_region = getattr(arguments, "primaryRegionId", self.conf.region_id)
             self.primary_api_key = arguments["primaryApiKey"]
             self.primary_secret_key = arguments["primarySecretKey"]
             self.primary_endpoint = getattr(arguments, "apiEndpoint", None)
@@ -203,9 +203,6 @@ class BackupDataSource(direct_pass.DirectPass):
                 region_id=self.secondary_region,
                 endpoint=self.secondary_endpoint,
                 account=self.secondary_account)
-
-    def cancel(self, reply_rpc, *args, **kwargs):
-        pass
 
 
 def load_plugin(conf, job_id, items_map, name, arguments):

@@ -31,9 +31,6 @@ class Heartbeat(jobs.Plugin):
         }
         return reply_doc
 
-    def cancel(self, reply_rpc, *args, **kwargs):
-        pass
-
 
 def load_plugin(conf, job_id, items_map, name, arguments):
     return Heartbeat(conf, job_id, items_map, name, arguments)

@@ -43,11 +43,11 @@ class ConfigureService(jobs.Plugin):
             ("The ssl address.",
              False, str),
         "sslPublic":
-            ("The SSL public key.", True, str),
+            ("The SSL public key.", False, str),
         "sslPrivate":
-            ("The SSL private key.", True, str),
+            ("The SSL private key.", False, str),
         "sslChain":
-            ("The SSL CA chain.", True, str),
+            ("The SSL CA chain.", False, str),
     }
 
     def __init__(self, conf, job_id, items_map, name, arguments):

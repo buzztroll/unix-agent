@@ -83,9 +83,9 @@ class _MainQueue(ParentReceiveQObserver):
                 raise Exception("That target is not in use.")
             del self._targets[msg_type]
 
-    def add_target(self, msg_type, target_object):
+    def add_target(self, msg_type, target_object, safe=True):
         with self._lock:
-            if msg_type in self._targets:
+            if safe and msg_type in self._targets:
                 raise Exception("That target is already in use. %s" % msg_type)
             self._targets[msg_type] = target_object
 
@@ -143,6 +143,10 @@ def create_put_q(name):
 
 def register_put_queue(put_q, handler_obj):
     _g_main_q_maker.add_target(put_q._name, handler_obj)
+
+
+def set_put_queue(put_q, handler_obj):
+    _g_main_q_maker.add_target(put_q._name, handler_obj, safe=False)
 
 
 def unregister_put_queue(put_q):
