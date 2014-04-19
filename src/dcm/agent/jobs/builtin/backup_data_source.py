@@ -43,6 +43,10 @@ class BackupDataSource(direct_pass.DirectPass):
         "primarySecretKey": ("The API secret for the backup cloud", True, str),
         "configuration": ("The configuration data that will be passed to "
                           "enstratus-backupDataSource", True, str),
+        "secondaryEndpoint": ("The endpoint for the off site account",
+                             False, str),
+        "secondaryAccount": ("The account for the off site cloud.",
+                             False, str),
         "secondaryCloudId": ("The cloud ID for the secondary backup cloud",
                              False, str),
         "secondaryRegionId": ("The region ID for the secondary cloud",
@@ -91,47 +95,6 @@ class BackupDataSource(direct_pass.DirectPass):
         super(BackupDataSource, self).__init__(
             conf, job_id, items_map, name, arguments)
 
-        try:
-            self._service_id = arguments["serviceId"]
-            self._config_data = arguments["configuration"]
-            self._data_source_name = arguments["dataSourceName"]
-            self._container_name = arguments["toBackupDirectory"]
-
-            self.primary_cloud_id = arguments["primaryCloudId"]
-            self.primary_region = getattr(arguments, "primaryRegionId", self.conf.region_id)
-            self.primary_api_key = arguments["primaryApiKey"]
-            self.primary_secret_key = arguments["primarySecretKey"]
-            self.primary_endpoint = getattr(arguments, "apiEndpoint", None)
-            self.primary_account = getattr(arguments, "apiAccount", None)
-            if "storageDelegate" in arguments:
-            # if the storage delegate exists we will use it instead of the
-            # primary info
-                self.primary_cloud_id = arguments["storageDelegate"]
-                self.primary_region = None  # for whatever reason there is no region ID here
-                self.primary_api_key = arguments["storagePublicKey"]
-                self.primary_secret_key = arguments["storagePrivateKey"]
-                self.primary_endpoint = getattr(arguments, "storageEndpoint", None)
-                self.primary_account = getattr(arguments, "storageAccount", None)
-
-            self.secondary_cloud_id = getattr(arguments, "secondaryCloudId", None)
-            if self.secondary_cloud_id:
-                self.secondary_region = getattr(arguments, "secondaryRegionId", None)
-                self.secondary_api_key = arguments["secondaryApiKey"]
-                self.secondary_secret_key = arguments["secondarySecretKey"]
-                self.secondary_endpoint = getattr(arguments, "secondaryApiEndpoint", None)
-                self.secondary_account = getattr(arguments, "secondaryApiAccount", None)
-
-            if "secondaryStorageDelegate" in arguments:
-                self.secondary_cloud_id = arguments["secondaryStorageDelegate"]
-                self.secondary_region = None
-                self.secondary_api_key = arguments["secondaryStoragePublicKey"]
-                self.secondary_secret_key = arguments["secondaryStoragePrivateKey"]
-                self.secondary_endpoint = getattr(arguments, "secondaryStorageEndpoint", None)
-                self.secondary_account = getattr(arguments, "secondaryStorageAccount", None)
-        except KeyError as ke:
-            raise exceptions.AgentPluginConfigException(
-                "The plugin %s requires the option %s" % (name, ke.message))
-
     def get_safe_name(self, name):
         s = ""
         for c in name.lower():
@@ -142,7 +105,7 @@ class BackupDataSource(direct_pass.DirectPass):
         return s
 
     def run(self):
-        service_dir = self.conf.get_service_directory(self._service_id)
+        service_dir = self.conf.get_service_directory(self.args.serviceId)
 
         config_file_path = os.path.join(
             service_dir, "cfg", "enstratiusinitd.cfg")
@@ -152,12 +115,12 @@ class BackupDataSource(direct_pass.DirectPass):
             raise exceptions.AgentJobException(msg)
 
         with open(config_file_path, "w") as fptr:
-            fptr.write(self._config_data.decode("utf-8"))
+            fptr.write(self.args.configuration.decode("utf-8"))
 
         tm_str = utils.get_time_backup_string()
         backup_file = "%s-%s-%s.zip" % \
-                      (self._service_id,
-                       self.get_safe_name(self._data_source_name),
+                      (self.args.serviceId,
+                       self.get_safe_name(self.args.dataSourceName),
                        tm_str)
 
         backup_path = os.path.join(self.conf.storage_temppath,
@@ -165,12 +128,12 @@ class BackupDataSource(direct_pass.DirectPass):
 
         script_name = self.items_map["script_name"]
         command = [self.conf.get_script_location(script_name),
-                   self._service_id,
-                   self._data_source_name,
+                   self.args.serviceId,
+                   self.args.dataSourceName,
                    config_file_path,
                    backup_path]
 
-        cwd = self.conf.get_service_directory(self._service_id)
+        cwd = self.conf.get_service_directory(self.args.serviceId)
         (stdout, stderr, rc) = utils.run_command(self.conf, command, cwd=cwd)
         if rc != 0:
             msg = "Unable to backup data source to " + backup_path + ": " + \
@@ -181,28 +144,58 @@ class BackupDataSource(direct_pass.DirectPass):
         _g_logger.info("Uploading backup %s to primary storage cloud." %
                        backup_path)
 
-        storagecloud.upload(
-            self.primary_cloud_id,
-            backup_path,
-            self._container_name,
-            backup_file,
-            self.primary_api_key,
-            self.primary_secret_key,
-            region_id=self.primary_region,
-            endpoint=self.primary_endpoint,
-            account=self.primary_account)
+        primary_cloud_id = int(self.args.primaryCloudId)
+        primary_api_key = self.args.primaryApiKey
+        primary_secret_key = self.args.primarySecretKey
+        primary_endpoint = self.args.apiEndpoint
+        primary_account = self.args.apiAccount
+        primary_region = self.args.primaryRegionId
+        if primary_region is None:
+            primary_region = self.conf.region_id
 
-        if self.secondary_cloud_id:
+        if self.args.storageDelegate:
+            primary_cloud_id = int(self.args.storageDelegate)
+            primary_api_key = self.args.storageApiKey
+            primary_secret_key = self.args.storageSecretKey
+            primary_endpoint = self.args.storageEndpoint
+            primary_account = self.args.storageAccount
+
+        storagecloud.upload(
+            primary_cloud_id,
+            backup_path,
+            self.args.toBackupDirectory,
+            backup_file,
+            primary_api_key,
+            primary_secret_key,
+            region_id=primary_region,
+            endpoint=primary_endpoint,
+            account=primary_account)
+
+        secondary_cloud_id = self.args.secondaryCloudId
+        secondary_api_key = self.args.secondaryApiKey
+        secondary_secret_key = self.args.secondarySecretKey
+        secondary_endpoint = self.args.secondaryEndpoint
+        secondary_account = self.args.secondaryAccount
+        secondary_region = self.args.secondaryRegionId
+
+        if self.args.secondaryStorageDelegate:
+            secondary_cloud_id = self.args.secondaryStorageDelegate
+            secondary_endpoint = self.args.secondaryStorageEndpoint
+            secondary_account = self.args.secondaryStorageAccount
+            secondary_api_key = self.args.secondaryStorageApiKey
+            secondary_secret_key = self.args.secondaryStorageSecretKey
+
+        if secondary_cloud_id:
             storagecloud.upload(
-                self.secondary_cloud_id,
+                int(secondary_cloud_id),
                 backup_path,
-                self._container_name,
+                self.args.toBackupDirectory,
                 backup_file,
-                self.secondary_api_key,
-                self.secondary_secret_key,
-                region_id=self.secondary_region,
-                endpoint=self.secondary_endpoint,
-                account=self.secondary_account)
+                secondary_api_key,
+                secondary_secret_key,
+                region_id=secondary_region,
+                endpoint=secondary_endpoint,
+                account=secondary_account)
 
 
 def load_plugin(conf, job_id, items_map, name, arguments):

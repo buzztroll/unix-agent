@@ -36,37 +36,35 @@ class TestProtocolCommands(unittest.TestCase, reply.ReplyObserverInterface):
         if "S3_SECRET_KEY" not in os.environ or "S3_ACCESS_KEY" not in os.environ:
             return
 
-        cls.backup_bucket = "enstartiustestone"
-        cls.backup_bucket2 = "enstartiustesttwo"
+        cls.backup_bucket = "enstartiustestonetwo" + str(uuid.uuid4()).split("-")[0]
+        cls.backup_bucket2 = "enstartiustesttwotwo"+ str(uuid.uuid4()).split("-")[0]
         cls.default_s3_region = "us_west_oregon"
+        cls.default_s3_region2 = "us_west"
         cls.simple_service = "asimple_service.tar.gz"
 
-        cloud = storagecloud.get_cloud_driver(
-            1,
-            os.environ["S3_ACCESS_KEY"],
-            os.environ["S3_SECRET_KEY"],
-            region_id=cls.default_s3_region)
-        try:
-            cloud.create_container(cls.backup_bucket)
-        except LibcloudError as ex:
-            pass
-
-        try:
-            cloud.create_container(cls.backup_bucket2)
-        except LibcloudError as ex:
-            pass
-
-        # create the service tarball
         etc_dir = os.path.dirname(os.path.dirname(__file__))
         tar_dir = tempfile.mkdtemp()
         tar_path = os.path.join(tar_dir, cls.simple_service)
         with tarfile.open(tar_path, "w:gz") as tar:
             for fname in os.listdir(os.path.join(etc_dir, "etc", "simple_service")):
                 tar.add(os.path.join(etc_dir, "etc", "simple_service", fname), arcname=fname)
-        print tar_path
 
-        container = cloud.get_container(cls.backup_bucket)
-        cloud.upload_object(tar_path, container, cls.simple_service)
+        check_list = [(cls.default_s3_region, cls.backup_bucket),
+                      (cls.default_s3_region2, cls.backup_bucket2)]
+        for region, bucket_name in check_list:
+            cloud = storagecloud.get_cloud_driver(
+                1,
+                os.environ["S3_ACCESS_KEY"],
+                os.environ["S3_SECRET_KEY"],
+                region_id=region)
+            try:
+                cloud.create_container(bucket_name)
+            except LibcloudError as ex:
+                pass
+
+            container = cloud.get_container(bucket_name)
+            cloud.upload_object(tar_path, container, cls.simple_service)
+
         shutil.rmtree(tar_dir)
 
     @classmethod
@@ -523,7 +521,9 @@ class TestProtocolCommands(unittest.TestCase, reply.ReplyObserverInterface):
         self.assertEquals(r["payload"]["reply_type"], "string_array")
         service_array = r["payload"]["reply_object"]
 
-        self.assertEqual([service_id, 'OK'], service_array)
+        self.assertIn(service_id, service_array)
+        self.assertEqual(service_array[service_array.index(service_id) + 1],
+                         'OK')
 
         # install data source
         arguments = {
@@ -571,25 +571,46 @@ class TestProtocolCommands(unittest.TestCase, reply.ReplyObserverInterface):
         self.assertTrue(tm >= start_time)
         shutil.rmtree(service_dir)
 
-    def _backup_data(self, cfg, s_id, u, bucket_name, object_name, file_path,
-                     secondary_name=None):
+    def _backup_data(self,
+                     s_id,
+                     file_path,
+                     use_storage=False,
+                     use_offsite=False):
+
+        object_name = "objname" + str(uuid.uuid4()).split("-")[0]
+        cfg = """
+        A bunch of config data
+        """ + str(uuid.uuid4())
+
+        check_list = [(self.default_s3_region, self.backup_bucket)]
 
         arguments = {
             "configuration": cfg,
             "serviceId": s_id,
             "primaryCloudId": 1,
-            "runAsUser": u,
+            "runAsUser": self.run_as_user,
             "primaryApiKey": os.environ["S3_ACCESS_KEY"],
             "primarySecretKey": os.environ["S3_SECRET_KEY"],
-            "toBackupDirectory": bucket_name,
+            "toBackupDirectory": self.backup_bucket,
             "serviceImageFile": file_path,
-            "dataSourceName": object_name
+            "dataSourceName": object_name,
+            "primaryRegionId": self.default_s3_region
         }
-        if secondary_name is not None:
+        if use_storage:
+            arguments["storageDelegate"] = 1
+            arguments["storageApiKey"] = os.environ["S3_ACCESS_KEY"]
+            arguments["storageSecretKey"]= os.environ["S3_SECRET_KEY"]
+
+        if use_offsite:
+            check_list.append((self.default_s3_region2, self.backup_bucket2))
             arguments["secondaryCloudId"] = 1
-            arguments["secondaryRegionId"] = None
             arguments["secondaryApiKey"] = os.environ["S3_ACCESS_KEY"]
-            arguments["secondarySecretKey"] = os.environ["S3_SECRET_KEY"]
+            arguments["secondarySecretKey"]= os.environ["S3_SECRET_KEY"]
+            arguments["secondaryRegionId"]= self.default_s3_region2
+            if use_storage:
+                arguments["secondaryStorageDelegate"] = 1
+                arguments["secondaryStorageApiKey"] = os.environ["S3_ACCESS_KEY"]
+                arguments["secondaryStorageSecretKey"]= os.environ["S3_SECRET_KEY"]
 
         doc = {
             "command": "backup_data_source",
@@ -604,6 +625,79 @@ class TestProtocolCommands(unittest.TestCase, reply.ReplyObserverInterface):
         while jd["job_status"] in ["WAITING", "RUNNING"]:
             jd = self._get_job_description(jd["job_id"])
         self.assertEqual(jd["job_status"], "COMPLETE")
+
+        for region, bucket in check_list:
+            cloud = storagecloud.get_cloud_driver(
+                1,
+                os.environ["S3_ACCESS_KEY"],
+                os.environ["S3_SECRET_KEY"],
+                region_id=region)
+
+            found = False
+            container = cloud.get_container(bucket)
+            obj_list = cloud.list_container_objects(container)
+            for obj in obj_list:
+                ndx = obj.name.find(object_name)
+                if ndx >= 0:
+                    found = True
+            self.assertTrue(found)
+
+    @test_utils.s3_needed
+    def test_backup_data_just_one(self):
+        service_id = "aservice_for_backup" + str(uuid.uuid4())
+        self._install_service(service_id,
+                              self.backup_bucket,
+                              self.simple_service)
+
+        service_dir = self.conf_obj.get_service_directory(service_id)
+        self.assertTrue(os.path.exists(service_dir))
+        self.assertTrue(os.path.exists(
+            os.path.join(service_dir, "bin/enstratus-dbgrant")))
+
+        self._backup_data(service_id, service_id + ".tar.gz")
+
+    @test_utils.s3_needed
+    def test_backup_data_just_one_storage(self):
+        service_id = "aservice_for_backup_store" + str(uuid.uuid4())
+        self._install_service(service_id,
+                              self.backup_bucket,
+                              self.simple_service)
+
+        service_dir = self.conf_obj.get_service_directory(service_id)
+        self.assertTrue(os.path.exists(service_dir))
+        self.assertTrue(os.path.exists(
+            os.path.join(service_dir, "bin/enstratus-dbgrant")))
+
+        self._backup_data(service_id, service_id + ".tar.gz", use_storage=True)
+
+    # offsite will not work with S3 because the bucket names are the same
+    # @test_utils.s3_needed
+    # def test_backup_data_offsite(self):
+    #     service_id = "aservice_for_twobackup" + str(uuid.uuid4())
+    #     self._install_service(service_id,
+    #                           self.backup_bucket,
+    #                           self.simple_service)
+    #
+    #     service_dir = self.conf_obj.get_service_directory(service_id)
+    #     self.assertTrue(os.path.exists(service_dir))
+    #     self.assertTrue(os.path.exists(
+    #         os.path.join(service_dir, "bin/enstratus-dbgrant")))
+    #
+    #     self._backup_data(service_id, service_id + ".tar.gz", use_offsite=True)
+    #
+    # @test_utils.s3_needed
+    # def test_backup_data_offsite_storage(self):
+    #     service_id = "aservice_for_twobackup_storage" + str(uuid.uuid4())
+    #     self._install_service(service_id,
+    #                           self.backup_bucket,
+    #                           self.simple_service)
+    #
+    #     service_dir = self.conf_obj.get_service_directory(service_id)
+    #     self.assertTrue(os.path.exists(service_dir))
+    #     self.assertTrue(os.path.exists(
+    #         os.path.join(service_dir, "bin/enstratus-dbgrant")))
+    #
+    #     self._backup_data(service_id, service_id + ".tar.gz", use_offsite=True, use_storage=True)
 
     @test_utils.system_changing
     @test_utils.s3_needed
