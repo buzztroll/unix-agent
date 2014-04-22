@@ -37,8 +37,7 @@ class StartServices(jobs.Plugin):
         for service in service_list:
             command = [self.exe, service]
             try:
-                cwd = self.conf.get_service_directory(
-                    self.arguments["serviceId"])
+                cwd = self.conf.get_service_directory(service)
                 (stdout, stderr, rc) = utils.run_command(
                     self.conf, command, cwd=cwd)
                 if rc != 0:

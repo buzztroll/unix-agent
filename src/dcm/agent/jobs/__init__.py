@@ -185,7 +185,7 @@ def parse_plugin_doc(conf, name):
 
     section_name = 'plugin:' + name
     for s in section:
-        p = re.compile(s)
+        p = re.compile(s + "$")
         if p.match(section_name):
             _g_logger.debug(
                 "load_plugin: found a match %s: %s" % (s, section_name))

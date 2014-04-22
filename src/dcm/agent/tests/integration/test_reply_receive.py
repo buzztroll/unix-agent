@@ -591,6 +591,62 @@ class TestProtocolCommands(unittest.TestCase, reply.ReplyObserverInterface):
         self.assertTrue(tm >= start_time)
         shutil.rmtree(service_dir)
 
+    @test_utils.system_changing
+    @test_utils.s3_needed
+    def test_start_services(self):
+        """
+        install a service, start it, configure it in two ways, stop it, then
+        delete the directory it was put into
+        """
+        service_id1 = "aone_service" + str(uuid.uuid4()).split("-")[0]
+        self._install_service(service_id1,
+                              self.backup_bucket,
+                              self.simple_service)
+
+        service_id2 = "atwo_service" + str(uuid.uuid4()).split("-")[0]
+        self._install_service(service_id2,
+                              self.backup_bucket,
+                              self.simple_service)
+
+        # test start
+        arguments = {
+            "serviceIds": [service_id1, service_id2]
+        }
+        doc = {
+            "command": "start_services",
+            "arguments": arguments
+        }
+        start_time = datetime.datetime.now().replace(microsecond=0)
+        req_reply = self._rpc_wait_reply(doc)
+        r = req_reply.get_reply()
+        self.assertEquals(r["payload"]["return_code"], 0)
+        self.assertTrue(os.path.exists("/tmp/service_start"))
+
+        with open("/tmp/service_start", "r") as fptr:
+            secs = fptr.readline()
+        tm = datetime.datetime.utcfromtimestamp(float(secs))
+        self.assertTrue(tm >= start_time)
+
+        # get service state
+        arguments = {
+        }
+        doc = {
+            "command": "get_service_states",
+            "arguments": arguments
+        }
+        req_reply = self._rpc_wait_reply(doc)
+        r = req_reply.get_reply()
+        self.assertEquals(r["payload"]["return_code"], 0)
+        self.assertEquals(r["payload"]["reply_type"], "string_array")
+        service_array = r["payload"]["reply_object"]
+
+        self.assertIn(service_id1, service_array)
+        self.assertIn(service_id2, service_array)
+        self.assertEqual(service_array[service_array.index(service_id1) + 1],
+                         'OK')
+        self.assertEqual(service_array[service_array.index(service_id2) + 1],
+                         'OK')
+
     def _backup_data(self,
                      s_id,
                      file_path,
