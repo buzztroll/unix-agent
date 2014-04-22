@@ -41,3 +41,5 @@ function exit_with_pipe_value() {
 function sudo() {
 	/usr/bin/sudo env PATH=${PATH} "$@"
 }
+
+REAL_SUDO=`which sudo`

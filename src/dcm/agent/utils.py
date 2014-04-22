@@ -202,8 +202,7 @@ def get_config_files(base_dir=None, conffile=None):
         if os.path.exists(f):
             locations.append(f)
         else:
-            # todo log a warning
-            pass
+            _g_logger.warn("Config file locations %s does not exist" % f)
 
     return locations
 

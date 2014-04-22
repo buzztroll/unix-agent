@@ -34,8 +34,10 @@ class TestProtocolCommands(unittest.TestCase, reply.ReplyObserverInterface):
 
     @classmethod
     def _setup_s3(cls):
-        cls.backup_bucket = "enstartiustestonetwo" + str(uuid.uuid4()).split("-")[0]
-        cls.backup_bucket2 = "enstartiustesttwotwo"+ str(uuid.uuid4()).split("-")[0]
+        cls.backup_bucket = "enstartiustestonetwo" + \
+                            str(uuid.uuid4()).split("-")[0]
+        cls.backup_bucket2 = "enstartiustesttwotwo"+ \
+                             str(uuid.uuid4()).split("-")[0]
         cls.default_s3_region = "us_west_oregon"
         cls.default_s3_region2 = "us_west"
         cls.simple_service = "asimple_service.tar.gz"
@@ -47,8 +49,10 @@ class TestProtocolCommands(unittest.TestCase, reply.ReplyObserverInterface):
         tar_dir = tempfile.mkdtemp()
         tar_path = os.path.join(tar_dir, cls.simple_service)
         with tarfile.open(tar_path, "w:gz") as tar:
-            for fname in os.listdir(os.path.join(etc_dir, "etc", "simple_service")):
-                tar.add(os.path.join(etc_dir, "etc", "simple_service", fname), arcname=fname)
+            for fname in os.listdir(
+                    os.path.join(etc_dir, "etc", "simple_service")):
+                tar.add(os.path.join(etc_dir, "etc",
+                                     "simple_service", fname), arcname=fname)
 
         check_list = [(cls.default_s3_region, cls.backup_bucket),
                       (cls.default_s3_region2, cls.backup_bucket2)]
@@ -125,6 +129,7 @@ class TestProtocolCommands(unittest.TestCase, reply.ReplyObserverInterface):
 
         test_conf_path = os.path.join(self.test_base_path, "etc", "agent.conf")
         self.conf_obj = config.AgentConfig([test_conf_path])
+        utils.verify_config_file(self.conf_obj)
         # script_dir must be forced to None so that we get the built in dir
         service._pre_threads(self.conf_obj, ["-c", test_conf_path])
         self.disp = dispatcher.Dispatcher(self.conf_obj)
@@ -399,6 +404,34 @@ class TestProtocolCommands(unittest.TestCase, reply.ReplyObserverInterface):
         self._install_service(service_id, self.backup_bucket,
                               self.simple_service, other_storage=True)
 
+        configuration_data = """test config data"""
+        arguments = {
+            "customerId": self.customer_id,
+            "serviceId": service_id,
+            "cloudId": 1,
+            "runAsUser": self.run_as_user,
+            "apiAccessKey": os.environ["S3_ACCESS_KEY"],
+            "apiSecretKey": os.environ["S3_SECRET_KEY"],
+            "configuration": configuration_data,
+            "imageDirectory": "enstratiustests",
+            "dataSourceImage": "success_service.tar.gz",
+            "storagePublicKey": os.environ["S3_ACCESS_KEY"],
+            "storagePrivateKey": os.environ["S3_SECRET_KEY"],
+            "storageDelegate": 1
+        }
+        doc = {
+            "command": "install_data_source",
+            "arguments": arguments
+        }
+        req_reply = self._rpc_wait_reply(doc)
+        r = req_reply.get_reply()
+        self.assertEquals(r["payload"]["return_code"], 0)
+        self.assertEquals(r["payload"]["reply_type"], "job_description")
+        jd = r["payload"]["reply_object"]
+        while jd["job_status"] in ["WAITING", "RUNNING"]:
+            jd = self._get_job_description(jd["job_id"])
+        self.assertEqual(jd["job_status"], "COMPLETE")
+
     @test_utils.system_changing
     @test_utils.s3_needed
     def test_install_start_stop_configure_service(self):
@@ -590,6 +623,16 @@ class TestProtocolCommands(unittest.TestCase, reply.ReplyObserverInterface):
         tm = datetime.datetime.utcfromtimestamp(float(secs))
         self.assertTrue(tm >= start_time)
         shutil.rmtree(service_dir)
+
+
+    @test_utils.system_changing
+    @test_utils.s3_needed
+    def test_install_service_storage_delegate(self):
+        service_id1 = "aotherstorage" + str(uuid.uuid4()).split("-")[0]
+        self._install_service(service_id1,
+                              self.backup_bucket,
+                              self.simple_service,
+                              other_storage=True)
 
     @test_utils.system_changing
     @test_utils.s3_needed
@@ -870,7 +913,6 @@ class TestProtocolCommands(unittest.TestCase, reply.ReplyObserverInterface):
         self.assertTrue(os.path.exists(
             os.path.join(service_dir, "bin/enstratus-dbgrant")))
 
-
         cfg_data =\
         """
         This is some sample configuration data that will be passed to the
@@ -995,3 +1037,68 @@ class TestProtocolCommands(unittest.TestCase, reply.ReplyObserverInterface):
     @test_utils.s3_needed
     def test_backup_service_storage(self):
         self._backup_service(storage_delegate=True)
+
+    def _upload_enstratius_config_scripts(self, files_uuids):
+        # load up a bunch of scripts that will be downloaded and run.
+        # the scripts just echo a uuid to a file and after config
+        # the test will check each file for the right uuid
+        cloud = storagecloud.get_cloud_driver(
+            1,
+            os.environ["S3_ACCESS_KEY"],
+            os.environ["S3_SECRET_KEY"],
+            region_id=self.default_s3_region)
+
+        scripts = []
+        for f, u in files_uuids:
+            osf, tmp_path = tempfile.mkstemp()
+            os.write(osf, "#!/usr/bin/env bash")
+            os.write(osf, os.linesep)
+            os.write(osf, "echo %s > /tmp/%s" % (u, f))
+            os.write(osf, os.linesep)
+            os.write(osf, "exit 0")
+            os.write(osf, os.linesep)
+            os.close(osf)
+
+            container = cloud.get_container(self.backup_bucket)
+            cloud.upload_object(tmp_path, container, f)
+            scripts.append(os.path.join(self.backup_bucket, f))
+        return scripts
+
+    @test_utils.system_changing
+    @test_utils.s3_needed
+    def test_configure_server_with_enstratius(self):
+        files_uuids = [("script_run"+str(uuid.uuid4()), str(uuid.uuid4())),
+            ("script_run"+str(uuid.uuid4()), str(uuid.uuid4())),
+            ("script_run"+str(uuid.uuid4()), str(uuid.uuid4()))]
+
+        script_files = self._upload_enstratius_config_scripts(files_uuids)
+        arguments = {
+            "configType": "ENSTRATUS",
+            "providerRegionId": self.default_s3_region,
+            "storageDelegate": 1,
+            "scriptFiles": script_files,
+            "storagePublicKey": os.environ["S3_ACCESS_KEY"],
+            "storagePrivateKey": os.environ["S3_SECRET_KEY"],
+            "personalityFiles": [],
+        }
+        doc = {
+            "command": "configure_server_16",
+            "arguments": arguments
+        }
+        req_reply = self._rpc_wait_reply(doc)
+        r = req_reply.get_reply()
+        self.assertEquals(r["payload"]["return_code"], 0)
+        self.assertEquals(r["payload"]["reply_type"], "job_description")
+
+        jd = r["payload"]["reply_object"]
+        while jd["job_status"] in ["WAITING", "RUNNING"]:
+            jd = self._get_job_description(jd["job_id"])
+        self.assertEqual(jd["job_status"], "COMPLETE")
+
+        for f, u in files_uuids:
+            f_path = os.path.join("/tmp", f)
+            print f_path
+            self.assertTrue(os.path.exists(f_path))
+            with open(f_path, "r") as fptr:
+                line = fptr.readline().strip()
+                self.assertEqual(line, u)

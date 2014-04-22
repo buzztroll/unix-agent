@@ -18,13 +18,6 @@ import dcm.agent.utils as utils
 import dcm.agent.jobs as jobs
 
 
-class DeviceTypes(object):
-    ROOT = "ROOT"
-    EPHEMERAL = "EPHEMERAL"
-    SERVICE = "SERVICE"
-    CUSTOM = "CUSTOM"
-
-
 class GetDeviceMappings(jobs.Plugin):
 
     protocol_arguments = {}

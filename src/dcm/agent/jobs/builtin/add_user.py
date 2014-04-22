@@ -34,17 +34,13 @@ class AddUser(direct_pass.DirectPass):
         super(AddUser, self).__init__(
             conf, job_id, items_map, name, arguments)
 
-        try:
-            self.ordered_param_list = [arguments["userId"],
-                                       arguments["userId"],
-                                       arguments["firstName"],
-                                       arguments["lastName"],
-                                       arguments["administrator"],
-                                       arguments["password"]]
-            self.ssh_public_key = arguments["authentication"]
-        except KeyError as ke:
-            raise exceptions.AgentPluginConfigException(
-                "The plugin %s requires the option %s" % (name, ke.message))
+        self.ordered_param_list = [arguments["userId"],
+                                   arguments["userId"],
+                                   arguments["firstName"],
+                                   arguments["lastName"],
+                                   arguments["administrator"],
+                                   arguments["password"]]
+        self.ssh_public_key = arguments["authentication"]
 
         if not arguments['password']:
             self.arguments["password"] = utils.generate_password()
@@ -60,7 +56,7 @@ class AddUser(direct_pass.DirectPass):
             return super(AddUser, self).run()
         finally:
             if os.path.exists(key_file):
-                os.remove(key_file)
+                utils.secure_delete(self.conf, key_file)
 
 
 def load_plugin(conf, job_id, items_map, name, arguments):

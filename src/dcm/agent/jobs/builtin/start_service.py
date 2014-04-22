@@ -31,13 +31,9 @@ class StartService(jobs.Plugin):
             conf, job_id, items_map, name, arguments)
 
         script_name = items_map["script_name"]
-        try:
-            self.command = [conf.get_script_location(script_name),
-                            arguments["serviceId"]]
-            self.cwd = self.conf.get_service_directory(arguments["serviceId"])
-        except KeyError as ke:
-            raise exceptions.AgentPluginConfigException(
-                "The plugin %s requires the option %s" % (name, ke.message))
+        self.command = [conf.get_script_location(script_name),
+                        arguments["serviceId"]]
+        self.cwd = self.conf.get_service_directory(arguments["serviceId"])
 
     def run(self):
         (stdout, stderr, rc) = utils.run_command(

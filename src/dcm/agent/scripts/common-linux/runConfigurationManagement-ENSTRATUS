@@ -2,8 +2,12 @@
 
 set -u
 
+DIRNAME=`dirname $0`
+. "$DIRNAME/common_mod"
+BASENAME=`basename $0`
+
 logTag="runConfigurationManagement-ENSTRATUS"
-LOGGER=/enstratus/bin/log
+LOGGER=$DCM_BASEDIR/bin/log
 
 if [ $# -lt 3 ] ; then
    $LOGGER -t "$logTag" "Syntax: runConfigurationManagement-ENSTRATUS RUN_AS_USER CUSTOMER_ID RUN_LIST"
@@ -37,12 +41,12 @@ BOOT_SCRIPT=`basename $FIRST_BOOT`
 
 $LOGGER -t "$logTag" "Executing $RUN_LIST script as $RUN_AS_USER."
 
-sudo -u $RUN_AS_USER ./${BOOT_SCRIPT}  > /dev/null 2>&1
-
+$REAL_SUDO -u $RUN_AS_USER ./${BOOT_SCRIPT}
 EXIT=$?
 
 if [[ $EXIT != 0 ]]; then
         echo "configuration run failed: $EXIT" 2>&1 | $LOGGER -t "$logTag"
+        echo "sudo -u $RUN_AS_USER ./${BOOT_SCRIPT}  > /dev/null 2>&1"
         exit 99
 else
         $LOGGER -t "$logTag" "Finished running configuration management for enStratus."

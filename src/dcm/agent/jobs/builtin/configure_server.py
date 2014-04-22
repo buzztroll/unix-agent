@@ -16,54 +16,55 @@ import logging
 import os
 import shutil
 from dcm.agent import exceptions, utils, storagecloud
-
-import dcm.agent.jobs.direct_pass as direct_pass
+import dcm.agent.jobs as jobs
 
 
 _g_logger = logging.getLogger(__name__)
 
 
-class ConfigureServer(direct_pass.DirectPass):
+class ConfigureServer(jobs.Plugin):
 
     protocol_arguments = {
         "configType":
             ("", True, str),
         "authId":
-            ("", True, str),
+            ("", False, str),
         "configurationData":
-            ("", True, str),
+            ("", False, str),
         "encryptedConfigToken":
-            ("", True, str),
+            ("", False, str),
         "encryptedAuthSecret":
-            ("", True, str),
+            ("", False, str),
         "endpoint":
-            ("", True, str),
+            ("", False, str),
         "providerRegionId":
-            ("", True, str),
+            ("", False, str),
+        "runAsUser":
+            ("", False, str),
         "storageDelegate":
-            ("", True, str),
+            ("", False, str),
         "storageEndpoint":
-            ("", True, str),
+            ("", False, str),
         "storageAccount":
-            ("", True, str),
+            ("", False, str),
         "scriptFiles":
-            ("", True, str),
+            ("", False, list),
         "storagePublicKey":
-            ("", True, str),
+            ("", False, str),
         "storagePrivateKey":
-            ("", True, str),
+            ("", False, str),
         "environmentId":
-            ("", True, str),
+            ("", False, str),
         "personalityFiles":
-            ("", True, str),
+            ("", False, str),
         "configClientName":
-            ("", True, str),
+            ("", False, str),
         "configCert":
-            ("", True, str),
+            ("", False, str),
         "runListIds":
-            ("", True, str),
+            ("", False, str),
         "parameterList":
-            ("", True, str),
+            ("", False, str),
     }
 
     def __init__(self, conf, job_id, items_map, name, arguments):
@@ -209,7 +210,7 @@ class ConfigureServer(direct_pass.DirectPass):
                        self.args.runAsUser,
                        self.conf.customer_id,
                        temp_script_path]
-                (rc, stdout, stderr) = utils.run_command(self.conf, cmd)
+                (stdout, stderr, rc) = utils.run_command(self.conf, cmd)
                 if rc != 0:
                     raise exceptions.AgentPluginOperationException(
                         "Script %s failed" % script_name)
@@ -220,17 +221,20 @@ class ConfigureServer(direct_pass.DirectPass):
             shutil.rmtree(temp_dir, ignore_errors=True)
 
     def run(self):
-        if self.conf.is_imaging:
+        if self.conf.is_imaging():
             raise exceptions.AgentPluginOperationIsImagingException(
                 operation_name=self.name)
 
         _g_logger.info("Running configuration management of type " +
                        self.args.configType)
 
+        if self.args.runAsUser is None:
+            self.args.runAsUser = self.conf.system_user
+
         if self.name == "configure_server" or self.name == "configure_server_15":
             (stdout, stderr, rc) = self.configure_server_legacy()
         elif self.name == "configure_server_16":
-            if self.args.configType.upper() == "ENSTRATUS":
+            if self.args.configType.upper() != "ENSTRATUS":
                 (stdout, stderr, rc) = self.configure_server_legacy()
             else:
                 (stdout, stderr, rc) = self.configure_server_with_es()
