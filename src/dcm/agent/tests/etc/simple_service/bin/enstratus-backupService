@@ -1,0 +1,12 @@
+#!/usr/bin/env bash
+
+fname="/tmp/service_backup"
+
+serviceId=$1
+backupFile=$2
+
+date +%s > $fname
+echo "$@" >> $fname
+
+echo $@ > $backupFile
+exit 0

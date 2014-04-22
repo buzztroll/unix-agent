@@ -10,12 +10,12 @@ class JobRunnerWorker(multiprocessing.Process):
 
     def __init__(self, pipe):
         super(JobRunnerWorker, self).__init__()
-        _g_logger.debug("Child job runner starting")
+        _g_logger.info("Child job runner starting")
         self._pipe = pipe
         self._exit = multiprocessing.Event()
 
     def done(self):
-        _g_logger.debug("Child job runner shutting down")
+        _g_logger.info("Child job runner shutting down")
         self._exit.set()
         self._pipe.close()
 
@@ -28,7 +28,7 @@ class JobRunnerWorker(multiprocessing.Process):
                         continue
                     (cmd, cwd, env) = wrk
                     try:
-                        _g_logger.debug("Child runner starting the script %s ;"
+                        _g_logger.info("Child runner starting the script %s ;"
                                         " env=%s"
                                         % (cmd, env))
 

@@ -1,6 +1,7 @@
 import getpass
 import os
 import random
+import re
 import shutil
 import socket
 import tarfile
@@ -33,14 +34,14 @@ class TestProtocolCommands(unittest.TestCase, reply.ReplyObserverInterface):
 
     @classmethod
     def _setup_s3(cls):
-        if "S3_SECRET_KEY" not in os.environ or "S3_ACCESS_KEY" not in os.environ:
-            return
-
         cls.backup_bucket = "enstartiustestonetwo" + str(uuid.uuid4()).split("-")[0]
         cls.backup_bucket2 = "enstartiustesttwotwo"+ str(uuid.uuid4()).split("-")[0]
         cls.default_s3_region = "us_west_oregon"
         cls.default_s3_region2 = "us_west"
         cls.simple_service = "asimple_service.tar.gz"
+
+        if "S3_SECRET_KEY" not in os.environ or "S3_ACCESS_KEY" not in os.environ:
+            return
 
         etc_dir = os.path.dirname(os.path.dirname(__file__))
         tar_dir = tempfile.mkdtemp()
@@ -56,7 +57,7 @@ class TestProtocolCommands(unittest.TestCase, reply.ReplyObserverInterface):
                 1,
                 os.environ["S3_ACCESS_KEY"],
                 os.environ["S3_SECRET_KEY"],
-                region_id=region)
+                    region_id=region)
             try:
                 cloud.create_container(bucket_name)
             except LibcloudError as ex:
@@ -97,6 +98,25 @@ class TestProtocolCommands(unittest.TestCase, reply.ReplyObserverInterface):
     @classmethod
     def tearDownClass(cls):
         shutil.rmtree(cls.test_base_path)
+        if "S3_SECRET_KEY" not in os.environ or "S3_ACCESS_KEY" not in os.environ:
+            return
+        check_list = [(cls.default_s3_region, cls.backup_bucket),
+                      (cls.default_s3_region2, cls.backup_bucket2)]
+        for region, bucket_name in check_list:
+            cloud = storagecloud.get_cloud_driver(
+                1,
+                os.environ["S3_ACCESS_KEY"],
+                os.environ["S3_SECRET_KEY"],
+                region_id=region)
+
+            try:
+                container = cloud.get_container(bucket_name)
+                obj_list = cloud.list_container_objects(container)
+                for o in obj_list:
+                    cloud.delete_object(o)
+                cloud.delete_container(container)
+            except:
+                pass
 
     def setUp(self):
         service._g_conn_for_shutdown = None # and this
@@ -814,7 +834,7 @@ class TestProtocolCommands(unittest.TestCase, reply.ReplyObserverInterface):
         req_reply = self._rpc_wait_reply(doc)
         r = req_reply.get_reply()
         self.assertEquals(r["payload"]["return_code"], 0)
-        self.assertTrue(os.path.exists("/tmp/service_start"))
+        self.assertTrue(os.path.exists("/tmp/enstratus_dbgrant"))
 
         with open("/tmp/enstratus_dbgrant", "r") as fptr:
             secs = fptr.readline()
@@ -848,6 +868,74 @@ class TestProtocolCommands(unittest.TestCase, reply.ReplyObserverInterface):
             cfg_data_back = fptr.read()
         self.assertEqual(cfg_data_back, cfg_data)
 
+    def _backup_service(self, storage_delegate=False):
+
+        service_id = "abackup_service" + str(uuid.uuid4())
+        self._install_service(service_id,
+                              self.backup_bucket,
+                              self.simple_service)
+
+        arguments = {
+            "serviceId": service_id,
+            "toBackupDirectory": self.backup_bucket,
+            "primaryCloudId": 1,
+            "primaryRegionId": self.default_s3_region,
+            "primaryApiKey": os.environ["S3_ACCESS_KEY"],
+            "primarySecretKey": os.environ["S3_SECRET_KEY"],
+        }
+        if storage_delegate:
+            arguments["storageDelegate"] = 1
+            arguments["storagePublicKey"] = os.environ["S3_ACCESS_KEY"]
+            arguments["storagePrivateKey"] = os.environ["S3_SECRET_KEY"]
+
+        doc = {
+            "command": "backup_service",
+            "arguments": arguments
+        }
+        start_time = datetime.datetime.now().replace(microsecond=0)
+        req_reply = self._rpc_wait_reply(doc)
+        r = req_reply.get_reply()
+        self.assertEquals(r["payload"]["return_code"], 0)
+        self.assertEquals(r["payload"]["reply_type"], "job_description")
+
+        jd = r["payload"]["reply_object"]
+        while jd["job_status"] in ["WAITING", "RUNNING"]:
+            jd = self._get_job_description(jd["job_id"])
+        self.assertEqual(jd["job_status"], "COMPLETE")
 
 
+        with open("/tmp/service_backup", "r") as fptr:
+            secs = fptr.readline()
+            parameters = fptr.readline()
+        tm = datetime.datetime.utcfromtimestamp(float(secs))
+        self.assertTrue(tm >= start_time)
 
+        # verify that the file made it to the bucket
+        backup_pattern = service_id + "-.*"
+        prog = re.compile(backup_pattern)
+
+        cloud = storagecloud.get_cloud_driver(
+            arguments["primaryCloudId"],
+            arguments["primaryApiKey"],
+            arguments["primarySecretKey"],
+            region_id=arguments["primaryRegionId"])
+
+        container = cloud.get_container(arguments["toBackupDirectory"])
+        obj_list = cloud.list_container_objects(container)
+
+        found = False
+        for o in obj_list:
+            m = prog.match(o.name)
+            if m:
+                found = True
+        self.assertTrue(found)
+
+    @test_utils.system_changing
+    @test_utils.s3_needed
+    def test_backup_service(self):
+        self._backup_service(storage_delegate=False)
+
+    @test_utils.system_changing
+    @test_utils.s3_needed
+    def test_backup_service_storage(self):
+        self._backup_service(storage_delegate=True)

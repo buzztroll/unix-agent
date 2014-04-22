@@ -112,43 +112,41 @@ class BackupService(direct_pass.DirectPass):
 
         self.service_id = arguments["serviceId"]
         self.primary_cloud_id = arguments["primaryCloudId"]
-        self.primary_region = getattr(arguments, "primaryRegionId", None)
+        self.primary_region = arguments.get("primaryRegionId", None)
         self.primary_api_key = arguments["primaryApiKey"]
         self.primary_secret_key = arguments["primarySecretKey"]
-        self.primary_endpoint = getattr(arguments, "apiEndpoint", None)
-        self.primary_account = getattr(arguments, "apiAccount", None)
+        self.primary_endpoint = arguments.get("apiEndpoint", None)
+        self.primary_account = arguments.get("apiAccount", None)
         if "storageDelegate" in arguments:
             # if the storage delegate exists we will use it instead of the
             # primary info
             self.primary_cloud_id = arguments["storageDelegate"]
-            self.primary_region = None  # for whatever reason there is no region ID here
             self.primary_api_key = arguments["storagePublicKey"]
             self.primary_secret_key = arguments["storagePrivateKey"]
-            self.primary_endpoint = getattr(arguments, "storageEndpoint", None)
-            self.primary_account = getattr(arguments, "storageAccount", None)
+            self.primary_endpoint = arguments.get("storageEndpoint", None)
+            self.primary_account = arguments.get("storageAccount", None)
 
-        self.secondary_cloud_id = getattr(arguments, "secondaryCloudId", None)
+        self.secondary_cloud_id = arguments.get("secondaryCloudId", None)
         if self.secondary_cloud_id:
-            self.secondary_region = getattr(arguments, "secondaryRegionId", None)
+            self.secondary_region = arguments.get("secondaryRegionId", None)
             self.secondary_api_key = arguments["secondaryApiKey"]
             self.secondary_secret_key = arguments["secondarySecretKey"]
-            self.secondary_endpoint = getattr(arguments, "secondaryApiEndpoint", None)
-            self.secondary_account = getattr(arguments, "secondaryApiAccount", None)
+            self.secondary_endpoint = arguments.get("secondaryApiEndpoint", None)
+            self.secondary_account = arguments.get("secondaryApiAccount", None)
 
         if "secondaryStorageDelegate" in arguments:
             self.secondary_cloud_id = arguments["secondaryStorageDelegate"]
             self.secondary_region = None
             self.secondary_api_key = arguments["secondaryStoragePublicKey"]
             self.secondary_secret_key = arguments["secondaryStoragePrivateKey"]
-            self.secondary_endpoint = getattr(arguments, "secondaryStorageEndpoint", None)
-            self.secondary_account = getattr(arguments, "secondaryStorageAccount", None)
+            self.secondary_endpoint = arguments.get("secondaryStorageEndpoint", None)
+            self.secondary_account = arguments.get("secondaryStorageAccount", None)
 
     def run(self):
         tm_str = utils.get_time_backup_string()
         backup_file_name = self.arguments["serviceId"] + "-" + tm_str
         backup_path = os.path.join(self.conf.storage_temppath,
                                    backup_file_name + ".zip")
-
 
         script_name = self.items_map["script_name"]
         command = [self.conf.get_script_location(script_name),
