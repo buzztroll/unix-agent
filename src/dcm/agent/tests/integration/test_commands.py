@@ -14,9 +14,8 @@ import dcm.agent.tests.utils as test_utils
 class TestSingleCommands(unittest.TestCase):
 
     def setUp(self):
-        self.conf_obj = config.AgentConfig()
         test_conf_path = test_utils.get_conf_file()
-        self.conf_obj.setup(conffile=test_conf_path)
+        self.conf_obj = config.AgentConfig([test_conf_path])
         self.disp = dispatcher.Dispatcher(self.conf_obj)
 
     def tearDown(self):
@@ -76,9 +75,8 @@ class TestSingleCommands(unittest.TestCase):
 class TestSerialCommands(unittest.TestCase):
 
     def setUp(self):
-        self.conf_obj = config.AgentConfig()
         test_conf_path = test_utils.get_conf_file()
-        self.conf_obj.setup(conffile=test_conf_path)
+        self.conf_obj = config.AgentConfig([test_conf_path])
         self.disp = dispatcher.Dispatcher(self.conf_obj)
 
     def tearDown(self):
@@ -136,9 +134,8 @@ class TestSerialCommands(unittest.TestCase):
 class TestRetransmission(unittest.TestCase):
 
     def setUp(self):
-        self.conf_obj = config.AgentConfig()
         test_conf_path = test_utils.get_conf_file()
-        self.conf_obj.setup(conffile=test_conf_path)
+        self.conf_obj = config.AgentConfig([test_conf_path])
 
     def _get_conn(self, incoming_lines, outfile, drop_count, retrans_list):
         self._incoming_io = StringIO.StringIO(incoming_lines)

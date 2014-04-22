@@ -5,7 +5,6 @@ import time
 import dcm.agent.exceptions as exceptions
 import dcm.agent.messaging.reply as reply
 import dcm.agent.messaging.types as types
-from dcm.agent import parent_receive_q
 
 
 class TestRequesterStandardPath(unittest.TestCase):
@@ -246,12 +245,11 @@ class TestRequestListener(unittest.TestCase):
             'message_id': message_id,
             'payload': {}
         }
-        conn.recv.return_value = request_doc
+        disp.incoming_request.return_value = None
 
         reply_listener = reply.RequestListener(conf, conn, disp)
-
-        reqreply = parent_receive_q.poll()
-        self.assertEqual(request_id, reqreply.get_request_id())
+        reply_listener.incoming_parent_q_message(request_doc)
+        self.assertTrue(disp.incoming_request.called)
 
     def test_read_request_retrans_request(self):
         disp = mock.Mock()
@@ -267,15 +265,10 @@ class TestRequestListener(unittest.TestCase):
             'message_id': message_id,
             'payload': {}
         }
-        conn.recv.return_value = request_doc
-
+        # just make sure that everything doesnt blow up on a repeated request
         reply_listener = reply.RequestListener(conf, conn, disp)
-        reqreply = reply_listener.poll()
-        self.assertEqual(request_id, reqreply.get_request_id())
-
-        conn.recv.return_value = request_doc
-        reqreply = reply_listener.poll()
-        self.assertIsNone(reqreply)
+        reply_listener.incoming_parent_q_message(request_doc)
+        reply_listener.incoming_parent_q_message(request_doc)
 
     def test_unknown_ack(self):
         disp = mock.Mock()
@@ -292,39 +285,10 @@ class TestRequestListener(unittest.TestCase):
             "payload": {}
         }
 
-        conn.recv.return_value = ack_doc
-
         reply_listener = reply.RequestListener(conf, conn, disp)
-        reply_listener.poll()
+        reply_listener.incoming_parent_q_message(ack_doc)
+
         (param_list, keywords) = conn.send.call_args
         send_doc = param_list[0]
         self.assertTrue('type' in send_doc)
         self.assertEqual(send_doc['type'], types.MessageTypes.NACK)
-
-    def test_request_ack(self):
-        disp = mock.Mock()
-        conn = mock.Mock()
-        conf = mock.Mock()
-
-        request_id = "requestID"
-        message_id = "messageID"
-
-        request_doc = {
-            'type': types.MessageTypes.REQUEST,
-            'request_id': request_id,
-            'message_id': message_id,
-            'payload': {}
-        }
-        conn.recv.return_value = request_doc
-
-        reply_listener = reply.RequestListener(conf, conn, disp)
-        reqreply = reply_listener.poll()
-        self.assertEqual(request_id, reqreply.get_request_id())
-
-        ack_doc = {
-            "type": types.MessageTypes.CANCEL,
-            "request_id": request_id,
-            "message_id": message_id,
-        }
-        conn.recv.return_value = ack_doc
-        reply_listener.poll()

@@ -475,9 +475,6 @@ class RequestListener(object):
             _g_logger.debug("New message type %s :: %s" %
                 (incoming_doc['type'], incoming_doc))
 
-            if 'entity' not in incoming_doc:
-                pass
-
             if incoming_doc['type'] == types.MessageTypes.REQUEST:
                 # this is new request
                 request_id = incoming_doc['request_id']
