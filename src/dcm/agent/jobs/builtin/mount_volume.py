@@ -97,11 +97,12 @@ class MountVolume(direct_pass.DirectPass):
                 encrypted_device_id = "es" + self.args.devices[0]
                 device_mappings = utils.get_device_mappings(self.conf)
                 for dm in device_mappings:
-                    if dm["device_id"] ==  self.args.devices[0]:
+                    if dm["device_id"] == self.args.devices[0]:
                         if dm["device_type"] != utils.DeviceTypes.EPHEMERAL:
                             raise exceptions.AgentJobException(
                                 "Attempt to mount non-ephemeral device " +
-                                self.args.devices[0] + " as an ephemeral mount.")
+                                self.args.devices[0] +
+                                " as an ephemeral mount.")
                         if dm["encrypted"]:
                             unencrypted_mount = dm
                     elif encrypted_device_id == dm["device_id"]:
@@ -136,7 +137,8 @@ class MountVolume(direct_pass.DirectPass):
                    key_file_path]
         (stdout, stderr, rc) = utils.run_command(self.conf, command)
         if rc != 0:
-            raise exceptions.AgentExecutableException("format failed: " + stderr)
+            raise exceptions.AgentExecutableException(
+                "format failed: " + stderr)
         return rc
 
     def write_key_file(self, block_device):
@@ -172,7 +174,8 @@ class MountVolume(direct_pass.DirectPass):
 
         (stdout, stderr, rc) = utils.run_command(self.conf, cmd)
         if rc != 0:
-            raise exceptions.AgentExecutableException("format failed: " + stderr)
+            raise exceptions.AgentExecutableException(
+                "format failed: " + stderr)
         return rc
 
     def mount_no_fs(self):
@@ -190,7 +193,8 @@ class MountVolume(direct_pass.DirectPass):
         if not self.args.devices:
             return 0
 
-        if len(self.args.devices) > 1 and self.args.raidLevel.upper() == "NONE":
+        if len(self.args.devices) > 1 and\
+                self.args.raidLevel.upper() == "NONE":
             raise exceptions.AgentJobException(
                 "Must specify a RAID volume with mounting multiple devices at "
                 "once.")
@@ -240,7 +244,9 @@ class MountVolume(direct_pass.DirectPass):
             finally:
                 utils.safe_delete(key_file_path)
         if self.args.encryptionKey is not None:
-            utils.mount(target_device, self.args.fileSystem, self.args.mountPoint)
+            utils.mount(target_device,
+                        self.args.fileSystem,
+                        self.args.mountPoint)
 
     def run(self):
         if self.args.mountPoint is None:

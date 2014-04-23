@@ -23,7 +23,6 @@ import threading
 
 import ws4py.client.threadedclient as ws4py_client
 
-from dcm.agent import exceptions
 import dcm.agent.connection.connection_interface as conn_iface
 from dcm.agent import parent_receive_q
 
@@ -148,8 +147,9 @@ class _WSManager(threading.Thread):
             _g_logger.info(
                 "The WS connection to %s succeeded." % self._server_url)
         except Exception as ex:
-            _g_logger.exception("An error forming the WS connection to %s occurred"
-                           ": %s" % (self._server_url, ex.message))
+            _g_logger.exception("An error forming the WS connection to %s "
+                                "occurred : %s" % (self._server_url,
+                                                   ex.message))
             self._set_next_connection_time()
             self._connected = False
 
@@ -260,7 +260,8 @@ class WebSocketConnection(conn_iface.ConnectionInterface):
             _g_logger.debug("recv called |%d|" % self._recv_queue.qsize())
             m = self._recv_queue.get(True, 0.1)
             self._recv_queue.task_done()
-            _g_logger.debug("User requested to receive |%d| %s" % (self._recv_queue.qsize(), m))
+            _g_logger.debug("User requested to receive |%d| %s"
+                            % (self._recv_queue.qsize(), m))
             return json.loads(m)
         except Queue.Empty:
             return None

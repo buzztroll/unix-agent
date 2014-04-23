@@ -13,7 +13,6 @@
 #  ======================================================================
 
 import os
-from dcm.agent import exceptions
 import dcm.agent.utils as utils
 import dcm.agent.jobs.direct_pass as direct_pass
 

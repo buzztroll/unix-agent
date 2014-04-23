@@ -149,8 +149,6 @@ def upload(cloud_id,
     driver.upload_object(source_path, container, object_name)
 
 
-
-
 def get_cloud_driver(cloud_id,
                      access_key,
                      secret_key,

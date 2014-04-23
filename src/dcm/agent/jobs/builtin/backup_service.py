@@ -26,84 +26,84 @@ class BackupService(direct_pass.DirectPass):
 
     protocol_arguments = {
         "serviceId":
-            ("The ID of the service to be backed up.  The service script "
-             "enstratus-backupService will be called.",
-             True, str),
+        ("The ID of the service to be backed up.  The service script "
+         "enstratus-backupService will be called.",
+         True, str),
         "toBackupDirectory":
-            ("The remote backup directory or bucket in the storage cloud where "
-             "this backup will be uploaded.",
-             True, str),
+        ("The remote backup directory or bucket in the storage cloud where "
+         "this backup will be uploaded.",
+         True, str),
         "primaryCloudId":
-            ("The cloud ID or delegate string of the primary storage cloud.",
-             True, str),
+        ("The cloud ID or delegate string of the primary storage cloud.",
+         True, str),
         "primaryRegionId":
-            ("The region ID for the primary storage cloud.",
-             False, str),
+        ("The region ID for the primary storage cloud.",
+         False, str),
         "primaryApiKey":
-            ("The API key for the primary storage cloud.",
-            True, str),
+        ("The API key for the primary storage cloud.",
+         True, str),
         "primarySecretKey":
-            ("The API secret key for the primary storage cloud.",
-             True, str),
+        ("The API secret key for the primary storage cloud.",
+         True, str),
         "secondaryCloudId":
-            ("The cloud ID or delegate string for the secondary storage cloud. "
-             "Often this is an off site cloud.",
-             False, str),
+        ("The cloud ID or delegate string for the secondary storage cloud. "
+         "Often this is an off site cloud.",
+         False, str),
         "secondaryRegionId":
-            ("The region ID of the secondary cloud.",
-             False, str),
+        ("The region ID of the secondary cloud.",
+         False, str),
         "secondaryApiKey":
-            ("The API key of the secondary cloud.",
-             False, str),
+        ("The API key of the secondary cloud.",
+         False, str),
         "secondarySecretKey":
-            ("The API secret key of the secondary cloud.",
-             False, str),
+        ("The API secret key of the secondary cloud.",
+         False, str),
         "apiEndpoint":
-            ("The endpoint contact string of the primary cloud.",
-             False, str),
+        ("The endpoint contact string of the primary cloud.",
+         False, str),
         "apiAccount":
-            ("The account string of the primary backup cloud.",
-             False, str),
+        ("The account string of the primary backup cloud.",
+         False, str),
         "storageDelegate":
-            ("When this value is set it overides the primary API information. "
-             "When the primary cloud does not have a storage cloud this value "
-             "is set to make user of an alternative cloud.",
-             False, str),
+        ("When this value is set it overides the primary API information. "
+         "When the primary cloud does not have a storage cloud this value "
+         "is set to make user of an alternative cloud.",
+         False, str),
         "storageEndpoint":
-            ("The endpoint contact string of the separate primary cloud.",
-             False, str),
+        ("The endpoint contact string of the separate primary cloud.",
+         False, str),
         "storageAccount":
-            ("The account string of the separate primary cloud.",
-             False, str),
+        ("The account string of the separate primary cloud.",
+         False, str),
         "storagePublicKey":
-            ("The API key for the separate primary storage cloud.",
-             False, str),
+        ("The API key for the separate primary storage cloud.",
+         False, str),
         "storagePrivateKey":
-            ("The API secret key for the separate primary storage cloud.",
-             False, str),
+        ("The API secret key for the separate primary storage cloud.",
+         False, str),
         "secondaryApiEndpoint":
-            ("The endpoint contact string of the secondary backup cloud.",
-             False, str),
+        ("The endpoint contact string of the secondary backup cloud.",
+         False, str),
         "secondaryApiAccount":
-            ("The account string of the secondary backup cloud.",
-             False, str),
+        ("The account string of the secondary backup cloud.",
+         False, str),
         "secondaryStorageDelegate":
-            ("If a separate storage cloud is used for the secondary cloud this "
-             "value will be set to the cloud ID or the storage delegate.",
-             False, str),
+        ("If a separate storage cloud is used for the secondary cloud this "
+         "value will be set to the cloud ID or the storage delegate.",
+         False, str),
         "secondaryStorageEndpoint":
-            ("The endpoint contact string of the separate secondary storage "
-             "clouds.",
-             False, str),
+        ("The endpoint contact string of the separate secondary storage "
+         "clouds.",
+         False, str),
         "secondaryStorageAccount":
-            ("The account string of the separate secondary storage cloud.",
-             False, str),
+        ("The account string of the separate secondary storage cloud.",
+         False, str),
         "secondaryStoragePublicKey":
-            ("The API key of the separate secondary storage cloud.",
-             False, str),
+        ("The API key of the separate secondary storage cloud.",
+         False, str),
         "secondaryStoragePrivateKey":
-            ("The API secret key for the separate secondary storage cloud.",
-             False, str)
+        ("The API secret key for the separate secondary storage cloud.",
+         False, str)
     }
 
     def __init__(self, conf, job_id, items_map, name, arguments):
@@ -131,7 +131,8 @@ class BackupService(direct_pass.DirectPass):
             self.secondary_region = arguments.get("secondaryRegionId", None)
             self.secondary_api_key = arguments["secondaryApiKey"]
             self.secondary_secret_key = arguments["secondarySecretKey"]
-            self.secondary_endpoint = arguments.get("secondaryApiEndpoint", None)
+            self.secondary_endpoint = arguments.get(
+                "secondaryApiEndpoint", None)
             self.secondary_account = arguments.get("secondaryApiAccount", None)
 
         if "secondaryStorageDelegate" in arguments:
@@ -139,8 +140,10 @@ class BackupService(direct_pass.DirectPass):
             self.secondary_region = None
             self.secondary_api_key = arguments["secondaryStoragePublicKey"]
             self.secondary_secret_key = arguments["secondaryStoragePrivateKey"]
-            self.secondary_endpoint = arguments.get("secondaryStorageEndpoint", None)
-            self.secondary_account = arguments.get("secondaryStorageAccount", None)
+            self.secondary_endpoint = arguments.get(
+                "secondaryStorageEndpoint", None)
+            self.secondary_account = arguments.get(
+                "secondaryStorageAccount", None)
 
     def run(self):
         tm_str = utils.get_time_backup_string()
@@ -193,4 +196,3 @@ class BackupService(direct_pass.DirectPass):
 
 def load_plugin(conf, job_id, items_map, name, arguments):
     return BackupService(conf, job_id, items_map, name, arguments)
-

@@ -14,9 +14,7 @@
 import json
 import logging
 import os
-import subprocess
 import urllib2
-import dcm
 from dcm.agent import exceptions
 
 import dcm.agent.utils as utils
@@ -83,18 +81,21 @@ def get_cloud_metadata(conf, key):
 
     try:
         result = None
-        if conf.cloud_type == CLOUD_TYPES.Amazon or conf.cloud_type == CLOUD_TYPES.Eucalyptus:
+        if conf.cloud_type == CLOUD_TYPES.Amazon or\
+                conf.cloud_type == CLOUD_TYPES.Eucalyptus:
             if conf.cloud_metadata_url is None:
                 _g_logger.warn("The metadata server is None")
                 return None
             url = conf.cloud_metadata_url + "/" + key
             data = _get_metadata_server_url_data(url)
             result = data
-        elif conf.cloud_type == CLOUD_TYPES.CloudStack or conf.cloud_type == CLOUD_TYPES.CloudStack3:
+        elif conf.cloud_type == CLOUD_TYPES.CloudStack or\
+                conf.cloud_type == CLOUD_TYPES.CloudStack3:
             addr = get_dhcp_ip_address(conf)
             url = "http://%s/" % addr
             result = _get_metadata_server_url_data(url)
-            if result is not None and conf.cloud_type == CLOUD_TYPES.CloudStack:
+            if result is not None and\
+                    conf.cloud_type == CLOUD_TYPES.CloudStack:
                 # split the name out for anything before CloudStack 3
                 split_name = result.strip().split("-")
                 if len(split_name) > 2:
@@ -127,7 +128,7 @@ def get_instance_id(conf):
             return conf.instance_id
 
         if conf.cloud_type == CLOUD_TYPES.Amazon or\
-                        conf.cloud_type == CLOUD_TYPES.Eucalyptus:
+                conf.cloud_type == CLOUD_TYPES.Eucalyptus:
             instance_id = get_cloud_metadata(conf, "instance-id")
         elif conf.cloud_type == CLOUD_TYPES.CloudStack:
             instance_id = get_cloud_metadata(conf, "instance-id")
@@ -147,7 +148,7 @@ def get_ipv4_addresses(conf):
     # do caching
     ip_list = []
     if conf.cloud_type == CLOUD_TYPES.Amazon or\
-                conf.cloud_type == CLOUD_TYPES.Eucalyptus:
+            conf.cloud_type == CLOUD_TYPES.Eucalyptus:
         private_ip = get_cloud_metadata(conf, "local-ipv4")
         if private_ip:
             ip_list.append(private_ip)

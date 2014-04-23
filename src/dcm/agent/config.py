@@ -1,4 +1,3 @@
-import argparse
 import ConfigParser
 import logging
 import logging.config
@@ -190,7 +189,6 @@ class AgentConfig(object):
 
         setup_logging(self.logging_configfile)
 
-
     def set_handshake(self, handshake_doc):
         self.state = "WAITING"
         #if handshake_doc["version"] == dcm.agent.g_version:
@@ -311,8 +309,6 @@ def _build_options_list():
 
         ConfigOpt("cloud", "type", str, default=CLOUD_TYPES.Amazon,
                   help="The type of cloud on which this agent is running"),
-                  #options=[i for i in dir(CLOUD_TYPES)
-                  #         if not i.startswith("_")]),
         ConfigOpt("cloud", "metadata_url", str,
                   default=None,
                   help="The url of the metadata server.  Not applicable "
@@ -361,7 +357,6 @@ def parse_config_files(agent_conf, config_files):
                                   default=getattr(agent_conf, oname))
                 setattr(agent_conf, oname, v)
             except ConfigParser.NoSectionError as nse:
-                opt.get
                 raise exceptions.AgentOptionSectionNotFoundException(
                     opt.name)
 

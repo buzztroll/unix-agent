@@ -115,7 +115,6 @@ class TestSerialCommands(unittest.TestCase):
 
         request_listener.shutdown()
 
-
     def test_echo_serial_message_no_fail(self):
         self._many_message(2, 0, "echo hello")
 
@@ -174,7 +173,6 @@ class TestRetransmission(unittest.TestCase):
         # wait until the request is done
         while request_listener.get_messages_processed() != count:
             parent_receive_q.poll()
-
 
         for i in range(count):
             output = json.loads(outfile.buflist[i])

@@ -29,8 +29,8 @@ class JobRunnerWorker(multiprocessing.Process):
                     (cmd, cwd, env) = wrk
                     try:
                         _g_logger.info("Child runner starting the script %s ;"
-                                        " env=%s"
-                                        % (cmd, env))
+                                       " env=%s"
+                                       % (cmd, env))
 
                         process = subprocess.Popen(cmd,
                                                    shell=True,

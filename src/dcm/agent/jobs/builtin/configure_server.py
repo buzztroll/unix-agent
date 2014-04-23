@@ -26,45 +26,45 @@ class ConfigureServer(jobs.Plugin):
 
     protocol_arguments = {
         "configType":
-            ("", True, str),
+        ("", True, str),
         "authId":
-            ("", False, str),
+        ("", False, str),
         "configurationData":
-            ("", False, str),
+        ("", False, str),
         "encryptedConfigToken":
-            ("", False, str),
+        ("", False, str),
         "encryptedAuthSecret":
-            ("", False, str),
+        ("", False, str),
         "endpoint":
-            ("", False, str),
+        ("", False, str),
         "providerRegionId":
-            ("", False, str),
+        ("", False, str),
         "runAsUser":
-            ("", False, str),
+        ("", False, str),
         "storageDelegate":
-            ("", False, str),
+        ("", False, str),
         "storageEndpoint":
-            ("", False, str),
+        ("", False, str),
         "storageAccount":
-            ("", False, str),
+        ("", False, str),
         "scriptFiles":
-            ("", False, list),
+        ("", False, list),
         "storagePublicKey":
-            ("", False, str),
+        ("", False, str),
         "storagePrivateKey":
-            ("", False, str),
+        ("", False, str),
         "environmentId":
-            ("", False, str),
+        ("", False, str),
         "personalityFiles":
-            ("", False, str),
+        ("", False, str),
         "configClientName":
-            ("", False, str),
+        ("", False, str),
         "configCert":
-            ("", False, str),
+        ("", False, str),
         "runListIds":
-            ("", False, str),
+        ("", False, str),
         "parameterList":
-            ("", False, str),
+        ("", False, str),
     }
 
     def __init__(self, conf, job_id, items_map, name, arguments):
@@ -141,7 +141,8 @@ class ConfigureServer(jobs.Plugin):
                 fptr.write(token)
                 fptr.write(os.linesep)
 
-            exe = self.conf.get_script_location("runConfigurationManagement-CHEF")
+            exe = self.conf.get_script_location(
+                "runConfigurationManagement-CHEF")
             cmd_list = [exe,
                         self.args.runAsUser,
                         self.args.nodeName,
@@ -170,7 +171,8 @@ class ConfigureServer(jobs.Plugin):
             if endpoint is None:
                 endpoint = "NULL"
 
-            exe = self.conf.get_script_location("runConfigurationManagement-PUPPET")
+            exe = self.conf.get_script_location(
+                "runConfigurationManagement-PUPPET")
             cmd = [exe,
                    self.args.runAsUser,
                    self.args.nodeName,
@@ -205,7 +207,8 @@ class ConfigureServer(jobs.Plugin):
                     endpoint=self.args.storageEndpoint,
                     account=self.args.storageAccount)
 
-                exe = self.conf.get_script_location("runConfigurationManagement-ENSTRATUS")
+                exe = self.conf.get_script_location(
+                    "runConfigurationManagement-ENSTRATUS")
                 cmd = [exe,
                        self.args.runAsUser,
                        self.conf.customer_id,
@@ -231,7 +234,8 @@ class ConfigureServer(jobs.Plugin):
         if self.args.runAsUser is None:
             self.args.runAsUser = self.conf.system_user
 
-        if self.name == "configure_server" or self.name == "configure_server_15":
+        if self.name == "configure_server" or\
+                self.name == "configure_server_15":
             (stdout, stderr, rc) = self.configure_server_legacy()
         elif self.name == "configure_server_16":
             if self.args.configType.upper() != "ENSTRATUS":

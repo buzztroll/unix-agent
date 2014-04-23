@@ -19,9 +19,9 @@ class StopService(direct_pass.DirectPass):
 
     protocol_arguments = {
         "customerId":
-            ("The customer ID that is invoking the command.", True, long),
-        "serviceId" :
-            ("The ID of the service to stop.", True, str)
+        ("The customer ID that is invoking the command.", True, long),
+        "serviceId":
+        ("The ID of the service to stop.", True, str)
     }
 
     def __init__(self, conf, job_id, items_map, name, arguments):

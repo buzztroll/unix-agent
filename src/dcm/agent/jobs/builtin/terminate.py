@@ -19,8 +19,8 @@ class Terminate(direct_pass.DirectPass):
 
     protocol_arguments = {
         "ignoreErrors":
-            ("Ignore any errors that are returned from the terminate script",
-             False, str)
+        ("Ignore any errors that are returned from the terminate script",
+         False, str)
     }
 
     def __init__(self, conf, job_id, items_map, name, arguments):

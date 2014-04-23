@@ -183,7 +183,7 @@ class LongRunner(parent_receive_q.ParentReceiveQObserver):
                 jd = self._job_table[job_reply.job_id]
                 jd.update(job_reply)
                 if jd._job_status == JobStatus.ERROR or\
-                         jd._job_status == JobStatus.COMPLETE:
+                        jd._job_status == JobStatus.COMPLETE:
                     self.job_complete(job_reply.job_id)
             except Exception:
                 _g_logger.exception("Failed to update")

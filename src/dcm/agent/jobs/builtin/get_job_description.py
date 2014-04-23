@@ -13,7 +13,6 @@
 #  ======================================================================
 
 import logging
-from dcm.agent import longrunners
 
 import dcm.agent.jobs as jobs
 
@@ -25,8 +24,8 @@ class GetJobDescription(jobs.Plugin):
 
     protocol_arguments = {
         "jobId":
-            ("The ID of job that is being queried.",
-             True, str),
+        ("The ID of job that is being queried.",
+         True, str),
     }
 
     def __init__(self, conf, job_id, items_map, name, arguments):

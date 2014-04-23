@@ -57,7 +57,7 @@ def setup_command_line_parser():
                         dest="cloud",
                         help="The cloud where this virtual machine will be "
                              "run.  Options: %s" % ", ".join(
-                            cloud_choices.values()))
+                                 cloud_choices.values()))
                         # choices=cloud_choices.values())
     parser.add_argument("--url", "-u", dest="url",
                         help="The location of the dcm web socket listener")

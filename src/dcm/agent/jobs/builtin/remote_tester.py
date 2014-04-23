@@ -25,7 +25,6 @@ class RemoteTester(jobs.Plugin):
 
     protocol_arguments = {}
 
-
     def __init__(self, conf, job_id, items_map, name, arguments):
         super(RemoteTester, self).__init__(
             conf, job_id, items_map, name, arguments)

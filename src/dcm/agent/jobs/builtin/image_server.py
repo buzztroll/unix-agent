@@ -21,31 +21,31 @@ class ImageServer(direct_pass.DirectPass):
 
     protocol_arguments = {
         "customerId":
-            ("The ID of the customer running this command.",
-             True, long),
+        ("The ID of the customer running this command.",
+         True, long),
         "serverId":
-            ("This value is passed to the imageServer script but is never "
-             "used",
-             True, str),
+        ("This value is passed to the imageServer script but is never "
+         "used",
+         True, str),
         "accountNumber":
-            ("The account number.  Used with EC2", True, str),
+        ("The account number.  Used with EC2", True, str),
         "imageDirectory":
-            ("This is passed to the imageServer script but is not used.",
-             True, str),
+        ("This is passed to the imageServer script but is not used.",
+         True, str),
         "imageName":
-            ("The name of the image.", True, str),
+        ("The name of the image.", True, str),
         "type":
-            ("The architecture of the image.", True, str),
+        ("The architecture of the image.", True, str),
         "cloudAccessKey":
-            ("The access key for the cloud where the server is being imaged.",
-             True, str),
+        ("The access key for the cloud where the server is being imaged.",
+         True, str),
         "cloudSecretKey":
-            ("The secret key for the cloud where the server is being imaged.",
-             True, str),
+        ("The secret key for the cloud where the server is being imaged.",
+         True, str),
         "storageCertificate":
-            ("The storage certificate.", True, str),
+        ("The storage certificate.", True, str),
         "storagePrivateKey":
-            ("The storage private key.", True, str)
+        ("The storage private key.", True, str)
     }
 
     def __init__(self, conf, job_id, items_map, name, arguments):
@@ -64,23 +64,25 @@ class ImageServer(direct_pass.DirectPass):
         self.conf.set_imaging(True)
         try:
             with open(cert_file_name, "w") as fptr:
-                fptr.write(self.arguments["storageCertificate"].decode("utf-8"))
+                fptr.write(
+                    self.arguments["storageCertificate"].decode("utf-8"))
             with open(pk_file_name, "w") as fptr:
                 fptr.write(self.arguments["storagePrivateKey"].decode("utf-8"))
             build_dir = self.conf.get_temp_file(
                 "bundle-%s" % self.arguments["imageName"], isdir=True)
 
-            self.ordered_param_list = [self.conf.customer_id,
-                                       self.arguments["serverId"],
-                                       self.arguments["imageDirectory"],
-                                       self.arguments["imageName"],
-                                       self.arguments["type"],
-                                       self.arguments["accountNumber"],
-                                       build_dir,
-                                       self.arguments["cloudAccessKey"].decode("utf-8"),
-                                       self.arguments["cloudSecretKey"].decode("utf-8"),
-                                       cert_file_name,
-                                       pk_file_name]
+            self.ordered_param_list = [
+                self.conf.customer_id,
+                self.arguments["serverId"],
+                self.arguments["imageDirectory"],
+                self.arguments["imageName"],
+                self.arguments["type"],
+                self.arguments["accountNumber"],
+                build_dir,
+                self.arguments["cloudAccessKey"].decode("utf-8"),
+                self.arguments["cloudSecretKey"].decode("utf-8"),
+                cert_file_name,
+                pk_file_name]
             try:
                 self._run_with_reties(self.conf.image_server_retrys_max)
             finally:
@@ -97,7 +99,7 @@ class ImageServer(direct_pass.DirectPass):
                 os.remove(pk_file_name)
 
     def upload_image(self, build_dir):
-        object_name =  self.arguments["imageName"] + ".manifest.xml";
+        object_name = self.arguments["imageName"] + ".manifest.xml"
 
         local_path = os.path.join(build_dir, object_name)
         if not os.path.exists(local_path):

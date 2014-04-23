@@ -20,43 +20,43 @@ class InstallDataSource(direct_pass.DirectPass):
 
     protocol_arguments = {
         "customerId":
-            ("The ID of the customer invoking the command.", True, str),
+        ("The ID of the customer invoking the command.", True, str),
         "serviceId":
-            ("The service ID for which this data source is being installed.",
-             True, str),
+        ("The service ID for which this data source is being installed.",
+         True, str),
         "imageDirectory":
-            ("The directory or bucket that is holding the data in the storage "
-             "cloud.", True, str),
+        ("The directory or bucket that is holding the data in the storage "
+         "cloud.", True, str),
         "dataSourceImage":
-            ("The name of the data source image.", True, str),
+        ("The name of the data source image.", True, str),
         "cloudId":
-            ("The ID or delegate of the cloud holding the data.", True, str),
+        ("The ID or delegate of the cloud holding the data.", True, str),
         "apiAccessKey":
-            ("The cloud API access key.", True, str),
+        ("The cloud API access key.", True, str),
         "apiSecretKey":
-            ("The cloud API secret key.", True, str),
+        ("The cloud API secret key.", True, str),
         "configuration":
-            ("The configuration data used to install the data source.  This "
-             "is written to a file and passed to the installer script.",
-             True, str),
+        ("The configuration data used to install the data source.  This "
+         "is written to a file and passed to the installer script.",
+         True, str),
         "regionId":
-            ("The cloud region ID that is holding the data.", False, str),
+        ("The cloud region ID that is holding the data.", False, str),
         "apiEndpoint":
-            ("The cloud API endpoint contact string.", False, str),
+        ("The cloud API endpoint contact string.", False, str),
         "apiAccount":
-            ("The cloud account.", False, str),
+        ("The cloud account.", False, str),
         "storageDelegate":
-            ("For clouds that have a separate storage cloud contact, this "
-             "value servers as the cloud ID", False, str),
+        ("For clouds that have a separate storage cloud contact, this "
+         "value servers as the cloud ID", False, str),
         "storageEndpoint":
-            ("The separate storage cloud endpoint contact string.",
-             False, str),
+        ("The separate storage cloud endpoint contact string.",
+         False, str),
         "storageAccount":
-            ("The separate storage cloud account.", False, str),
+        ("The separate storage cloud account.", False, str),
         "storagePublicKey":
-            ("The separate storage cloud API access key.", False, str),
+        ("The separate storage cloud API access key.", False, str),
         "storagePrivateKey":
-            ("The separate storage cloud API secret key.", False, str)
+        ("The separate storage cloud API secret key.", False, str)
     }
 
     def __init__(self, conf, job_id, items_map, name, arguments):

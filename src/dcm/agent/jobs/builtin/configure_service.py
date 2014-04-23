@@ -27,27 +27,27 @@ class ConfigureService(jobs.Plugin):
 
     protocol_arguments = {
         "forCustomerId":
-            ("The ID of the customer running the configuration.",
-             True, str),
+        ("The ID of the customer running the configuration.",
+         True, str),
         "serviceId":
-            ("The ID of the service on which enstratus-configure will be run.",
-             True, str),
+        ("The ID of the service on which enstratus-configure will be run.",
+         True, str),
         "runAsUser":
-            ("The unix account name that will run the configuration.",
-             True, str),
+        ("The unix account name that will run the configuration.",
+         True, str),
         "configurationData":
-            ("Data that will be written to a file and passed to the script "
-             "enstratus-configure as configuration data",
-             True, str),
+        ("Data that will be written to a file and passed to the script "
+         "enstratus-configure as configuration data",
+         True, str),
         "addressForSSL":
-            ("The ssl address.",
-             False, str),
+        ("The ssl address.",
+         False, str),
         "sslPublic":
-            ("The SSL public key.", False, str),
+        ("The SSL public key.", False, str),
         "sslPrivate":
-            ("The SSL private key.", False, str),
+        ("The SSL private key.", False, str),
         "sslChain":
-            ("The SSL CA chain.", False, str),
+        ("The SSL CA chain.", False, str),
     }
 
     def __init__(self, conf, job_id, items_map, name, arguments):
@@ -120,7 +120,7 @@ class ConfigureService(jobs.Plugin):
 
     def run(self):
         if self._address is not None and self._ssl_public is not None\
-            and self._ssl_private is not None:
+                and self._ssl_private is not None:
             self._do_ssl()
 
         try:

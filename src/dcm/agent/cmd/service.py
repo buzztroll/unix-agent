@@ -77,7 +77,8 @@ def _run_agent(conf):
         _g_conn_for_shutdown = conn
         handshake_reply = conn.connect()
         if handshake_reply is None:
-            raise Exception("The agent was unable to connect to the agent manager")
+            raise Exception("The agent was unable to connect to the agent "
+                            "manager")
         if handshake_reply["return_code"] != 200:
             raise Exception("handshake failed " + handshake_reply['message'])
 
@@ -86,6 +87,7 @@ def _run_agent(conf):
         disp.start_workers(request_listener)
 
         rc = _agent_main_loop(conf, request_listener, disp, conn)
+        return rc
     finally:
         _cleanup_agent(conf, request_listener, disp, conn)
 
@@ -150,7 +152,7 @@ def main(args=sys.argv):
         _run_agent(conf)
     except exceptions.AgentOptionException as aoex:
         console_log(cli_args, 0, "The agent is not configured properly. "
-                                      "please check the config file.")
+                    "please check the config file.")
         console_log(cli_args, 0, aoex.message)
         shutdown_main_loop()
         if getattr(cli_args, "verbose", 0) > 2:

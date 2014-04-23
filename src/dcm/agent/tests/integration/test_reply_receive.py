@@ -36,13 +36,14 @@ class TestProtocolCommands(unittest.TestCase, reply.ReplyObserverInterface):
     def _setup_s3(cls):
         cls.backup_bucket = "enstartiustestonetwo" + \
                             str(uuid.uuid4()).split("-")[0]
-        cls.backup_bucket2 = "enstartiustesttwotwo"+ \
+        cls.backup_bucket2 = "enstartiustesttwotwo" +\
                              str(uuid.uuid4()).split("-")[0]
         cls.default_s3_region = "us_west_oregon"
         cls.default_s3_region2 = "us_west"
         cls.simple_service = "asimple_service.tar.gz"
 
-        if "S3_SECRET_KEY" not in os.environ or "S3_ACCESS_KEY" not in os.environ:
+        if "S3_SECRET_KEY" not in os.environ or\
+                "S3_ACCESS_KEY" not in os.environ:
             return
 
         etc_dir = os.path.dirname(os.path.dirname(__file__))
@@ -61,7 +62,7 @@ class TestProtocolCommands(unittest.TestCase, reply.ReplyObserverInterface):
                 1,
                 os.environ["S3_ACCESS_KEY"],
                 os.environ["S3_SECRET_KEY"],
-                    region_id=region)
+                region_id=region)
             try:
                 cloud.create_container(bucket_name)
             except LibcloudError as ex:
@@ -102,7 +103,8 @@ class TestProtocolCommands(unittest.TestCase, reply.ReplyObserverInterface):
     @classmethod
     def tearDownClass(cls):
         shutil.rmtree(cls.test_base_path)
-        if "S3_SECRET_KEY" not in os.environ or "S3_ACCESS_KEY" not in os.environ:
+        if "S3_SECRET_KEY" not in os.environ or\
+                "S3_ACCESS_KEY" not in os.environ:
             return
         check_list = [(cls.default_s3_region, cls.backup_bucket),
                       (cls.default_s3_region2, cls.backup_bucket2)]
@@ -123,7 +125,7 @@ class TestProtocolCommands(unittest.TestCase, reply.ReplyObserverInterface):
                 pass
 
     def setUp(self):
-        service._g_conn_for_shutdown = None # and this
+        service._g_conn_for_shutdown = None
 
         self._event = threading.Event()
 
@@ -624,7 +626,6 @@ class TestProtocolCommands(unittest.TestCase, reply.ReplyObserverInterface):
         self.assertTrue(tm >= start_time)
         shutil.rmtree(service_dir)
 
-
     @test_utils.system_changing
     @test_utils.s3_needed
     def test_install_service_storage_delegate(self):
@@ -718,18 +719,20 @@ class TestProtocolCommands(unittest.TestCase, reply.ReplyObserverInterface):
         if use_storage:
             arguments["storageDelegate"] = 1
             arguments["storageApiKey"] = os.environ["S3_ACCESS_KEY"]
-            arguments["storageSecretKey"]= os.environ["S3_SECRET_KEY"]
+            arguments["storageSecretKey"] = os.environ["S3_SECRET_KEY"]
 
         if use_offsite:
             check_list.append((self.default_s3_region2, self.backup_bucket2))
             arguments["secondaryCloudId"] = 1
             arguments["secondaryApiKey"] = os.environ["S3_ACCESS_KEY"]
-            arguments["secondarySecretKey"]= os.environ["S3_SECRET_KEY"]
-            arguments["secondaryRegionId"]= self.default_s3_region2
+            arguments["secondarySecretKey"] = os.environ["S3_SECRET_KEY"]
+            arguments["secondaryRegionId"] = self.default_s3_region2
             if use_storage:
                 arguments["secondaryStorageDelegate"] = 1
-                arguments["secondaryStorageApiKey"] = os.environ["S3_ACCESS_KEY"]
-                arguments["secondaryStorageSecretKey"]= os.environ["S3_SECRET_KEY"]
+                arguments["secondaryStorageApiKey"] =\
+                    os.environ["S3_ACCESS_KEY"]
+                arguments["secondaryStorageSecretKey"] =\
+                    os.environ["S3_SECRET_KEY"]
 
         doc = {
             "command": "backup_data_source",
@@ -839,8 +842,8 @@ class TestProtocolCommands(unittest.TestCase, reply.ReplyObserverInterface):
 
         service_dir = self.conf_obj.get_service_directory(service_id)
         self.assertTrue(os.path.exists(service_dir))
-        self.assertTrue(os.path.exists(os.path.join(service_dir,
-                                                    "bin/enstratus-configure")))
+        self.assertTrue(os.path.exists(
+            os.path.join(service_dir, "bin/enstratus-configure")))
         self.assertTrue(os.path.exists(os.path.join(service_dir,
                                                     "bin/enstratus-stop")))
         self.assertTrue(os.path.exists(os.path.join(service_dir,
@@ -895,7 +898,6 @@ class TestProtocolCommands(unittest.TestCase, reply.ReplyObserverInterface):
 
         self.assertTrue(found)
 
-
     @test_utils.system_changing
     @test_utils.s3_needed
     def test_grant_db_revoke_db(self):
@@ -914,10 +916,10 @@ class TestProtocolCommands(unittest.TestCase, reply.ReplyObserverInterface):
             os.path.join(service_dir, "bin/enstratus-dbgrant")))
 
         cfg_data =\
-        """
-        This is some sample configuration data that will be passed to the
-        dbgrant file.
-        """ + str(uuid.uuid4())
+            """
+            This is some sample configuration data that will be passed to the
+            dbgrant file.
+            """ + str(uuid.uuid4())
 
         arguments = {
             "customerId": self.customer_id,
@@ -1001,7 +1003,6 @@ class TestProtocolCommands(unittest.TestCase, reply.ReplyObserverInterface):
             jd = self._get_job_description(jd["job_id"])
         self.assertEqual(jd["job_status"], "COMPLETE")
 
-
         with open("/tmp/service_backup", "r") as fptr:
             secs = fptr.readline()
             parameters = fptr.readline()
@@ -1067,7 +1068,8 @@ class TestProtocolCommands(unittest.TestCase, reply.ReplyObserverInterface):
     @test_utils.system_changing
     @test_utils.s3_needed
     def test_configure_server_with_enstratius(self):
-        files_uuids = [("script_run"+str(uuid.uuid4()), str(uuid.uuid4())),
+        files_uuids = [
+            ("script_run"+str(uuid.uuid4()), str(uuid.uuid4())),
             ("script_run"+str(uuid.uuid4()), str(uuid.uuid4())),
             ("script_run"+str(uuid.uuid4()), str(uuid.uuid4()))]
 

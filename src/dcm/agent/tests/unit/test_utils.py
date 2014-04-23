@@ -11,7 +11,6 @@ class TestProtocolCommands(unittest.TestCase):
         rc = utils.safe_delete("no/such/file")
         self.assertTrue(rc)
 
-
     def test_get_conf_files(self):
         tmp_d = tempfile.mkdtemp()
         osf, path = tempfile.mkstemp()

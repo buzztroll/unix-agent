@@ -24,7 +24,6 @@ class GetPrivateIpAddress(direct_pass.DirectPass):
 
     protocol_arguments = {}
 
-
     def __init__(self, conf, job_id, items_map, name, arguments):
         super(GetPrivateIpAddress, self).__init__(
             conf, job_id, items_map, name, arguments)

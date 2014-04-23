@@ -2,9 +2,7 @@ import Queue
 import logging
 import threading
 
-
 import dcm.agent.utils as agent_util
-from dcm.eventlog import tracer
 
 
 _g_logger = logging.getLogger(__name__)

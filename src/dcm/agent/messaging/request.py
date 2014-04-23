@@ -173,8 +173,6 @@ class RequestRPC(object):
         side and the requesting side receives the ACK before any timeouts of
         other 1 off events occur.  Pending retransmits will be cancelled.
         """
-        message = kwargs['message']
-
         # note: was are canceling the message but due to various
         # races it is still possible for timeout to occur.  The
         # state machine should account for this.
@@ -222,13 +220,13 @@ class RequestRPC(object):
         else:
             pass
 
-
         if self._reply_callback is not None:
             args = [message]
             if self._reply_args:
                 args.extend(self._reply_args)
 
-            parent_receive_q.UserCallback(self._user_reply_callback, None, None)
+            parent_receive_q.UserCallback(
+                self._user_reply_callback, None, None)
 
     def _sm_requested_reply_received(self, **kwargs):
         """

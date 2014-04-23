@@ -21,12 +21,12 @@ class RevokeDBAccess(direct_pass.DirectPass):
 
     protocol_arguments = {
         "serviceId":
-            ("The ID of the service that will have its rights revoked.",
-             True, str),
+        ("The ID of the service that will have its rights revoked.",
+         True, str),
         "configurationData":
-            ("The configuration data that will be written to a file and "
-             "passed into the revokeDatabaseAccess script",
-             True, str)
+        ("The configuration data that will be written to a file and "
+         "passed into the revokeDatabaseAccess script",
+         True, str)
     }
 
     def __init__(self, conf, job_id, items_map, name, arguments):

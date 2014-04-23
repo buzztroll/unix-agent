@@ -95,4 +95,3 @@ class AckCleanupTimer(object):
 
     def timeout_wrapper(self, *args, **kwargs):
         self._func(self, *args, **kwargs)
-

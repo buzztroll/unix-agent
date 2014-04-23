@@ -51,7 +51,8 @@ class Plugin(object):
         for arg in self.arguments:
             if arg not in self.protocol_arguments:
                 _g_logger.warn("The argument %s was sent from the agent "
-                               "manager but is not understood by this command.")
+                               "manager but is not understood by this "
+                               "command.")
             else:
                 h, mandatory, t = self.protocol_arguments[arg]
                 setattr(self.args, arg, t(self.arguments[arg]))

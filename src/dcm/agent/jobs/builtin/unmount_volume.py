@@ -19,8 +19,7 @@ import dcm.agent.utils as utils
 class UnmountVolume(jobs.Plugin):
 
     protocol_arguments = {
-        "deviceId":
-            ("The device ID to unmount.", True, str),
+        "deviceId": ("The device ID to unmount.", True, str),
     }
 
     def __init__(self, conf, job_id, items_map, name, arguments):

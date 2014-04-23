@@ -14,7 +14,6 @@
 import logging
 
 import os
-import datetime
 from dcm.agent import exceptions
 import dcm.agent.utils as utils
 import dcm.agent.jobs.direct_pass as direct_pass
@@ -27,14 +26,16 @@ _g_logger = logging.getLogger(__name__)
 class BackupDataSource(direct_pass.DirectPass):
 
     protocol_arguments = {
-        "serviceId": ("The ID of the service on which enstratus-backupDataSource "
-                      "will be called", True, str),
+        "serviceId": ("The ID of the service on which "
+                      "enstratus-backupDataSource will be called", True, str),
         "dataSourceName": ("The name of the data source.  This value will be "
-                           "passed to the enstratus-backupDataSource script. It"
-                           "is the base name for the destination backup file."
-                           " Date information will be encoded into the name.",
+                           "passed to the enstratus-backupDataSource script. "
+                           "It is the base name for the destination backup "
+                           "file. Date information will be encoded into the "
+                           "name.",
                            True, str),
-        "toBackupDirectory": ("The remote directory or bucket name", True, str),
+        "toBackupDirectory": ("The remote directory or bucket name",
+                              True, str),
         "primaryCloudId": ("The cloud ID or delegate string to which the "
                            "backup will be sent", True, str),
         "primaryRegionId": ("The region ID of the cloud where the backup "
@@ -44,7 +45,7 @@ class BackupDataSource(direct_pass.DirectPass):
         "configuration": ("The configuration data that will be passed to "
                           "enstratus-backupDataSource", True, str),
         "secondaryEndpoint": ("The endpoint for the off site account",
-                             False, str),
+                              False, str),
         "secondaryAccount": ("The account for the off site cloud.",
                              False, str),
         "secondaryCloudId": ("The cloud ID for the secondary backup cloud",
@@ -62,16 +63,16 @@ class BackupDataSource(direct_pass.DirectPass):
         "storageDelegate": ("For clouds setups where a separate storage cloud "
                             "is used this value will be the cloud ID for that "
                             "storage cloud", False, str),
-        "storageEndpoint": ("The storage endpoint point string for the separate"
-                            " storage cloud", False, str),
-        "storageAccount": ("The storage cloud account for the separate storage "
-                           "cloud", False, str),
+        "storageEndpoint": ("The storage endpoint point string for the"
+                            " separate storage cloud", False, str),
+        "storageAccount": ("The storage cloud account for the separate storage"
+                           " cloud", False, str),
         "storageApiKey": ("The separate storage cloud API key",
                           False, str),
         "storageSecretKey": ("The separate storage cloud secret key",
                              False, str),
-        "secondaryApiEndpoint": ("The endpoint contact string for the secondary "
-                                 "backup cloud.", False, str),
+        "secondaryApiEndpoint": ("The endpoint contact string for the "
+                                 "secondary backup cloud.", False, str),
         "secondaryApiAccount": ("The secondary cloud API account",
                                 False, str),
         "secondaryStorageDelegate": ("If the secondary backup cloud has a "
@@ -79,7 +80,7 @@ class BackupDataSource(direct_pass.DirectPass):
                                      "specified here.", False, str),
         "secondaryStorageEndpoint": ("The endpoint contact string for the "
                                      "secondary separate storage cloud.",
-                                     False,str),
+                                     False, str),
         "secondaryStorageAccount": ("The account for the secondary storage "
                                     "separate cloud.",
                                     False, str),

@@ -28,32 +28,31 @@ class InitializeJob(jobs.Plugin):
 
     protocol_arguments = {
         "cloudId":
-            ("The cloud ID on which this agent is running.",
-             True, str),
+        ("The cloud ID on which this agent is running.",
+         True, str),
         "customerId":
-            ("The ID of the customer running this server.  A new user will be "
-             "created with the name c<customerId>.",
-             True, long),
+        ("The ID of the customer running this server.  A new user will be "
+         "created with the name c<customerId>.",
+         True, long),
         "regionId":
-            ("Sets the default region that will be used by this agent in "
-             "future cloud related operations",
-             True, str),
+        ("Sets the default region that will be used by this agent in "
+         "future cloud related operations",
+         True, str),
         "zoneId":
-            ("The default zone that will be used by this agent in future "
-             "cloud operations.", True, str),
+        ("The default zone that will be used by this agent in future "
+         "cloud operations.", True, str),
         "serverId":
-            ("A unique ID for this server.  This will be used in future "
-             "communication with the agent manager as a means of "
-             "authentication.",
-             True, str),
+        ("A unique ID for this server.  This will be used in future "
+         "communication with the agent manager as a means of "
+         "authentication.",
+         True, str),
         "serverName":
-            ("The name of this server. The hostname will be set to this value.",
-             True, str),
+        ("The name of this server. The hostname will be set to this value.",
+         True, str),
         "encryptedEphemeralFsKey":
-            ("The file system key for encrypted ephemeral file systems.",
-             True, str)
+        ("The file system key for encrypted ephemeral file systems.",
+         True, str)
     }
-
 
     def __init__(self, conf, job_id, items_map, name, arguments):
         super(InitializeJob, self).__init__(

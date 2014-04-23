@@ -34,8 +34,8 @@ class Rename(direct_pass.DirectPass):
 
     protocol_arguments = {
         "serverName":
-            ("The host name to which this server will be set.",
-             True, str)
+        ("The host name to which this server will be set.",
+         True, str)
     }
 
     def __init__(self, conf, job_id, items_map, name, arguments):
