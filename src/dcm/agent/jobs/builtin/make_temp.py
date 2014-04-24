@@ -20,11 +20,7 @@ class MakeTemp(direct_pass.DirectPass):
     def __init__(self, conf, job_id, items_map, name, arguments):
         super(MakeTemp, self).__init__(
             conf, job_id, items_map, name, arguments)
-        try:
-            self.ordered_param_list = []
-        except KeyError as ke:
-            raise exceptions.AgentPluginConfigException(
-                "The plugin %s requires the option %s" % (name, ke.message))
+        self.ordered_param_list = []
 
 
 def load_plugin(conf, job_id, items_map, name, arguments):

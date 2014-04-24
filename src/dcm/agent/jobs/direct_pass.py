@@ -62,9 +62,6 @@ class DirectPass(jobs.Plugin):
         return reply
         # TODO XXX should stdout go on payload?
 
-    def cancel(self, reply_rpc, *args, **kwargs):
-        pass
-
 
 def load_plugin(conf, job_id, items_map, name, arguments):
     return DirectPass(conf, job_id, items_map, name, arguments)

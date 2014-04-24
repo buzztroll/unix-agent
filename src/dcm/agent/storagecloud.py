@@ -14,6 +14,7 @@
 import logging
 from libcloud.common.types import LibcloudError
 
+import libcloud.security
 from libcloud.storage.types import Provider, ContainerDoesNotExistError
 import libcloud.storage.providers as libcloud_providers
 from dcm.agent.cloudmetadata import CLOUD_TYPES
@@ -154,15 +155,16 @@ def get_cloud_driver(cloud_id,
                      secret_key,
                      region_id=None,
                      endpoint=None,
-                     account=None,
-                     storage_id=None,
-                     storage_endpoint=None,
-                     storage_account=None,
-                     storage_api_key=None,
-                     storage_secret_key=None):
+                     account=None):
 
     cloud_type = _map_cloud_id_to_type[cloud_id]
     driver_cls = _map_cloud_name_to_provider(cloud_type, region_id)
 
     driver = driver_cls(access_key, secret_key)
     return driver
+
+# libcloud.security.CA_CERTS_PATH.append('/Users/bresnaha/cert')
+# libcloud.security.VERIFY_SSL_CERT = False
+# driver = libcloud_providers.get_driver(Provider.AZURE_BLOBS)
+# d = driver('mediasvcbldtllnf01jhs', secret='syMWzquRwk18IHX31fXTYJ9b6GCou03BNin3rG5/OQKEmuWFvpWXQG0A5NzG485pQ4Q+ZBuruudhlklD3Xy37g==', sercure=False)
+# print d.list_containers()

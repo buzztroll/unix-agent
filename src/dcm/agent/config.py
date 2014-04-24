@@ -6,6 +6,7 @@ import tempfile
 import threading
 import yaml
 import dcm
+import libcloud.security
 from dcm.agent import job_runner
 from dcm.agent.cloudmetadata import CLOUD_TYPES
 from dcm.agent.connection import websocket
@@ -187,6 +188,12 @@ class AgentConfig(object):
         if self.storage_script_dir == "/PYTHON_LIBS_SCRIPTS":
             self.storage_script_dir = None
 
+        if self.storagecloud_ca_cert_dir and\
+                os.path.exists(self.storage_ca_cert_dir):
+            libcloud.security.CA_CERTS_PATH.append(self.storage_ca_cert_dir)
+        if not self.storagecloud_secure:
+            libcloud.security.VERIFY_SSL_CERT = False
+
         setup_logging(self.logging_configfile)
 
     def set_handshake(self, handshake_doc):
@@ -301,6 +308,9 @@ def _build_options_list():
         FilenameOpt("storage", "operations_path", default="/mnt"),
         FilenameOpt("storage", "idfile", default=None),
         FilenameOpt("storage", "script_dir", default=None),
+
+        FilenameOpt("storagecloud", "ca_cert_dir", default=None),
+        FilenameOpt("storagecloud", "secure", default=True),
 
         ConfigOpt("storage", "mount_enabled", bool, default=True),
         ConfigOpt("storage", "default_filesystem", str, default="ext3"),

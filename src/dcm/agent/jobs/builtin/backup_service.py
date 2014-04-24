@@ -137,7 +137,7 @@ class BackupService(direct_pass.DirectPass):
 
         if "secondaryStorageDelegate" in arguments:
             self.secondary_cloud_id = arguments["secondaryStorageDelegate"]
-            self.secondary_region = None
+            self.secondary_region = arguments.get("secondaryRegionId", None)
             self.secondary_api_key = arguments["secondaryStoragePublicKey"]
             self.secondary_secret_key = arguments["secondaryStoragePrivateKey"]
             self.secondary_endpoint = arguments.get(

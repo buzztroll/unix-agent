@@ -26,15 +26,3 @@ def system_changing(func):
         return func(*args, **kwargs)
     inner.__name__ = func.__name__
     return inner
-
-
-def s3_needed(func):
-    def inner(*args, **kwargs):
-        if S3_ACCESS_KEY_ENV not in os.environ or\
-                S3_SECRET_KEY_ENV not in os.environ:
-            raise skip.SkipTest(
-                "Test %s requires S# keys in your env %s %s"
-                % (func.__name__, S3_ACCESS_KEY_ENV, S3_SECRET_KEY_ENV))
-        return func(*args, **kwargs)
-    inner.__name__ = func.__name__
-    return inner

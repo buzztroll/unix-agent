@@ -26,9 +26,19 @@ class UnmountVolume(jobs.Plugin):
         super(UnmountVolume, self).__init__(
             conf, job_id, items_map, name, arguments)
 
+    def umount(self):
+        device_mappings = utils.get_device_mappings(self.conf)
+
+        for mapping in device_mappings:
+            d_id = mapping["device_id"]
+            mount_point = mapping["mount_point"]
+            if d_id == self.args.deviceId:
+                utils.unmount(self.conf, mount_point)
+                break
+
     def run(self):
         try:
-            utils.unmount(self.args.deviceId)
+            self.umount()
             return {"return_code": 0, "message": "",
                     "error_message": "", "return_type": "void"}
         except exceptions.AgentExecutableException as aex:

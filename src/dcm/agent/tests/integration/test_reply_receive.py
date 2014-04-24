@@ -1,3 +1,4 @@
+from collections import namedtuple
 import getpass
 import os
 import random
@@ -7,11 +8,12 @@ import socket
 import tarfile
 import tempfile
 import threading
-import unittest
 import pwd
 import datetime
 import uuid
-from libcloud.common.types import LibcloudError
+import logging
+import nose
+from nose.plugins import skip
 
 import dcm.agent.utils as utils
 from dcm.agent.cmd import service, configure
@@ -21,7 +23,9 @@ import dcm.agent.tests.utils as test_utils
 import dcm.agent.tests.utils.test_connection as test_conn
 
 
-class TestProtocolCommands(unittest.TestCase, reply.ReplyObserverInterface):
+# does not inherit from unittest because of the python generators for
+# testing storage clouds
+class TestProtocolCommands(reply.ReplyObserverInterface):
 
     def new_message(self, reply):
         pass
@@ -33,17 +37,53 @@ class TestProtocolCommands(unittest.TestCase, reply.ReplyObserverInterface):
         pass
 
     @classmethod
-    def _setup_s3(cls):
-        cls.backup_bucket = "enstartiustestonetwo" + \
+    def _setup_storage_clouds(cls):
+        env_str = "DCM_AGENT_STORAGE_CREDS"
+
+        cls.storage_clouds = []
+        if env_str not in os.environ:
+            return
+
+        path = os.environ[env_str]
+        try:
+            with open(path, "r") as fptr:
+                cloud_lines = fptr.readlines()
+        except Exception as ex:
+            logging.error("Failed to setup storage clouds, continuing all "
+                          "tests that do not require a storage cloud", ex)
+            return
+
+        for cloud_line in cloud_lines:
+            cloud_endpoint = None
+            cloud_account = None
+            cloud_region = None
+            c_a = cloud_line.split(" ")
+            cloud_id = int(c_a.pop(0).strip())
+            cloud_key = c_a.pop(0).strip()
+            cloud_secret = c_a.pop(0).strip()
+            if c_a:
+                cloud_region = c_a.pop(0).strip()
+            if c_a:
+                cloud_endpoint = c_a.pop(0).strip()
+            if c_a:
+                cloud_account = c_a.pop(0).strip()
+
+            CloudT = namedtuple('Cloud', 'id key secret endpoint account region')
+            cloud = CloudT(cloud_id,
+                           cloud_key,
+                           cloud_secret,
+                           cloud_endpoint,
+                           cloud_account,
+                           cloud_region)
+            cls.storage_clouds.append(cloud)
+
+    @classmethod
+    def _setup_buckets(cls):
+        cls.bucket = "dcmagenttests" + \
                             str(uuid.uuid4()).split("-")[0]
-        cls.backup_bucket2 = "enstartiustesttwotwo" +\
-                             str(uuid.uuid4()).split("-")[0]
-        cls.default_s3_region = "us_west_oregon"
-        cls.default_s3_region2 = "us_west"
         cls.simple_service = "asimple_service.tar.gz"
 
-        if "S3_SECRET_KEY" not in os.environ or\
-                "S3_ACCESS_KEY" not in os.environ:
+        if not cls.storage_clouds:
             return
 
         etc_dir = os.path.dirname(os.path.dirname(__file__))
@@ -55,21 +95,17 @@ class TestProtocolCommands(unittest.TestCase, reply.ReplyObserverInterface):
                 tar.add(os.path.join(etc_dir, "etc",
                                      "simple_service", fname), arcname=fname)
 
-        check_list = [(cls.default_s3_region, cls.backup_bucket),
-                      (cls.default_s3_region2, cls.backup_bucket2)]
-        for region, bucket_name in check_list:
-            cloud = storagecloud.get_cloud_driver(
-                1,
-                os.environ["S3_ACCESS_KEY"],
-                os.environ["S3_SECRET_KEY"],
-                region_id=region)
-            try:
-                cloud.create_container(bucket_name)
-            except LibcloudError as ex:
-                pass
-
-            container = cloud.get_container(bucket_name)
-            cloud.upload_object(tar_path, container, cls.simple_service)
+        for cloud in cls.storage_clouds:
+            cloud_driver = storagecloud.get_cloud_driver(
+                cloud.id,
+                cloud.key,
+                cloud.secret,
+                region_id=cloud.region,
+                account=cloud.account,
+                endpoint=cloud.endpoint)
+            cloud_driver.create_container(cls.bucket)
+            container = cloud_driver.get_container(cls.bucket)
+            cloud_driver.upload_object(tar_path, container, cls.simple_service)
 
         shutil.rmtree(tar_dir)
 
@@ -96,31 +132,29 @@ class TestProtocolCommands(unittest.TestCase, reply.ReplyObserverInterface):
         if rc != 0:
             raise Exception("We could not configure the test env")
         try:
-            cls._setup_s3()
+            cls._setup_storage_clouds()
+            cls._setup_buckets()
         except Exception as ex:
-            pass
+            raise
 
     @classmethod
     def tearDownClass(cls):
         shutil.rmtree(cls.test_base_path)
-        if "S3_SECRET_KEY" not in os.environ or\
-                "S3_ACCESS_KEY" not in os.environ:
-            return
-        check_list = [(cls.default_s3_region, cls.backup_bucket),
-                      (cls.default_s3_region2, cls.backup_bucket2)]
-        for region, bucket_name in check_list:
-            cloud = storagecloud.get_cloud_driver(
-                1,
-                os.environ["S3_ACCESS_KEY"],
-                os.environ["S3_SECRET_KEY"],
-                region_id=region)
 
+        for cloud in cls.storage_clouds:
+            cloud_driver = storagecloud.get_cloud_driver(
+                cloud.id,
+                cloud.key,
+                cloud.secret,
+                region_id=cloud.region,
+                account=cloud.account,
+                endpoint=cloud.endpoint)
             try:
-                container = cloud.get_container(bucket_name)
-                obj_list = cloud.list_container_objects(container)
+                container = cloud_driver.get_container(cls.bucket)
+                obj_list = cloud_driver.list_container_objects(container)
                 for o in obj_list:
-                    cloud.delete_object(o)
-                cloud.delete_container(container)
+                    cloud_driver.delete_object(o)
+                cloud_driver.delete_container(container)
             except:
                 pass
 
@@ -155,7 +189,7 @@ class TestProtocolCommands(unittest.TestCase, reply.ReplyObserverInterface):
         handshake_doc["agentID"] = self.agent_id
         handshake_doc["cloudId"] = "Amazon"
         handshake_doc["customerId"] = self.customer_id
-        handshake_doc["regionId"] = self.default_s3_region
+        handshake_doc["regionId"] = None
         handshake_doc["zoneId"] = "rack2"
         handshake_doc["serverId"] = "thisServer"
         handshake_doc["serverName"] = "dcm.testagent.com"
@@ -225,22 +259,20 @@ class TestProtocolCommands(unittest.TestCase, reply.ReplyObserverInterface):
         }
         req_reply = self._rpc_wait_reply(doc)
         r = req_reply.get_reply()
-
-        print r
-        self.assertEquals(r["payload"]["reply_type"], "string")
-        self.assertEquals(r["payload"]["return_code"], 0)
+        nose.tools.eq_(r["payload"]["reply_type"], "string")
+        nose.tools.eq_(r["payload"]["return_code"], 0)
 
         # TODO verify that this matches the output of the command
 
     def test_get_agent_data(self):
         doc = {
             "command": "get_agent_data",
-            "arguments": {"agent_token": None}
+            "arguments": {}
         }
         req_rpc = self._rpc_wait_reply(doc)
         r = req_rpc.get_reply()
-        self.assertEquals(r["payload"]["reply_type"], "agent_data")
-        self.assertEquals(r["payload"]["return_code"], 0)
+        nose.tools.eq_(r["payload"]["reply_type"], "agent_data")
+        nose.tools.eq_(r["payload"]["return_code"], 0)
 
     @test_utils.system_changing
     def test_add_user_remove_user(self):
@@ -257,11 +289,11 @@ class TestProtocolCommands(unittest.TestCase, reply.ReplyObserverInterface):
                           "administrator": False}}
         req_rpc = self._rpc_wait_reply(doc)
         r = req_rpc.get_reply()
-        self.assertEquals(r["payload"]["return_code"], 0)
+        nose.tools.eq_(r["payload"]["return_code"], 0)
 
         pw_ent = pwd.getpwnam(user_name)
 
-        self.assertEquals(pw_ent.pw_name, user_name)
+        nose.tools.eq_(pw_ent.pw_name, user_name)
 
         doc = {
             "command": "remove_user",
@@ -269,8 +301,12 @@ class TestProtocolCommands(unittest.TestCase, reply.ReplyObserverInterface):
 
         req_rpc = self._rpc_wait_reply(doc)
         r = req_rpc.get_reply()
-        self.assertEquals(r["payload"]["return_code"], 0)
-        self.assertRaises(KeyError, pwd.getpwnam, user_name)
+        nose.tools.eq_(r["payload"]["return_code"], 0)
+        try:
+            pwd.getpwnam(user_name)
+            nose.tools.ok_(False, "should have raised an exception")
+        except KeyError:
+            pass
 
     @test_utils.system_changing
     def test_initialize(self):
@@ -288,12 +324,12 @@ class TestProtocolCommands(unittest.TestCase, reply.ReplyObserverInterface):
                           "encryptedEphemeralFsKey": None}}
         req_rpc = self._rpc_wait_reply(doc)
         r = req_rpc.get_reply()
-        self.assertEquals(r["payload"]["return_code"], 0)
-        self.assertEquals(socket.gethostname(), new_hostname)
+        nose.tools.eq_(r["payload"]["return_code"], 0)
+        nose.tools.eq_(socket.gethostname(), new_hostname)
 
         customer_user = utils.make_id_string("c", cust)
         pw_ent = pwd.getpwnam(customer_user)
-        self.assertEquals(pw_ent.pw_name, customer_user)
+        nose.tools.eq_(pw_ent.pw_name, customer_user)
 
     def test_list_devices(self):
         doc = {
@@ -302,7 +338,7 @@ class TestProtocolCommands(unittest.TestCase, reply.ReplyObserverInterface):
         }
         req_reply = self._rpc_wait_reply(doc)
         r = req_reply.get_reply()
-        self.assertEquals(r["payload"]["return_code"], 0)
+        nose.tools.eq_(r["payload"]["return_code"], 0)
 
         # TODO verify that this matches the output of the command
 
@@ -313,7 +349,7 @@ class TestProtocolCommands(unittest.TestCase, reply.ReplyObserverInterface):
         }
         req_reply = self._rpc_wait_reply(doc)
         r = req_reply.get_reply()
-        self.assertEquals(r["payload"]["return_code"], 0)
+        nose.tools.eq_(r["payload"]["return_code"], 0)
 
         # TODO verify that this matches the output of the command
 
@@ -321,16 +357,16 @@ class TestProtocolCommands(unittest.TestCase, reply.ReplyObserverInterface):
     def test_rename(self):
         orig_hostname = socket.gethostname()
 
-        new_hostname = "buzztroll.net"
+        new_hostname = "buzztroll"
         doc = {
             "command": "rename",
             "arguments": {"serverName": new_hostname}
         }
         req_reply = self._rpc_wait_reply(doc)
         r = req_reply.get_reply()
-        self.assertEquals(r["payload"]["return_code"], 0)
+        nose.tools.eq_(r["payload"]["return_code"], 0)
 
-        self.assertEqual(socket.gethostname(), new_hostname)
+        nose.tools.eq_(socket.gethostname(), new_hostname)
 
         doc = {
             "command": "rename",
@@ -338,9 +374,9 @@ class TestProtocolCommands(unittest.TestCase, reply.ReplyObserverInterface):
         }
         req_reply = self._rpc_wait_reply(doc)
         r = req_reply.get_reply()
-        self.assertEquals(r["payload"]["return_code"], 0)
+        nose.tools.eq_(r["payload"]["return_code"], 0)
 
-        self.assertEqual(socket.gethostname(), orig_hostname)
+        nose.tools.eq_(socket.gethostname(), orig_hostname)
 
     def _get_job_description(self, job_id):
         arguments = {
@@ -352,29 +388,36 @@ class TestProtocolCommands(unittest.TestCase, reply.ReplyObserverInterface):
         }
         req_reply = self._rpc_wait_reply(doc)
         r = req_reply.get_reply()
-        self.assertEquals(r["payload"]["return_code"], 0)
-        self.assertEquals(r["payload"]["reply_type"], "job_description")
+        nose.tools.eq_(r["payload"]["return_code"], 0)
+        nose.tools.eq_(r["payload"]["reply_type"], "job_description")
 
         jd = r["payload"]["reply_object"]
 
         return jd
 
-    def _install_service(self, service_id, bucket, fname, other_storage=False):
+    def _install_service(self, service_id, bucket, fname, cloud_tuple,
+                         other_storage=False):
+
         # test install
         arguments = {
             "customerId": self.customer_id,
             "serviceId": service_id,
-            "cloudId": 1,
+            "cloudId": cloud_tuple.id,
             "runAsUser": self.run_as_user,
-            "apiAccessKey": os.environ["S3_ACCESS_KEY"],
-            "apiSecretKey": os.environ["S3_SECRET_KEY"],
+            "apiAccessKey": cloud_tuple.key,
+            "apiSecretKey": cloud_tuple.secret,
             "serviceImageDirectory": bucket,
+            "providerRegionId": cloud_tuple.region,
+            "apiEndpoint": cloud_tuple.endpoint,
+            "apiAccount": cloud_tuple.account,
             "serviceImageFile": fname
         }
         if other_storage:
-            arguments["storageAccessKey"] = os.environ["S3_ACCESS_KEY"]
-            arguments["storageSecretKey"] = os.environ["S3_SECRET_KEY"]
-            arguments["storageDelegate"] = 1
+            arguments["storageAccessKey"] = cloud_tuple.key
+            arguments["storageSecretKey"] = cloud_tuple.secret
+            arguments["storageDelegate"] = cloud_tuple.id
+            arguments["storageEndpoint"] = cloud_tuple.endpoint
+            arguments["storageAccount"] = cloud_tuple.account
 
         doc = {
             "command": "install_service",
@@ -382,44 +425,73 @@ class TestProtocolCommands(unittest.TestCase, reply.ReplyObserverInterface):
         }
         req_reply = self._rpc_wait_reply(doc)
         r = req_reply.get_reply()
-        self.assertEquals(r["payload"]["return_code"], 0)
-        self.assertEquals(r["payload"]["reply_type"], "job_description")
+        nose.tools.eq_(r["payload"]["return_code"], 0)
+        nose.tools.eq_(r["payload"]["reply_type"], "job_description")
 
         jd = r["payload"]["reply_object"]
         while jd["job_status"] in ["WAITING", "RUNNING"]:
             jd = self._get_job_description(jd["job_id"])
-        self.assertEqual(jd["job_status"], "COMPLETE")
+        nose.tools.eq_(jd["job_status"], "COMPLETE")
 
         service_dir = self.conf_obj.get_service_directory(service_id)
-        self.assertTrue(os.path.exists(service_dir))
-        self.assertTrue(os.path.exists(
+        nose.tools.ok_(os.path.exists(service_dir))
+        nose.tools.ok_(os.path.exists(
             os.path.join(service_dir, "bin/enstratus-configure")))
-        self.assertTrue(os.path.exists(os.path.join(service_dir,
+        nose.tools.ok_(os.path.exists(os.path.join(service_dir,
                                                     "bin/enstratus-stop")))
-        self.assertTrue(os.path.exists(os.path.join(service_dir,
+        nose.tools.ok_(os.path.exists(os.path.join(service_dir,
                                                     "bin/enstratus-start")))
 
-    @test_utils.system_changing
-    @test_utils.s3_needed
-    def test_alt_service_install(self):
-        service_id = "asuccess_service_two"
-        self._install_service(service_id, self.backup_bucket,
-                              self.simple_service, other_storage=True)
+    def test_service_install_only(self):
+        for b in (True, False):
+            for i in range(-1, len(self.storage_clouds) - 1):
+                primary = self.storage_clouds[i]
+                secondary = self.storage_clouds[i + 1]
+                if primary == secondary:
+                    secondary = None
+                yield self._service_install_only, primary, secondary, b
+
+    def _service_install_only(self, primary, secondary, other_store):
+        service_id = "aservice" + str(uuid.uuid4()).split("-")[0]
+        self._install_service(service_id,
+                              self.bucket,
+                              self.simple_service,
+                              primary,
+                              other_storage=True)
+
+    def test_alt_service_install_data_source(self):
+        for b in (True, False):
+            for i in range(-1, len(self.storage_clouds) - 1):
+                primary = self.storage_clouds[i]
+                secondary = self.storage_clouds[i + 1]
+                if primary == secondary:
+                    secondary = None
+                yield self.alt_service_install, primary, secondary, b
+
+    def alt_service_install(self, primary, secondary, os):
+        service_id = "aservice" + str(uuid.uuid4()).split("-")[0]
+        self._install_service(service_id,
+                              self.bucket,
+                              self.simple_service,
+                              primary,
+                              other_storage=os)
 
         configuration_data = """test config data"""
         arguments = {
             "customerId": self.customer_id,
             "serviceId": service_id,
-            "cloudId": 1,
+            "cloudId": primary.id,
             "runAsUser": self.run_as_user,
-            "apiAccessKey": os.environ["S3_ACCESS_KEY"],
-            "apiSecretKey": os.environ["S3_SECRET_KEY"],
+            "apiAccessKey": primary.key,
+            "apiSecretKey": primary.secret,
             "configuration": configuration_data,
-            "imageDirectory": "enstratiustests",
-            "dataSourceImage": "success_service.tar.gz",
-            "storagePublicKey": os.environ["S3_ACCESS_KEY"],
-            "storagePrivateKey": os.environ["S3_SECRET_KEY"],
-            "storageDelegate": 1
+            "imageDirectory": self.bucket,
+            # pretend the same tarball is the data set
+            "dataSourceImage": self.simple_service,
+            "storagePublicKey": primary.key,
+            "storagePrivateKey": primary.secret,
+            "storageDelegate": primary.id,
+            "regionId": primary.region
         }
         doc = {
             "command": "install_data_source",
@@ -427,32 +499,41 @@ class TestProtocolCommands(unittest.TestCase, reply.ReplyObserverInterface):
         }
         req_reply = self._rpc_wait_reply(doc)
         r = req_reply.get_reply()
-        self.assertEquals(r["payload"]["return_code"], 0)
-        self.assertEquals(r["payload"]["reply_type"], "job_description")
+        nose.tools.eq_(r["payload"]["return_code"], 0)
+        nose.tools.eq_(r["payload"]["reply_type"], "job_description")
         jd = r["payload"]["reply_object"]
         while jd["job_status"] in ["WAITING", "RUNNING"]:
             jd = self._get_job_description(jd["job_id"])
-        self.assertEqual(jd["job_status"], "COMPLETE")
+        nose.tools.eq_(jd["job_status"], "COMPLETE")
 
-    @test_utils.system_changing
-    @test_utils.s3_needed
     def test_install_start_stop_configure_service(self):
         """
         install a service, start it, configure it in two ways, stop it, then
         delete the directory it was put into
         """
-        service_id = "asuccess_service"
+        for b in (True, False):
+            for i in range(-1, len(self.storage_clouds) - 1):
+                primary = self.storage_clouds[i]
+                secondary = self.storage_clouds[i + 1]
+                if primary == secondary:
+                    secondary = None
+                yield self._install_start_stop_configure_service, primary, secondary, b
+
+    def _install_start_stop_configure_service(self, primary, secondary, b):
+        service_id = "aservice" + str(uuid.uuid4()).split("-")[0]
         self._install_service(service_id,
-                              self.backup_bucket,
-                              self.simple_service)
+                              self.bucket,
+                              self.simple_service,
+                              primary,
+                              other_storage=b)
 
         service_dir = self.conf_obj.get_service_directory(service_id)
-        self.assertTrue(os.path.exists(service_dir))
-        self.assertTrue(os.path.exists(
+        nose.tools.ok_(os.path.exists(service_dir))
+        nose.tools.ok_(os.path.exists(
             os.path.join(service_dir, "bin/enstratus-configure")))
-        self.assertTrue(os.path.exists(os.path.join(service_dir,
+        nose.tools.ok_(os.path.exists(os.path.join(service_dir,
                                                     "bin/enstratus-stop")))
-        self.assertTrue(os.path.exists(os.path.join(service_dir,
+        nose.tools.ok_(os.path.exists(os.path.join(service_dir,
                                                     "bin/enstratus-start")))
 
         # test start
@@ -467,13 +548,13 @@ class TestProtocolCommands(unittest.TestCase, reply.ReplyObserverInterface):
         start_time = datetime.datetime.now().replace(microsecond=0)
         req_reply = self._rpc_wait_reply(doc)
         r = req_reply.get_reply()
-        self.assertEquals(r["payload"]["return_code"], 0)
-        self.assertTrue(os.path.exists("/tmp/service_start"))
+        nose.tools.eq_(r["payload"]["return_code"], 0)
+        nose.tools.ok_(os.path.exists("/tmp/service_start"))
 
         with open("/tmp/service_start", "r") as fptr:
             secs = fptr.readline()
         tm = datetime.datetime.utcfromtimestamp(float(secs))
-        self.assertTrue(tm >= start_time)
+        nose.tools.ok_(tm >= start_time)
 
         configuration_data = """
         This is some configuration data.
@@ -494,28 +575,28 @@ class TestProtocolCommands(unittest.TestCase, reply.ReplyObserverInterface):
         start_time = datetime.datetime.now().replace(microsecond=0)
         req_reply = self._rpc_wait_reply(doc)
         r = req_reply.get_reply()
-        self.assertEquals(r["payload"]["return_code"], 0)
+        nose.tools.eq_(r["payload"]["return_code"], 0)
         jd = r["payload"]["reply_object"]
         while jd["job_status"] in ["WAITING", "RUNNING"]:
             jd = self._get_job_description(jd["job_id"])
-        self.assertEqual(jd["job_status"], "COMPLETE")
+        nose.tools.eq_(jd["job_status"], "COMPLETE")
 
-        self.assertTrue(os.path.exists("/tmp/service_configure"))
+        nose.tools.ok_(os.path.exists("/tmp/service_configure"))
 
         with open("/tmp/service_configure", "r") as fptr:
             secs = fptr.readline()
             params = fptr.readline()
         tm = datetime.datetime.utcfromtimestamp(float(secs))
-        self.assertTrue(tm >= start_time)
+        nose.tools.ok_(tm >= start_time)
         p_a = params.split()
-        self.assertEqual(len(p_a), 2)
+        nose.tools.ok_(len(p_a), 2)
 
         cfg_file = os.path.join(service_dir, "cfg", "enstratiusinitd.cfg")
-        self.assertTrue(os.path.exists(cfg_file))
+        nose.tools.ok_(os.path.exists(cfg_file))
 
         with open(cfg_file, "r") as fptr:
             data = fptr.read()
-            self.assertEqual(data, configuration_data)
+            nose.tools.ok_(data, configuration_data)
 
         ssl_public = "SFSOHWEKJRNMNSD<MNCSDNFSLEJFLKSENF<SDNCVDMS< CV"
         ssl_private = "sdfsdfsdjkhwekrjnwekrnweknv,mx vm,nwekrnlwekndfems,nfsd"
@@ -530,7 +611,7 @@ class TestProtocolCommands(unittest.TestCase, reply.ReplyObserverInterface):
             "address": "http://someplacefcdx.com",
             "sslPublic": ssl_public,
             "sslPrivate": ssl_private,
-            "sslChain": None
+            "sslChain": "thisisthesslschain"
         }
         doc = {
             "command": "configure_service_with_ssl",
@@ -539,28 +620,28 @@ class TestProtocolCommands(unittest.TestCase, reply.ReplyObserverInterface):
         start_time = datetime.datetime.now().replace(microsecond=0)
         req_reply = self._rpc_wait_reply(doc)
         r = req_reply.get_reply()
-        self.assertEquals(r["payload"]["return_code"], 0)
+        nose.tools.eq_(r["payload"]["return_code"], 0)
         jd = r["payload"]["reply_object"]
         while jd["job_status"] in ["WAITING", "RUNNING"]:
             jd = self._get_job_description(jd["job_id"])
-        self.assertEqual(jd["job_status"], "COMPLETE")
+        nose.tools.eq_(jd["job_status"], "COMPLETE")
 
-        self.assertTrue(os.path.exists("/tmp/service_configure"))
+        nose.tools.ok_(os.path.exists("/tmp/service_configure"))
 
         with open("/tmp/service_configure", "r") as fptr:
             secs = fptr.readline()
             params = fptr.readline()
         tm = datetime.datetime.utcfromtimestamp(float(secs))
-        self.assertTrue(tm >= start_time)
+        nose.tools.ok_(tm >= start_time)
         p_a = params.split()
-        self.assertEqual(len(p_a), 5)
+        nose.tools.eq_(len(p_a), 6)
 
         cfg_file = os.path.join(service_dir, "cfg", "enstratiusinitd.cfg")
-        self.assertTrue(os.path.exists(cfg_file))
+        nose.tools.ok_(os.path.exists(cfg_file))
 
         with open(cfg_file, "r") as fptr:
             data = fptr.read()
-            self.assertEqual(data, configuration_data)
+            nose.tools.eq_(data, configuration_data)
 
         # get service state
         arguments = {
@@ -572,25 +653,26 @@ class TestProtocolCommands(unittest.TestCase, reply.ReplyObserverInterface):
         }
         req_reply = self._rpc_wait_reply(doc)
         r = req_reply.get_reply()
-        self.assertEquals(r["payload"]["return_code"], 0)
-        self.assertEquals(r["payload"]["reply_type"], "string_array")
+        nose.tools.eq_(r["payload"]["return_code"], 0)
+        nose.tools.eq_(r["payload"]["reply_type"], "string_array")
         service_array = r["payload"]["reply_object"]
 
-        self.assertIn(service_id, service_array)
-        self.assertEqual(service_array[service_array.index(service_id) + 1],
+        nose.tools.ok_(service_id in service_array)
+        nose.tools.eq_(service_array[service_array.index(service_id) + 1],
                          'OK')
 
         # install data source
         arguments = {
             "customerId": self.customer_id,
             "serviceId": service_id,
-            "cloudId": 1,
+            "cloudId": primary.id,
             "runAsUser": self.run_as_user,
-            "apiAccessKey": os.environ["S3_ACCESS_KEY"],
-            "apiSecretKey": os.environ["S3_SECRET_KEY"],
+            "apiAccessKey": primary.key,
+            "apiSecretKey": primary.secret,
             "configuration": configuration_data,
-            "imageDirectory": "enstratiustests",
-            "dataSourceImage": "success_service.tar.gz"
+            "imageDirectory": self.bucket,
+            "dataSourceImage": self.simple_service,
+            "regionId": primary.region
         }
         doc = {
             "command": "install_data_source",
@@ -598,12 +680,12 @@ class TestProtocolCommands(unittest.TestCase, reply.ReplyObserverInterface):
         }
         req_reply = self._rpc_wait_reply(doc)
         r = req_reply.get_reply()
-        self.assertEquals(r["payload"]["return_code"], 0)
-        self.assertEquals(r["payload"]["reply_type"], "job_description")
+        nose.tools.eq_(r["payload"]["return_code"], 0)
+        nose.tools.eq_(r["payload"]["reply_type"], "job_description")
         jd = r["payload"]["reply_object"]
         while jd["job_status"] in ["WAITING", "RUNNING"]:
             jd = self._get_job_description(jd["job_id"])
-        self.assertEqual(jd["job_status"], "COMPLETE")
+        nose.tools.eq_(jd["job_status"], "COMPLETE")
 
         # test stop
         arguments = {
@@ -617,40 +699,37 @@ class TestProtocolCommands(unittest.TestCase, reply.ReplyObserverInterface):
         start_time = datetime.datetime.now().replace(microsecond=0)
         req_reply = self._rpc_wait_reply(doc)
         r = req_reply.get_reply()
-        self.assertEquals(r["payload"]["return_code"], 0)
-        self.assertTrue(os.path.exists("/tmp/service_stop"))
+        nose.tools.eq_(r["payload"]["return_code"], 0)
+        nose.tools.ok_(os.path.exists("/tmp/service_stop"))
 
         with open("/tmp/service_stop", "r") as fptr:
             secs = fptr.readline()
         tm = datetime.datetime.utcfromtimestamp(float(secs))
-        self.assertTrue(tm >= start_time)
+        nose.tools.ok_(tm >= start_time)
         shutil.rmtree(service_dir)
 
     @test_utils.system_changing
-    @test_utils.s3_needed
-    def test_install_service_storage_delegate(self):
-        service_id1 = "aotherstorage" + str(uuid.uuid4()).split("-")[0]
-        self._install_service(service_id1,
-                              self.backup_bucket,
-                              self.simple_service,
-                              other_storage=True)
-
-    @test_utils.system_changing
-    @test_utils.s3_needed
     def test_start_services(self):
         """
         install a service, start it, configure it in two ways, stop it, then
         delete the directory it was put into
         """
+        # just install from the first storage cloud in the list
+        if not self.storage_clouds:
+            raise skip.SkipTest("No storage clouds configured")
+
+        primary_cloud = self.storage_clouds[1]
         service_id1 = "aone_service" + str(uuid.uuid4()).split("-")[0]
         self._install_service(service_id1,
-                              self.backup_bucket,
-                              self.simple_service)
+                              self.bucket,
+                              self.simple_service,
+                              primary_cloud)
 
         service_id2 = "atwo_service" + str(uuid.uuid4()).split("-")[0]
         self._install_service(service_id2,
-                              self.backup_bucket,
-                              self.simple_service)
+                              self.bucket,
+                              self.simple_service,
+                              primary_cloud)
 
         # test start
         arguments = {
@@ -663,13 +742,13 @@ class TestProtocolCommands(unittest.TestCase, reply.ReplyObserverInterface):
         start_time = datetime.datetime.now().replace(microsecond=0)
         req_reply = self._rpc_wait_reply(doc)
         r = req_reply.get_reply()
-        self.assertEquals(r["payload"]["return_code"], 0)
-        self.assertTrue(os.path.exists("/tmp/service_start"))
+        nose.tools.eq_(r["payload"]["return_code"], 0)
+        nose.tools.ok_(os.path.exists("/tmp/service_start"))
 
         with open("/tmp/service_start", "r") as fptr:
             secs = fptr.readline()
         tm = datetime.datetime.utcfromtimestamp(float(secs))
-        self.assertTrue(tm >= start_time)
+        nose.tools.ok_(tm >= start_time)
 
         # get service state
         arguments = {
@@ -680,59 +759,57 @@ class TestProtocolCommands(unittest.TestCase, reply.ReplyObserverInterface):
         }
         req_reply = self._rpc_wait_reply(doc)
         r = req_reply.get_reply()
-        self.assertEquals(r["payload"]["return_code"], 0)
-        self.assertEquals(r["payload"]["reply_type"], "string_array")
+        nose.tools.eq_(r["payload"]["return_code"], 0)
+        nose.tools.eq_(r["payload"]["reply_type"], "string_array")
         service_array = r["payload"]["reply_object"]
 
-        self.assertIn(service_id1, service_array)
-        self.assertIn(service_id2, service_array)
-        self.assertEqual(service_array[service_array.index(service_id1) + 1],
+        nose.tools.ok_(service_id1 in service_array)
+        nose.tools.ok_(service_id2 in service_array)
+        nose.tools.eq_(service_array[service_array.index(service_id1) + 1],
                          'OK')
-        self.assertEqual(service_array[service_array.index(service_id2) + 1],
+        nose.tools.eq_(service_array[service_array.index(service_id2) + 1],
                          'OK')
 
     def _backup_data(self,
                      s_id,
                      file_path,
-                     use_storage=False,
-                     use_offsite=False):
+                     primary,
+                     secondary,
+                     use_storage=False):
 
         object_name = "objname" + str(uuid.uuid4()).split("-")[0]
         cfg = """
         A bunch of config data
         """ + str(uuid.uuid4())
 
-        check_list = [(self.default_s3_region, self.backup_bucket)]
-
+        cloud_list = [primary]
         arguments = {
             "configuration": cfg,
             "serviceId": s_id,
-            "primaryCloudId": 1,
+            "primaryCloudId": primary.id,
             "runAsUser": self.run_as_user,
-            "primaryApiKey": os.environ["S3_ACCESS_KEY"],
-            "primarySecretKey": os.environ["S3_SECRET_KEY"],
-            "toBackupDirectory": self.backup_bucket,
+            "primaryApiKey": primary.key,
+            "primarySecretKey": primary.secret,
+            "toBackupDirectory": self.bucket,
             "serviceImageFile": file_path,
             "dataSourceName": object_name,
-            "primaryRegionId": self.default_s3_region
+            "primaryRegionId": primary.region
         }
         if use_storage:
-            arguments["storageDelegate"] = 1
-            arguments["storageApiKey"] = os.environ["S3_ACCESS_KEY"]
-            arguments["storageSecretKey"] = os.environ["S3_SECRET_KEY"]
+            arguments["storageDelegate"] = primary.id
+            arguments["storageApiKey"] = primary.key
+            arguments["storageSecretKey"] = primary.secret
 
-        if use_offsite:
-            check_list.append((self.default_s3_region2, self.backup_bucket2))
-            arguments["secondaryCloudId"] = 1
-            arguments["secondaryApiKey"] = os.environ["S3_ACCESS_KEY"]
-            arguments["secondarySecretKey"] = os.environ["S3_SECRET_KEY"]
-            arguments["secondaryRegionId"] = self.default_s3_region2
+        if secondary:
+            cloud_list.append(secondary)
+            arguments["secondaryCloudId"] = secondary.id
+            arguments["secondaryApiKey"] = secondary.key
+            arguments["secondarySecretKey"] = secondary.secret
+            arguments["secondaryRegionId"] = secondary.region
             if use_storage:
-                arguments["secondaryStorageDelegate"] = 1
-                arguments["secondaryStorageApiKey"] =\
-                    os.environ["S3_ACCESS_KEY"]
-                arguments["secondaryStorageSecretKey"] =\
-                    os.environ["S3_SECRET_KEY"]
+                arguments["secondaryStorageDelegate"] = secondary.id
+                arguments["secondaryStorageApiKey"] = secondary.key
+                arguments["secondaryStorageSecretKey"] = secondary.secret
 
         doc = {
             "command": "backup_data_source",
@@ -740,179 +817,82 @@ class TestProtocolCommands(unittest.TestCase, reply.ReplyObserverInterface):
         }
         req_reply = self._rpc_wait_reply(doc)
         r = req_reply.get_reply()
-        self.assertEquals(r["payload"]["return_code"], 0)
-        self.assertEquals(r["payload"]["reply_type"], "job_description")
+        nose.tools.eq_(r["payload"]["return_code"], 0)
+        nose.tools.eq_(r["payload"]["reply_type"], "job_description")
 
         jd = r["payload"]["reply_object"]
         while jd["job_status"] in ["WAITING", "RUNNING"]:
             jd = self._get_job_description(jd["job_id"])
-        self.assertEqual(jd["job_status"], "COMPLETE")
+        nose.tools.eq_(jd["job_status"], "COMPLETE")
 
-        for region, bucket in check_list:
-            cloud = storagecloud.get_cloud_driver(
-                1,
-                os.environ["S3_ACCESS_KEY"],
-                os.environ["S3_SECRET_KEY"],
-                region_id=region)
+        for cloud in cloud_list:
+            cloud_driver = storagecloud.get_cloud_driver(
+                cloud.id,
+                cloud.key,
+                cloud.secret,
+                region_id=cloud.region)
 
             found = False
-            container = cloud.get_container(bucket)
-            obj_list = cloud.list_container_objects(container)
+            container = cloud_driver.get_container(self.bucket)
+            obj_list = cloud_driver.list_container_objects(container)
             for obj in obj_list:
                 ndx = obj.name.find(object_name)
                 if ndx >= 0:
                     found = True
-            self.assertTrue(found)
+            nose.tools.ok_(found)
 
-    @test_utils.s3_needed
-    def test_backup_data_just_one(self):
+    def test_backup_data_source(self):
+        if not self.storage_clouds:
+            raise skip.SkipTest("No storage clouds are configured")
+
+        for b in (True, False):
+            for i in range(-1, len(self.storage_clouds) - 1):
+                primary = self.storage_clouds[i]
+                secondary = self.storage_clouds[i + 1]
+                if primary == secondary:
+                    secondary = None
+                yield self._backup_data_source, primary, secondary, b
+
+        if len(self.storage_clouds) > 1:
+            yield self._backup_data_source, self.storage_clouds[0], None, True
+            yield self._backup_data_source, self.storage_clouds[0], None, False
+
+    def _backup_data_source(self, primary, secondary, use_storage):
         service_id = "aservice_for_backup" + str(uuid.uuid4())
         self._install_service(service_id,
-                              self.backup_bucket,
-                              self.simple_service)
+                              self.bucket,
+                              self.simple_service,
+                              primary)
 
         service_dir = self.conf_obj.get_service_directory(service_id)
-        self.assertTrue(os.path.exists(service_dir))
-        self.assertTrue(os.path.exists(
+        nose.tools.ok_(os.path.exists(service_dir))
+        nose.tools.ok_(os.path.exists(
             os.path.join(service_dir, "bin/enstratus-dbgrant")))
-
-        self._backup_data(service_id, service_id + ".tar.gz")
-
-    @test_utils.s3_needed
-    def test_backup_data_just_one_storage(self):
-        service_id = "aservice_for_backup_store" + str(uuid.uuid4())
-        self._install_service(service_id,
-                              self.backup_bucket,
-                              self.simple_service)
-
-        service_dir = self.conf_obj.get_service_directory(service_id)
-        self.assertTrue(os.path.exists(service_dir))
-        self.assertTrue(os.path.exists(
-            os.path.join(service_dir, "bin/enstratus-dbgrant")))
-
-        self._backup_data(service_id, service_id + ".tar.gz", use_storage=True)
-
-    # offsite will not work with S3 because the bucket names are the same
-    # @test_utils.s3_needed
-    # def test_backup_data_offsite(self):
-    #     service_id = "aservice_for_twobackup" + str(uuid.uuid4())
-    #     self._install_service(service_id,
-    #                           self.backup_bucket,
-    #                           self.simple_service)
-    #
-    #     service_dir = self.conf_obj.get_service_directory(service_id)
-    #     self.assertTrue(os.path.exists(service_dir))
-    #     self.assertTrue(os.path.exists(
-    #         os.path.join(service_dir, "bin/enstratus-dbgrant")))
-    #
-    #     self._backup_data(service_id, service_id + ".tar.gz", use_offsite=True)
-    #
-    # @test_utils.s3_needed
-    # def test_backup_data_offsite_storage(self):
-    #     service_id = "aservice_for_twobackup_storage" + str(uuid.uuid4())
-    #     self._install_service(service_id,
-    #                           self.backup_bucket,
-    #                           self.simple_service)
-    #
-    #     service_dir = self.conf_obj.get_service_directory(service_id)
-    #     self.assertTrue(os.path.exists(service_dir))
-    #     self.assertTrue(os.path.exists(
-    #         os.path.join(service_dir, "bin/enstratus-dbgrant")))
-    #
-    #     self._backup_data(service_id, service_id + ".tar.gz", use_offsite=True, use_storage=True)
+        self._backup_data(service_id, service_id + ".tar.gz", primary,
+                          secondary, use_storage=use_storage)
 
     @test_utils.system_changing
-    @test_utils.s3_needed
-    def test_install_backup_data_set_service(self):
-        """
-        install a service, start it, configure it in two ways, stop it, then
-        delete the directory it was put into
-        """
-        service_id = "asuccess_service"
-
-        nw = datetime.datetime.now()
-        tm_str = nw.strftime("%Y%m%d%H%M%S")
-        container_name = "enstratiustests"
-        dataSourceName = "somename%d" % random.randint(0, 1000) + tm_str
-
-        service_id = "asuccess_service"
-        self._install_service(service_id,
-                              self.backup_bucket,
-                              self.simple_service)
-
-        service_dir = self.conf_obj.get_service_directory(service_id)
-        self.assertTrue(os.path.exists(service_dir))
-        self.assertTrue(os.path.exists(
-            os.path.join(service_dir, "bin/enstratus-configure")))
-        self.assertTrue(os.path.exists(os.path.join(service_dir,
-                                                    "bin/enstratus-stop")))
-        self.assertTrue(os.path.exists(os.path.join(service_dir,
-                                                    "bin/enstratus-start")))
-
-        configuration_data = """
-        This is some configuration data.
-        That will be writen over there
-        """
-
-        arguments = {
-            "configuration": configuration_data,
-            "serviceId": service_id,
-            "primaryCloudId": 1,
-            "runAsUser": self.run_as_user,
-            "primaryApiKey": os.environ["S3_ACCESS_KEY"],
-            "primarySecretKey": os.environ["S3_SECRET_KEY"],
-            "toBackupDirectory": "enstratiustests",
-            "serviceImageFile": "success_service.tar.gz",
-            "dataSourceName": dataSourceName
-        }
-        doc = {
-            "command": "backup_data_source",
-            "arguments": arguments
-        }
-        req_reply = self._rpc_wait_reply(doc)
-        r = req_reply.get_reply()
-        self.assertEquals(r["payload"]["return_code"], 0)
-        self.assertEquals(r["payload"]["reply_type"], "job_description")
-
-        jd = r["payload"]["reply_object"]
-        while jd["job_status"] in ["WAITING", "RUNNING"]:
-            jd = self._get_job_description(jd["job_id"])
-        self.assertEqual(jd["job_status"], "COMPLETE")
-        shutil.rmtree(service_dir)
-
-        cloud = storagecloud.get_cloud_driver(
-            arguments["primaryCloudId"],
-            arguments["primaryApiKey"],
-            arguments["primarySecretKey"],
-            region_id="us_west_oregon")
-
-        container = cloud.get_container(arguments["toBackupDirectory"])
-        obj_list = cloud.list_container_objects(container)
-
-        found = False
-        for o in obj_list:
-            ndx = o.name.find(dataSourceName)
-            if ndx >= 0:
-                found = True
-                cloud.delete_object(o)
-
-        self.assertTrue(found)
-
-    @test_utils.system_changing
-    @test_utils.s3_needed
     def test_grant_db_revoke_db(self):
         """
         install a service, start it, configure it in two ways, stop it, then
         delete the directory it was put into
         """
+        if not self.storage_clouds:
+            raise skip.SkipTest("No storage clouds are configured")
+        # just use the first cloud.  install_service is well tested on
+        # all clouds elsewhere
+
+        store_cloud = self.storage_clouds[0]
+
         service_id = "asuccess_service" + str(uuid.uuid4())
         self._install_service(service_id,
-                              self.backup_bucket,
-                              self.simple_service)
+                              self.bucket,
+                              self.simple_service,
+                              store_cloud)
 
         service_dir = self.conf_obj.get_service_directory(service_id)
-        self.assertTrue(os.path.exists(service_dir))
-        self.assertTrue(os.path.exists(
+        nose.tools.ok_(os.path.exists(service_dir))
+        nose.tools.ok_(os.path.exists(
             os.path.join(service_dir, "bin/enstratus-dbgrant")))
 
         cfg_data =\
@@ -933,18 +913,18 @@ class TestProtocolCommands(unittest.TestCase, reply.ReplyObserverInterface):
         start_time = datetime.datetime.now().replace(microsecond=0)
         req_reply = self._rpc_wait_reply(doc)
         r = req_reply.get_reply()
-        self.assertEquals(r["payload"]["return_code"], 0)
-        self.assertTrue(os.path.exists("/tmp/enstratus_dbgrant"))
+        nose.tools.eq_(r["payload"]["return_code"], 0)
+        nose.tools.ok_(os.path.exists("/tmp/enstratus_dbgrant"))
 
         with open("/tmp/enstratus_dbgrant", "r") as fptr:
             secs = fptr.readline()
             parameters = fptr.readline()
         tm = datetime.datetime.utcfromtimestamp(float(secs))
-        self.assertTrue(tm >= start_time)
+        nose.tools.ok_(tm >= start_time)
 
         with open("/tmp/enstratus_dbgrant.cfg", "r") as fptr:
             cfg_data_back = fptr.read()
-        self.assertEqual(cfg_data_back, cfg_data)
+        nose.tools.eq_(cfg_data_back, cfg_data)
 
         # test revoke
         arguments = {
@@ -962,31 +942,46 @@ class TestProtocolCommands(unittest.TestCase, reply.ReplyObserverInterface):
             secs = fptr.readline()
             parameters = fptr.readline()
         tm = datetime.datetime.utcfromtimestamp(float(secs))
-        self.assertTrue(tm >= start_time)
+        nose.tools.ok_(tm >= start_time)
 
         with open("/tmp/enstratus_dbrevoke.cfg", "r") as fptr:
             cfg_data_back = fptr.read()
-        self.assertEqual(cfg_data_back, cfg_data)
+        nose.tools.eq_(cfg_data_back, cfg_data)
 
-    def _backup_service(self, storage_delegate=False):
+    def _backup_service(self, primary, secondary, storage_delegate):
 
         service_id = "abackup_service" + str(uuid.uuid4())
         self._install_service(service_id,
-                              self.backup_bucket,
-                              self.simple_service)
+                              self.bucket,
+                              self.simple_service,
+                              primary)
 
         arguments = {
             "serviceId": service_id,
-            "toBackupDirectory": self.backup_bucket,
-            "primaryCloudId": 1,
-            "primaryRegionId": self.default_s3_region,
-            "primaryApiKey": os.environ["S3_ACCESS_KEY"],
-            "primarySecretKey": os.environ["S3_SECRET_KEY"],
+            "toBackupDirectory": self.bucket,
+            "primaryCloudId": primary.id,
+            "primaryRegionId": primary.region,
+            "primaryApiKey": primary.key,
+            "primarySecretKey": primary.secret,
         }
         if storage_delegate:
-            arguments["storageDelegate"] = 1
-            arguments["storagePublicKey"] = os.environ["S3_ACCESS_KEY"]
-            arguments["storagePrivateKey"] = os.environ["S3_SECRET_KEY"]
+            arguments["storageDelegate"] = primary.id
+            arguments["storagePublicKey"] = primary.key
+            arguments["storagePrivateKey"] = primary.secret
+
+        if secondary:
+            arguments["secondaryCloudId"] = secondary.id
+            arguments["secondaryRegionId"] = secondary.region
+            arguments["secondaryApiKey"] = secondary.key
+            arguments["secondarySecretKey"] = secondary.secret
+            arguments["secondaryApiEndpoint"] = secondary.endpoint
+            arguments["secondaryApiAccount"] = secondary.account
+            if storage_delegate:
+                arguments["secondaryStorageDelegate"] = secondary.id
+                arguments["secondaryStoragePublicKey"] = secondary.key
+                arguments["secondaryStoragePrivateKey"] = secondary.secret
+                arguments["secondaryStorageEndpoint"] = secondary.endpoint
+                arguments["secondaryStorageAccount"] = secondary.account
 
         doc = {
             "command": "backup_service",
@@ -995,19 +990,19 @@ class TestProtocolCommands(unittest.TestCase, reply.ReplyObserverInterface):
         start_time = datetime.datetime.now().replace(microsecond=0)
         req_reply = self._rpc_wait_reply(doc)
         r = req_reply.get_reply()
-        self.assertEquals(r["payload"]["return_code"], 0)
-        self.assertEquals(r["payload"]["reply_type"], "job_description")
+        nose.tools.eq_(r["payload"]["return_code"], 0)
+        nose.tools.eq_(r["payload"]["reply_type"], "job_description")
 
         jd = r["payload"]["reply_object"]
         while jd["job_status"] in ["WAITING", "RUNNING"]:
             jd = self._get_job_description(jd["job_id"])
-        self.assertEqual(jd["job_status"], "COMPLETE")
+        nose.tools.eq_(jd["job_status"], "COMPLETE")
 
         with open("/tmp/service_backup", "r") as fptr:
             secs = fptr.readline()
             parameters = fptr.readline()
         tm = datetime.datetime.utcfromtimestamp(float(secs))
-        self.assertTrue(tm >= start_time)
+        nose.tools.ok_(tm >= start_time)
 
         # verify that the file made it to the bucket
         backup_pattern = service_id + "-.*"
@@ -1027,27 +1022,30 @@ class TestProtocolCommands(unittest.TestCase, reply.ReplyObserverInterface):
             m = prog.match(o.name)
             if m:
                 found = True
-        self.assertTrue(found)
+        nose.tools.ok_(found)
 
-    @test_utils.system_changing
-    @test_utils.s3_needed
     def test_backup_service(self):
-        self._backup_service(storage_delegate=False)
+        for b in (True, False):
+            for i in range(-1, len(self.storage_clouds) - 1):
+                primary = self.storage_clouds[i]
+                secondary = self.storage_clouds[i + 1]
+                if primary == secondary:
+                    secondary = None
+                yield self._backup_service, primary, secondary, b
 
-    @test_utils.system_changing
-    @test_utils.s3_needed
-    def test_backup_service_storage(self):
-        self._backup_service(storage_delegate=True)
+        if len(self.storage_clouds) > 1:
+            yield self._backup_service, self.storage_clouds[0], None, True
+            yield self._backup_service, self.storage_clouds[0], None, False
 
-    def _upload_enstratius_config_scripts(self, files_uuids):
+    def _upload_enstratius_config_scripts(self, primary, files_uuids):
         # load up a bunch of scripts that will be downloaded and run.
         # the scripts just echo a uuid to a file and after config
         # the test will check each file for the right uuid
         cloud = storagecloud.get_cloud_driver(
-            1,
-            os.environ["S3_ACCESS_KEY"],
-            os.environ["S3_SECRET_KEY"],
-            region_id=self.default_s3_region)
+            primary.id,
+            primary.key,
+            primary.secret,
+            region_id=primary.region)
 
         scripts = []
         for f, u in files_uuids:
@@ -1060,27 +1058,33 @@ class TestProtocolCommands(unittest.TestCase, reply.ReplyObserverInterface):
             os.write(osf, os.linesep)
             os.close(osf)
 
-            container = cloud.get_container(self.backup_bucket)
+            container = cloud.get_container(self.bucket)
             cloud.upload_object(tmp_path, container, f)
-            scripts.append(os.path.join(self.backup_bucket, f))
+            scripts.append(os.path.join(self.bucket, f))
         return scripts
 
     @test_utils.system_changing
-    @test_utils.s3_needed
     def test_configure_server_with_enstratius(self):
+        if not self.storage_clouds:
+            raise skip.SkipTest("No storage clouds are configured")
+        # just use the first cloud.  install_service is well tested on
+        # all clouds elsewhere
+        primary = self.storage_clouds[0]
+
         files_uuids = [
             ("script_run"+str(uuid.uuid4()), str(uuid.uuid4())),
             ("script_run"+str(uuid.uuid4()), str(uuid.uuid4())),
             ("script_run"+str(uuid.uuid4()), str(uuid.uuid4()))]
 
-        script_files = self._upload_enstratius_config_scripts(files_uuids)
+        script_files = self._upload_enstratius_config_scripts(
+            primary, files_uuids)
         arguments = {
             "configType": "ENSTRATUS",
-            "providerRegionId": self.default_s3_region,
-            "storageDelegate": 1,
+            "providerRegionId": primary.region,
+            "storageDelegate": primary.id,
             "scriptFiles": script_files,
-            "storagePublicKey": os.environ["S3_ACCESS_KEY"],
-            "storagePrivateKey": os.environ["S3_SECRET_KEY"],
+            "storagePublicKey": primary.key,
+            "storagePrivateKey": primary.secret,
             "personalityFiles": [],
         }
         doc = {
@@ -1089,18 +1093,106 @@ class TestProtocolCommands(unittest.TestCase, reply.ReplyObserverInterface):
         }
         req_reply = self._rpc_wait_reply(doc)
         r = req_reply.get_reply()
-        self.assertEquals(r["payload"]["return_code"], 0)
-        self.assertEquals(r["payload"]["reply_type"], "job_description")
+        nose.tools.eq_(r["payload"]["return_code"], 0)
+        nose.tools.eq_(r["payload"]["reply_type"], "job_description")
 
         jd = r["payload"]["reply_object"]
         while jd["job_status"] in ["WAITING", "RUNNING"]:
             jd = self._get_job_description(jd["job_id"])
-        self.assertEqual(jd["job_status"], "COMPLETE")
+        nose.tools.eq_(jd["job_status"], "COMPLETE")
 
         for f, u in files_uuids:
             f_path = os.path.join("/tmp", f)
             print f_path
-            self.assertTrue(os.path.exists(f_path))
+            nose.tools.ok_(os.path.exists(f_path))
             with open(f_path, "r") as fptr:
                 line = fptr.readline().strip()
-                self.assertEqual(line, u)
+                nose.tools.eq_(line, u)
+
+    @test_utils.system_changing
+    def test_configure_server_17_with_enstratius(self):
+        if not self.storage_clouds:
+            raise skip.SkipTest("No storage clouds are configured")
+        # just use the first cloud.  install_service is well tested on
+        # all clouds elsewhere
+        primary = self.storage_clouds[0]
+
+        files_uuids = [
+            ("script_run"+str(uuid.uuid4()), str(uuid.uuid4())),
+            ("script_run"+str(uuid.uuid4()), str(uuid.uuid4())),
+            ("script_run"+str(uuid.uuid4()), str(uuid.uuid4()))]
+
+        script_files = self._upload_enstratius_config_scripts(
+            primary, files_uuids)
+        arguments = {
+            "configType": "ENSTRATUS",
+            "providerRegionId": primary.region,
+            "storageDelegate": primary.id,
+            "scriptFiles": script_files,
+            "storagePublicKey": primary.key,
+            "storagePrivateKey": primary.secret,
+            "personalityFiles": [],
+        }
+        doc = {
+            "command": "configure_server_17",
+            "arguments": arguments
+        }
+        req_reply = self._rpc_wait_reply(doc)
+        r = req_reply.get_reply()
+        nose.tools.eq_(r["payload"]["return_code"], 0)
+        nose.tools.eq_(r["payload"]["reply_type"], "job_description")
+
+        jd = r["payload"]["reply_object"]
+        while jd["job_status"] in ["WAITING", "RUNNING"]:
+            jd = self._get_job_description(jd["job_id"])
+        nose.tools.eq_(jd["job_status"], "COMPLETE")
+
+        for f, u in files_uuids:
+            f_path = os.path.join("/tmp", f)
+            print f_path
+            nose.tools.ok_(os.path.exists(f_path))
+            with open(f_path, "r") as fptr:
+                line = fptr.readline().strip()
+                nose.tools.eq_(line, u)
+
+    def test_unmount_something_not_mounted(self):
+        arguments = {
+            "deviceId": "/dev/notreal",
+        }
+        doc = {
+            "command": "unmount_volume",
+            "arguments": arguments
+        }
+        req_reply = self._rpc_wait_reply(doc)
+        r = req_reply.get_reply()
+        nose.tools.eq_(r["payload"]["return_code"], 0)
+
+    @test_utils.system_changing
+    def test_rename_bad_name(self):
+        new_hostname = "@#@#$"
+        doc = {
+            "command": "rename",
+            "arguments": {"serverName": new_hostname}
+        }
+        req_reply = self._rpc_wait_reply(doc)
+        r = req_reply.get_reply()
+        nose.tools.ok_(r["payload"]["return_code"] != 0)
+
+    @test_utils.system_changing
+    def test_initialize_rename_error(self):
+        cust = 10l
+        orig_hostname = socket.gethostname()
+        new_hostname = "#@#*&%$"
+        doc = {
+            "command": "initialize",
+            "arguments": {"cloudId": "3",
+                          "customerId": cust,
+                          "regionId": None,
+                          "zoneId": None,
+                          "serverId": self.agent_id,
+                          "serverName": new_hostname,
+                          "encryptedEphemeralFsKey": None}}
+        req_rpc = self._rpc_wait_reply(doc)
+        r = req_rpc.get_reply()
+        nose.tools.ok_(r["payload"]["return_code"] != 0)
+        nose.tools.eq_(socket.gethostname(), orig_hostname)

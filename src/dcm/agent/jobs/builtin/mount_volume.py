@@ -178,17 +178,6 @@ class MountVolume(direct_pass.DirectPass):
                 "format failed: " + stderr)
         return rc
 
-    def mount_no_fs(self):
-        device_mappings = utils.get_device_mappings(self.conf)
-
-        for device in self.args.devices:
-            for mapping in device_mappings:
-                d_id = mapping["device_id"]
-                mount_point = mapping["mount_point"]
-                if d_id == device:
-                    utils.unmount(self.conf, mount_point)
-                    break
-
     def mount_block_volume(self):
         if not self.args.devices:
             return 0
@@ -255,9 +244,7 @@ class MountVolume(direct_pass.DirectPass):
         if self.args.fileSystem is None:
             self.args.fileSystem = self.conf.storage_default_file_system
 
-        if self.args.fileSystem is None:
-            self.mount_no_fs()
-        elif self.args.raidLevel is None:
+        if self.args.raidLevel is None:
             self.mount_ephemeral_volume()
         else:
             self.mount_block_volume()

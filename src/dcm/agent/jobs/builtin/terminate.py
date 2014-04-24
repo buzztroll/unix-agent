@@ -26,11 +26,7 @@ class Terminate(direct_pass.DirectPass):
     def __init__(self, conf, job_id, items_map, name, arguments):
         super(Terminate, self).__init__(
             conf, job_id, items_map, name, arguments)
-        try:
-            self._ordered_param_list = [arguments["ignoreErrors"]]
-        except KeyError as ke:
-            raise exceptions.AgentPluginConfigException(
-                "The plugin %s requires the option %s" % (name, ke.message))
+        self._ordered_param_list = [self.args.ignoreErrors]
 
 
 def load_plugin(conf, job_id, items_map, name, arguments):
