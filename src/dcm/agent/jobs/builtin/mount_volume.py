@@ -21,33 +21,18 @@ import dcm.agent.jobs.direct_pass as direct_pass
 class MountVolume(direct_pass.DirectPass):
 
     protocol_arguments = {
-        "userId": ("The new unix account name to be created", True, str),
-        "firstName": ("The user's first name", True, str),
-        "lastName": ("The user's last name", True, str),
-        "authentication": ("The user's ssh public key", True, str),
-        "administrator": ("A string that is either 'true' or 'false' "
-                          "which indicates if the new user should have"
-                          "ssh access", True, str)
+        "formatVolume":
+        ("A boolean indicating if the volume should be formated.", True, bool),
+        "fileSystem": ("", True, str),
+        "raidLevel": ("", True, str),
+        "encryptionKey": ("", True, str),
+        "mountPoint": ("", True, str),
+        "devices": ("", True, list)
     }
 
     def __init__(self, conf, job_id, items_map, name, arguments):
         super(MountVolume, self).__init__(
             conf, job_id, items_map, name, arguments)
-
-        try:
-            self.ordered_param_list = [arguments["userId"],
-                                       arguments["userId"],
-                                       arguments["firstName"],
-                                       arguments["lastName"],
-                                       arguments["administrator"],
-                                       arguments["password"]]
-            self.ssh_public_key = arguments["authentication"]
-        except KeyError as ke:
-            raise exceptions.AgentPluginConfigException(
-                "The plugin %s requires the option %s" % (name, ke.message))
-
-        if not arguments['password']:
-            self.arguments["password"] = utils.generate_password()
 
     def mount_ephemeral_volume(self):
         mapped = False
@@ -137,8 +122,7 @@ class MountVolume(direct_pass.DirectPass):
                    key_file_path]
         (stdout, stderr, rc) = utils.run_command(self.conf, command)
         if rc != 0:
-            raise exceptions.AgentExecutableException(
-                "format failed: " + stderr)
+            raise exceptions.AgentExecutableException(rc, stdout, stderr)
         return rc
 
     def write_key_file(self, block_device):
@@ -232,8 +216,9 @@ class MountVolume(direct_pass.DirectPass):
                 target_device = encrypted_device
             finally:
                 utils.safe_delete(key_file_path)
-        if self.args.encryptionKey is not None:
-            utils.mount(target_device,
+        if self.args.encryptionKey is None:
+            utils.mount(self.conf,
+                        target_device,
                         self.args.fileSystem,
                         self.args.mountPoint)
 
@@ -249,9 +234,9 @@ class MountVolume(direct_pass.DirectPass):
         else:
             self.mount_block_volume()
 
-    def cancel(self, reply_rpc, *args, **kwargs):
-        pass
-
+        reply = {"return_code": 0, "message": "",
+                 "error_message": "", "return_type": "void"}
+        return reply
 
 def load_plugin(conf, job_id, items_map, name, arguments):
     return MountVolume(conf, job_id, items_map, name, arguments)

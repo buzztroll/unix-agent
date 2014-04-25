@@ -8,7 +8,7 @@ DIRNAME=`dirname $0`
 . "$DIRNAME/common_mod"
 
 logTag="mount"
-LOGGER=$DIRNAME/bin/log
+LOGGER=$DIRNAME/log
 
 BASENAME=`basename $0`
 CUSTOM="$DCM_BASEDIR/custom/bin/$BASENAME"
@@ -22,7 +22,7 @@ deviceId=$1
 fileSystem=$2
 mountPoint=$3
 
-$LOGGER -t "$logTag" mount "$@"
+$LOGGER -t "$logTag mount $@"
 
 if [ -x ${CUSTOM} ] ; then
 	${CUSTOM} "$@"  2>&1 | $LOGGER -t "$logTag"
@@ -41,7 +41,7 @@ fi
 # 1. Some kernels may detect sdX devices as xvdX
 # 2. sdh is identified as xvdl since RHEL/CentOS 6.1
 el_ver=0
-distro=$(/enstratus/bin/getUnixOs)
+distro=$($DCM_BASEDIR/bin/getUnixOs)
 if [ -f /etc/redhat-release ]; then
 	el_ver=$(grep -o -E '[0-9]\.[0-9]' /etc/redhat-release)
 fi

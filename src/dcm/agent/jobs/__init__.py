@@ -55,7 +55,10 @@ class Plugin(object):
                                "command.")
             else:
                 h, mandatory, t = self.protocol_arguments[arg]
-                setattr(self.args, arg, t(self.arguments[arg]))
+                a = self.arguments[arg]
+                if a is not None:
+                    a = t(a)
+                setattr(self.args, arg, a)
 
     @utils.not_implemented_decorator
     def run(self):

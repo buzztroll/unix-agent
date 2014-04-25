@@ -1196,3 +1196,108 @@ class TestProtocolCommands(reply.ReplyObserverInterface):
         r = req_rpc.get_reply()
         nose.tools.ok_(r["payload"]["return_code"] != 0)
         nose.tools.eq_(socket.gethostname(), orig_hostname)
+
+
+    @test_utils.system_changing
+    def test_mount_variety(self):
+        mount_point = tempfile.mkdtemp()
+        device_id = "sdb"
+
+        mappings = utils.get_device_mappings(self.conf_obj)
+        for dm in mappings:
+            if dm['device_id'] == device_id:
+                if dm['mount_point'] != mount_point:
+                    raise Exception("The device is already mounted")
+
+        doc = {
+            "command": "mount_volume",
+            "arguments": {"formatVolume": True,
+                          "fileSystem": "ext3",
+                          "raidLevel": "NONE",
+                          "encryptionKey": None,
+                          "mountPoint": mount_point,
+                          "devices": [device_id]}}
+        req_rpc = self._rpc_wait_reply(doc)
+        r = req_rpc.get_reply()
+        jd = r["payload"]["reply_object"]
+        while jd["job_status"] in ["WAITING", "RUNNING"]:
+            jd = self._get_job_description(jd["job_id"])
+        nose.tools.eq_(jd["job_status"], "COMPLETE")
+
+        found = False
+        mappings = utils.get_device_mappings(self.conf_obj)
+        for dm in mappings:
+            if dm['device_id'] == device_id:
+                found = True
+                nose.tools.eq_(dm['mount_point'], mount_point)
+        nose.tools.ok_(found)
+
+        doc = {
+            "command": "mount_volume",
+            "arguments": {"formatVolume": False,
+                          "fileSystem": "ext3",
+                          "raidLevel": "NONE",
+                          "encryptionKey": None,
+                          "mountPoint": mount_point,
+                          "devices": ["sdb"]}}
+        req_rpc = self._rpc_wait_reply(doc)
+        r = req_rpc.get_reply()
+        jd = r["payload"]["reply_object"]
+        while jd["job_status"] in ["WAITING", "RUNNING"]:
+            jd = self._get_job_description(jd["job_id"])
+        nose.tools.eq_(jd["job_status"], "COMPLETE")
+
+        arguments = {
+            "deviceId": device_id,
+        }
+        doc = {
+            "command": "unmount_volume",
+            "arguments": arguments
+        }
+        req_reply = self._rpc_wait_reply(doc)
+        r = req_reply.get_reply()
+        nose.tools.eq_(r["payload"]["return_code"], 0)
+
+    @test_utils.system_changing
+    def test_mount_encryption(self):
+        enc_str = "ENCRYPTED_FILE_ENV"
+
+        if enc_str not in os.environ:
+            raise skip.SkipTest("set %s to try encryption tests" % enc_str)
+
+        enc_key = os.environ["ENCRYPTED_FILE_ENV"]
+        mount_point = tempfile.mkdtemp()
+        device_id = "sdb"
+
+        mappings = utils.get_device_mappings(self.conf_obj)
+        for dm in mappings:
+            if dm['device_id'] == device_id:
+                if dm['mount_point'] != mount_point:
+                    raise Exception("The device is already mounted")
+
+        doc = {
+            "command": "mount_volume",
+            "arguments": {"formatVolume": True,
+                          "fileSystem": "ext3",
+                          "raidLevel": "NONE",
+                          "encryptionKey": enc_key,
+                          "mountPoint": mount_point,
+                          "devices": [device_id]}}
+        req_rpc = self._rpc_wait_reply(doc)
+        r = req_rpc.get_reply()
+        jd = r["payload"]["reply_object"]
+        while jd["job_status"] in ["WAITING", "RUNNING"]:
+            jd = self._get_job_description(jd["job_id"])
+        nose.tools.eq_(jd["job_status"], "COMPLETE")
+
+        arguments = {
+            "deviceId": device_id,
+        }
+        doc = {
+            "command": "unmount_volume",
+            "arguments": arguments
+        }
+        req_reply = self._rpc_wait_reply(doc)
+        r = req_reply.get_reply()
+        nose.tools.eq_(r["payload"]["return_code"], 0)
+

@@ -2,13 +2,15 @@
 
 set -u
 
-. "/enstratus/bin/common_mod"
+BASENAME=`basename $0`
+DIRNAME=`dirname $0`
+. "$DIRNAME/common_mod"
 
 logTag="format"
-LOGGER=/enstratus/bin/log
+LOGGER=$DCM_BASEDIR/bin/log
 
 BASENAME=`basename $0`
-CUSTOM="/enstratus/custom/bin/$BASENAME"
+CUSTOM="$DCM_BASEDIR/custom/bin/$BASENAME"
 
 if [ $# -lt 4 ] ; then
    $LOGGER -t "$logTag" Syntax: format DEVICE_ID FILE_SYSTEM MOUNT_POINT ENCRYPTED
@@ -63,7 +65,7 @@ if [ $? != 0 ] ; then
 	exit 24
 fi
 
-distro=$(/enstratus/bin/getUnixOs)
+distro=$($DCM_BASEDIR/bin/getUnixOs)
 mp=${mountPoint//\//\\\/}
 sudo sed -i "/\s$mp\s/d" /etc/fstab
 if [[ $encrypted == "true" ]] ; then

@@ -302,7 +302,7 @@ def mount(conf, device_id, file_system, mount_point):
 
 
 def format(conf, device_id, file_system, mount_point, encryption_key):
-    enc_str = str(encryption_key is None).lower()
+    enc_str = str(encryption_key is not None).lower()
     command = [conf.get_script_location("format"),
                device_id,
                file_system,
