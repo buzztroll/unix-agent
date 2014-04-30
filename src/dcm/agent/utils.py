@@ -284,7 +284,7 @@ def unmount(conf, mount_point):
     command = [conf.get_script_location("unmount"), mount_point]
     (stdout, stderr, rc) = run_command(conf, command)
     if rc != 0:
-        raise exceptions.AgentExecutableException("unmount failed: " + stderr)
+        raise exceptions.AgentExecutableException(rc, stdout, stderr)
 
     return rc
 
@@ -297,7 +297,7 @@ def mount(conf, device_id, file_system, mount_point):
                device_id, file_system, mount_point]
     (stdout, stderr, rc) = run_command(conf, command)
     if rc != 0:
-        raise exceptions.AgentExecutableException("mount failed: " + stderr)
+        raise exceptions.AgentExecutableException(rc, stdout, stderr)
     return rc
 
 
@@ -310,7 +310,7 @@ def format(conf, device_id, file_system, mount_point, encryption_key):
                enc_str]
     (stdout, stderr, rc) = run_command(conf, command)
     if rc != 0:
-        raise exceptions.AgentExecutableException("format failed: " + stderr)
+        raise exceptions.AgentExecutableException(rc, stdout, stderr)
     return rc
 
 
@@ -321,6 +321,14 @@ def open_encrypted_device(conf, raw_device_id, encrypted_device_id, key_file):
                key_file]
     (stdout, stderr, rc) = run_command(conf, command)
     if rc != 0:
-        raise exceptions.AgentExecutableException(
-            "open_encrypted_device failed: " + stderr)
+        raise exceptions.AgentExecutableException(rc, stdout, stderr)
+    return rc
+
+
+def close_encrypted_device(conf, encrypted_device_id):
+    command = [conf.get_script_location("closeEncryption"),
+               encrypted_device_id]
+    (stdout, stderr, rc) = run_command(conf, command)
+    if rc != 0:
+        raise exceptions.AgentExecutableException(rc, stdout, stderr)
     return rc

@@ -11,23 +11,17 @@
 #   this material is strictly forbidden unless prior written permission
 #   is obtained from Dell, Inc.
 #  ======================================================================
-
-# TODO FIGURE OUT LOCKS
-
 import dcm.agent.jobs as jobs
 
 
 class UnLock(jobs.Plugin):
+
     def __init__(self, conf, job_id, items_map, name, arguments):
         super(UnLock, self).__init__(
             conf, job_id, items_map, name, arguments)
 
-        script_name = items_map["script_name"]
-        self.command = [conf.get_script_location(script_name)]
-
     def run(self):
-        self._conf.unlock()
-
+        self.conf.jr.unlock()
         reply_doc = {
             "return_code": 0,
             "reply_type": "void"

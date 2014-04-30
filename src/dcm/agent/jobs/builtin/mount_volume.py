@@ -216,11 +216,10 @@ class MountVolume(direct_pass.DirectPass):
                 target_device = encrypted_device
             finally:
                 utils.safe_delete(key_file_path)
-        if self.args.encryptionKey is None:
-            utils.mount(self.conf,
-                        target_device,
-                        self.args.fileSystem,
-                        self.args.mountPoint)
+        utils.mount(self.conf,
+                    target_device,
+                    self.args.fileSystem,
+                    self.args.mountPoint)
 
     def run(self):
         if self.args.mountPoint is None:

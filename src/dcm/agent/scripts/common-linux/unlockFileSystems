@@ -4,7 +4,6 @@ set -u
 PATH=/usr/sbin:${PATH}
 
 DIRNAME=`dirname $0`
-. "$DIRNAME/common_mod"
 BASENAME=`basename $0`
 
 logTag="unlockFileSystems"

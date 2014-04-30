@@ -23,7 +23,7 @@ handlers:
 
 loggers:
     dcm.agent:
-        level: INFO
+        level: DEBUG
         handlers: [file_handler]
         propagate: no
 

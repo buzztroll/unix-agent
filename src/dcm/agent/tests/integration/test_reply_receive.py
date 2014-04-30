@@ -1197,7 +1197,6 @@ class TestProtocolCommands(reply.ReplyObserverInterface):
         nose.tools.ok_(r["payload"]["return_code"] != 0)
         nose.tools.eq_(socket.gethostname(), orig_hostname)
 
-
     @test_utils.system_changing
     def test_mount_variety(self):
         mount_point = tempfile.mkdtemp()
@@ -1291,7 +1290,8 @@ class TestProtocolCommands(reply.ReplyObserverInterface):
         nose.tools.eq_(jd["job_status"], "COMPLETE")
 
         arguments = {
-            "deviceId": device_id,
+            "deviceId": "es"+device_id,
+            "encrypted": True
         }
         doc = {
             "command": "unmount_volume",
@@ -1300,4 +1300,58 @@ class TestProtocolCommands(reply.ReplyObserverInterface):
         req_reply = self._rpc_wait_reply(doc)
         r = req_reply.get_reply()
         nose.tools.eq_(r["payload"]["return_code"], 0)
+
+    @test_utils.system_changing
+    def test_lock_services(self):
+        """
+        install a service, start it, configure it in two ways, stop it, then
+        delete the directory it was put into
+        """
+        if not self.storage_clouds:
+            raise skip.SkipTest("No storage clouds are configured")
+
+        store_cloud = self.storage_clouds[0]
+        service_id = "alock_service" + str(uuid.uuid4())
+        self._install_service(service_id,
+                              self.bucket,
+                              self.simple_service,
+                              store_cloud)
+
+        service_dir = self.conf_obj.get_service_directory(service_id)
+        nose.tools.ok_(os.path.exists(service_dir))
+        nose.tools.ok_(os.path.exists(
+            os.path.join(service_dir, "bin/enstratus-lock")))
+
+        arguments = {
+            "timeout": 10000,
+        }
+        doc = {
+            "command": "lock",
+            "arguments": arguments
+        }
+        start_time = datetime.datetime.now().replace(microsecond=0)
+        req_reply = self._rpc_wait_reply(doc)
+        r = req_reply.get_reply()
+        nose.tools.eq_(r["payload"]["return_code"], 0)
+        nose.tools.ok_(os.path.exists("/tmp/service_lock.%s" % service_id))
+
+        with open("/tmp/service_lock.%s" % service_id, "r") as fptr:
+            lines = fptr.readlines()
+            nose.tools.eq_(len(lines), 2)
+            secs = lines[0]
+        tm = datetime.datetime.utcfromtimestamp(float(secs))
+        nose.tools.ok_(tm >= start_time)
+
+        doc = {
+            "command": "unlock",
+            "arguments": {}
+        }
+        req_reply = self._rpc_wait_reply(doc)
+        r = req_reply.get_reply()
+        nose.tools.eq_(r["payload"]["return_code"], 0)
+        with open("/tmp/service_lock.%s" % service_id, "r") as fptr:
+            lines = fptr.readlines()
+            nose.tools.eq_(len(lines), 3)
+            nose.tools.eq_("UNLOCKED", lines[2].strip())
+
 

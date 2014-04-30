@@ -251,17 +251,11 @@ class AgentConfig(object):
         else:
             self.imaging_event.clear()
 
-    def lock(self):
-        pass
-
-    def unlock(self):
-        pass
-
     def get_service_directory(self, service_name):
         return os.path.join(self.storage_services_dir, service_name)
 
     def start_job_runner(self):
-        self.jr = job_runner.JobRunner()
+        self.jr = job_runner.JobRunner(self)
 
     def get_temp_file(self, filename, isdir=False):
         new_dir = tempfile.mkdtemp(dir=self.storage_temppath)
