@@ -255,17 +255,6 @@ class WebSocketConnection(conn_iface.ConnectionInterface):
     def connect(self):
         return self._ws_manager.connect()
 
-    def recv(self):
-        try:
-            _g_logger.debug("recv called |%d|" % self._recv_queue.qsize())
-            m = self._recv_queue.get(True, 0.1)
-            self._recv_queue.task_done()
-            _g_logger.debug("User requested to receive |%d| %s"
-                            % (self._recv_queue.qsize(), m))
-            return json.loads(m)
-        except Queue.Empty:
-            return None
-
     def send(self, doc):
         _g_logger.debug("Adding a message to the send queue")
         self._send_queue.put(doc)
