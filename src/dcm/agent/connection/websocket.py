@@ -12,8 +12,6 @@
 #   is obtained from Dell, Inc.
 #  ======================================================================
 
-import datetime
-import time
 import errno
 import json
 import logging
@@ -22,12 +20,28 @@ import socket
 import threading
 
 import ws4py.client.threadedclient as ws4py_client
+from dcm.agent import exceptions
+from dcm.agent.messaging import states
 
-import dcm.agent.connection.connection_interface as conn_iface
-from dcm.agent import parent_receive_q
+import dcm.agent.messaging.utils as utils
+import dcm.agent.parent_receive_q as parent_receive_q
 
 
 _g_logger = logging.getLogger(__name__)
+
+
+class WsConnEvents:
+    POLL = "POLL"
+    GOT_HANDSHAKE = "GOT_HANDSHAKE"
+    ERROR = "ERROR"
+    CLOSE = "CLOSE"
+
+
+class WsConnStates:
+    WAITING = "WAITING"
+    HANDSHAKING = "HANDSHAKING"
+    OPEN = "OPEN"
+    DONE = "DONE"
 
 
 class _WebSocketClient(ws4py_client.WebSocketClient):
@@ -43,33 +57,12 @@ class _WebSocketClient(ws4py_client.WebSocketClient):
         self.manager = manager
         self._url = url
         self._complete_handshake = False
-        self._lock = threading.Lock()
-        self._cond = threading.Condition(self._lock)
         self._handshake_reply = None
+        self._dcm_closed_called = False
 
     def send_handshake(self, handshake):
         _g_logger.debug("Sending handshake")
-        try:
-            self._cond.acquire()
-            self.send(handshake)
-        except Exception as ex:
-            _g_logger.error("An error occurred sending the handshake.")
-        finally:
-            self._cond.release()
-
-    def wait_for_handshake(self):
-        _g_logger.debug("Waiting for the handshake...")
-        try:
-            self._cond.acquire()
-            while not self._complete_handshake:
-                self._cond.wait()
-        except Exception as ex:
-            _g_logger.error("An error occurred waiting for the handshake to "
-                            "complete.")
-        finally:
-            self._cond.release()
-        _g_logger.debug("received handshake %s" % str(self._handshake_reply))
-        return self._handshake_reply
+        self.send(handshake)
 
     def opened(self):
         _g_logger.debug("Web socket %s has been opened" % self._url)
@@ -77,187 +70,259 @@ class _WebSocketClient(ws4py_client.WebSocketClient):
     def closed(self, code, reason=None):
         _g_logger.debug("Web socket %s has been closed %d %s"
                         % (self._url, code, reason))
-        self._cond.acquire()
-        try:
-            if not self._complete_handshake:
-                _g_logger.debug("WS closed before the handshake completed.")
-                self._complete_handshake = True
-                error_doc = {"return_code": code, "message": reason}
-                self._handshake_reply = json.dumps(error_doc)
-                self._cond.notify_all()
-        finally:
-            self._cond.release()
-        self.manager.closed(code, reason=reason)
+        if not self._dcm_closed_called:
+            self.manager.event_error(Exception(
+                "Connection unexpectedly closed: %d %s" % (code, reason)))
+
+    def close(self, code=1000, reason=''):
+        self._dcm_closed_called = True
+        return ws4py_client.WebSocketClient.close(self, code=code, reason=reason)
 
     def received_message(self, m):
         _g_logger.debug("WS message received " + m.data)
-        self._cond.acquire()
-        try:
-            if not self._complete_handshake:
-                _g_logger.debug("Handshake received")
-                self._complete_handshake = True
-                self._handshake_reply = m.data
-                self._cond.notify_all()
-            else:
-                _g_logger.debug("New message received")
-                json_doc = json.loads(m.data)
-                self.receive_queue.put(json_doc)
-        finally:
-            self._cond.release()
+        if not self._complete_handshake:
+            _g_logger.debug("Handshake received")
+            self._complete_handshake = True
+            json_doc = json.loads(m.data)
+            self._handshake_reply = json_doc
+            self.manager.event_handshake_received(json_doc)
+        else:
+            _g_logger.debug("New message received")
+            json_doc = json.loads(m.data)
+            self.receive_queue.put(json_doc)
 
 
-class _WSManager(threading.Thread):
-
-    def __init__(self, server_url, receive_queue, send_queue,
-                 max_backoff=3, **kwargs):
-        super(_WSManager, self).__init__()
-
-        self._server_url = server_url
-        self._receive_queue = receive_queue
-        self._send_queue = send_queue
-        self._kwargs = kwargs
-        self._ws = None
-        self._max_backoff = max_backoff
-        self._connected = False
-        self._reset_backoff()
-        self._hs_string = None
-        self._done = False
-
-    def set_handshake(self, hs):
-        self._hs_string = hs
-
-    def _connect(self):
-        tm = datetime.datetime.now()
-        if tm < self._next_connection_time:
-            return
-        # TODO there should be a maximum wait for connect time that throws a
-        # catastrophic error
-
-        try:
-            _g_logger.debug(
-                "Attempting to connect to %s." % self._server_url)
-            self._ws = _WebSocketClient(
-                self, self._server_url, self._receive_queue,
-                protocols=['http-only', 'chat'], **self._kwargs)
-            self._ws.connect()
-            self._reply_hs_doc = self._ws.send_handshake(self._hs_string)
-            self._ws.wait_for_handshake()
-            self._reset_backoff()
-            self._connected = True
-            _g_logger.info(
-                "The WS connection to %s succeeded." % self._server_url)
-        except Exception as ex:
-            _g_logger.exception("An error forming the WS connection to %s "
-                                "occurred : %s" % (self._server_url,
-                                                   ex.message))
-            self._set_next_connection_time()
-            self._connected = False
-
-    def connect(self):
-        while not self._connected and not self._done:
-            self._connect()
-            diff = self._next_connection_time - datetime.datetime.now()
-            if diff.total_seconds() > 0:
-                time.sleep(diff.total_seconds())
-        # NOTE(jbresnahan) we should probably have a lock here
-        if self._done:
-            return None
-        self.start()
-        return json.loads(self._ws._handshake_reply)
-
-    def _reset_backoff(self):
-        self._backoff = 1
-        self._next_connection_time = datetime.datetime.now()
-
-    def _set_next_connection_time(self):
-        self._backoff += 1
-        if self._backoff > self._max_backoff:
-            self._backoff = self._max_backoff
-
-        self._next_connection_time = datetime.datetime.now() +\
-            datetime.timedelta(seconds=self._backoff)
-
-    def closed(self, code, reason=None):
-        # we might want to rest the back off if code is success
-        self._set_next_connection_time()
-        self._connected = False
-
-    def poll(self):
-        # This will try and send items from the queue or it will try to connect
-        # if it is not connected
-        if not self._connected:
-            self._connect()
-            return False
-
-        try:
-            # The wait interval here only controls the amount of time to
-            # shutdown
-            doc = self._send_queue.get(True, 2)
-            self._send_queue.task_done()
-        except Queue.Empty:
-            return True
-
-        try:
-            msg = json.dumps(doc)
-            _g_logger.debug("sending the message " + msg)
-            self._ws.send(msg)
-        except socket.error as er:
-            if er.errno == errno.EPIPE:
-                _g_logger.info(
-                    "The ws connection broke for %s" % self._server_url)
-                self._connected = False
-            else:
-                _g_logger.info(
-                    "A WS socket error occurred %s" % self._server_url)
-                raise
-            # XXX TODO we may need to trap other exceptions as well
-        except:
-            _g_logger.exception("An exception occurred while sending.")
-        return False
-
-    def run(self):
-        while not self._done:
-            try:
-                self.poll()
-                time.sleep(0)
-            except:
-                _g_logger.exception("An error occurred in poll.")
-
-    def close(self):
-        _g_logger.debug("Close called")
-        self._done = True
-        if self._connected:
-            self._ws.close()
-        _g_logger.debug("The connection to " + self._server_url +
-                        " is closed.")
-
-
-class WebSocketConnection(conn_iface.ConnectionInterface):
+class WebSocketConnection(threading.Thread):
 
     def __init__(self, server_url):
+        super(WebSocketConnection, self).__init__()
         self._send_queue = Queue.Queue()
         self._recv_queue = None
-        self._hs_string = None
-
         self._ws_manager = None
         self._server_url = server_url
+        self._cond = threading.Condition()
+        self._done_event = threading.Event()
+        self._backoff_time = 0.1
+        self._backoff_amount = 1.0
+        self._max_backoff = 120.0
+        self._total_errors = 0
+        self._errors_since_success = 0
+        self._sm = states.StateMachine(WsConnStates.WAITING)
+        self._setup_states()
+        self.handshake_observer = None
 
-    def set_receiver(self, receive_object):
-        self._recv_queue = parent_receive_q.get_master_receive_queue(
+    def connect(self, receive_object, handshake_observer, handshake_doc):
+        self._receive_queue = parent_receive_q.get_master_receive_queue(
             receive_object, str(self))
-        self._ws_manager = _WSManager(
-            self._server_url, self._recv_queue, self._send_queue)
-
-    def set_handshake(self, handshake_doc):
         self._hs_string = json.dumps(handshake_doc)
-        self._ws_manager.set_handshake(self._hs_string)
+        self.handshake_observer = handshake_observer
+        self.start()
 
-    def connect(self):
-        return self._ws_manager.connect()
-
+    @utils.class_method_sync
     def send(self, doc):
         _g_logger.debug("Adding a message to the send queue")
         self._send_queue.put(doc)
+        self._cond.notify()
 
     def close(self):
-        self._ws_manager.close()
+        self.event_close()
+
+    @utils.class_method_sync
+    def run(self):
+        while not self._done_event.is_set():
+            try:
+                self._sm.event_occurred(WsConnEvents.POLL)
+                self._cond.wait(self._backoff_time)
+            except Exception as ex:
+                _g_logger.exception("The ws connection poller loop had "
+                                        "an unexpected exception.")
+                self._throw_error(ex)
+
+    #########
+    # incoming events
+    #########
+    @utils.class_method_sync
+    def event_close(self):
+        self._sm.event_occurred(WsConnEvents.CLOSE)
+
+    @utils.class_method_sync
+    def event_handshake_received(self, incoming_handshake):
+        self._sm.event_occurred(WsConnEvents.GOT_HANDSHAKE,
+                                incoming_handshake=incoming_handshake)
+        self._errors_since_success = 0
+
+    @utils.class_method_sync
+    def event_error(self, exception=None):
+        self._sm.event_occurred(WsConnEvents.ERROR)
+        _g_logger.error(
+            "State machine received an exception %s" % str(exception))
+
+    def _increase_backoff(self):
+        if self._backoff_time is None:
+            self._backoff_time = 0.0
+        self._backoff_time = self._backoff_time + self._backoff_amount
+        if self._backoff_time > self._max_backoff:
+            self._backoff_time = self._max_backoff
+        self._total_errors += 1
+        self._errors_since_success += 1
+
+    def _throw_error(self, exception):
+        parent_receive_q.register_user_callback(self.event_error,
+                                                {"exception": exception})
+        self._cond.notify()
+
+    def lock(self):
+        self._cond.acquire()
+
+    def unlock(self):
+        self._cond.release()
+
+    #########
+    # state transitions
+    #########
+
+    def _sm_connect(self):
+        """
+        Attempting to connect and setup the handshake
+        """
+        try:
+            self._ws = _WebSocketClient(
+                self, self._server_url, self._receive_queue,
+                protocols=['http-only', 'chat'])
+            self._ws.connect()
+            self._ws.send_handshake(self._hs_string)
+        except Exception as ex:
+            self._throw_error(ex)
+
+    def _sm_received_hs(self, incoming_handshake=None):
+        """
+        The handshake has arrived
+        """
+        try:
+            self.handshake_doc = incoming_handshake
+            self._errors_since_success = 0
+            self._backoff_time = None
+            rc = self.handshake_observer(incoming_handshake)
+            if not rc:
+                # this means the the AM rejected the handshake.  This is an error
+                # and the connection returns to the waiting state
+                ex = exceptions.AgentHandshakeException(incoming_handshake)
+                self._throw_error(ex)
+        except Exception as ex:
+            self._throw_error(ex)
+
+    def _sm_hs_failed(self):
+        """
+        An error occurred while waiting for the handshake
+        """
+        self._increase_backoff()
+
+    def _sm_close_open(self):
+        """
+        A user called close while the connection was open
+        """
+        self._done_event.set()
+        self._cond.notify()
+
+    def _sm_hs_close(self):
+        """
+        A user called close while waiting for a handshake
+        """
+        self._done_event.set()
+        self._cond.notify()
+
+    def _sm_not_open_close(self):
+        """
+        A user called close when the connection was not open
+        """
+        self._done_event.set()
+        self._cond.notify()
+
+    def _sm_open_poll(self):
+        """
+        A poll event occurred in the open state.  Check the send queue
+        """
+        # check the send queue
+        done = False
+        while not done:
+            try:
+                doc = self._send_queue.get(False)
+                self._send_queue.task_done()
+
+                msg = json.dumps(doc)
+                _g_logger.debug("sending the message " + msg)
+                self._ws.send(msg)
+                self._errors_since_success = 0
+            except socket.error as er:
+                if er.errno == errno.EPIPE:
+                    _g_logger.info(
+                        "The ws connection broke for %s" % self._server_url)
+                else:
+                    _g_logger.info(
+                        "A WS socket error occurred %s" % self._server_url)
+                self._throw_error(er)
+                done = True
+            except Queue.Empty:
+                done = True
+            except Exception as ex:
+                _g_logger.exception(str(ex))
+                self._throw_error(ex)
+                done = True
+
+    def _sm_open_error(self):
+        """
+        And error occured while the connection was open
+        """
+        self._increase_backoff()
+
+    def _sm_handshake_poll(self):
+        """
+        While waiting for the handshake a poll event occurred
+        """
+        pass
+
+    def _setup_states(self):
+        self._sm.add_transition(WsConnStates.WAITING,
+                                WsConnEvents.POLL,
+                                WsConnStates.HANDSHAKING,
+                                self._sm_connect)
+
+        self._sm.add_transition(WsConnStates.WAITING,
+                                WsConnEvents.CLOSE,
+                                WsConnStates.DONE,
+                                self._sm_not_open_close)
+
+        self._sm.add_transition(WsConnStates.HANDSHAKING,
+                                WsConnEvents.GOT_HANDSHAKE,
+                                WsConnStates.OPEN,
+                                self._sm_received_hs)
+
+        self._sm.add_transition(WsConnStates.HANDSHAKING,
+                                WsConnEvents.ERROR,
+                                WsConnStates.WAITING,
+                                self._sm_hs_failed)
+
+        self._sm.add_transition(WsConnStates.HANDSHAKING,
+                                WsConnEvents.POLL,
+                                WsConnStates.HANDSHAKING,
+                                self._sm_handshake_poll)
+
+        self._sm.add_transition(WsConnStates.HANDSHAKING,
+                                WsConnEvents.CLOSE,
+                                WsConnStates.DONE,
+                                self._sm_hs_close)
+
+        self._sm.add_transition(WsConnStates.OPEN,
+                                WsConnEvents.CLOSE,
+                                WsConnStates.DONE,
+                                self._sm_close_open)
+
+        self._sm.add_transition(WsConnStates.OPEN,
+                                WsConnEvents.POLL,
+                                WsConnStates.OPEN,
+                                self._sm_open_poll)
+
+        self._sm.add_transition(WsConnStates.OPEN,
+                                WsConnEvents.ERROR,
+                                WsConnStates.WAITING,
+                                self._sm_open_error)

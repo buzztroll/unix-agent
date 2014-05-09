@@ -22,7 +22,6 @@ import string
 
 
 _g_logger = logging.getLogger(__name__)
-_g_conf_file_env = "DCM_AGENT_CONF"
 
 
 class OperationalState(object):
@@ -184,27 +183,6 @@ def make_friendly_id(prefix, id):
 
 def make_id_string(prefix, id):
     return "%s%03d" % (prefix, id)
-
-
-def get_config_files(base_dir=None, conffile=None):
-    candidates = ["/etc/dcm/agent.conf",
-                  os.path.expanduser("~/.dcm/agent.conf")]
-    if base_dir:
-        candidates.append(os.path.join(base_dir, "etc", "agent.conf"))
-    if _g_conf_file_env in os.environ:
-        candidates.append(os.environ[_g_conf_file_env])
-    if conffile:
-        candidates.append(conffile)
-
-    locations = []
-    for f in candidates:
-        f = os.path.abspath(f)
-        if os.path.exists(f):
-            locations.append(f)
-        else:
-            _g_logger.warn("Config file locations %s does not exist" % f)
-
-    return locations
 
 
 def get_time_backup_string():

@@ -59,6 +59,7 @@ class JobRunner(threading.Thread):
     def run(self):
         _g_logger.info("Job runner %s thread starting." % self.getName())
 
+        # TODO CHANGE TO SIGNAL MODLE
         while not self._exit.is_set():
             try:
                 work = self._queue.get(True, 1)

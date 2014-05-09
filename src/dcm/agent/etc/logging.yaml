@@ -10,6 +10,7 @@ filters:
     add_request:
         (): dcm.eventlog.tracer.RequestFilter
 
+
 handlers:
     file_handler:
         class: logging.handlers.RotatingFileHandler
@@ -21,10 +22,18 @@ handlers:
         encoding: utf8
         filters: [add_request]
 
+    dcm_logger:
+        class: dcm.agent.logger.dcmLogger
+        level: INFO
+        formatter: simple
+        filters: [add_request]
+        encoding: utf8
+
+
 loggers:
     dcm.agent:
         level: DEBUG
-        handlers: [file_handler]
+        handlers: [file_handler, dcm_logger]
         propagate: no
 
     dcm.agent.messaging:
@@ -39,7 +48,7 @@ loggers:
 
     dcm.agent.jobs:
         level: DEBUG
-        handlers: [file_handler]
+        handlers: [file_handler, dcm_logger]
         propagate: no
 
 

@@ -1,14 +1,17 @@
 import dcm.agent.utils as agent_util
 
 
-class ConnectionInterface(object):
-
+class HandshakeReceiverInterface(object):
+    """
+    This is the interface that shows what methods will be called on the
+    connection receiving object
+    """
     @agent_util.not_implemented_decorator
-    def set_receiver(self, receive_object):
-        """
-        Read 1 packet from the connection.  1 complete json doc.
-        """
+    def incoming_handshake(self, connection, handshake_doc):
         pass
+
+
+class ConnectionInterface(object):
 
     @agent_util.not_implemented_decorator
     def send(self, doc):
@@ -18,20 +21,14 @@ class ConnectionInterface(object):
         pass
 
     @agent_util.not_implemented_decorator
-    def connect(self):
+    def connect(self, receive_object, incoming_handshake_object, outgoing_handshake_doc):
         """
-        establish a connection.  This will block until the handshake
-        document returns.  Re-connections may happen after this which
-        can be asynchronous but the first call must block until initial
-        contact with estratius is made.
-        """
-        pass
-
-    @agent_util.not_implemented_decorator
-    def set_handshake(self, handshake_doc):
-        """
-        Set the handshake that will be sent out as part of connect.  This must
-        be called before connect.
+        Start the connection object.  The incoming data will be sent to the
+        receive_object which should implement ParentReceiveQObserver.  In
+        response to the connection the agent manager will send a handshake
+        document.  When this happens methods on incoming_handshake_object
+        will be called.  It can be called more than once but the data should
+        always be the same.
         """
         pass
 

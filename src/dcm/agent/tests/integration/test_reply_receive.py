@@ -159,22 +159,21 @@ class TestProtocolCommands(reply.ReplyObserverInterface):
                 pass
 
     def setUp(self):
-        service._g_conn_for_shutdown = None
+        test_conf_path = os.path.join(self.test_base_path, "etc", "agent.conf")
+        self.conf_obj = config.AgentConfig([test_conf_path])
+        self.svc = service.DCMAgent(self.conf_obj)
 
         self._event = threading.Event()
 
-        test_conf_path = os.path.join(self.test_base_path, "etc", "agent.conf")
-        self.conf_obj = config.AgentConfig([test_conf_path])
         utils.verify_config_file(self.conf_obj)
         # script_dir must be forced to None so that we get the built in dir
-        service._pre_threads(self.conf_obj, ["-c", test_conf_path])
+        self.svc.pre_threads()
+        self.conf_obj.start_job_runner()
+
         self.disp = dispatcher.Dispatcher(self.conf_obj)
-
         self.test_con = test_conn.ReqRepQHolder()
-
         self.req_conn = self.test_con.get_req_conn()
         self.reply_conn = self.test_con.get_reply_conn()
-
         self.request_listener = reply.RequestListener(
             self.conf_obj, self.reply_conn, self.disp)
         observers = self.request_listener.get_reply_observers()
@@ -196,16 +195,17 @@ class TestProtocolCommands(reply.ReplyObserverInterface):
         handshake_doc["ephemeralFileSystem"] = "/tmp"
         handshake_doc["encryptedEphemeralFsKey"] = "DEADBEAF"
 
-        self.conf_obj.set_handshake(handshake_doc)
-        self.conf_obj.start_job_runner()
+        self.svc.conn = self.reply_conn
+        self.svc.disp = self.disp
+        self.svc.request_listener = self.request_listener
+
+        self.svc.incoming_handshake({"handshake": handshake_doc,
+                                     "return_code": 200})
 
         self.disp.start_workers(self.request_listener)
 
     def _run_main_loop(self):
-        service._agent_main_loop(self.conf_obj,
-                                 self.request_listener,
-                                 self.disp,
-                                 self.reply_conn)
+        self.svc.agent_main_loop()
 
     def _rpc_wait_reply(self, doc):
 
@@ -217,7 +217,6 @@ class TestProtocolCommands(reply.ReplyObserverInterface):
                 self.req.incoming_message(obj)
 
         def reply_callback():
-            service._g_shutting_down = True
             parent_receive_q.wakeup()
 
         reqRPC = request.RequestRPC(doc, self.req_conn, self.agent_id,
@@ -233,14 +232,13 @@ class TestProtocolCommands(reply.ReplyObserverInterface):
         self._event.clear()
 
         reqRPC.cleanup()
-        service._g_shutting_down = False
+        self.shutting_down = False
 
         return reqRPC
 
     def tearDown(self):
         self.request_listener.wait_for_all_nicely()
-        service._cleanup_agent(
-            self.conf_obj, self.request_listener, self.disp, self.reply_conn)
+        self.svc.cleanup_agent()
         self.req_conn.close()
 
     def test_get_private_ip(self):
@@ -1353,5 +1351,3 @@ class TestProtocolCommands(reply.ReplyObserverInterface):
             lines = fptr.readlines()
             nose.tools.eq_(len(lines), 3)
             nose.tools.eq_("UNLOCKED", lines[2].strip())
-
-

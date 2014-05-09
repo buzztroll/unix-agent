@@ -44,7 +44,7 @@ def get_handshake(conf):
 
     ipv4s = cloudmetadata.get_ipv4_addresses(conf)
     ipv6s = []
-    injected_id = _get_injected_id()
+    injected_id = None
     agent_id = _get_agent_id(conf)
 
     vm_instance = cloud_instance.get_instance_id(conf)

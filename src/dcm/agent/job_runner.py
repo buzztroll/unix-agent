@@ -122,9 +122,11 @@ class JobRunner(object):
         if type(cmd) == list or type(cmd) == tuple:
             cmd = " ".join([str(i) for i in cmd])
 
-        _g_logger.debug("Sending the command %s to the child runner" % cmd)
+        _g_logger.info("Sending the command %s to the child runner" % cmd)
         self._parent_conn.send((JobRunnerWorker.SYNC_JOB, cmd, cwd, env))
         (rc, stdout, stderr) = self._parent_conn.recv()
+        _g_logger.info("Output frim the command %s. rc=%d, stdout=%s, "
+                        "stderr=%s" % (cmd, rc, stdout, stderr))
         return (stdout, stderr, rc)
 
     def lock(self, timeout, lock_fs):

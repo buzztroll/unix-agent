@@ -357,6 +357,7 @@ def merge_opts(conf_d, opts):
         "services_path": ("storage", "services_dir"),
         "temp_path": ("storage", "temppath"),
         "platform": ("platform", "name"),
+        "con_type": ("connection", "type"),
     }
     for opts_name in map_opts_to_conf:
         (s, i) = map_opts_to_conf[opts_name]
