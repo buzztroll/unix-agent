@@ -11,7 +11,12 @@ class dcmLogger(logging.Handler):
         if self._conn is None:
             return
         msg = self.format(record)
-        self._conn.log(msg)
+        try:
+            self._conn.log(msg)
+        except:
+            # skip any errors
+            # TODO figure out a safe way to log these
+            pass
 
     def set_conn(self, conn):
         self._conn = conn

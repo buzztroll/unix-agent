@@ -16,6 +16,7 @@ class WorkLoad(object):
         self.request_id = request_id
         self.payload = payload
         self.items_map = items_map
+        self.quit = False
 
 
 class WorkReply(object):
@@ -69,9 +70,17 @@ class Worker(threading.Thread):
     def run(self):
         _g_logger.info("Worker %s thread starting." % self.getName())
 
-        while not self._is_done:
+        done = False
+        while not done:
             try:
-                workload = self.worker_queue.get(True, 1)
+                workload = self.worker_queue.get()
+                if workload is None:
+                    continue
+                if workload.quit:
+                    done = True
+                    self.worker_queue.task_done()
+                    continue
+
                 # setup message logging
                 with tracer.RequestTracer(workload.request_id):
 
@@ -121,6 +130,12 @@ class Dispatcher(object):
 
     def stop(self):
         _g_logger.info("Stopping workers.")
+
+        for w in self.workers:
+            workload = WorkLoad(None, None, None)
+            workload.quit = True
+            self.worker_q.put(workload)
+
         for w in self.workers:
             _g_logger.debug("Stopping worker %s" % str(w))
             w.done()
