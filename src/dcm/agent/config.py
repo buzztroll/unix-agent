@@ -7,12 +7,11 @@ import threading
 import yaml
 import dcm
 import libcloud.security
-from dcm.agent import job_runner
-from dcm.agent.cloudmetadata import CLOUD_TYPES
-from dcm.agent.connection import websocket
 
+from dcm.agent.cloudmetadata import CLOUD_TYPES
+import dcm.agent.connection.websocket as websocket
 import dcm.agent.exceptions as exceptions
-import dcm.agent.connection.dummy as dummy_con
+import dcm.agent.job_runner as job_runner
 import dcm.agent.tests.utils.test_connection as test_connection
 
 
@@ -54,8 +53,6 @@ def get_connection_object(conf):
 
         outf = open(conf.connection_dest_file, "w")
         con = test_connection.TestReplySuccessfullyAlways(fptr, outf)
-    elif con_type == "dummy":
-        con = dummy_con.DummyConnection()
     elif con_type == "ws":
         if not conf.connection_agentmanager_url:
             raise exceptions.AgentOptionValueNotSetException(
@@ -251,17 +248,11 @@ class AgentConfig(object):
         else:
             self.imaging_event.clear()
 
-    def lock(self):
-        pass
-
-    def unlock(self):
-        pass
-
     def get_service_directory(self, service_name):
         return os.path.join(self.storage_services_dir, service_name)
 
     def start_job_runner(self):
-        self.jr = job_runner.JobRunner()
+        self.jr = job_runner.JobRunner(self)
 
     def get_temp_file(self, filename, isdir=False):
         new_dir = tempfile.mkdtemp(dir=self.storage_temppath)
@@ -338,6 +329,14 @@ def _build_options_list():
                   options=["ubuntu", "el", "suse", "debian"]),
         ConfigOpt("jobs", "retain_job_time", int, default=3600),
         ConfigOpt("test", "skip_handshake", bool, default=False),
+
+        ConfigOpt("intrusion", "type", str, default="ossec",
+                  help="The name of the intrusion detection system to use.  "
+                       "Currently only ossec is available."),
+        ConfigOpt("intrusion", "enabled", bool, default=True),
+        ConfigOpt("intrusion", "file", str,
+                  default="/var/ossec/logs/alerts/alerts.log",
+                  help="The file where alerts are logged."),
     ]
 
     return option_list

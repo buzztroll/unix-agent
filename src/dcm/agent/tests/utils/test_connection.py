@@ -102,6 +102,13 @@ class TestReplySuccessfullyAlways(conniface.ConnectionInterface):
             if retrans.should_retrans(event):
                 self._readq.put(retrans.request_doc)
 
+    def connect(self, receive_object, incoming_handshake_object,
+                outgoing_handshake_doc):
+        pass
+
+    def close(self):
+        pass
+
     def send(self, doc):
         with self._lock:
             t = doc['type']
@@ -144,6 +151,10 @@ class ReqRepQHolder(object):
         def __init__(self, sq, rq):
             self._send_q = sq
             self._recv_q = rq
+
+        def connect(self, receive_object, incoming_handshake_object,
+                    outgoing_handshake_doc):
+            pass
 
         def set_receiver(self, receive_object):
             parent_receive_q.set_put_queue(self._recv_q, receive_object)

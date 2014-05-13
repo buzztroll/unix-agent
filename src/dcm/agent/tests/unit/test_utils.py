@@ -1,7 +1,9 @@
 import os
 import tempfile
 import unittest
-from dcm.agent import utils
+
+import dcm.agent.utils as utils
+import dcm.agent.cmd.service as service
 
 
 class TestProtocolCommands(unittest.TestCase):
@@ -18,7 +20,7 @@ class TestProtocolCommands(unittest.TestCase):
         os.environ["DCM_AGENT_CONF"] = path2
 
         try:
-            file_list = utils.get_config_files(base_dir=tmp_d, conffile=path)
+            file_list = service.get_config_files(base_dir=tmp_d, conffile=path)
             self.assertIn(path, file_list)
             self.assertIn(path2, file_list)
         finally:

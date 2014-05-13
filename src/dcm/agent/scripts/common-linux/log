@@ -2,9 +2,18 @@
 
 [ -t 0 ] || read PIPEINPUT
 
-if [ "X$1" != "X"  ]; then
-    echo ${@} 1>&2
+tag=""
+if [ "X$1" == "X-t" ]; then
+    shift
+    tag="[$1] "
+    shift
 fi
+msg="${@}"
+
 if [ "X$PIPEINPUT" != "X" ]; then
-    echo $PIPEINPUT 1>&2
+   if [ "X$msg" != "X" ]; then
+       msg="$msg "
+   fi
+   msg="$msg$PIPEINPUT"
 fi
+echo "$tag[$msg]" 1>&2

@@ -19,21 +19,6 @@ import dcm.agent
 import dcm.agent.cloudmetadata as cloud_instance
 
 
-# This function does not really work
-def _gather_ipv4_addresses():
-    addrs = socket.getaddrinfo(socket.gethostname(), None, socket.AF_INET)
-    ipv4s = set([i[4][0] for i in addrs])
-    # this turns the set into a list so that it can be JSON serialized
-    return list(ipv4s)
-
-
-def _gather_ipv6_addresses():
-    addrs = socket.getaddrinfo(socket.gethostname(), None, socket.AF_INET6)
-    ipv6s = set([i[4][0] for i in addrs])
-    # this turns the set into a list so that it can be JSON serialized
-    return list(ipv6s)
-
-
 def _get_agent_id(conf):
     if not conf.storage_idfile or not os.path.exists(conf.storage_idfile):
         return None
@@ -41,10 +26,6 @@ def _get_agent_id(conf):
     with open(conf.storage_idfile, "r") as fptr:
         agent_id = fptr.readline().strip()
         return agent_id
-
-
-def _get_injected_id():
-    pass
 
 
 def get_handshake(conf):
@@ -63,7 +44,7 @@ def get_handshake(conf):
 
     ipv4s = cloudmetadata.get_ipv4_addresses(conf)
     ipv6s = []
-    injected_id = _get_injected_id()
+    injected_id = None
     agent_id = _get_agent_id(conf)
 
     vm_instance = cloud_instance.get_instance_id(conf)

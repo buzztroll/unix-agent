@@ -140,6 +140,18 @@ class InvalidMessageParameterValueException(MalformedMessageException):
                         'attr_value': attr_value})
 
 
+class AgentHandshakeException(Exception):
+    def __init__(self, handshake_doc, extra_msg=None):
+        if handshake_doc:
+            msg = "The handshake failed with code %s.  doc=%s."\
+                % (handshake_doc["return_code"], str(handshake_doc))
+        else:
+            msg = "Handshake Error."
+        if extra_msg:
+            msg = msg + " " + extra_msg
+        super(AgentHandshakeException, self).__init__(msg)
+
+
 class PerminateConnectionException(MessagingException):
     msg = "This connection has perminately failed.  This should almost " \
           "never happen. %(details)s."

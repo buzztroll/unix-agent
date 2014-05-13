@@ -27,6 +27,7 @@ class NewLongJob(object):
         self.arguments = arguments
         self.job_id = job_id
         self.request_id = request_id
+        self.quit = False
 
 
 class JobReply(object):
@@ -59,9 +60,13 @@ class JobRunner(threading.Thread):
     def run(self):
         _g_logger.info("Job runner %s thread starting." % self.getName())
 
-        while not self._exit.is_set():
+        done = False
+        while not done:
             try:
-                work = self._queue.get(True, 1)
+                work = self._queue.get(False)
+                if work.quit:
+                    done = True
+                    continue
 
                 try:
                     _g_logger.debug("Running the long job %s:%s" %
@@ -122,6 +127,11 @@ class LongRunner(parent_receive_q.ParentReceiveQObserver):
     def shutdown(self):
         # IF we want to make sure the queue is empty we must call
         # self._run_queue.join()
+
+        for i in range(len(self._runner_list)):
+            quit_job = NewLongJob(None, None, None, None, None)
+            quit_job.quit = True
+            self._run_queue.put(quit_job)
         for r in self._runner_list:
             _g_logger.debug("Stopping worker %s" % str(r))
             r.done()

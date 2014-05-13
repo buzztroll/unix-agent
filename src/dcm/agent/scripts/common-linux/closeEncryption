@@ -1,0 +1,53 @@
+#!/usr/bin/env bash
+
+set -u
+
+BASENAME=`basename $0`
+DIRNAME=`dirname $0`
+. "$DIRNAME/common_mod"
+
+logTag="closeEncryption"
+LOGGER=$DIRNAME/log
+
+PATH=/usr/local/sbin:/usr/local/bin:/sbin:/bin:/usr/sbin:/usr/bin:$DCM_BASEDIR/bin
+
+BASENAME=`basename $0`
+CUSTOM="$DCM_BASEDIR/custom/bin/$BASENAME"
+
+if [ $# -lt 1 ] ; then
+   $LOGGER -t "$logTag" Syntax: closeEncryption ENCRYPTED_DEVICE
+   exit 1
+fi
+
+if ! sudo which cryptsetup ; then
+	$LOGGER -t "$logTag" cryptsetup not installed
+	exit 2
+fi
+
+encryptedDevice=$1
+
+$LOGGER -t "$logTag" closeEncryption "$@"
+
+if [ -x ${CUSTOM} ] ; then
+        ${CUSTOM} "$@" 2>&1 | $LOGGER -t "$logTag"
+	exit_with_pipe_value
+fi
+
+if [ -x ${CUSTOM}-pre ] ; then
+        ${CUSTOM}-pre "$@" 2>&1 | $LOGGER -t "$logTag"
+	exit_if_pipe_false
+fi
+
+sudo cryptsetup remove $encryptedDevice > /dev/null 2>&1
+
+if [ $? != 0 ] ; then
+        $LOGGER -t "$logTag" Unable to open encrypted device.
+        exit 11
+fi
+
+if [ -x ${CUSTOM}-post ] ; then
+        ${CUSTOM}-post "$@" 2>&1 | $LOGGER -t "$logTag"
+	exit_if_pipe_false
+fi
+
+exit 0

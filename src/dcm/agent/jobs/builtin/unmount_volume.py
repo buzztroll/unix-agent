@@ -19,7 +19,9 @@ import dcm.agent.utils as utils
 class UnmountVolume(jobs.Plugin):
 
     protocol_arguments = {
-        "deviceId": ("The device ID to unmount.", True, str),
+        "deviceId": ("The mount point ID to unmount.", True, str),
+        "encrypted": ("If using an encrypted device this is the "
+                              "device id to remove.", False, bool),
     }
 
     def __init__(self, conf, job_id, items_map, name, arguments):
@@ -39,6 +41,9 @@ class UnmountVolume(jobs.Plugin):
     def run(self):
         try:
             self.umount()
+            if self.args.encrypted:
+                utils.close_encrypted_device(
+                    self.conf, self.args.deviceId)
             return {"return_code": 0, "message": "",
                     "error_message": "", "return_type": "void"}
         except exceptions.AgentExecutableException as aex:

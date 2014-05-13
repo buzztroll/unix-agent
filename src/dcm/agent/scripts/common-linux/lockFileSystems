@@ -5,7 +5,6 @@ PATH=/usr/sbin:${PATH}
 
 BASENAME=`basename $0`
 DIRNAME=`dirname $0`
-. "$DIRNAME/common_mod"
 
 logTag="lockFileSystems"
 LOGGER=$DIRNAME/log

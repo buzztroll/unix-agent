@@ -22,7 +22,6 @@ import string
 
 
 _g_logger = logging.getLogger(__name__)
-_g_conf_file_env = "DCM_AGENT_CONF"
 
 
 class OperationalState(object):
@@ -186,27 +185,6 @@ def make_id_string(prefix, id):
     return "%s%03d" % (prefix, id)
 
 
-def get_config_files(base_dir=None, conffile=None):
-    candidates = ["/etc/dcm/agent.conf",
-                  os.path.expanduser("~/.dcm/agent.conf")]
-    if base_dir:
-        candidates.append(os.path.join(base_dir, "etc", "agent.conf"))
-    if _g_conf_file_env in os.environ:
-        candidates.append(os.environ[_g_conf_file_env])
-    if conffile:
-        candidates.append(conffile)
-
-    locations = []
-    for f in candidates:
-        f = os.path.abspath(f)
-        if os.path.exists(f):
-            locations.append(f)
-        else:
-            _g_logger.warn("Config file locations %s does not exist" % f)
-
-    return locations
-
-
 def get_time_backup_string():
     nw = datetime.datetime.now()
     tm_str = nw.strftime("%Y%m%d.%H%M%S.%f")
@@ -284,7 +262,7 @@ def unmount(conf, mount_point):
     command = [conf.get_script_location("unmount"), mount_point]
     (stdout, stderr, rc) = run_command(conf, command)
     if rc != 0:
-        raise exceptions.AgentExecutableException("unmount failed: " + stderr)
+        raise exceptions.AgentExecutableException(rc, stdout, stderr)
 
     return rc
 
@@ -297,7 +275,7 @@ def mount(conf, device_id, file_system, mount_point):
                device_id, file_system, mount_point]
     (stdout, stderr, rc) = run_command(conf, command)
     if rc != 0:
-        raise exceptions.AgentExecutableException("mount failed: " + stderr)
+        raise exceptions.AgentExecutableException(rc, stdout, stderr)
     return rc
 
 
@@ -310,7 +288,7 @@ def format(conf, device_id, file_system, mount_point, encryption_key):
                enc_str]
     (stdout, stderr, rc) = run_command(conf, command)
     if rc != 0:
-        raise exceptions.AgentExecutableException("format failed: " + stderr)
+        raise exceptions.AgentExecutableException(rc, stdout, stderr)
     return rc
 
 
@@ -321,6 +299,14 @@ def open_encrypted_device(conf, raw_device_id, encrypted_device_id, key_file):
                key_file]
     (stdout, stderr, rc) = run_command(conf, command)
     if rc != 0:
-        raise exceptions.AgentExecutableException(
-            "open_encrypted_device failed: " + stderr)
+        raise exceptions.AgentExecutableException(rc, stdout, stderr)
+    return rc
+
+
+def close_encrypted_device(conf, encrypted_device_id):
+    command = [conf.get_script_location("closeEncryption"),
+               encrypted_device_id]
+    (stdout, stderr, rc) = run_command(conf, command)
+    if rc != 0:
+        raise exceptions.AgentExecutableException(rc, stdout, stderr)
     return rc

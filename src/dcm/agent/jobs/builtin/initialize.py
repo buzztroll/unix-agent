@@ -81,8 +81,7 @@ class InitializeJob(jobs.Plugin):
         try:
             # TODO WALK THE INIT STEPS
             # rename
-            self.logger.info("Renaming the host to %s"
-                             % self.args.serverName)
+            self.logger.info("Renaming the host to %s" % self.args.serverName)
             res_doc = self.rename.run()
             if res_doc["return_code"] != 0:
                 res_doc["message"] = res_doc["message"] + " : rename failed"

@@ -101,7 +101,7 @@ class _MainQueue(ParentReceiveQObserver):
         with self._lock:
             try:
                 if msg_type not in self._targets:
-                    raise Exception("This is not a valid message type")
+                    _g_logger.error("This is not a valid message type: %s" % msg_type)
                 handler = self._targets[msg_type]
             finally:
                 self._q.task_done()

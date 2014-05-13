@@ -52,7 +52,7 @@ class Plugin(object):
             if arg not in self.protocol_arguments:
                 _g_logger.warn("The argument %s was sent from the agent "
                                "manager but is not understood by this "
-                               "command.")
+                               "command." % arg)
             else:
                 h, mandatory, t = self.protocol_arguments[arg]
                 a = self.arguments[arg]
@@ -69,6 +69,10 @@ class Plugin(object):
 
     def get_name(self):
         return self.name
+
+    def cancel(self, reply_rpc, *args, **kwargs):
+        pass
+
 
 
 # a fork plugin.  Fork an executable and wait for it to complete.

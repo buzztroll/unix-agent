@@ -2,7 +2,7 @@ import json
 import os
 import unittest
 import StringIO
-from dcm.agent import dispatcher, parent_receive_q
+from dcm.agent import dispatcher, parent_receive_q, logger
 
 import dcm.agent.config as config
 from dcm.agent.messaging import types
@@ -14,6 +14,7 @@ import dcm.agent.tests.utils as test_utils
 class TestSingleCommands(unittest.TestCase):
 
     def setUp(self):
+        logger.clear_dcm_logging()
         test_conf_path = test_utils.get_conf_file()
         self.conf_obj = config.AgentConfig([test_conf_path])
         self.disp = dispatcher.Dispatcher(self.conf_obj)
@@ -75,6 +76,7 @@ class TestSingleCommands(unittest.TestCase):
 class TestSerialCommands(unittest.TestCase):
 
     def setUp(self):
+        logger.clear_dcm_logging()
         test_conf_path = test_utils.get_conf_file()
         self.conf_obj = config.AgentConfig([test_conf_path])
         self.disp = dispatcher.Dispatcher(self.conf_obj)
@@ -133,6 +135,7 @@ class TestSerialCommands(unittest.TestCase):
 class TestRetransmission(unittest.TestCase):
 
     def setUp(self):
+        logger.clear_dcm_logging()
         test_conf_path = test_utils.get_conf_file()
         self.conf_obj = config.AgentConfig([test_conf_path])
 

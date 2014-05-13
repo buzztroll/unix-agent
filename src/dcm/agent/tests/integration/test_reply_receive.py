@@ -17,7 +17,7 @@ from nose.plugins import skip
 
 import dcm.agent.utils as utils
 from dcm.agent.cmd import service, configure
-from dcm.agent import config, dispatcher, storagecloud, parent_receive_q
+from dcm.agent import config, dispatcher, storagecloud, parent_receive_q, logger
 from dcm.agent.messaging import reply, request
 import dcm.agent.tests.utils as test_utils
 import dcm.agent.tests.utils.test_connection as test_conn
@@ -139,6 +139,8 @@ class TestProtocolCommands(reply.ReplyObserverInterface):
 
     @classmethod
     def tearDownClass(cls):
+        logger.clear_dcm_logging()
+
         shutil.rmtree(cls.test_base_path)
 
         for cloud in cls.storage_clouds:
@@ -159,22 +161,21 @@ class TestProtocolCommands(reply.ReplyObserverInterface):
                 pass
 
     def setUp(self):
-        service._g_conn_for_shutdown = None
+        test_conf_path = os.path.join(self.test_base_path, "etc", "agent.conf")
+        self.conf_obj = config.AgentConfig([test_conf_path])
+        self.svc = service.DCMAgent(self.conf_obj)
 
         self._event = threading.Event()
 
-        test_conf_path = os.path.join(self.test_base_path, "etc", "agent.conf")
-        self.conf_obj = config.AgentConfig([test_conf_path])
         utils.verify_config_file(self.conf_obj)
         # script_dir must be forced to None so that we get the built in dir
-        service._pre_threads(self.conf_obj, ["-c", test_conf_path])
+        self.svc.pre_threads()
+        self.conf_obj.start_job_runner()
+
         self.disp = dispatcher.Dispatcher(self.conf_obj)
-
         self.test_con = test_conn.ReqRepQHolder()
-
         self.req_conn = self.test_con.get_req_conn()
         self.reply_conn = self.test_con.get_reply_conn()
-
         self.request_listener = reply.RequestListener(
             self.conf_obj, self.reply_conn, self.disp)
         observers = self.request_listener.get_reply_observers()
@@ -196,16 +197,17 @@ class TestProtocolCommands(reply.ReplyObserverInterface):
         handshake_doc["ephemeralFileSystem"] = "/tmp"
         handshake_doc["encryptedEphemeralFsKey"] = "DEADBEAF"
 
-        self.conf_obj.set_handshake(handshake_doc)
-        self.conf_obj.start_job_runner()
+        self.svc.conn = self.reply_conn
+        self.svc.disp = self.disp
+        self.svc.request_listener = self.request_listener
+
+        self.svc.incoming_handshake({"handshake": handshake_doc,
+                                     "return_code": 200})
 
         self.disp.start_workers(self.request_listener)
 
     def _run_main_loop(self):
-        service._agent_main_loop(self.conf_obj,
-                                 self.request_listener,
-                                 self.disp,
-                                 self.reply_conn)
+        self.svc.agent_main_loop()
 
     def _rpc_wait_reply(self, doc):
 
@@ -217,7 +219,6 @@ class TestProtocolCommands(reply.ReplyObserverInterface):
                 self.req.incoming_message(obj)
 
         def reply_callback():
-            service._g_shutting_down = True
             parent_receive_q.wakeup()
 
         reqRPC = request.RequestRPC(doc, self.req_conn, self.agent_id,
@@ -233,14 +234,13 @@ class TestProtocolCommands(reply.ReplyObserverInterface):
         self._event.clear()
 
         reqRPC.cleanup()
-        service._g_shutting_down = False
+        self.shutting_down = False
 
         return reqRPC
 
     def tearDown(self):
         self.request_listener.wait_for_all_nicely()
-        service._cleanup_agent(
-            self.conf_obj, self.request_listener, self.disp, self.reply_conn)
+        self.svc.cleanup_agent()
         self.req_conn.close()
 
     def test_get_private_ip(self):
@@ -1197,7 +1197,6 @@ class TestProtocolCommands(reply.ReplyObserverInterface):
         nose.tools.ok_(r["payload"]["return_code"] != 0)
         nose.tools.eq_(socket.gethostname(), orig_hostname)
 
-
     @test_utils.system_changing
     def test_mount_variety(self):
         mount_point = tempfile.mkdtemp()
@@ -1291,7 +1290,8 @@ class TestProtocolCommands(reply.ReplyObserverInterface):
         nose.tools.eq_(jd["job_status"], "COMPLETE")
 
         arguments = {
-            "deviceId": device_id,
+            "deviceId": "es"+device_id,
+            "encrypted": True
         }
         doc = {
             "command": "unmount_volume",
@@ -1301,3 +1301,55 @@ class TestProtocolCommands(reply.ReplyObserverInterface):
         r = req_reply.get_reply()
         nose.tools.eq_(r["payload"]["return_code"], 0)
 
+    @test_utils.system_changing
+    def test_lock_services(self):
+        """
+        install a service, start it, configure it in two ways, stop it, then
+        delete the directory it was put into
+        """
+        if not self.storage_clouds:
+            raise skip.SkipTest("No storage clouds are configured")
+
+        store_cloud = self.storage_clouds[0]
+        service_id = "alock_service" + str(uuid.uuid4())
+        self._install_service(service_id,
+                              self.bucket,
+                              self.simple_service,
+                              store_cloud)
+
+        service_dir = self.conf_obj.get_service_directory(service_id)
+        nose.tools.ok_(os.path.exists(service_dir))
+        nose.tools.ok_(os.path.exists(
+            os.path.join(service_dir, "bin/enstratus-lock")))
+
+        arguments = {
+            "timeout": 10000,
+        }
+        doc = {
+            "command": "lock",
+            "arguments": arguments
+        }
+        start_time = datetime.datetime.now().replace(microsecond=0)
+        req_reply = self._rpc_wait_reply(doc)
+        r = req_reply.get_reply()
+        nose.tools.eq_(r["payload"]["return_code"], 0)
+        nose.tools.ok_(os.path.exists("/tmp/service_lock.%s" % service_id))
+
+        with open("/tmp/service_lock.%s" % service_id, "r") as fptr:
+            lines = fptr.readlines()
+            nose.tools.eq_(len(lines), 2)
+            secs = lines[0]
+        tm = datetime.datetime.utcfromtimestamp(float(secs))
+        nose.tools.ok_(tm >= start_time)
+
+        doc = {
+            "command": "unlock",
+            "arguments": {}
+        }
+        req_reply = self._rpc_wait_reply(doc)
+        r = req_reply.get_reply()
+        nose.tools.eq_(r["payload"]["return_code"], 0)
+        with open("/tmp/service_lock.%s" % service_id, "r") as fptr:
+            lines = fptr.readlines()
+            nose.tools.eq_(len(lines), 3)
+            nose.tools.eq_("UNLOCKED", lines[2].strip())

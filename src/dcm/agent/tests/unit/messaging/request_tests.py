@@ -2,7 +2,7 @@ import unittest
 
 import mock
 import time
-from dcm.agent import parent_receive_q
+from dcm.agent import parent_receive_q, logger
 
 import dcm.agent.messaging.types as types
 import dcm.agent.messaging.states as states
@@ -10,6 +10,10 @@ from dcm.agent.messaging import request
 
 
 class TestRequesterStandardPath(unittest.TestCase):
+
+    @classmethod
+    def setUpClass(cls):
+        logger.clear_dcm_logging()
 
     def _validate_request_message(self, send_doc, doc):
         self.assertEqual(send_doc['payload'], doc)
@@ -156,6 +160,10 @@ class TestRequesterStandardPath(unittest.TestCase):
 
 
 class TestRequesterRetransmissionCases(unittest.TestCase):
+
+    @classmethod
+    def setUpClass(cls):
+        logger.clear_dcm_logging()
 
     def _validate_request_message(self, send_doc, doc):
         self.assertEqual(send_doc['payload'], doc)
