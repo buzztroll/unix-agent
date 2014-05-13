@@ -101,8 +101,8 @@ class DCMAgent(object):
             return False
 
         self.conf.set_handshake(incoming_handshake_doc["handshake"])
-        #ams = am_sender.LogAlert(self.conn)
-        #logger.set_dcm_connection(ams)
+        ams = am_sender.LogAlert(self.conn)
+        logger.set_dcm_connection(ams)
         self.disp.start_workers(self.request_listener)
 
         return True

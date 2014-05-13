@@ -8,7 +8,7 @@ class LogAlert(object):
 
     def log(self, message):
         msg = {
-            "type": "log",
+            "type": "LOG",
             "message": message
         }
         self._conn.send(msg)
@@ -16,7 +16,7 @@ class LogAlert(object):
     def alert(self, tm, level, subject, message):
         nw = datetime.datetime.now()
         msg = {
-            "type": "alert",
+            "type": "ALERT",
             "level": level,
             "subject": subject,
             "message": message,

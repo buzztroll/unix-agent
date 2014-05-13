@@ -29,3 +29,13 @@ def set_dcm_connection(conn):
             for h in logger.handlers:
                 if type(h) == dcmLogger:
                     h.set_conn(conn)
+
+
+def clear_dcm_logging():
+    # effectively just for tests
+    for key in logging.Logger.manager.loggerDict:
+        logger = logging.Logger.manager.loggerDict[key]
+        if type(logger) == logging.Logger:
+            for h in logger.handlers:
+                if type(h) == dcmLogger:
+                    h.set_conn(None)

@@ -6,3 +6,5 @@ class MessageTypes(object):
     ACK = "ACK"
     NACK = "NACK"
     REPLY = "REPLY"
+    LOG = "LOG"
+    ALERT = "ALERT"

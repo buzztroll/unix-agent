@@ -17,7 +17,7 @@ from nose.plugins import skip
 
 import dcm.agent.utils as utils
 from dcm.agent.cmd import service, configure
-from dcm.agent import config, dispatcher, storagecloud, parent_receive_q
+from dcm.agent import config, dispatcher, storagecloud, parent_receive_q, logger
 from dcm.agent.messaging import reply, request
 import dcm.agent.tests.utils as test_utils
 import dcm.agent.tests.utils.test_connection as test_conn
@@ -139,6 +139,8 @@ class TestProtocolCommands(reply.ReplyObserverInterface):
 
     @classmethod
     def tearDownClass(cls):
+        logger.clear_dcm_logging()
+
         shutil.rmtree(cls.test_base_path)
 
         for cloud in cls.storage_clouds:

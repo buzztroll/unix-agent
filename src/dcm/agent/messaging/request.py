@@ -60,13 +60,18 @@ class RequestRPC(object):
         type_to_event = {
             types.MessageTypes.ACK: states.RequesterEvents.ACK_RECEIVED,
             types.MessageTypes.NACK: states.RequesterEvents.NACK_RECEIVED,
-            types.MessageTypes.REPLY: states.RequesterEvents.REPLY_RECEIVED
+            types.MessageTypes.REPLY: states.RequesterEvents.REPLY_RECEIVED,
+            types.MessageTypes.LOG: None,
+            types.MessageTypes.ALERT: None
         }
         if 'type' not in json_doc:
             raise exceptions.MissingMessageParameterException('type')
         if json_doc['type'] not in type_to_event:
             raise exceptions.InvalidMessageParameterValueException(
                 'type', json_doc['type'])
+
+        if type_to_event[json_doc['type']] is None:
+            return
 
         # this next call drives the state machine
         self._sm.event_occurred(type_to_event[json_doc['type']],
