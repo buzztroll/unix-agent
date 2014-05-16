@@ -168,7 +168,7 @@ class WebSocketConnection(threading.Thread):
         self._errors_since_success += 1
 
     def _throw_error(self, exception):
-        _g_logger.debug("throwing error %s" % exception.message)
+        _g_logger.debug("throwing error %s" % str(exception))
         parent_receive_q.register_user_callback(self.event_error,
                                                 {"exception": exception})
         self._cond.notify()

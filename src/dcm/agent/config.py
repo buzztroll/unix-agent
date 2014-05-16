@@ -209,14 +209,6 @@ class AgentConfig(object):
         #else:
         #    raise exceptions.AgentHandshakeException()
 
-        if self.storage_idfile:
-            try:
-                with open(self.storage_idfile, "w") as fptr:
-                    fptr.write(str(self.agent_id))
-            except Exception as ex:
-                _g_logger.exception("Failed to write the agent ID to "
-                                    "%s" % self.storage_idfile)
-
     def get_script_location(self, name):
         if self.storage_script_dir is not None:
             path = os.path.join(self.storage_script_dir, name)

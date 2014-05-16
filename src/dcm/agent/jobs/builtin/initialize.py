@@ -108,6 +108,18 @@ class InitializeJob(jobs.Plugin):
                 res_doc["message"] = res_doc["message"] + " : addUser failed"
                 return res_doc
 
+            # we wait until initialize is called to write out the agent ID
+            # because it is not until this point that the full handshake
+            # is complete.  prior to this point we cannot shortcut the
+            # handshake
+            if self.conf.storage_idfile:
+                try:
+                    with open(self.storage_idfile, "w") as fptr:
+                        fptr.write(str(self.conf.agent_id))
+                except Exception as ex:
+                    _g_logger.exception("Failed to write the agent ID to "
+                                        "%s" % self.storage_idfile)
+
             self.conf.state = "RUNNING"
             return {"return_code": 0, "message": "",
                     "error_message": "", "return_type": "void"}
