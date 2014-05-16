@@ -112,7 +112,7 @@ class BackupDataSource(direct_pass.DirectPass):
             service_dir, "cfg", "enstratiusinitd.cfg")
         if not utils.safe_delete(config_file_path):
             msg = "Could not overwrite existing enstratiusinitd.cfg file."
-            _g_logger.warn(msg)
+            utils.log_to_dcm(logging.WARN, msg)
             raise exceptions.AgentJobException(msg)
 
         with open(config_file_path, "w") as fptr:
@@ -142,8 +142,8 @@ class BackupDataSource(direct_pass.DirectPass):
             _g_logger.warn(msg)
             raise exceptions.AgentJobException(msg)
 
-        _g_logger.info("Uploading backup %s to primary storage cloud." %
-                       backup_path)
+        utils.log_to_dcm(
+            logging.INFO, "Uploading backup %s to primary storage cloud." % backup_path)
 
         primary_cloud_id = int(self.args.primaryCloudId)
         primary_api_key = self.args.primaryApiKey

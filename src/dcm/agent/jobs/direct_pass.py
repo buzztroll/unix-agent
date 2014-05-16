@@ -39,8 +39,9 @@ class DirectPass(jobs.Plugin):
             script_name = items_map["script_name"]
             self.exe_path = conf.get_script_location(script_name)
 
-            _g_logger.debug("script name: %s, exe: %s"
-                            % (script_name, self.exe_path))
+            utils.log_to_dcm(logging.DEBUG,
+                             "script name: %s, exe: %s"
+                             % (script_name, self.exe_path))
             if not os.path.exists(self.exe_path):
                 raise exceptions.AgentPluginConfigException(
                     "The plugin %s points an add_user_exe_path that does not "

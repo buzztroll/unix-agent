@@ -485,17 +485,21 @@ class RequestListener(object):
                                 'agent_id': self._conf.agent_id}
                     self._conn.send(nack_doc)
                 elif request_id in self._requests:
-                    _g_logger.debug("Retransmission found")
+                    agent_util.log_to_dcm(
+                        logging.DEBUG, "Retransmission found %s" % request_id)
                     # this is a retransmission, send in the message
                     req = self._requests[request_id]
                     req.incoming_message(incoming_doc)
                 else:
                     if self._shutdown:
                         return
-                    _g_logger.debug("New Request found")
+                    agent_util.log_to_dcm(logging.DEBUG, "New request found")
                     if len(self._requests.keys()) >=\
                        self._conf.messaging_max_at_once > -1:
-                        _g_logger.info("A new request came in but we are full")
+                        agent_util.log_to_dcm(
+                            logging.DEBUG, "The new request was rejected "
+                                           "because the agent has too many "
+                                           "outstanding requests.")
                         nack_doc = {
                             'type': types.MessageTypes.NACK,
                             'message_id': incoming_doc['message_id'],
@@ -519,8 +523,9 @@ class RequestListener(object):
                             self._dispatcher.incoming_request(msg)
                         except Exception as ex:
                             del self._requests[request_id]
-                            _g_logger.error("The dispatcher could not handle "
-                                            "the message")
+                            agent_util.log_to_dcm(logging.ERROR,
+                                             "The dispatcher could not handle "
+                                             "the message")
                             raise
             else:
                 request_id = incoming_doc['request_id']

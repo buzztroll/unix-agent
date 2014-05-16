@@ -24,7 +24,7 @@ handlers:
 
     dcm_logger:
         class: dcm.agent.logger.dcmLogger
-        level: INFO
+        level: DEBUG
         formatter: simple
         filters: [add_request]
         encoding: utf8
@@ -33,7 +33,7 @@ handlers:
 loggers:
     dcm.agent:
         level: DEBUG
-        handlers: [file_handler, dcm_logger]
+        handlers: [file_handler]
         propagate: no
 
     dcm.agent.messaging:
@@ -48,7 +48,12 @@ loggers:
 
     dcm.agent.jobs:
         level: DEBUG
-        handlers: [file_handler, dcm_logger]
+        handlers: [file_handler]
+        propagate: no
+
+    dcm.agent.log.to.agent.manager:
+        level: DEBUG
+        handlers: [dcm_logger, file_handler]
         propagate: no
 
 

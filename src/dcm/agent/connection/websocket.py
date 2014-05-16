@@ -125,6 +125,7 @@ class WebSocketConnection(threading.Thread):
         self._cond.notify()
 
     def close(self):
+        _g_logger.debug("Websocket connection closed.")
         self.event_close()
 
     @utils.class_method_sync
@@ -167,6 +168,7 @@ class WebSocketConnection(threading.Thread):
         self._errors_since_success += 1
 
     def _throw_error(self, exception):
+        _g_logger.debug("throwing error %s" % exception.message)
         parent_receive_q.register_user_callback(self.event_error,
                                                 {"exception": exception})
         self._cond.notify()
@@ -191,6 +193,7 @@ class WebSocketConnection(threading.Thread):
                 protocols=['http-only', 'chat'])
             self._ws.connect()
             self._ws.send_handshake(self._hs_string)
+            self._backoff_time = None
         except Exception as ex:
             self._throw_error(ex)
 
@@ -221,6 +224,8 @@ class WebSocketConnection(threading.Thread):
         """
         A user called close while the connection was open
         """
+        _g_logger.debug("close called when open")
+
         self._done_event.set()
         self._cond.notify()
 
@@ -228,6 +233,7 @@ class WebSocketConnection(threading.Thread):
         """
         A user called close while waiting for a handshake
         """
+        _g_logger.debug("close event while handshaking")
         self._done_event.set()
         self._cond.notify()
 
@@ -235,6 +241,7 @@ class WebSocketConnection(threading.Thread):
         """
         A user called close when the connection was not open
         """
+        _g_logger.debug("close event while not open")
         self._done_event.set()
         self._cond.notify()
 

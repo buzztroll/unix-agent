@@ -13,7 +13,7 @@
 #  ======================================================================
 import logging
 import re
-from dcm.agent import exceptions, cloudmetadata
+from dcm.agent import exceptions, cloudmetadata, utils
 
 import dcm.agent.jobs.direct_pass as direct_pass
 
@@ -58,7 +58,7 @@ class Rename(direct_pass.DirectPass):
             }
             return reply_doc
 
-        _g_logger.debug("Acquired ip addr %s" % private_ips[0])
+        utils.log_to_dcm(logging.DEBUG, "Acquired ip addr %s" % private_ips[0])
         self.ordered_param_list.append(private_ips[0])
 
         return super(Rename, self).run()

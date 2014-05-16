@@ -125,7 +125,7 @@ class JobRunner(object):
         _g_logger.info("Sending the command %s to the child runner" % cmd)
         self._parent_conn.send((JobRunnerWorker.SYNC_JOB, cmd, cwd, env))
         (rc, stdout, stderr) = self._parent_conn.recv()
-        _g_logger.info("Output frim the command %s. rc=%d, stdout=%s, "
+        _g_logger.info("Output from the command %s. rc=%d, stdout=%s, "
                         "stderr=%s" % (cmd, rc, stdout, stderr))
         return (stdout, stderr, rc)
 

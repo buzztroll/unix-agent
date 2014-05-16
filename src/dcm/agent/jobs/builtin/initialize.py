@@ -75,33 +75,34 @@ class InitializeJob(jobs.Plugin):
                                      "c", self.args.customerId)})
 
     def run(self):
-        _g_logger.debug("Initialize run")
+        utils.log_to_dcm(logging.DEBUG, "Initialize run")
         # verify that the parameters in initialize match what came in on the
         # connection
         try:
             # TODO WALK THE INIT STEPS
             # rename
-            self.logger.info("Renaming the host to %s" % self.args.serverName)
+            utils.log_to_dcm(logging.INFO,
+                             "Renaming the host to %s" % self.args.serverName)
             res_doc = self.rename.run()
             if res_doc["return_code"] != 0:
                 res_doc["message"] = res_doc["message"] + " : rename failed"
                 return res_doc
 
             if self.conf.storage_mount_enabled:
-                self.logger.debug("Mount is enabled")
+                utils.log_to_dcm(logging.INFO, "Mount is enabled")
                 if self.args.encryptedEphemeralFsKey:
                     self.logger.info(
                         "Attempting to mount the ephemeral file system")
                     # TODO mount encrypted FS
 
             # make the temp directory
-            self.logger.info("Create the temporary directory")
+            utils.log_to_dcm(logging.INFO, "Create the temporary directory")
             res_doc = self.make_temp.run()
             if res_doc["return_code"] != 0:
                 res_doc["message"] = res_doc["message"] + " : makeTemp failed"
                 return res_doc
             # add customer user
-            self.logger.info("Adding the user")
+            utils.log_to_dcm(logging.INFO, "Adding the user")
             res_doc = self.add_user.run()
             if res_doc["return_code"] != 0:
                 res_doc["message"] = res_doc["message"] + " : addUser failed"

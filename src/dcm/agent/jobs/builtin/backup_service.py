@@ -163,8 +163,9 @@ class BackupService(direct_pass.DirectPass):
             _g_logger.warn(msg)
             raise exceptions.AgentJobException(msg)
 
-        _g_logger.info("Uploading %s to storage cloud %s" %
-                       (backup_path, self.primary_cloud_id))
+        utils.log_to_dcm(
+            logging.INFO, "Uploading %s to storage cloud %s" %
+                          (backup_path, self.primary_cloud_id))
 
         storagecloud.upload(
             self.primary_cloud_id,

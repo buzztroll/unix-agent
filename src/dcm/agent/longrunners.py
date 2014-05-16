@@ -63,7 +63,7 @@ class JobRunner(threading.Thread):
         done = False
         while not done:
             try:
-                work = self._queue.get(False)
+                work = self._queue.get(True)
                 if work.quit:
                     done = True
                     continue
@@ -98,7 +98,8 @@ class JobRunner(threading.Thread):
                                                    job_reply.job_status))
 
             except Queue.Empty:
-                pass
+                _g_logger.exception("The queue was empty.  This shouldn't "
+                                    "happen often")
             except:
                 _g_logger.exception("Something went wrong processing the job")
             finally:

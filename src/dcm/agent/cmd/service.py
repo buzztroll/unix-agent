@@ -103,6 +103,8 @@ class DCMAgent(object):
         self.conf.set_handshake(incoming_handshake_doc["handshake"])
         ams = am_sender.LogAlert(self.conn)
         logger.set_dcm_connection(ams)
+        utils.log_to_dcm(
+            logging.INFO, "A handshake was successful, starting the workers")
         self.disp.start_workers(self.request_listener)
 
         return True
@@ -112,6 +114,8 @@ class DCMAgent(object):
             try:
                 parent_receive_q.poll()
             except Exception as ex:
+                utils.log_to_dcm(
+                    logging.ERROR, "A top level exception occurred: %s" % ex.message)
                 self.g_logger.exception("A top level exception occurred")
 
     def cleanup_agent(self):
@@ -155,8 +159,8 @@ def parse_command_line(argv):
 
 def main(args=sys.argv):
     agent = None
+    cli_args, remaining_argv = parse_command_line(args)
     try:
-        cli_args, remaining_argv = parse_command_line(args)
 
         config_files = get_config_files(conffile=cli_args.conffile)
         conf = config.AgentConfig(config_files)

@@ -310,3 +310,8 @@ def close_encrypted_device(conf, encrypted_device_id):
     if rc != 0:
         raise exceptions.AgentExecutableException(rc, stdout, stderr)
     return rc
+
+
+def log_to_dcm(lvl, msg, *args, **kvargs):
+    l_logger = logging.getLogger("dcm.agent.log.to.agent.manager")
+    l_logger.log(lvl, msg, *args, **kvargs)

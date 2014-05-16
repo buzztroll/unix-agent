@@ -50,9 +50,10 @@ class Plugin(object):
         # validate that nothing extra was sent
         for arg in self.arguments:
             if arg not in self.protocol_arguments:
-                _g_logger.warn("The argument %s was sent from the agent "
-                               "manager but is not understood by this "
-                               "command." % arg)
+                utils.log_to_dcm(logging.WARN,
+                                 "The argument %s was sent from the agent "
+                                 "manager but is not understood by this "
+                                 "command." % arg)
             else:
                 h, mandatory, t = self.protocol_arguments[arg]
                 a = self.arguments[arg]

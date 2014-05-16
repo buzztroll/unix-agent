@@ -333,7 +333,7 @@ def do_set_owner_and_perms(conf_d):
     for f in os.listdir(cfg_dir):
         os.chmod(os.path.join(cfg_dir, f), 0640)
 
-    with open(os.path.join(base_path, "variables.sh"), "w") as fptr:
+    with open(os.path.join(script_dir, "variables.sh"), "w") as fptr:
         fptr.write("DCM_USER=%s" % user)
         fptr.write(os.linesep)
         fptr.write("DCM_BASEDIR=%s" % base_path)
@@ -435,7 +435,7 @@ def get_url(default=None):
     except Exception as ex:
         raise Exception("The agent manager contact %s is not a valid url"
                         % url)
-    allowed_schemes = ["http", "https", "ws", "wss"]
+    allowed_schemes = ["ws", "wss"]
     if up.scheme not in allowed_schemes:
         raise Exception("The url %s does not consist of an allowed scheme. "
                         "Only the follow schemes are allows %s"

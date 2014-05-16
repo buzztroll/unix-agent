@@ -15,6 +15,7 @@
 import json
 import logging
 import socket
+from dcm.agent import utils
 import dcm.agent.jobs as jobs
 
 
@@ -46,6 +47,8 @@ class RemoteTester(jobs.Plugin):
 
     def run(self):
         try:
+            utils.log_to_dcm(logging.INFO, "Test remote logging. %s"
+                                           % str(self.arguments))
             _g_logger.info("Start tester remote socket.  Send " + self._msg)
             self.sock.send(self._msg)
             _g_logger.info("waiting to get a message back")
