@@ -53,7 +53,6 @@ class MessageTimer(object):
         self._send_doc = message_doc
         self._timeout = timeout
         self._cb = callback
-        self.message_id = None
         self._timer = None
         self._lock = threading.RLock()
 
@@ -65,11 +64,10 @@ class MessageTimer(object):
 
     @class_method_sync
     def send(self, conn):
+        _g_logger.info("Resending reply to %s" % self._send_doc["request_id"])
         self._timer = threading.Timer(self._timeout,
                                       self._cb,
                                       args=[self])
-        self.message_id = new_message_id()
-        self._send_doc["message_id"] = self.message_id
         self._send_doc['entity'] = "timer"
         conn.send(self._send_doc)
         self._timer.start()

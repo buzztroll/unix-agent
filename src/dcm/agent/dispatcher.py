@@ -129,8 +129,7 @@ class Dispatcher(object):
         self.request_listener = request_listener
         for i in range(self._conf.workers_count):
             worker = Worker(self._conf, self.worker_q, self.reply_q)
-            utils.log_to_dcm(
-                logging.DEBUG, "Starting worker %d : %s" % (i, str(worker)))
+            _g_logger.debug("Starting worker %d : %s" % (i, str(worker)))
             worker.start()
             self.workers.append(worker)
 

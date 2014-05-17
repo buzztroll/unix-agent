@@ -31,6 +31,8 @@ class ReplyRPC(object):
         self._reply_listener = reply_listener
         self._timeout = timeout
         self._conn = connection
+        self._resend_reply_cnt = 0
+        self._resend_reply_cnt_threshold = 5
         self._lock = threading.RLock()
         self._sm = states.StateMachine(states.ReplyStates.NEW)
         self._setup_states()
@@ -178,6 +180,7 @@ class ReplyRPC(object):
         ack_doc = {'type': types.MessageTypes.ACK,
                    'message_id': self._message_id,
                    'request_id': self._request_id,
+                   'entity': "user_accepts",
                    'agent_id': self._agent_id}
         self._conn.send(ack_doc)
 
@@ -191,6 +194,7 @@ class ReplyRPC(object):
                      'message_id': utils.new_message_id(),
                      'request_id': self._request_id,
                      'payload': self._response_doc,
+                     'entity': "user_replies",
                      'agent_id': self._agent_id}
 
         message_timer = utils.MessageTimer(self._timeout,
@@ -206,6 +210,7 @@ class ReplyRPC(object):
         nack_doc = {'type': types.MessageTypes.NACK,
                     'message_id': self._message_id,
                     'request_id': self._request_id,
+                    'entity': "user_rejects",
                     'agent_id': self._agent_id}
         self._conn.send(nack_doc)
 
@@ -222,6 +227,7 @@ class ReplyRPC(object):
         ack_doc = {'type': types.MessageTypes.ACK,
                    'message_id': message_id,
                    'request_id': self._request_id,
+                   'entity': "request_received",
                    'agent_id': self._agent_id}
         self._conn.send(ack_doc)
 
@@ -245,6 +251,7 @@ class ReplyRPC(object):
                      'message_id': utils.new_message_id(),
                      'request_id': self._request_id,
                      'payload': self._response_doc,
+                     'entity': "acked_reply",
                      'agent_id': self._agent_id}
 
         message_timer = utils.MessageTimer(self._timeout,
@@ -263,6 +270,7 @@ class ReplyRPC(object):
                      'message_id': utils.new_message_id(),
                      'request_id': self._request_id,
                      'payload': self._response_doc,
+                     'entity': "request_retrans",
                      'agent_id': self._agent_id}
         self._conn.send(reply_doc)
 
@@ -295,7 +303,11 @@ class ReplyRPC(object):
         message_timer = kwargs['message_timer']
         # The time out did occur before the message could be acked so we must
         # resend it
-        _g_logger.info("Resending reply id %s" % message_timer.message_id)
+        _g_logger.info("Resending reply")
+        self._resend_reply_cnt += 1
+        if self._resend_reply_cnt > self._resend_reply_cnt_threshold:
+            # TODO punt at some point
+            pass
         self._send_reply_message(message_timer)
 
     def _sm_nacked_request_received(self, **kwargs):
@@ -307,6 +319,7 @@ class ReplyRPC(object):
         nack_doc = {'type': types.MessageTypes.NACK,
                     'message_id': self._message_id,
                     'request_id': self._request_id,
+                    'entity': "request_received",
                     'agent_id': self._agent_id}
         self._conn.send(nack_doc)
 

@@ -1,4 +1,13 @@
 import logging
+from dcm.agent import parent_receive_q
+
+
+def send_log_to_dcm_callback(conn=None, message=None):
+    msg = {
+        "type": "LOG",
+        "message": message
+    }
+    conn.send(msg)
 
 
 class dcmLogger(logging.Handler):
@@ -12,7 +21,8 @@ class dcmLogger(logging.Handler):
             return
         msg = self.format(record)
         try:
-            self._conn.log(msg)
+            parent_receive_q.register_user_callback(
+                send_log_to_dcm_callback, conn=self._conn, message=msg)
         except:
             # skip any errors
             # TODO figure out a safe way to log these

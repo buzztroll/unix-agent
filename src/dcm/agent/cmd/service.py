@@ -61,6 +61,7 @@ class DCMAgent(object):
     def pre_threads(self):
         signal.signal(signal.SIGINT, self.kill_handler)
         signal.signal(signal.SIGTERM, self.kill_handler)
+        signal.signal(signal.SIGUSR2, self.kill_handler)
 
         if self.conf.pydev_host:
             utils.setup_remote_pydev(self.conf.pydev_host,

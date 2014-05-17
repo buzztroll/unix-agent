@@ -114,7 +114,7 @@ class InitializeJob(jobs.Plugin):
             # handshake
             if self.conf.storage_idfile:
                 try:
-                    with open(self.storage_idfile, "w") as fptr:
+                    with open(self.conf.storage_idfile, "w") as fptr:
                         fptr.write(str(self.conf.agent_id))
                 except Exception as ex:
                     _g_logger.exception("Failed to write the agent ID to "
