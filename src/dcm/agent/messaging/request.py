@@ -204,15 +204,11 @@ class RequestRPC(object):
             msg = ("When a reply happens in the REQUESTING state the message "
                    "should always be in the list.  This situation should "
                    "never occur")
-            utils.build_assertion_exception(
-                _g_logger, "message not in list", msg)
 
         if self._reply_doc is not None:
             msg = ("There should be exactly 1 reply received.  Thus is the "
                    "reply_doc attribute is not None something we terribly "
                    "wrong.")
-            utils.build_assertion_exception(
-                _g_logger, "reply not none", msg)
 
         self._reply_doc = message
 
@@ -243,15 +239,11 @@ class RequestRPC(object):
         if self._message_timer is not None:
             msg = ("In the REQUESTED state the message ID should not be in the"
                    " list")
-            utils.build_assertion_exception(
-                _g_logger, "message in list", msg)
 
         if self._reply_doc is not None:
             msg = ("There should be exactly 1 reply received.  Thus is the "
                    "reply_doc attribute is not None something we terribly "
                    "wrong.")
-            utils.build_assertion_exception(
-                _g_logger, "reply doc is not None", msg)
 
         _g_logger.debug("The incoming reply is %s" % str(message))
         self._reply_doc = message

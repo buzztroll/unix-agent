@@ -15,6 +15,8 @@
 import os
 import tempfile
 import datetime
+import traceback
+import sys
 import exceptions
 import logging
 import random
@@ -315,3 +317,21 @@ def close_encrypted_device(conf, encrypted_device_id):
 def log_to_dcm(lvl, msg, *args, **kvargs):
     l_logger = logging.getLogger("dcm.agent.log.to.agent.manager")
     l_logger.log(lvl, msg, *args, **kvargs)
+
+
+
+def build_assertion_exception(logger, msg):
+    details_out = " === Stacktrace Begin === " + os.linesep
+    for threadId, stack in sys._current_frames().items():
+        details_out = details_out + os.linesep + \
+            "##### Thread %s #####" % threadId + os.linesep
+        for filename, lineno, name, line in traceback.extract_stack(stack):
+            details_out = details_out + os.linesep + \
+                'File: "%s", line %d, in %s' % (filename, lineno, name)
+        if line:
+            details_out = details_out + os.linesep + line.strip()
+
+    details_out = " === Stacktrace End === " + os.linesep
+
+    msg = msg + " | " + details_out
+    logger.error(msg)

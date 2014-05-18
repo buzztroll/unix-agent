@@ -54,6 +54,9 @@ class DCMAgent(object):
     def kill_handler(self, signum, frame):
         self.shutdown_main_loop()
 
+    def stack_trace_handler(self, signum, frame):
+        utils.build_assertion_exception(self.g_logger, "signal stack")
+
     def shutdown_main_loop(self):
         self.shutting_down = True
         parent_receive_q.wakeup()
@@ -61,7 +64,7 @@ class DCMAgent(object):
     def pre_threads(self):
         signal.signal(signal.SIGINT, self.kill_handler)
         signal.signal(signal.SIGTERM, self.kill_handler)
-        signal.signal(signal.SIGUSR2, self.kill_handler)
+        signal.signal(signal.SIGUSR2, self.stack_trace_handler)
 
         if self.conf.pydev_host:
             utils.setup_remote_pydev(self.conf.pydev_host,

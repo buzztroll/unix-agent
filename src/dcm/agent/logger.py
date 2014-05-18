@@ -11,25 +11,29 @@ def send_log_to_dcm_callback(conn=None, message=None):
 
 
 class dcmLogger(logging.Handler):
-    _conn = None
 
     def __init__(self, encoding=None):
         super(dcmLogger, self).__init__()
+        self._conn = None
+        self._unsent_msgs = []
 
     def emit(self, record):
-        if self._conn is None:
-            return
         msg = self.format(record)
-        try:
+        if self._conn is None:
+            self._unsent_msgs.append(msg)
+        else:
             parent_receive_q.register_user_callback(
-                send_log_to_dcm_callback, conn=self._conn, message=msg)
-        except:
-            # skip any errors
-            # TODO figure out a safe way to log these
-            pass
+                send_log_to_dcm_callback, **{"conn": self._conn,
+                                             "message": msg})
 
     def set_conn(self, conn):
         self._conn = conn
+
+        for msg in self._unsent_msgs:
+            parent_receive_q.register_user_callback(
+                send_log_to_dcm_callback, **{"conn": self._conn,
+                                             "message": msg})
+        self._unsent_msgs = []
 
 
 def set_dcm_connection(conn):
