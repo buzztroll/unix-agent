@@ -86,6 +86,7 @@ class DCMAgent(object):
             handshake_doc = handshake.get_handshake(self.conf)
             self.g_logger.debug("Using outgoing handshake document %s"
                                 % str(handshake_doc))
+            logger.set_dcm_connection(self.conn)
             self.conn.connect(
                 self.request_listener, self.incoming_handshake, handshake_doc)
 
@@ -105,8 +106,6 @@ class DCMAgent(object):
             return False
 
         self.conf.set_handshake(incoming_handshake_doc["handshake"])
-        ams = am_sender.LogAlert(self.conn)
-        logger.set_dcm_connection(ams)
         utils.log_to_dcm(
             logging.INFO, "A handshake was successful, starting the workers")
         self.disp.start_workers(self.request_listener)
