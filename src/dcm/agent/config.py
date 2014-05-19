@@ -7,6 +7,7 @@ import threading
 import yaml
 import dcm
 import libcloud.security
+from dcm.agent import utils
 
 from dcm.agent.cloudmetadata import CLOUD_TYPES
 import dcm.agent.connection.websocket as websocket
@@ -76,6 +77,7 @@ class ConfigOpt(object):
         self.minv = minv
         self.maxv = maxv
         self.help = help
+        self.token = utils.generate_token()
 
     def get_option_name(self):
         option_name = "%s_%s" % (self.section, self.name)

@@ -335,3 +335,11 @@ def build_assertion_exception(logger, msg):
 
     msg = msg + " | " + details_out
     logger.error(msg)
+
+
+def generate_token():
+    l = 30 + random.randint(0, 29)
+    token = ''.join(random.choice(string.ascii_letters + string.digits +
+                                  "-_!@#^(),.=+") for x in range(l))
+    return token
+

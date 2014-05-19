@@ -37,6 +37,7 @@ def get_handshake(conf):
             'agent_id': "test-agent",
             'vm_instance': "vdeadbeef",
             'injected_id': "ideadbeef",
+            'token': 'tdeadbeef',
             'version': dcm.agent.g_version,
             'protocol_version': dcm.agent.g_protocol_version,
             'platform': conf.platform_name
@@ -53,6 +54,7 @@ def get_handshake(conf):
         'ipv4': ipv4s,
         'ipv6': ipv6s,
         'agent_id': agent_id,
+        'token': conf.token,
         'vm_instance': vm_instance,
         'injected_id': injected_id,
         'version': dcm.agent.g_version,

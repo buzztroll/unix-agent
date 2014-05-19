@@ -295,6 +295,17 @@ class ReplyRPC(object):
         _g_logger.debug("Messaging complete.  State event transition: "
                         + str(self._sm.get_event_list()))
 
+    def _sm_reply_nack_received(self, **kwargs):
+        """
+        The reply was nacked.  This is probably a result of the a retransmission
+        that was not needed.
+        """
+        self._reply_message_timer.cancel()
+        self._reply_message_timer = None
+        self._reply_listener.message_done(self)
+        _g_logger.debug("Reply NACKed, messaging complete.  State event "
+                        "transition: " + str(self._sm.get_event_list()))
+
     def _sm_reply_ack_timeout(self, **kwargs):
         """
         This happens when after a given amount of time an ack has still not
@@ -432,6 +443,10 @@ class ReplyRPC(object):
                                 states.ReplyEvents.TIMEOUT,
                                 states.ReplyStates.REPLY,
                                 self._sm_reply_ack_timeout)
+        self._sm.add_transition(states.ReplyStates.REPLY,
+                                states.ReplyEvents.REPLY_NACK_RECEIVED,
+                                states.ReplyStates.CLEANUP,
+                                self._sm_reply_nack_received)
 
         self._sm.add_transition(states.ReplyStates.NACKED,
                                 states.ReplyEvents.REQUEST_RECEIVED,
