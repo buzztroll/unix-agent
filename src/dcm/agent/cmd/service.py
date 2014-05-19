@@ -86,7 +86,7 @@ class DCMAgent(object):
             handshake_doc = handshake.get_handshake(self.conf)
             self.g_logger.debug("Using outgoing handshake document %s"
                                 % str(handshake_doc))
-            logger.set_dcm_connection(self.conn)
+            logger.set_dcm_connection(self.conf, self.conn)
             self.conn.connect(
                 self.request_listener, self.incoming_handshake, handshake_doc)
 
