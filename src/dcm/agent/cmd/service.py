@@ -5,11 +5,11 @@ import signal
 import sys
 
 import dcm.agent
-import dcm.agent.am_sender as am_sender
 import dcm.agent.config as config
 import dcm.agent.dispatcher as dispatcher
 import dcm.agent.exceptions as exceptions
 import dcm.agent.logger as logger
+from dcm.agent.messaging import persistence
 import dcm.agent.messaging.handshake as handshake
 import dcm.agent.messaging.reply as reply
 import dcm.agent.parent_receive_q as parent_receive_q
@@ -50,6 +50,7 @@ class DCMAgent(object):
         self.request_listener = None
         self.incoming_handshake_doc = None
         self.g_logger = logging.getLogger(__name__)
+        self._db = persistence.AgentDB(conf.storage_dbfile)
 
     def kill_handler(self, signum, frame):
         self.shutdown_main_loop()
@@ -81,7 +82,7 @@ class DCMAgent(object):
             self.conn = config.get_connection_object(self.conf)
             self.disp = dispatcher.Dispatcher(self.conf)
             self.request_listener = \
-                reply.RequestListener(self.conf, self.conn, self.disp)
+                reply.RequestListener(self.conf, self.conn, self.disp, self._db)
 
             handshake_doc = handshake.get_handshake(self.conf)
             self.g_logger.debug("Using outgoing handshake document %s"

@@ -18,7 +18,7 @@ from nose.plugins import skip
 import dcm.agent.utils as utils
 from dcm.agent.cmd import service, configure
 from dcm.agent import config, dispatcher, storagecloud, parent_receive_q, logger
-from dcm.agent.messaging import reply, request
+from dcm.agent.messaging import reply, request, persistence
 import dcm.agent.tests.utils as test_utils
 import dcm.agent.tests.utils.test_connection as test_conn
 
@@ -176,8 +176,9 @@ class TestProtocolCommands(reply.ReplyObserverInterface):
         self.test_con = test_conn.ReqRepQHolder()
         self.req_conn = self.test_con.get_req_conn()
         self.reply_conn = self.test_con.get_reply_conn()
+        self.db = persistence.AgentDB(":memory:")
         self.request_listener = reply.RequestListener(
-            self.conf_obj, self.reply_conn, self.disp)
+            self.conf_obj, self.reply_conn, self.disp, self.db)
         observers = self.request_listener.get_reply_observers()
         observers.append(self)
         self.reply_conn.set_receiver(self.request_listener)

@@ -38,6 +38,7 @@ class MessageTimer(object):
         self._cb = callback
         self._timer = None
         self._lock = threading.RLock()
+        self.message_id = message_doc['message_id']
 
     def lock(self):
         self._lock.acquire()

@@ -175,7 +175,7 @@ class LongRunner(parent_receive_q.ParentReceiveQObserver):
 
     def _job_cleanup(self, job_id):
         with self._lock:
-            _g_logger.debug("####### Removing job %d from the table" % job_id)
+            _g_logger.debug("Removing job %d from the table" % job_id)
             del self._job_table[job_id]
 
     def lookup_job(self, job_id):

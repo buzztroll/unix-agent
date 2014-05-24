@@ -165,7 +165,15 @@ class Dispatcher(object):
         utils.log_to_dcm(
             logging.INFO, "Incoming request for command %s" % payload["command"])
 
-        if "longer_runner" in items_map:
+        immediate = "immediate" in items_map
+        long_runner = "longer_runner" in items_map
+        if "longer_runner" in payload:
+            long_runner = bool(payload["longer_runner"])
+
+        # we ack first.  This will write it to the persistent store before
+        # sending the message so the agent will have it for restarts
+        reply_obj.ack(None, None, None)
+        if long_runner:
             dj = self._long_runner.start_new_job(
                 self._conf,
                 request_id,
@@ -180,7 +188,7 @@ class Dispatcher(object):
             }
             wr = WorkReply(request_id, reply_doc)
             self.reply_q.put(wr)
-        elif "immediate" in items_map:
+        elif immediate:
             items_map["long_runner"] = self._long_runner
             reply_doc = _run_plugin(self._conf,
                                     items_map,
@@ -193,11 +201,6 @@ class Dispatcher(object):
             workload = WorkLoad(request_id, payload, items_map)
             self.worker_q.put(workload)
 
-        # there is an open window when the worker could pull the
-        # command from the queue before it is acked.  A lock could
-        # prevent this but it is safe so long as poll and incoming_request
-        # are called in the same thread
-        reply_obj.ack(None, None, None)
         _g_logger.debug(
             "The request %s has been set to send an ACK" % request_id)
 

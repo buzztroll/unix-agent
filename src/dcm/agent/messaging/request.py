@@ -141,6 +141,7 @@ class RequestRPC(object):
         """
         _g_logger.info("This initial request has been made.")
         send_doc = {'request_id': self._request_id,
+                    'message_id': utils.new_message_id(),
                     'type': types.MessageTypes.REQUEST,
                     'payload': self._doc}
         message_timer = utils.MessageTimer(self._timeout,

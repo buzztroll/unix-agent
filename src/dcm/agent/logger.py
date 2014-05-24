@@ -32,6 +32,8 @@ class dcmLogger(logging.Handler):
     def set_conn(self, conf, conn):
         self._conn = conn
         self._conf = conf
+        if conn is None:
+             return
         for msg in self._unsent_msgs:
            parent_receive_q.register_user_callback(
                 send_log_to_dcm_callback, kwargs={"conn": self._conn,

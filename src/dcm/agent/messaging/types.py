@@ -3,6 +3,7 @@
 class MessageTypes(object):
     REQUEST = "REQUEST"
     CANCEL = "CANCEL"
+    STATUS = "STATUS"
     ACK = "ACK"
     NACK = "NACK"
     REPLY = "REPLY"

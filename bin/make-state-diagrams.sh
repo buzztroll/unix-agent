@@ -8,7 +8,7 @@ fi
 working_dir=`mktemp -d /tmp/dcm_agentXXXXX`
 echo $working_dir
 
-reply_cmd='import dcm.agent.messaging.reply as reply;r = reply.ReplyRPC(None, None, None, None, None, None);r._sm.mapping_to_digraph()'
+reply_cmd='import dcm.agent.messaging.reply as reply;r = reply.ReplyRPC(None, None, None, None, None, None, None);r._sm.mapping_to_digraph()'
 
 python -c "$reply_cmd" > $working_dir/reply.dot
 
