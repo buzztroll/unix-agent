@@ -51,7 +51,7 @@ class InitializeJob(jobs.Plugin):
          True, str),
         "encryptedEphemeralFsKey":
         ("The file system key for encrypted ephemeral file systems.",
-         True, str)
+         True, utils.base64type_convertor)
     }
 
     def __init__(self, conf, job_id, items_map, name, arguments):

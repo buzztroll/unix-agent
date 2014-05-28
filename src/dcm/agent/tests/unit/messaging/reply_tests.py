@@ -1,5 +1,4 @@
 import mock
-import unittest
 import time
 
 import dcm.agent.exceptions as exceptions
@@ -7,6 +6,7 @@ from dcm.agent.messaging import persistence
 import dcm.agent.messaging.reply as reply
 import dcm.agent.messaging.types as types
 import dcm.agent.tests.unit.test_utils as test_utils
+
 
 class TestRequesterStandardPath(test_utils.AgentBaseUnitTester):
 

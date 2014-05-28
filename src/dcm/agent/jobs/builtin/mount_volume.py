@@ -25,7 +25,7 @@ class MountVolume(direct_pass.DirectPass):
         ("A boolean indicating if the volume should be formated.", True, bool),
         "fileSystem": ("", True, str),
         "raidLevel": ("", True, str),
-        "encryptionKey": ("", True, str),
+        "encryptionKey": ("", True, utils.base64type_convertor),
         "mountPoint": ("", True, str),
         "devices": ("", True, list)
     }
@@ -122,7 +122,8 @@ class MountVolume(direct_pass.DirectPass):
                    key_file_path]
         (stdout, stderr, rc) = utils.run_command(self.conf, command)
         if rc != 0:
-            raise exceptions.AgentExecutableException(rc, stdout, stderr)
+            raise exceptions.AgentExecutableException(
+                command, rc, stdout, stderr)
         return rc
 
     def write_key_file(self, block_device):
@@ -136,7 +137,7 @@ class MountVolume(direct_pass.DirectPass):
         key_file_path = os.path.join(key_file_dir, "fskey.txt")
 
         with open(key_file_path, "w") as fptr:
-            fptr.write(self.args.encryptionKey.decode("utf-8"))
+            fptr.write(self.args.encryptionKey)
 
         return key_file_path
 
@@ -159,7 +160,7 @@ class MountVolume(direct_pass.DirectPass):
         (stdout, stderr, rc) = utils.run_command(self.conf, cmd)
         if rc != 0:
             raise exceptions.AgentExecutableException(
-                "format failed: " + stderr)
+                cmd, rc, stdout, stderr)
         return rc
 
     def mount_block_volume(self):
@@ -236,6 +237,7 @@ class MountVolume(direct_pass.DirectPass):
         reply = {"return_code": 0, "message": "",
                  "error_message": "", "return_type": "void"}
         return reply
+
 
 def load_plugin(conf, job_id, items_map, name, arguments):
     return MountVolume(conf, job_id, items_map, name, arguments)

@@ -11,6 +11,7 @@
 #   this material is strictly forbidden unless prior written permission
 #   is obtained from Dell, Inc.
 #  ======================================================================
+import base64
 
 import os
 import tempfile
@@ -265,7 +266,7 @@ def unmount(conf, mount_point):
     command = [conf.get_script_location("unmount"), mount_point]
     (stdout, stderr, rc) = run_command(conf, command)
     if rc != 0:
-        raise exceptions.AgentExecutableException(rc, stdout, stderr)
+        raise exceptions.AgentExecutableException(command, rc, stdout, stderr)
 
     return rc
 
@@ -278,7 +279,7 @@ def mount(conf, device_id, file_system, mount_point):
                device_id, file_system, mount_point]
     (stdout, stderr, rc) = run_command(conf, command)
     if rc != 0:
-        raise exceptions.AgentExecutableException(rc, stdout, stderr)
+        raise exceptions.AgentExecutableException(command, rc, stdout, stderr)
     return rc
 
 
@@ -291,7 +292,7 @@ def format(conf, device_id, file_system, mount_point, encryption_key):
                enc_str]
     (stdout, stderr, rc) = run_command(conf, command)
     if rc != 0:
-        raise exceptions.AgentExecutableException(rc, stdout, stderr)
+        raise exceptions.AgentExecutableException(command, rc, stdout, stderr)
     return rc
 
 
@@ -302,7 +303,7 @@ def open_encrypted_device(conf, raw_device_id, encrypted_device_id, key_file):
                key_file]
     (stdout, stderr, rc) = run_command(conf, command)
     if rc != 0:
-        raise exceptions.AgentExecutableException(rc, stdout, stderr)
+        raise exceptions.AgentExecutableException(command, rc, stdout, stderr)
     return rc
 
 
@@ -311,14 +312,13 @@ def close_encrypted_device(conf, encrypted_device_id):
                encrypted_device_id]
     (stdout, stderr, rc) = run_command(conf, command)
     if rc != 0:
-        raise exceptions.AgentExecutableException(rc, stdout, stderr)
+        raise exceptions.AgentExecutableException(command, rc, stdout, stderr)
     return rc
 
 
 def log_to_dcm(lvl, msg, *args, **kvargs):
     l_logger = logging.getLogger("dcm.agent.log.to.agent.manager")
     l_logger.log(lvl, msg, *args, **kvargs)
-
 
 
 def build_assertion_exception(logger, msg):
@@ -344,3 +344,6 @@ def generate_token():
                                   "-_!@#^(),.=+") for x in range(l))
     return token
 
+
+def base64type_convertor(b64str):
+    return base64.b64decode(b64str).decode("utf-8")

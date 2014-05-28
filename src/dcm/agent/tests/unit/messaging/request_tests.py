@@ -117,6 +117,7 @@ class TestRequesterStandardPath(unittest.TestCase):
     def test_standard_with_callback_path(self):
 
         self.called = False
+
         def reply_called(*args, **kwargs):
             self.called = True
 
@@ -144,7 +145,8 @@ class TestRequesterStandardPath(unittest.TestCase):
 
             requester.incoming_message(reply_doc)
 
-            while requester._sm._current_state != states.RequesterStates.ACK_SENT:
+            while requester._sm._current_state !=\
+                    states.RequesterStates.ACK_SENT:
                 parent_receive_q.poll()
 
             self.assertEqual(states.RequesterStates.ACK_SENT,

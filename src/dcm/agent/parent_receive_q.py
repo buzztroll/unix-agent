@@ -90,7 +90,8 @@ class _MainQueue(ParentReceiveQObserver):
     def add_message(self, msg_type, msg_obj):
         with self._lock:
             if msg_type not in self._targets:
-                _g_logger.error("This is not a valid message type: %s" % msg_type)
+                _g_logger.error(
+                    "This is not a valid message type: %s" % msg_type)
                 return
             self._q.put((msg_type, msg_obj))
 
@@ -102,7 +103,8 @@ class _MainQueue(ParentReceiveQObserver):
         with self._lock:
             try:
                 if msg_type not in self._targets:
-                    _g_logger.error("This is not a valid message type: %s" % msg_type)
+                    _g_logger.error(
+                        "This is not a valid message type: %s" % msg_type)
                     return
                 handler = self._targets[msg_type]
             finally:

@@ -4,8 +4,8 @@ import Queue
 import threading
 
 import dcm.agent.jobs as jobs
-from dcm.eventlog import tracer
-from dcm.agent import parent_receive_q
+import dcm.eventlog.tracer as tracer
+import dcm.agent.parent_receive_q as parent_receive_q
 
 
 _g_logger = logging.getLogger(__name__)
@@ -35,17 +35,21 @@ def _run_plugin(conf, items_map, request_id, command, arguments):
             arguments)
 
         utils.log_to_dcm(
-            logging.INFO, "Starting job for command %s %s" % (command, request_id))
+            logging.INFO,
+            "Starting job for command %s %s" % (command, request_id))
         reply_doc = plugin.run()
         utils.log_to_dcm(
-            logging.INFO, "Completed successfully job %s %s" % (command, request_id))
+            logging.INFO,
+            "Completed successfully job %s %s" % (command, request_id))
     except Exception as ex:
         _g_logger.exception(
             "Worker %s thread had a top level error when "
             "running job %s : %s"
             % (threading.current_thread().getName(), request_id, ex.message))
         utils.log_to_dcm(
-            logging.ERROR, "A top level error occurred handling %s %s" % (command, request_id))
+            logging.ERROR,
+            "A top level error occurred handling %s %s" % (command,
+                                                           request_id))
         reply_doc = {
             'Exception': ex.message,
             'return_code': 1}
@@ -163,7 +167,8 @@ class Dispatcher(object):
         items_map = jobs.parse_plugin_doc(self._conf, payload["command"])
 
         utils.log_to_dcm(
-            logging.INFO, "Incoming request for command %s" % payload["command"])
+            logging.INFO,
+            "Incoming request for command %s" % payload["command"])
 
         immediate = "immediate" in items_map
         long_runner = "longer_runner" in items_map

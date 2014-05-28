@@ -13,7 +13,8 @@
 #  ======================================================================
 
 import os
-from dcm.agent import exceptions
+import dcm.agent.exceptions as exceptions
+import dcm.agent.utils as utils
 import dcm.agent.jobs.direct_pass as direct_pass
 
 
@@ -30,7 +31,7 @@ class GrantDBAccess(direct_pass.DirectPass):
         "configuration":
         ("The configuration information to be passed to the services "
          "enstratus-dbgrant program",
-         True, str)
+         True, utils.base64type_convertor)
     }
 
     def __init__(self, conf, job_id, items_map, name, arguments):
@@ -43,7 +44,7 @@ class GrantDBAccess(direct_pass.DirectPass):
                 operation_name=self.name)
         config_file = self.conf.get_temp_file("database.cfg")
         with open(config_file, "w") as fptr:
-            fptr.write(self.arguments["configuration"].decode("utf-8"))
+            fptr.write(self.args.configuration)
         try:
             self.ordered_param_list = [self.arguments["serviceId"],
                                        config_file]

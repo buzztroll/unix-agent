@@ -37,7 +37,13 @@ class Plugin(object):
         self.items_map = items_map
         self.arguments = arguments
         self.args = ArgHolder()
-        self._validate_arguments()
+        try:
+            self._validate_arguments()
+        except exceptions.AgentPluginBadParameterException:
+            raise
+        except Exception as ex:
+            raise exceptions.AgentPluginBadParameterException(
+                self.name, ex.message)
 
     def _validate_arguments(self):
         # validate that all of the required arguments were sent
@@ -58,7 +64,12 @@ class Plugin(object):
                 h, mandatory, t = self.protocol_arguments[arg]
                 a = self.arguments[arg]
                 if a is not None:
-                    a = t(a)
+                    try:
+                        a = t(a)
+                    except:
+                        raise exceptions.AgentPluginBadParameterException(
+                            self.name, "Parameter %s has an invalid "
+                                       "value" % arg)
                 setattr(self.args, arg, a)
 
     @utils.not_implemented_decorator
@@ -73,7 +84,6 @@ class Plugin(object):
 
     def cancel(self, reply_rpc, *args, **kwargs):
         pass
-
 
 
 # a fork plugin.  Fork an executable and wait for it to complete.

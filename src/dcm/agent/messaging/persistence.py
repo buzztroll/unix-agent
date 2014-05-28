@@ -26,7 +26,8 @@ import dcm.agent.messaging.states as messaging_states
 g_metadata = sqlalchemy.MetaData()
 
 
-request_table = sqlalchemy.Table('requests', g_metadata,
+request_table = sqlalchemy.Table(
+    'requests', g_metadata,
     sqlalchemy.Column('request_id', sqlalchemy.String(64), primary_key=True),
     sqlalchemy.Column('creation_time', sqlalchemy.types.TIMESTAMP(),
                       default=datetime.datetime.now()),
@@ -126,7 +127,8 @@ class AgentDB(object):
 
     @messaging_utils.class_method_sync
     def update_record(self, request_id, state, reply_doc=None):
-        record = self._session.query(RequestDBObject).filter(RequestDBObject.request_id==request_id).one()
+        record = self._session.query(RequestDBObject).filter(
+            RequestDBObject.request_id==request_id).one()
         if not record:
             raise exceptions.PersistenceException(
                 "The record %s was not found" % request_id)
@@ -150,6 +152,7 @@ class AgentDB(object):
             self._session.commit()
         except:
             self._session.rollback()
+
 
 class DBCleaner(threading.Thread):
 
@@ -179,5 +182,3 @@ class DBCleaner(threading.Thread):
             self._cond.notify()
         finally:
             self._cond.release()
-
-

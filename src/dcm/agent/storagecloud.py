@@ -135,6 +135,11 @@ def upload(cloud_id,
            account=None):
 
     try:
+        cloud_id = int(cloud_id)
+    except ValueError:
+        pass
+
+    try:
         cloud_type = _map_cloud_id_to_type[cloud_id]
         driver_cls = _map_cloud_name_to_provider(cloud_type, region_id)
     except KeyError:
@@ -162,9 +167,3 @@ def get_cloud_driver(cloud_id,
 
     driver = driver_cls(access_key, secret_key)
     return driver
-
-# libcloud.security.CA_CERTS_PATH.append('/Users/bresnaha/cert')
-# libcloud.security.VERIFY_SSL_CERT = False
-# driver = libcloud_providers.get_driver(Provider.AZURE_BLOBS)
-# d = driver('mediasvcbldtllnf01jhs', secret='syMWzquRwk18IHX31fXTYJ9b6GCou03BNin3rG5/OQKEmuWFvpWXQG0A5NzG485pQ4Q+ZBuruudhlklD3Xy37g==', sercure=False)
-# print d.list_containers()

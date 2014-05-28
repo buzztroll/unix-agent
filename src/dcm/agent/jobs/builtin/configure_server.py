@@ -30,11 +30,11 @@ class ConfigureServer(jobs.Plugin):
         "authId":
         ("", False, str),
         "configurationData":
-        ("", False, str),
+        ("", False, utils.base64type_convertor),
         "encryptedConfigToken":
-        ("", False, str),
+        ("", False, utils.base64type_convertor),
         "encryptedAuthSecret":
-        ("", False, str),
+        ("", False, utils.base64type_convertor),
         "endpoint":
         ("", False, str),
         "providerRegionId":
@@ -50,9 +50,9 @@ class ConfigureServer(jobs.Plugin):
         "scriptFiles":
         ("", False, list),
         "storagePublicKey":
-        ("", False, str),
+        ("", False, utils.base64type_convertor),
         "storagePrivateKey":
-        ("", False, str),
+        ("", False, utils.base64type_convertor),
         "environmentId":
         ("", False, str),
         "personalityFiles":
@@ -60,11 +60,11 @@ class ConfigureServer(jobs.Plugin):
         "configClientName":
         ("", False, str),
         "configCert":
-        ("", False, str),
+        ("", False, utils.base64type_convertor),
         "runListIds":
         ("", False, str),
         "parameterList":
-        ("", False, str),
+        ("", False, utils.base64type_convertor),
     }
 
     def __init__(self, conf, job_id, items_map, name, arguments):
@@ -91,7 +91,7 @@ class ConfigureServer(jobs.Plugin):
 
         try:
             with open(cfg_file_path, "w") as fptr:
-                fptr.write(self.args.configurationData.decode("utf-8"))
+                fptr.write(self.args.configurationData)
 
             if token:
                 with open(token_file_path, "w") as fptr:
@@ -163,9 +163,9 @@ class ConfigureServer(jobs.Plugin):
 
         try:
             with open(cert_file_path, "w") as fptr:
-                fptr.write(self.args.configCert).decode("utf-8")
+                fptr.write(self.args.configCert)
             with open(key_file_path, "w") as fptr:
-                fptr.write(self.args.configKey).decode("utf-8")
+                fptr.write(self.args.configKey)
 
             endpoint = self.args.endpoint
             if endpoint is None:

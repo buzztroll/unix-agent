@@ -17,6 +17,8 @@ import dcm.agent.jobs.direct_pass as direct_pass
 
 
 class MakeTemp(direct_pass.DirectPass):
+    protocol_arguments = {}
+
     def __init__(self, conf, job_id, items_map, name, arguments):
         super(MakeTemp, self).__init__(
             conf, job_id, items_map, name, arguments)

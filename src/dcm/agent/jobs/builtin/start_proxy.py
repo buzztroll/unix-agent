@@ -13,6 +13,7 @@
 #  ======================================================================
 import logging
 import socket
+from dcm.agent import utils
 import dcm.agent.exceptions as exceptions
 import dcm.agent.jobs as jobs
 
@@ -32,9 +33,9 @@ class StartProxy(jobs.Plugin):
         "atServicePort":
         ("The ID of the service.", True, int),
         "sslCert":
-        ("The ID of the service.", True, str),
+        ("The ID of the service.", True, utils.base64type_convertor),
         "sslKey":
-        ("The ID of the service.", True, str),
+        ("The ID of the service.", True, utils.base64type_convertor),
         "sslChain":
         ("The ID of the service.", True, str),
         "dnsNames":

@@ -13,7 +13,7 @@
 #  ======================================================================
 
 import os
-from dcm.agent import exceptions
+from dcm.agent import exceptions, utils
 import dcm.agent.jobs.direct_pass as direct_pass
 
 
@@ -26,7 +26,7 @@ class RevokeDBAccess(direct_pass.DirectPass):
         "configurationData":
         ("The configuration data that will be written to a file and "
          "passed into the revokeDatabaseAccess script",
-         True, str)
+         True, utils.base64type_convertor)
     }
 
     def __init__(self, conf, job_id, items_map, name, arguments):
@@ -39,7 +39,7 @@ class RevokeDBAccess(direct_pass.DirectPass):
                 operation_name=self.name)
         config_file = self.conf.get_temp_file("database.cfg")
         with open(config_file, "w") as fptr:
-            fptr.write(self.arguments["configurationData"].decode("utf-8"))
+            fptr.write(self.args.configurationData)
         try:
             self.ordered_param_list = [self.arguments["serviceId"],
                                        config_file]

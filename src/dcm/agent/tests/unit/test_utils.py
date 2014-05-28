@@ -7,6 +7,7 @@ import dcm.agent.cmd.service as service
 
 _debugger_connected = False
 
+
 class AgentBaseUnitTester(unittest.TestCase):
 
     @classmethod

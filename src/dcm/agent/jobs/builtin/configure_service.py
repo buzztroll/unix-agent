@@ -38,14 +38,14 @@ class ConfigureService(jobs.Plugin):
         "configurationData":
         ("Data that will be written to a file and passed to the script "
          "enstratus-configure as configuration data",
-         True, str),
-        "addressForSSL":
+         True, utils.base64type_convertor),
+        "sslAddress":
         ("The ssl address.",
          False, str),
         "sslPublic":
-        ("The SSL public key.", False, str),
+        ("The SSL public key.", False, utils.base64type_convertor),
         "sslPrivate":
-        ("The SSL private key.", False, str),
+        ("The SSL private key.", False, utils.base64type_convertor),
         "sslChain":
         ("The SSL CA chain.", False, str),
     }
@@ -57,16 +57,16 @@ class ConfigureService(jobs.Plugin):
         script_name = items_map["script_name"]
         self.exe = conf.get_script_location(script_name)
 
-        self._customer_id = arguments["forCustomerId"]
-        self._service_id = arguments["serviceId"]
-        self._run_as_user = arguments["runAsUser"]
-        self._configuration_data = arguments["configurationData"]
+        self._customer_id = self.args.forCustomerId
+        self._service_id = self.args.serviceId
+        self._run_as_user = self.args.runAsUser
+        self._configuration_data = self.args.configurationData
 
         # with ssl parameters
-        self._address = arguments.get("address", None)
-        self._ssl_public = arguments.get("sslPublic", None)
-        self._ssl_private = arguments.get("sslPrivate", None)
-        self._ssl_chain = arguments.get("sslChain", None)
+        self._address = self.args.sslAddress
+        self._ssl_public = self.args.sslPublic
+        self._ssl_private = self.args.sslPrivate
+        self._ssl_chain = self.args.sslChain
 
         self._cert_file_name = None
         self._key_file_name = None

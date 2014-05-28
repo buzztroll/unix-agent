@@ -50,6 +50,7 @@ class DCMAgent(object):
         self.request_listener = None
         self.incoming_handshake_doc = None
         self.g_logger = logging.getLogger(__name__)
+        self.g_logger.info("Using DB %s" % conf.storage_dbfile)
         self._db = persistence.AgentDB(conf.storage_dbfile)
 
     def kill_handler(self, signum, frame):
@@ -81,8 +82,8 @@ class DCMAgent(object):
             # def get a connection object
             self.conn = config.get_connection_object(self.conf)
             self.disp = dispatcher.Dispatcher(self.conf)
-            self.request_listener = \
-                reply.RequestListener(self.conf, self.conn, self.disp, self._db)
+            self.request_listener = reply.RequestListener(
+                self.conf, self.conn, self.disp, self._db)
 
             handshake_doc = handshake.get_handshake(self.conf)
             self.g_logger.debug("Using outgoing handshake document %s"
@@ -97,7 +98,8 @@ class DCMAgent(object):
             self.cleanup_agent()
 
     def incoming_handshake(self, incoming_handshake_doc):
-        self.g_logger.info("Incoming handshake %s" % str(incoming_handshake_doc))
+        self.g_logger.info(
+            "Incoming handshake %s" % str(incoming_handshake_doc))
         if self.incoming_handshake_doc is not None:
             # we already received a handshake, just return
             return True
@@ -119,7 +121,8 @@ class DCMAgent(object):
                 parent_receive_q.poll()
             except Exception as ex:
                 utils.log_to_dcm(
-                    logging.ERROR, "A top level exception occurred: %s" % ex.message)
+                    logging.ERROR,
+                    "A top level exception occurred: %s" % ex.message)
                 self.g_logger.exception("A top level exception occurred")
 
     def cleanup_agent(self):

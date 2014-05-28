@@ -70,7 +70,8 @@ def get_dhcp_ip_address(conf):
 
     (stdout, stderr, rc) = utils.run_script(conf, "getDhcpAddress", [])
     if rc != 0:
-        raise exceptions.AgentExecutableException(rc, stdout, stderr)
+        raise exceptions.AgentExecutableException(
+            "getDhcpAddress", rc, stdout, stderr)
 
     conf.dhcp_address = stdout.strip()
     return conf.dhcp_address

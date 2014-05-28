@@ -21,7 +21,7 @@ class UnmountVolume(jobs.Plugin):
     protocol_arguments = {
         "deviceId": ("The mount point ID to unmount.", True, str),
         "encrypted": ("If using an encrypted device this is the "
-                              "device id to remove.", False, bool),
+                      "device id to remove.", False, bool),
     }
 
     def __init__(self, conf, job_id, items_map, name, arguments):

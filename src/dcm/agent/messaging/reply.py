@@ -43,12 +43,12 @@ class ReplyRPC(object):
         self._lock = threading.RLock()
 
         if reply_doc is None:
-            starting_state=states.ReplyStates.NEW
-            starting_event=states.ReplyEvents.REQUEST_RECEIVED
+            starting_state = states.ReplyStates.NEW
+            starting_event = states.ReplyEvents.REQUEST_RECEIVED
             message = {}
         else:
-            starting_state=states.ReplyStates.REPLY
-            starting_event=states.ReplyEvents.USER_REPLIES
+            starting_state = states.ReplyStates.REPLY
+            starting_event = states.ReplyEvents.USER_REPLIES
             message = reply_doc
 
         self._sm = states.StateMachine(starting_state)
@@ -344,8 +344,8 @@ class ReplyRPC(object):
 
     def _sm_reply_nack_received(self, **kwargs):
         """
-        The reply was nacked.  This is probably a result of the a retransmission
-        that was not needed.
+        The reply was nacked.  This is probably a result of the a
+        retransmission that was not needed.
         """
         self._db.update_record(self._request_id,
                                states.ReplyStates.REPLY_NACKED)
@@ -595,7 +595,6 @@ class ReplyRPC(object):
                                 self._sm_send_status)
 
 
-
 class RequestListener(object):
 
     def __init__(self, conf, sender_connection, dispatcher, db):
@@ -616,14 +615,14 @@ class RequestListener(object):
         old_replies = self._db.get_all_active()
         for db_rec in old_replies:
             req = ReplyRPC(
-                    self,
-                    self._conf.agent_id,
-                    self._conn,
-                    db_rec.request_id,
-                    db_rec.request_doc,
-                    self._db,
-                    timeout=self._timeout,
-                    reply_doc=db_rec.reply_doc)
+                self,
+                self._conf.agent_id,
+                self._conn,
+                db_rec.request_id,
+                db_rec.request_doc,
+                self._db,
+                timeout=self._timeout,
+                reply_doc=db_rec.reply_doc)
             self._requests[db_rec.request_id] = req
 
     def get_reply_observers(self):
