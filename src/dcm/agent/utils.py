@@ -180,13 +180,13 @@ class Lock(object):
         (stdout, stderr, rc) = run_script("lockServices")
 
 
-def make_friendly_id(prefix, id):
-    str_id = "%s%09d" % (prefix, id)
+def make_friendly_id(prefix, uid):
+    str_id = "%s%09d" % (prefix, uid)
     return str_id[0:3] + "-" + str_id[3:6] + "-" + str_id[6:9]
 
 
-def make_id_string(prefix, id):
-    return "%s%03d" % (prefix, id)
+def make_id_string(prefix, uid):
+    return "%s%03d" % (prefix, uid)
 
 
 def get_time_backup_string():
@@ -219,7 +219,7 @@ def get_device_mappings(conf):
 
     (stdout, stderr, rc) = run_command(conf, command)
     if rc != 0:
-        raise exceptions.AgentExecutableException("listDevices failed")
+        raise exceptions.AgentExecutableException(command, rc, stdout, stderr)
 
     device_mapping_list = []
     lines = stdout.split(os.linesep)
@@ -283,7 +283,7 @@ def mount(conf, device_id, file_system, mount_point):
     return rc
 
 
-def format(conf, device_id, file_system, mount_point, encryption_key):
+def agent_format(conf, device_id, file_system, mount_point, encryption_key):
     enc_str = str(encryption_key is not None).lower()
     command = [conf.get_script_location("format"),
                device_id,
@@ -316,13 +316,13 @@ def close_encrypted_device(conf, encrypted_device_id):
     return rc
 
 
-def log_to_dcm(lvl, msg, *args, **kvargs):
+def log_to_dcm(lvl, msg, *args, **kwargs):
     l_logger = logging.getLogger("dcm.agent.log.to.agent.manager")
-    l_logger.log(lvl, msg, *args, **kvargs)
+    l_logger.log(lvl, msg, *args, **kwargs)
 
 
 def build_assertion_exception(logger, msg):
-    details_out = " === Stacktrace Begin === " + os.linesep
+    details_out = " === Stack trace Begin === " + os.linesep
     for threadId, stack in sys._current_frames().items():
         details_out = details_out + os.linesep + \
             "##### Thread %s #####" % threadId + os.linesep
@@ -332,7 +332,7 @@ def build_assertion_exception(logger, msg):
         if line:
             details_out = details_out + os.linesep + line.strip()
 
-    details_out = " === Stacktrace End === " + os.linesep
+    details_out = " === Stack trace End === " + os.linesep
 
     msg = msg + " | " + details_out
     logger.error(msg)

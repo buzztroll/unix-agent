@@ -3,7 +3,6 @@ import threading
 from dcm.agent import parent_receive_q
 
 import dcm.agent.exceptions as exceptions
-from dcm.agent.messaging import persistence
 import dcm.agent.messaging.states as states
 import dcm.agent.messaging.types as types
 import dcm.agent.messaging.utils as utils
@@ -83,7 +82,7 @@ class ReplyRPC(object):
                 try:
                     self._reply_message_timer.cancel()
                 except Exception as ex:
-                    _g_logger.info("an exception occured when trying to cancel"
+                    _g_logger.info("an exception occurred when trying to cancel"
                                    "the timer: " + ex.message)
 
     @utils.class_method_sync
@@ -259,7 +258,6 @@ class ReplyRPC(object):
         message = kwargs['message']
 
         # reply using the latest message id
-        message_id = message['message_id']
         ack_doc = {'type': types.MessageTypes.ACK,
                    'message_id': utils.new_message_id(),
                    'request_id': self._request_id,
@@ -661,20 +659,6 @@ class RequestListener(object):
             # is this an old completed request that is in the DB
             db_record = self._db.lookup_req(request_id)
             if db_record:
-                # convert the state
-                if db_record.db_state == persistence.DBStates.FAILED:
-                    state = states.ReplyStates.REPLY
-                elif db_record.db_state == persistence.DBStates.REPLIED:
-                    state = states.ReplyStates.REPLY
-                elif db_record.db_state == persistence.DBStates.REPLY_ACKED:
-                    state = states.ReplyStates.DONE
-                else:
-                    msg = "The database entry for %s reached an impossible " \
-                          "state %s" % (db_record.request_id,
-                                        db_record.db_state)
-                    _g_logger.error(msg)
-                    raise exceptions.RequesterMessagingException(msg)
-
                 req = ReplyRPC(
                     self,
                     self._conf.agent_id,
@@ -778,9 +762,7 @@ class RequestListener(object):
 
     def register_user_callback(self, user_callback):
         parent_receive_q.register_user_callback(
-            user_callback,
-            self._cancel_callback_args,
-            self._cancel_callback_kwargs)
+            user_callback)
 
     def get_messages_processed(self):
         return self._messages_processed
@@ -800,7 +782,7 @@ class RequestListener(object):
             req.kill()
 
     def wait_for_all_nicely(self):
-        while(self._requests):
+        while self._requests:
             parent_receive_q.poll()
 
     def reply(self, request_id, reply_doc):

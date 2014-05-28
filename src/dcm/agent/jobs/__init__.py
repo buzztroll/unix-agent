@@ -219,10 +219,10 @@ def parse_plugin_doc(conf, name):
                     raise exceptions.AgentPluginConfigException(
                         "The section %s does not have an entry for type."
                         % section_name)
-                type = items_map["type"]
-                if type not in g_type_to_obj_map:
+                atype = items_map["type"]
+                if atype not in g_type_to_obj_map:
                     raise exceptions.AgentPluginConfigException(
-                        "The module type %s is not valid." % type)
+                        "The module type %s is not valid." % atype)
 
                 return items_map
             except ConfigParser.NoOptionError as conf_ex:

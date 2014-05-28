@@ -33,22 +33,23 @@ class RemoteTester(jobs.Plugin):
         self._port = int(items_map['remote_port'])
         self._host = items_map['remote_host']
 
-        for i in range(3):
-            try:
-                self.sock = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
-                self.sock.connect((self._host, self._port))
-                break
-            except:
-                if i == 2:
-                    raise
-        msg = {"name": name, "arguments": arguments}
-
-        self._msg = json.dumps(msg)
-
     def run(self):
         try:
             utils.log_to_dcm(logging.INFO, "Test remote logging. %s"
                                            % str(self.arguments))
+            for i in range(3):
+                try:
+                    self.sock = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
+                    self.sock.connect((self._host, self._port))
+                    break
+                except:
+                    if i == 2:
+                        raise
+
+            msg = {"name": self.name, "arguments": self.arguments}
+
+            self._msg = json.dumps(msg)
+
             _g_logger.info("Start tester remote socket.  Send " + self._msg)
             self.sock.send(self._msg)
             _g_logger.info("waiting to get a message back")

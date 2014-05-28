@@ -142,7 +142,7 @@ class MountVolume(direct_pass.DirectPass):
         return key_file_path
 
     def format(self, device_id):
-        return utils.format(
+        return utils.agent_format(
             self.conf, device_id, self.args.fileSystem,
             self.args.mountPoint, self.args.encryptionKey)
 
