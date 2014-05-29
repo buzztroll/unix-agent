@@ -16,6 +16,8 @@ import dcm.agent.jobs as jobs
 
 class UnLock(jobs.Plugin):
 
+    protocol_arguments = {}
+
     def __init__(self, conf, job_id, items_map, name, arguments):
         super(UnLock, self).__init__(
             conf, job_id, items_map, name, arguments)

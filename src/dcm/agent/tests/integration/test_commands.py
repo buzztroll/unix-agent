@@ -5,7 +5,7 @@ import StringIO
 from dcm.agent import dispatcher, parent_receive_q, logger
 
 import dcm.agent.config as config
-from dcm.agent.messaging import types
+from dcm.agent.messaging import types, persistence
 import dcm.agent.messaging.reply as reply
 import dcm.agent.tests.utils.test_connection as test_conn
 import dcm.agent.tests.utils as test_utils
@@ -18,6 +18,7 @@ class TestSingleCommands(unittest.TestCase):
         test_conf_path = test_utils.get_conf_file()
         self.conf_obj = config.AgentConfig([test_conf_path])
         self.disp = dispatcher.Dispatcher(self.conf_obj)
+        self.db = persistence.AgentDB(":memory:")
 
     def tearDown(self):
         self.disp.stop()
@@ -32,7 +33,7 @@ class TestSingleCommands(unittest.TestCase):
         outfile = StringIO.StringIO()
         conn = self._get_conn(inlines, outfile, drop_count)
         request_listener = reply.RequestListener(
-            self.conf_obj, conn, self.disp)
+            self.conf_obj, conn, self.disp, self.db)
         conn.set_receiver(request_listener)
         self.disp.start_workers(request_listener)
 
@@ -80,6 +81,7 @@ class TestSerialCommands(unittest.TestCase):
         test_conf_path = test_utils.get_conf_file()
         self.conf_obj = config.AgentConfig([test_conf_path])
         self.disp = dispatcher.Dispatcher(self.conf_obj)
+        self.db = persistence.AgentDB(":memory:")
 
     def tearDown(self):
         self.disp.stop()
@@ -103,7 +105,7 @@ class TestSerialCommands(unittest.TestCase):
 
         conn = self._get_conn(inlines, outfile, drop_count)
         request_listener = reply.RequestListener(
-            self.conf_obj, conn, self.disp)
+            self.conf_obj, conn, self.disp, self.db)
         conn.set_receiver(request_listener)
         self.disp.start_workers(request_listener)
 
@@ -138,6 +140,7 @@ class TestRetransmission(unittest.TestCase):
         logger.clear_dcm_logging()
         test_conf_path = test_utils.get_conf_file()
         self.conf_obj = config.AgentConfig([test_conf_path])
+        self.db = persistence.AgentDB(":memory:")
 
     def _get_conn(self, incoming_lines, outfile, drop_count, retrans_list):
         self._incoming_io = StringIO.StringIO(incoming_lines)
@@ -166,7 +169,7 @@ class TestRetransmission(unittest.TestCase):
         conn = self._get_conn(inlines, outfile, drop_count, retrans_list)
 
         request_listener = reply.RequestListener(
-            self.conf_obj, conn, disp)
+            self.conf_obj, conn, disp, self.db)
         conn.set_receiver(request_listener)
         to = TestStateObserver()
         rol = request_listener.get_reply_observers()

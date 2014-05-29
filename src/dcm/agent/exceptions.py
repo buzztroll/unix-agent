@@ -140,6 +140,15 @@ class InvalidMessageParameterValueException(MalformedMessageException):
                         'attr_value': attr_value})
 
 
+class AgentPluginBadParameterException(MalformedMessageException):
+    msg = "The command %(command_name)s received invalid arguemnts." \
+          "%(message)s"
+
+    def __init__(self, command_name, message):
+        super(AgentPluginBadParameterException, self).__init__(
+            self.msg % locals())
+
+
 class AgentHandshakeException(Exception):
     def __init__(self, handshake_doc, extra_msg=None):
         if handshake_doc:
@@ -176,7 +185,7 @@ class AgentExecutableException(Exception):
     msg = "The external process run with %(command_line)s returned an " \
           "error. rc=%(code)s stderr=%(stderr)s stdout=%(stdout)s"
 
-    def __init__(self, rc, stdout, stderr):
+    def __init__(self, command_line, rc, stdout, stderr):
         super(AgentExecutableException, self).__init__(self.msg % locals())
 
 
@@ -192,3 +201,7 @@ class AgentUnsupportedCloudFeature(Exception):
 class AgentStorageCloudException(Exception):
     def __init__(self, message):
         super(AgentStorageCloudException, self).__init__(message)
+
+
+class PersistenceException(Exception):
+    pass

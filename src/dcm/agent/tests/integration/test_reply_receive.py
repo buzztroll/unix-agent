@@ -1,3 +1,4 @@
+import base64
 from collections import namedtuple
 import getpass
 import os
@@ -17,8 +18,12 @@ from nose.plugins import skip
 
 import dcm.agent.utils as utils
 from dcm.agent.cmd import service, configure
-from dcm.agent import config, dispatcher, storagecloud, parent_receive_q, logger
-from dcm.agent.messaging import reply, request
+import dcm.agent.storagecloud as storagecloud
+import dcm.agent.parent_receive_q as parent_receive_q
+import dcm.agent.logger as logger
+import dcm.agent.dispatcher as dispatcher
+import dcm.agent.config as config
+from dcm.agent.messaging import reply, request, persistence
 import dcm.agent.tests.utils as test_utils
 import dcm.agent.tests.utils.test_connection as test_conn
 
@@ -68,7 +73,8 @@ class TestProtocolCommands(reply.ReplyObserverInterface):
             if c_a:
                 cloud_account = c_a.pop(0).strip()
 
-            CloudT = namedtuple('Cloud', 'id key secret endpoint account region')
+            CloudT = namedtuple('Cloud',
+                                'id key secret endpoint account region')
             cloud = CloudT(cloud_id,
                            cloud_key,
                            cloud_secret,
@@ -79,8 +85,7 @@ class TestProtocolCommands(reply.ReplyObserverInterface):
 
     @classmethod
     def _setup_buckets(cls):
-        cls.bucket = "dcmagenttests" + \
-                            str(uuid.uuid4()).split("-")[0]
+        cls.bucket = "dcmagenttests" + str(uuid.uuid4()).split("-")[0]
         cls.simple_service = "asimple_service.tar.gz"
 
         if not cls.storage_clouds:
@@ -176,8 +181,9 @@ class TestProtocolCommands(reply.ReplyObserverInterface):
         self.test_con = test_conn.ReqRepQHolder()
         self.req_conn = self.test_con.get_req_conn()
         self.reply_conn = self.test_con.get_reply_conn()
+        self.db = persistence.AgentDB(":memory:")
         self.request_listener = reply.RequestListener(
-            self.conf_obj, self.reply_conn, self.disp)
+            self.conf_obj, self.reply_conn, self.disp, self.db)
         observers = self.request_listener.get_reply_observers()
         observers.append(self)
         self.reply_conn.set_receiver(self.request_listener)
@@ -404,8 +410,8 @@ class TestProtocolCommands(reply.ReplyObserverInterface):
             "serviceId": service_id,
             "cloudId": cloud_tuple.id,
             "runAsUser": self.run_as_user,
-            "apiAccessKey": cloud_tuple.key,
-            "apiSecretKey": cloud_tuple.secret,
+            "apiAccessKey": base64.b64encode(bytearray(cloud_tuple.key)),
+            "apiSecretKey": base64.b64encode(bytearray(cloud_tuple.secret)),
             "serviceImageDirectory": bucket,
             "providerRegionId": cloud_tuple.region,
             "apiEndpoint": cloud_tuple.endpoint,
@@ -413,8 +419,10 @@ class TestProtocolCommands(reply.ReplyObserverInterface):
             "serviceImageFile": fname
         }
         if other_storage:
-            arguments["storageAccessKey"] = cloud_tuple.key
-            arguments["storageSecretKey"] = cloud_tuple.secret
+            arguments["storageAccessKey"] = base64.b64encode(
+                bytearray((cloud_tuple.key)))
+            arguments["storageSecretKey"] = base64.b64encode(
+                bytearray(cloud_tuple.secret))
             arguments["storageDelegate"] = cloud_tuple.id
             arguments["storageEndpoint"] = cloud_tuple.endpoint
             arguments["storageAccount"] = cloud_tuple.account
@@ -438,9 +446,9 @@ class TestProtocolCommands(reply.ReplyObserverInterface):
         nose.tools.ok_(os.path.exists(
             os.path.join(service_dir, "bin/enstratus-configure")))
         nose.tools.ok_(os.path.exists(os.path.join(service_dir,
-                                                    "bin/enstratus-stop")))
+                                                   "bin/enstratus-stop")))
         nose.tools.ok_(os.path.exists(os.path.join(service_dir,
-                                                    "bin/enstratus-start")))
+                                                   "bin/enstratus-start")))
 
     def test_service_install_only(self):
         for b in (True, False):
@@ -482,14 +490,14 @@ class TestProtocolCommands(reply.ReplyObserverInterface):
             "serviceId": service_id,
             "cloudId": primary.id,
             "runAsUser": self.run_as_user,
-            "apiAccessKey": primary.key,
-            "apiSecretKey": primary.secret,
-            "configuration": configuration_data,
+            "apiAccessKey": base64.b64encode(bytearray(primary.key)),
+            "apiSecretKey": base64.b64encode(bytearray(primary.secret)),
+            "configuration": base64.b64encode(bytearray(configuration_data)),
             "imageDirectory": self.bucket,
             # pretend the same tarball is the data set
             "dataSourceImage": self.simple_service,
-            "storagePublicKey": primary.key,
-            "storagePrivateKey": primary.secret,
+            "storagePublicKey": base64.b64encode(bytearray(primary.key)),
+            "storagePrivateKey": base64.b64encode(bytearray(primary.secret)),
             "storageDelegate": primary.id,
             "regionId": primary.region
         }
@@ -507,17 +515,14 @@ class TestProtocolCommands(reply.ReplyObserverInterface):
         nose.tools.eq_(jd["job_status"], "COMPLETE")
 
     def test_install_start_stop_configure_service(self):
-        """
-        install a service, start it, configure it in two ways, stop it, then
-        delete the directory it was put into
-        """
         for b in (True, False):
             for i in range(-1, len(self.storage_clouds) - 1):
                 primary = self.storage_clouds[i]
                 secondary = self.storage_clouds[i + 1]
                 if primary == secondary:
                     secondary = None
-                yield self._install_start_stop_configure_service, primary, secondary, b
+                yield self._install_start_stop_configure_service,\
+                    primary, secondary, b
 
     def _install_start_stop_configure_service(self, primary, secondary, b):
         service_id = "aservice" + str(uuid.uuid4()).split("-")[0]
@@ -532,9 +537,9 @@ class TestProtocolCommands(reply.ReplyObserverInterface):
         nose.tools.ok_(os.path.exists(
             os.path.join(service_dir, "bin/enstratus-configure")))
         nose.tools.ok_(os.path.exists(os.path.join(service_dir,
-                                                    "bin/enstratus-stop")))
+                                                   "bin/enstratus-stop")))
         nose.tools.ok_(os.path.exists(os.path.join(service_dir,
-                                                    "bin/enstratus-start")))
+                                                   "bin/enstratus-start")))
 
         # test start
         arguments = {
@@ -566,7 +571,8 @@ class TestProtocolCommands(reply.ReplyObserverInterface):
             "forCustomerId": self.customer_id,
             "serviceId": service_id,
             "runAsUser": self.run_as_user,
-            "configurationData": configuration_data
+            "configurationData": base64.b64encode(
+                bytearray(configuration_data))
         }
         doc = {
             "command": "configure_service",
@@ -607,10 +613,11 @@ class TestProtocolCommands(reply.ReplyObserverInterface):
             "forCustomerId": self.customer_id,
             "serviceId": service_id,
             "runAsUser": self.run_as_user,
-            "configurationData": configuration_data,
-            "address": "http://someplacefcdx.com",
-            "sslPublic": ssl_public,
-            "sslPrivate": ssl_private,
+            "configurationData": base64.b64encode(
+                bytearray(configuration_data)),
+            "sslAddress": "http://someplacefcdx.com",
+            "sslPublic": base64.b64encode(bytearray(ssl_public)),
+            "sslPrivate": base64.b64encode(bytearray(ssl_private)),
             "sslChain": "thisisthesslschain"
         }
         doc = {
@@ -659,7 +666,7 @@ class TestProtocolCommands(reply.ReplyObserverInterface):
 
         nose.tools.ok_(service_id in service_array)
         nose.tools.eq_(service_array[service_array.index(service_id) + 1],
-                         'OK')
+                       'OK')
 
         # install data source
         arguments = {
@@ -667,9 +674,9 @@ class TestProtocolCommands(reply.ReplyObserverInterface):
             "serviceId": service_id,
             "cloudId": primary.id,
             "runAsUser": self.run_as_user,
-            "apiAccessKey": primary.key,
-            "apiSecretKey": primary.secret,
-            "configuration": configuration_data,
+            "apiAccessKey": base64.b64encode(bytearray(primary.key)),
+            "apiSecretKey": base64.b64encode(bytearray(primary.secret)),
+            "configuration": base64.b64encode(bytearray(configuration_data)),
             "imageDirectory": self.bucket,
             "dataSourceImage": self.simple_service,
             "regionId": primary.region
@@ -710,10 +717,6 @@ class TestProtocolCommands(reply.ReplyObserverInterface):
 
     @test_utils.system_changing
     def test_start_services(self):
-        """
-        install a service, start it, configure it in two ways, stop it, then
-        delete the directory it was put into
-        """
         # just install from the first storage cloud in the list
         if not self.storage_clouds:
             raise skip.SkipTest("No storage clouds configured")
@@ -766,9 +769,9 @@ class TestProtocolCommands(reply.ReplyObserverInterface):
         nose.tools.ok_(service_id1 in service_array)
         nose.tools.ok_(service_id2 in service_array)
         nose.tools.eq_(service_array[service_array.index(service_id1) + 1],
-                         'OK')
+                       'OK')
         nose.tools.eq_(service_array[service_array.index(service_id2) + 1],
-                         'OK')
+                       'OK')
 
     def _backup_data(self,
                      s_id,
@@ -784,12 +787,12 @@ class TestProtocolCommands(reply.ReplyObserverInterface):
 
         cloud_list = [primary]
         arguments = {
-            "configuration": cfg,
+            "configuration": base64.b64encode(bytearray(cfg)),
             "serviceId": s_id,
             "primaryCloudId": primary.id,
             "runAsUser": self.run_as_user,
-            "primaryApiKey": primary.key,
-            "primarySecretKey": primary.secret,
+            "primaryApiKey": base64.b64encode(bytearray(primary.key)),
+            "primarySecretKey": base64.b64encode(bytearray(primary.secret)),
             "toBackupDirectory": self.bucket,
             "serviceImageFile": file_path,
             "dataSourceName": object_name,
@@ -797,19 +800,25 @@ class TestProtocolCommands(reply.ReplyObserverInterface):
         }
         if use_storage:
             arguments["storageDelegate"] = primary.id
-            arguments["storageApiKey"] = primary.key
-            arguments["storageSecretKey"] = primary.secret
+            arguments["storageApiKey"] = \
+                base64.b64encode(bytearray(primary.key))
+            arguments["storageSecretKey"] = \
+                base64.b64encode(bytearray(primary.secret))
 
         if secondary:
             cloud_list.append(secondary)
             arguments["secondaryCloudId"] = secondary.id
-            arguments["secondaryApiKey"] = secondary.key
-            arguments["secondarySecretKey"] = secondary.secret
+            arguments["secondaryApiKey"] = \
+                base64.b64encode(bytearray(secondary.key))
+            arguments["secondarySecretKey"] = \
+                base64.b64encode(bytearray(secondary.secret))
             arguments["secondaryRegionId"] = secondary.region
             if use_storage:
                 arguments["secondaryStorageDelegate"] = secondary.id
-                arguments["secondaryStorageApiKey"] = secondary.key
-                arguments["secondaryStorageSecretKey"] = secondary.secret
+                arguments["secondaryStorageApiKey"] = \
+                    base64.b64encode(bytearray(secondary.key))
+                arguments["secondaryStorageSecretKey"] = \
+                    base64.b64encode(bytearray(secondary.secret))
 
         doc = {
             "command": "backup_data_source",
@@ -873,10 +882,6 @@ class TestProtocolCommands(reply.ReplyObserverInterface):
 
     @test_utils.system_changing
     def test_grant_db_revoke_db(self):
-        """
-        install a service, start it, configure it in two ways, stop it, then
-        delete the directory it was put into
-        """
         if not self.storage_clouds:
             raise skip.SkipTest("No storage clouds are configured")
         # just use the first cloud.  install_service is well tested on
@@ -903,7 +908,7 @@ class TestProtocolCommands(reply.ReplyObserverInterface):
 
         arguments = {
             "customerId": self.customer_id,
-            "configuration": bytearray(cfg_data),
+            "configuration": base64.b64encode(bytearray(cfg_data)),
             "serviceId": service_id
         }
         doc = {
@@ -928,7 +933,7 @@ class TestProtocolCommands(reply.ReplyObserverInterface):
 
         # test revoke
         arguments = {
-            "configurationData": bytearray(cfg_data),
+            "configurationData": base64.b64encode(bytearray(cfg_data)),
             "serviceId": service_id
         }
         doc = {
@@ -961,25 +966,31 @@ class TestProtocolCommands(reply.ReplyObserverInterface):
             "toBackupDirectory": self.bucket,
             "primaryCloudId": primary.id,
             "primaryRegionId": primary.region,
-            "primaryApiKey": primary.key,
-            "primarySecretKey": primary.secret,
+            "primaryApiKey": base64.b64encode(bytearray(primary.key)),
+            "primarySecretKey": base64.b64encode(bytearray(primary.secret)),
         }
         if storage_delegate:
             arguments["storageDelegate"] = primary.id
-            arguments["storagePublicKey"] = primary.key
-            arguments["storagePrivateKey"] = primary.secret
+            arguments["storagePublicKey"] = \
+                base64.b64encode(bytearray(primary.key))
+            arguments["storagePrivateKey"] = \
+                base64.b64encode(bytearray(primary.secret))
 
         if secondary:
             arguments["secondaryCloudId"] = secondary.id
             arguments["secondaryRegionId"] = secondary.region
-            arguments["secondaryApiKey"] = secondary.key
-            arguments["secondarySecretKey"] = secondary.secret
+            arguments["secondaryApiKey"] = \
+                base64.b64encode(bytearray(secondary.key))
+            arguments["secondarySecretKey"] = \
+                base64.b64encode(bytearray(secondary.secret))
             arguments["secondaryApiEndpoint"] = secondary.endpoint
             arguments["secondaryApiAccount"] = secondary.account
             if storage_delegate:
                 arguments["secondaryStorageDelegate"] = secondary.id
-                arguments["secondaryStoragePublicKey"] = secondary.key
-                arguments["secondaryStoragePrivateKey"] = secondary.secret
+                arguments["secondaryStoragePublicKey"] = \
+                    base64.b64encode(bytearray(secondary.key))
+                arguments["secondaryStoragePrivateKey"] = \
+                    base64.b64encode(bytearray(secondary.secret))
                 arguments["secondaryStorageEndpoint"] = secondary.endpoint
                 arguments["secondaryStorageAccount"] = secondary.account
 
@@ -1010,8 +1021,8 @@ class TestProtocolCommands(reply.ReplyObserverInterface):
 
         cloud = storagecloud.get_cloud_driver(
             arguments["primaryCloudId"],
-            arguments["primaryApiKey"],
-            arguments["primarySecretKey"],
+            primary.key,
+            primary.secret,
             region_id=arguments["primaryRegionId"])
 
         container = cloud.get_container(arguments["toBackupDirectory"])
@@ -1083,8 +1094,8 @@ class TestProtocolCommands(reply.ReplyObserverInterface):
             "providerRegionId": primary.region,
             "storageDelegate": primary.id,
             "scriptFiles": script_files,
-            "storagePublicKey": primary.key,
-            "storagePrivateKey": primary.secret,
+            "storagePublicKey": base64.b64encode(bytearray(primary.key)),
+            "storagePrivateKey": base64.b64encode(bytearray(primary.secret)),
             "personalityFiles": [],
         }
         doc = {
@@ -1129,8 +1140,8 @@ class TestProtocolCommands(reply.ReplyObserverInterface):
             "providerRegionId": primary.region,
             "storageDelegate": primary.id,
             "scriptFiles": script_files,
-            "storagePublicKey": primary.key,
-            "storagePrivateKey": primary.secret,
+            "storagePublicKey": base64.b64encode(bytearray(primary.key)),
+            "storagePrivateKey": base64.b64encode(bytearray(primary.secret)),
             "personalityFiles": [],
         }
         doc = {
@@ -1279,7 +1290,8 @@ class TestProtocolCommands(reply.ReplyObserverInterface):
             "arguments": {"formatVolume": True,
                           "fileSystem": "ext3",
                           "raidLevel": "NONE",
-                          "encryptionKey": enc_key,
+                          "encryptionKey":
+                              base64.b64encode(bytearray(enc_key)),
                           "mountPoint": mount_point,
                           "devices": [device_id]}}
         req_rpc = self._rpc_wait_reply(doc)
@@ -1303,10 +1315,6 @@ class TestProtocolCommands(reply.ReplyObserverInterface):
 
     @test_utils.system_changing
     def test_lock_services(self):
-        """
-        install a service, start it, configure it in two ways, stop it, then
-        delete the directory it was put into
-        """
         if not self.storage_clouds:
             raise skip.SkipTest("No storage clouds are configured")
 

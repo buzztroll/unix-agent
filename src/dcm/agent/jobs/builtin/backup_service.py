@@ -41,10 +41,10 @@ class BackupService(direct_pass.DirectPass):
          False, str),
         "primaryApiKey":
         ("The API key for the primary storage cloud.",
-         True, str),
+         True, utils.base64type_convertor),
         "primarySecretKey":
         ("The API secret key for the primary storage cloud.",
-         True, str),
+         True, utils.base64type_convertor),
         "secondaryCloudId":
         ("The cloud ID or delegate string for the secondary storage cloud. "
          "Often this is an off site cloud.",
@@ -54,10 +54,10 @@ class BackupService(direct_pass.DirectPass):
          False, str),
         "secondaryApiKey":
         ("The API key of the secondary cloud.",
-         False, str),
+         False, utils.base64type_convertor),
         "secondarySecretKey":
         ("The API secret key of the secondary cloud.",
-         False, str),
+         False, utils.base64type_convertor),
         "apiEndpoint":
         ("The endpoint contact string of the primary cloud.",
          False, str),
@@ -77,10 +77,10 @@ class BackupService(direct_pass.DirectPass):
          False, str),
         "storagePublicKey":
         ("The API key for the separate primary storage cloud.",
-         False, str),
+         False, utils.base64type_convertor),
         "storagePrivateKey":
         ("The API secret key for the separate primary storage cloud.",
-         False, str),
+         False, utils.base64type_convertor),
         "secondaryApiEndpoint":
         ("The endpoint contact string of the secondary backup cloud.",
          False, str),
@@ -100,50 +100,47 @@ class BackupService(direct_pass.DirectPass):
          False, str),
         "secondaryStoragePublicKey":
         ("The API key of the separate secondary storage cloud.",
-         False, str),
+         False, utils.base64type_convertor),
         "secondaryStoragePrivateKey":
         ("The API secret key for the separate secondary storage cloud.",
-         False, str)
+         False, utils.base64type_convertor)
     }
 
     def __init__(self, conf, job_id, items_map, name, arguments):
         super(BackupService, self).__init__(
             conf, job_id, items_map, name, arguments)
 
-        self.service_id = arguments["serviceId"]
-        self.primary_cloud_id = arguments["primaryCloudId"]
-        self.primary_region = arguments.get("primaryRegionId", None)
-        self.primary_api_key = arguments["primaryApiKey"]
-        self.primary_secret_key = arguments["primarySecretKey"]
-        self.primary_endpoint = arguments.get("apiEndpoint", None)
-        self.primary_account = arguments.get("apiAccount", None)
+        self.service_id = self.args.serviceId
+        self.primary_cloud_id = self.args.primaryCloudId
+        self.primary_region = self.args.primaryRegionId
+        self.primary_api_key = self.args.primaryApiKey
+        self.primary_secret_key = self.args.primarySecretKey
+        self.primary_endpoint = self.args.apiEndpoint
+        self.primary_account = self.args.apiAccount
         if "storageDelegate" in arguments:
             # if the storage delegate exists we will use it instead of the
             # primary info
-            self.primary_cloud_id = arguments["storageDelegate"]
-            self.primary_api_key = arguments["storagePublicKey"]
-            self.primary_secret_key = arguments["storagePrivateKey"]
-            self.primary_endpoint = arguments.get("storageEndpoint", None)
-            self.primary_account = arguments.get("storageAccount", None)
+            self.primary_cloud_id = self.args.storageDelegate
+            self.primary_api_key = self.args.storagePublicKey
+            self.primary_secret_key = self.args.storagePrivateKey
+            self.primary_endpoint = self.args.storageEndpoint
+            self.primary_account = self.args.storageAccount
 
-        self.secondary_cloud_id = arguments.get("secondaryCloudId", None)
+        self.secondary_cloud_id = self.args.secondaryCloudId
         if self.secondary_cloud_id:
-            self.secondary_region = arguments.get("secondaryRegionId", None)
-            self.secondary_api_key = arguments["secondaryApiKey"]
-            self.secondary_secret_key = arguments["secondarySecretKey"]
-            self.secondary_endpoint = arguments.get(
-                "secondaryApiEndpoint", None)
-            self.secondary_account = arguments.get("secondaryApiAccount", None)
+            self.secondary_region = self.args.secondaryRegionId
+            self.secondary_api_key = self.args.secondaryApiKey
+            self.secondary_secret_key = self.args.secondarySecretKey
+            self.secondary_endpoint = self.args.secondaryApiEndpoint
+            self.secondary_account = self.args.secondaryApiAccount
 
         if "secondaryStorageDelegate" in arguments:
-            self.secondary_cloud_id = arguments["secondaryStorageDelegate"]
-            self.secondary_region = arguments.get("secondaryRegionId", None)
-            self.secondary_api_key = arguments["secondaryStoragePublicKey"]
-            self.secondary_secret_key = arguments["secondaryStoragePrivateKey"]
-            self.secondary_endpoint = arguments.get(
-                "secondaryStorageEndpoint", None)
-            self.secondary_account = arguments.get(
-                "secondaryStorageAccount", None)
+            self.secondary_cloud_id = self.args.secondaryStorageDelegate
+            self.secondary_region = self.args.secondaryRegionId
+            self.secondary_api_key = self.args.secondaryStoragePublicKey
+            self.secondary_secret_key = self.args.secondaryStoragePrivateKey
+            self.secondary_endpoint = self.args.secondaryStorageEndpoint
+            self.secondary_account = self.args.secondaryStorageAccount
 
     def run(self):
         tm_str = utils.get_time_backup_string()
@@ -163,8 +160,9 @@ class BackupService(direct_pass.DirectPass):
             _g_logger.warn(msg)
             raise exceptions.AgentJobException(msg)
 
-        _g_logger.info("Uploading %s to storage cloud %s" %
-                       (backup_path, self.primary_cloud_id))
+        utils.log_to_dcm(
+            logging.INFO, "Uploading %s to storage cloud %s" %
+                          (backup_path, self.primary_cloud_id))
 
         storagecloud.upload(
             self.primary_cloud_id,

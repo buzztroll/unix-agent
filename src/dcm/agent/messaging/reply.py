@@ -17,25 +17,43 @@ class ReplyRPC(object):
 
     MISSING_VALUE_STRING = "DEADBEEF"
 
-    def __init__(self, reply_listener, agent_id, connection,
-                 request_id, message_id, payload,
-                 timeout=1.0):
+    def __init__(self,
+                 reply_listener,
+                 agent_id,
+                 connection,
+                 request_id,
+                 request_document,
+                 db,
+                 timeout=1.0,
+                 reply_doc=None):
         self._agent_id = agent_id
         self._request_id = request_id
-        self._message_id = message_id
-        self._request_payload = payload
+        self._request_document = request_document
         self._cancel_callback = None
         self._cancel_callback_args = None
         self._cancel_callback_kwargs = None
         self._reply_message_timer = None
         self._reply_listener = reply_listener
+        self._response_doc = None
         self._timeout = timeout
         self._conn = connection
+        self._resend_reply_cnt = 0
+        self._resend_reply_cnt_threshold = 5
         self._lock = threading.RLock()
-        self._sm = states.StateMachine(states.ReplyStates.NEW)
+
+        if reply_doc is None:
+            starting_state = states.ReplyStates.NEW
+            starting_event = states.ReplyEvents.REQUEST_RECEIVED
+            message = {}
+        else:
+            starting_state = states.ReplyStates.REPLY
+            starting_event = states.ReplyEvents.USER_REPLIES
+            message = reply_doc
+
+        self._sm = states.StateMachine(starting_state)
         self._setup_states()
-        self._sm.event_occurred(states.ReplyEvents.REQUEST_RECEIVED,
-                                message={})
+        self._db = db
+        self._sm.event_occurred(starting_event, message=message)
 
     def get_request_id(self):
         return self._request_id
@@ -47,7 +65,7 @@ class ReplyRPC(object):
         self._lock.release()
 
     def get_message_payload(self):
-        return self._request_payload
+        return self._request_document["payload"]
 
     def shutdown(self):
         with tracer.RequestTracer(self._request_id):
@@ -64,7 +82,7 @@ class ReplyRPC(object):
                 try:
                     self._reply_message_timer.cancel()
                 except Exception as ex:
-                    _g_logger.info("an exception occured when trying to cancel"
+                    _g_logger.info("an exception occurred when trying to cancel"
                                    "the timer: " + ex.message)
 
     @utils.class_method_sync
@@ -77,6 +95,7 @@ class ReplyRPC(object):
         with tracer.RequestTracer(self._request_id):
             self._cancel_callback = cancel_callback
             self._cancel_callback_args = cancel_callback_args
+
             if self._cancel_callback_args is None:
                 self._cancel_callback_args = []
             self._cancel_callback_args.insert(0, self)
@@ -122,6 +141,7 @@ class ReplyRPC(object):
                 states.ReplyEvents.REPLY_NACK_RECEIVED,
                 types.MessageTypes.REPLY: states.ReplyEvents.USER_REPLIES,
                 types.MessageTypes.CANCEL: states.ReplyEvents.CANCEL_RECEIVED,
+                types.MessageTypes.STATUS: states.ReplyEvents.STATUS_RECEIVED,
                 types.MessageTypes.REQUEST: states.ReplyEvents.REQUEST_RECEIVED
             }
             if 'type' not in json_doc:
@@ -175,9 +195,16 @@ class ReplyRPC(object):
         """
         The user decided to accept the message.  Here we will send the ack
         """
+        self._db.new_record(self._request_id,
+                            self._request_document,
+                            None,
+                            states.ReplyStates.ACKED,
+                            self._agent_id)
+
         ack_doc = {'type': types.MessageTypes.ACK,
-                   'message_id': self._message_id,
+                   'message_id': utils.new_message_id(),
                    'request_id': self._request_id,
+                   'entity': "user_accepts",
                    'agent_id': self._agent_id}
         self._conn.send(ack_doc)
 
@@ -187,10 +214,16 @@ class ReplyRPC(object):
         we just send the reply and it acts as the ack and the reply
         """
         self._response_doc = kwargs['message']
+
+        self._db.update_record(self._request_id,
+                               states.ReplyStates.REPLY,
+                               reply_doc=self._response_doc)
+
         reply_doc = {'type': types.MessageTypes.REPLY,
                      'message_id': utils.new_message_id(),
                      'request_id': self._request_id,
                      'payload': self._response_doc,
+                     'entity': "user_replies",
                      'agent_id': self._agent_id}
 
         message_timer = utils.MessageTimer(self._timeout,
@@ -203,9 +236,16 @@ class ReplyRPC(object):
         The user decides to reject the incoming request so we must send
         a nack to the remote side.
         """
+        self._db.new_record(self._request_id,
+                            self._request_document,
+                            None,
+                            states.ReplyStates.ACKED,
+                            self._agent_id)
+
         nack_doc = {'type': types.MessageTypes.NACK,
-                    'message_id': self._message_id,
+                    'message_id': utils.new_message_id(),
                     'request_id': self._request_id,
+                    'entity': "user_rejects",
                     'agent_id': self._agent_id}
         self._conn.send(nack_doc)
 
@@ -218,10 +258,10 @@ class ReplyRPC(object):
         message = kwargs['message']
 
         # reply using the latest message id
-        message_id = message['message_id']
         ack_doc = {'type': types.MessageTypes.ACK,
-                   'message_id': message_id,
+                   'message_id': utils.new_message_id(),
                    'request_id': self._request_id,
+                   'entity': "request_received",
                    'agent_id': self._agent_id}
         self._conn.send(ack_doc)
 
@@ -241,10 +281,16 @@ class ReplyRPC(object):
         now replying to it.  We send the reply.
         """
         self._response_doc = kwargs['message']
+
+        self._db.update_record(self._request_id,
+                               states.ReplyStates.REPLY,
+                               reply_doc=self._response_doc)
+
         reply_doc = {'type': types.MessageTypes.REPLY,
                      'message_id': utils.new_message_id(),
                      'request_id': self._request_id,
                      'payload': self._response_doc,
+                     'entity': "acked_reply",
                      'agent_id': self._agent_id}
 
         message_timer = utils.MessageTimer(self._timeout,
@@ -257,14 +303,19 @@ class ReplyRPC(object):
         After replying to a message we receive a retransmission of the
         original request.  This can happen if the remote end never receives
         an ack and the reply message is either lost or delayed.  Here we
-        retransmit the reply
+        retransmit the reply.
         """
         reply_doc = {'type': types.MessageTypes.REPLY,
                      'message_id': utils.new_message_id(),
                      'request_id': self._request_id,
                      'payload': self._response_doc,
+                     'entity': "request_retrans",
                      'agent_id': self._agent_id}
-        self._conn.send(reply_doc)
+
+        message_timer = utils.MessageTimer(self._timeout,
+                                           self.reply_timeout,
+                                           reply_doc)
+        self._send_reply_message(message_timer)
 
     def _sm_reply_cancel_received(self, **kwargs):
         """
@@ -281,11 +332,26 @@ class ReplyRPC(object):
         reply is received.  At this point we know that the RPC was
         successful.
         """
+        self._db.update_record(self._request_id,
+                               states.ReplyStates.REPLY_ACKED)
         self._reply_message_timer.cancel()
         self._reply_message_timer = None
         self._reply_listener.message_done(self)
         _g_logger.debug("Messaging complete.  State event transition: "
                         + str(self._sm.get_event_list()))
+
+    def _sm_reply_nack_received(self, **kwargs):
+        """
+        The reply was nacked.  This is probably a result of the a
+        retransmission that was not needed.
+        """
+        self._db.update_record(self._request_id,
+                               states.ReplyStates.REPLY_NACKED)
+        self._reply_message_timer.cancel()
+        self._reply_message_timer = None
+        self._reply_listener.message_done(self)
+        _g_logger.debug("Reply NACKed, messaging complete.  State event "
+                        "transition: " + str(self._sm.get_event_list()))
 
     def _sm_reply_ack_timeout(self, **kwargs):
         """
@@ -295,7 +361,11 @@ class ReplyRPC(object):
         message_timer = kwargs['message_timer']
         # The time out did occur before the message could be acked so we must
         # resend it
-        _g_logger.info("Resending reply id %s" % message_timer.message_id)
+        _g_logger.info("Resending reply")
+        self._resend_reply_cnt += 1
+        if self._resend_reply_cnt > self._resend_reply_cnt_threshold:
+            # TODO punt at some point ?
+            pass
         self._send_reply_message(message_timer)
 
     def _sm_nacked_request_received(self, **kwargs):
@@ -305,28 +375,11 @@ class ReplyRPC(object):
         the nack
         """
         nack_doc = {'type': types.MessageTypes.NACK,
-                    'message_id': self._message_id,
+                    'message_id': utils.new_message_id(),
                     'request_id': self._request_id,
+                    'entity': "request_received",
                     'agent_id': self._agent_id}
         self._conn.send(nack_doc)
-
-    def _sm_nacked_timeout(self, **kwargs):
-        """
-        Once in the nack state we wait a while before terminating the
-        communicate in case the nack is lost.  This happens when that waiting
-        period has expired.
-        """
-        self._reply_listener.message_done(self)
-        _g_logger.debug("NACK Ordered events: " +
-                        str(self._sm.get_event_list()))
-
-    def _sm_cleanup_timeout(self, **kwargs):
-        """
-        This occurs if the timeout occurred while the reply ack was being
-        processed but before the timer could be properly processed.  We
-        can just ignore this.
-        """
-        pass
 
     def _sm_cancel_waiting_ack(self, **kwargs):
         """
@@ -340,6 +393,50 @@ class ReplyRPC(object):
             self._cancel_callback,
             self._cancel_callback_args,
             self._cancel_callback_kwargs)
+
+    def _sm_send_status(self):
+        status_doc = {'type': types.MessageTypes.STATUS,
+                      'message_id': utils.new_message_id(),
+                      'request_id': self._request_id,
+                      'entity': "status send",
+                      'agent_id': self._agent_id,
+                      'state': self._sm._current_state,
+                      'reply': self._response_doc}
+        self._conn.send(status_doc)
+
+    def _reinflate_done(self):
+        if self._reply_message_timer:
+            self._reply_message_timer.cancel()
+            self._reply_message_timer = None
+        self._reply_listener.message_done(self)
+
+    def _sm_reply_ack_re_acked(self):
+        """
+        This is called when a re-inflated state had already been reply acked,
+        and is now acked again.  We just take it out of memory.
+        """
+        self._reinflate_done()
+
+    def _sm_reply_ack_now_nacked(self):
+        """
+        This is called whenever a re-inflated command reaches a terminal state
+        that was
+        """
+        self._reinflate_done()
+
+    def _sm_reply_nack_re_nacked(self):
+        """
+        This is called when a re-inflated state had already been reply nacked,
+        and is now nacked again.  We just take it out of memory.
+        """
+        self._reinflate_done()
+
+    def _sm_reply_nack_now_acked(self):
+        """
+        This is called whenever a re-inflated command reaches acked state but
+        it was previously nacked
+        """
+        self._reinflate_done()
 
     def _setup_states(self):
         self._sm.add_transition(states.ReplyStates.NEW,
@@ -367,6 +464,10 @@ class ReplyRPC(object):
                                 states.ReplyEvents.USER_REJECTS_REQUEST,
                                 states.ReplyStates.NACKED,
                                 self._sm_requesting_user_rejects)
+        self._sm.add_transition(states.ReplyStates.REQUESTING,
+                                states.ReplyEvents.STATUS_RECEIVED,
+                                states.ReplyStates.REQUESTING,
+                                self._sm_send_status)
 
         self._sm.add_transition(states.ReplyStates.CANCEL_RECEIVED_REQUESTING,
                                 states.ReplyEvents.REQUEST_RECEIVED,
@@ -388,6 +489,10 @@ class ReplyRPC(object):
                                 states.ReplyEvents.USER_REJECTS_REQUEST,
                                 states.ReplyStates.NACKED,
                                 self._sm_requesting_user_rejects)
+        self._sm.add_transition(states.ReplyStates.CANCEL_RECEIVED_REQUESTING,
+                                states.ReplyEvents.STATUS_RECEIVED,
+                                states.ReplyStates.CANCEL_RECEIVED_REQUESTING,
+                                self._sm_send_status)
 
         self._sm.add_transition(states.ReplyStates.ACKED,
                                 states.ReplyEvents.REQUEST_RECEIVED,
@@ -401,6 +506,10 @@ class ReplyRPC(object):
                                 states.ReplyEvents.USER_REPLIES,
                                 states.ReplyStates.REPLY,
                                 self._sm_acked_reply)
+        self._sm.add_transition(states.ReplyStates.ACKED,
+                                states.ReplyEvents.STATUS_RECEIVED,
+                                states.ReplyStates.ACKED,
+                                self._sm_send_status)
 
         # note, eventually we will want to reply retrans logic to just punt
         self._sm.add_transition(states.ReplyStates.REPLY,
@@ -413,41 +522,106 @@ class ReplyRPC(object):
                                 self._sm_reply_cancel_received)
         self._sm.add_transition(states.ReplyStates.REPLY,
                                 states.ReplyEvents.REPLY_ACK_RECEIVED,
-                                states.ReplyStates.CLEANUP,
+                                states.ReplyStates.REPLY_ACKED,
                                 self._sm_reply_ack_received)
         self._sm.add_transition(states.ReplyStates.REPLY,
                                 states.ReplyEvents.TIMEOUT,
                                 states.ReplyStates.REPLY,
                                 self._sm_reply_ack_timeout)
+        self._sm.add_transition(states.ReplyStates.REPLY,
+                                states.ReplyEvents.REPLY_NACK_RECEIVED,
+                                states.ReplyStates.REPLY_NACKED,
+                                self._sm_reply_nack_received)
+        self._sm.add_transition(states.ReplyStates.REPLY,
+                                states.ReplyEvents.STATUS_RECEIVED,
+                                states.ReplyStates.REPLY,
+                                self._sm_send_status)
 
         self._sm.add_transition(states.ReplyStates.NACKED,
                                 states.ReplyEvents.REQUEST_RECEIVED,
                                 states.ReplyStates.NACKED,
                                 self._sm_nacked_request_received)
         self._sm.add_transition(states.ReplyStates.NACKED,
-                                states.ReplyEvents.TIMEOUT,
-                                states.ReplyStates.CLEANUP,
-                                self._sm_nacked_timeout)
+                                states.ReplyEvents.STATUS_RECEIVED,
+                                states.ReplyStates.NACKED,
+                                self._sm_send_status)
 
-        self._sm.add_transition(states.ReplyStates.CLEANUP,
+        self._sm.add_transition(states.ReplyStates.REPLY_ACKED,
+                                states.ReplyEvents.REQUEST_RECEIVED,
+                                states.ReplyStates.REPLY_ACKED,
+                                self._sm_reply_request_retrans)
+        self._sm.add_transition(states.ReplyStates.REPLY_ACKED,
+                                states.ReplyEvents.REPLY_ACK_RECEIVED,
+                                states.ReplyStates.REPLY_ACKED,
+                                self._sm_reply_ack_re_acked)
+        self._sm.add_transition(states.ReplyStates.REPLY_ACKED,
+                                states.ReplyEvents.REPLY_NACK_RECEIVED,
+                                states.ReplyStates.REPLY_ACKED,
+                                self._sm_reply_ack_now_nacked)
+        self._sm.add_transition(states.ReplyStates.REPLY_ACKED,
+                                states.ReplyEvents.CANCEL_RECEIVED,
+                                states.ReplyStates.REPLY_ACKED,
+                                None)
+        self._sm.add_transition(states.ReplyStates.REPLY_ACKED,
+                                states.ReplyEvents.STATUS_RECEIVED,
+                                states.ReplyStates.REPLY_ACKED,
+                                self._sm_send_status)
+        self._sm.add_transition(states.ReplyStates.REPLY_ACKED,
                                 states.ReplyEvents.TIMEOUT,
-                                states.ReplyStates.CLEANUP,
-                                self._sm_cleanup_timeout)
+                                states.ReplyStates.REPLY_ACKED,
+                                None)
+
+        self._sm.add_transition(states.ReplyStates.REPLY_NACKED,
+                                states.ReplyEvents.REQUEST_RECEIVED,
+                                states.ReplyStates.REPLY_NACKED,
+                                self._sm_reply_request_retrans)
+        self._sm.add_transition(states.ReplyStates.REPLY_NACKED,
+                                states.ReplyEvents.REPLY_ACK_RECEIVED,
+                                states.ReplyStates.REPLY_NACKED,
+                                self._sm_reply_nack_re_nacked)
+        self._sm.add_transition(states.ReplyStates.REPLY_NACKED,
+                                states.ReplyEvents.REPLY_NACK_RECEIVED,
+                                states.ReplyStates.REPLY_NACKED,
+                                self._sm_reply_nack_now_acked)
+        self._sm.add_transition(states.ReplyStates.REPLY_NACKED,
+                                states.ReplyEvents.CANCEL_RECEIVED,
+                                states.ReplyStates.REPLY_NACKED,
+                                None)
+        self._sm.add_transition(states.ReplyStates.REPLY_NACKED,
+                                states.ReplyEvents.STATUS_RECEIVED,
+                                states.ReplyStates.REPLY_NACKED,
+                                self._sm_send_status)
 
 
 class RequestListener(object):
 
-    def __init__(self, conf, sender_connection, dispatcher):
+    def __init__(self, conf, sender_connection, dispatcher, db):
         self._conn = sender_connection
         self._dispatcher = dispatcher
         self._requests = {}
-        self._expired_requests = {}
         self._messages_processed = 0
 
         self._reply_observers = []
         self._timeout = conf.messaging_retransmission_timeout
         self._shutdown = False
         self._conf = conf
+        self._db = db
+
+        self._db.starting_agent()
+
+        # create live entries for all that may need to resend their replies
+        old_replies = self._db.get_all_active()
+        for db_rec in old_replies:
+            req = ReplyRPC(
+                self,
+                self._conf.agent_id,
+                self._conn,
+                db_rec.request_id,
+                db_rec.request_doc,
+                self._db,
+                timeout=self._timeout,
+                reply_doc=db_rec.reply_doc)
+            self._requests[db_rec.request_id] = req
 
     def get_reply_observers(self):
         # get the whole list so that the user can add and remove themselves.
@@ -474,67 +648,82 @@ class RequestListener(object):
             _g_logger.debug("New message type %s :: %s" %
                             (incoming_doc['type'], incoming_doc))
 
-            if incoming_doc['type'] == types.MessageTypes.REQUEST:
-                # this is new request
-                request_id = incoming_doc['request_id']
-                if request_id in self._expired_requests:
-                    # this is an old requests
-                    nack_doc = {'type': types.MessageTypes.NACK,
-                                'message_id': incoming_doc['message_id'],
-                                'request_id': request_id,
-                                'agent_id': self._conf.agent_id}
+            request_id = incoming_doc["request_id"]
+            # is this request already in memory?
+            if request_id in self._requests:
+                # send it through, state machine will deal with it
+                req = self._requests[request_id]
+                req.incoming_message(incoming_doc)
+                return
+
+            # is this an old completed request that is in the DB
+            db_record = self._db.lookup_req(request_id)
+            if db_record:
+                req = ReplyRPC(
+                    self,
+                    self._conf.agent_id,
+                    self._conn,
+                    request_id,
+                    incoming_doc,
+                    self._db,
+                    timeout=self._timeout,
+                    reply_doc=db_record.reply_doc)
+
+                # this will probably be used in the near future so get it
+                # on the memory list
+                self._requests[request_id] = req
+                req.incoming_message(incoming_doc)
+
+            elif incoming_doc["type"] == types.MessageTypes.REQUEST:
+                if len(self._requests.keys()) >=\
+                        self._conf.messaging_max_at_once > -1:
+
+                    # short circuit the case where the agent is too busy
+                    agent_util.log_to_dcm(
+                        logging.DEBUG, "The new request was rejected "
+                                       "because the agent has too many "
+                                       "outstanding requests.")
+                    nack_doc = {
+                        'type': types.MessageTypes.NACK,
+                        'message_id': utils.new_message_id(),
+                        'request_id': request_id,
+                        'agent_id': self._conf.agent_id,
+                        'exception': ("The agent can only handle %d "
+                                      "commands at once"
+                                      % self._conf.messaging_max_at_once)}
                     self._conn.send(nack_doc)
-                elif request_id in self._requests:
-                    _g_logger.debug("Retransmission found")
-                    # this is a retransmission, send in the message
-                    req = self._requests[request_id]
-                    req.incoming_message(incoming_doc)
-                else:
-                    if self._shutdown:
-                        return
-                    _g_logger.debug("New Request found")
-                    if len(self._requests.keys()) >=\
-                       self._conf.messaging_max_at_once > -1:
-                        _g_logger.info("A new request came in but we are full")
-                        nack_doc = {
-                            'type': types.MessageTypes.NACK,
-                            'message_id': incoming_doc['message_id'],
-                            'request_id': request_id,
-                            'agent_id': self._conf.agent_id,
-                            'exception': ("The agent can only handle %d "
-                                          "commands at once"
-                                          % self._conf.messaging_max_at_once)}
-                        self._conn.send(nack_doc)
-                    else:
-                        message_id = incoming_doc['message_id']
-                        payload = incoming_doc['payload']
-                        msg = ReplyRPC(
-                            self, self._conf.agent_id,
-                            self._conn, request_id, message_id, payload,
-                            timeout=self._timeout)
-                        self._call_reply_observers("new_message", msg)
-                        # only add the message if processing was successful
-                        self._requests[request_id] = msg
-                        try:
-                            self._dispatcher.incoming_request(msg)
-                        except Exception as ex:
-                            del self._requests[request_id]
-                            _g_logger.error("The dispatcher could not handle "
-                                            "the message")
-                            raise
+                    return
+
+                req = ReplyRPC(
+                    self,
+                    self._conf.agent_id,
+                    self._conn,
+                    request_id,
+                    incoming_doc,
+                    self._db,
+                    timeout=self._timeout)
+                self._call_reply_observers("new_message", req)
+
+                # only add the message if processing was successful
+                self._requests[request_id] = req
+                try:
+                    self._dispatcher.incoming_request(req)
+                except Exception as ex:
+                    _g_logger.exception("The dispatcher could not handle a "
+                                        "message.")
+                    del self._requests[request_id]
+                    agent_util.log_to_dcm(
+                        logging.ERROR,
+                        "The dispatcher could not handle the message.")
+                    raise
             else:
-                request_id = incoming_doc['request_id']
-                if request_id not in self._requests:
-                    # an unknown request should only be requesting
-                    nack_doc = {'type': types.MessageTypes.NACK,
-                                'message_id': incoming_doc['message_id'],
-                                'request_id': request_id,
-                                'agent_id': self._conf.agent_id}
-                    self._conn.send(nack_doc)
-                else:
-                    # get the message
-                    req = self._requests[request_id]
-                    req.incoming_message(incoming_doc)
+                # if we have never heard of the ID and this is not a new
+                # request we return a courtesy error
+                nack_doc = {'type': types.MessageTypes.NACK,
+                            'message_id': utils.new_message_id(),
+                            'request_id': request_id,
+                            'agent_id': self._conf.agent_id}
+                self._conn.send(nack_doc)
 
     def _validate_doc(self, incoming_doc):
         pass
@@ -550,12 +739,9 @@ class RequestListener(object):
             request_id = incoming_doc['request_id']
         except KeyError:
             request_id = ReplyRPC.MISSING_VALUE_STRING
-        try:
-            message_id = incoming_doc['message_id']
-        except KeyError:
-            message_id = ReplyRPC.MISSING_VALUE_STRING
+
         nack_doc = {'type': types.MessageTypes.NACK,
-                    'message_id': message_id,
+                    'message_id': utils.new_message_id(),
                     'request_id': request_id,
                     'error_message': message,
                     'agent_id': self._conf.agent_id}
@@ -570,29 +756,13 @@ class RequestListener(object):
         # TODO put a soft state timer on the expired request IDs so that they
         # do not leak out forever
         request_id = reply_message.get_request_id()
-
-        timer = threading.Timer(3600,
-                                self._expired_req_timeout,
-                                args=[request_id])
-        self._expired_requests[request_id] = timer
-        timer.start()
-
         del self._requests[request_id]
         self._messages_processed += 1
         self._call_reply_observers("message_done", reply_message)
 
-    def _expired_req_timeout(self, req):
-        _g_logger.debug("******** _expired_req_timeout")
-        try:
-            del self._expired_requests[req.get_request_id()]
-        except:
-            pass
-
     def register_user_callback(self, user_callback):
         parent_receive_q.register_user_callback(
-            user_callback,
-            self._cancel_callback_args,
-            self._cancel_callback_kwargs)
+            user_callback)
 
     def get_messages_processed(self):
         return self._messages_processed
@@ -608,14 +778,11 @@ class RequestListener(object):
         self._shutdown = True  # XXX danger will robinson.  Lets not have
                                # too many flags like this before we have
                                # a state machine
-        for timer in self._expired_requests.values():
-            timer.cancel()
         for req in self._requests.values():
             req.kill()
 
     def wait_for_all_nicely(self):
-        pass
-        while(self._requests):
+        while self._requests:
             parent_receive_q.poll()
 
     def reply(self, request_id, reply_doc):
@@ -626,7 +793,7 @@ class RequestListener(object):
         _g_logger.debug("Received message %s" % str(incoming_doc))
         try:
             self._validate_doc(incoming_doc)
-            return self._process_doc(incoming_doc)
+            self._process_doc(incoming_doc)
         except Exception as ex:
             _g_logger.exception(
                 "Error processing the message: %s" % str(incoming_doc))

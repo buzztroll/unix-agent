@@ -45,6 +45,13 @@ handlers:
         formatter: message
         stream: ext://sys.stdout
 
+    dcm_logger:
+        class: dcm.agent.logger.dcmLogger
+        level: DEBUG
+        formatter: simple
+        filters: [add_request]
+        encoding: utf8
+
 
 loggers:
     dcm.agent:
@@ -60,6 +67,11 @@ loggers:
     dcm.agent.jobs:
         level: DEBUG
         handlers: [job_request_tracer]
+        propagate: no
+
+    dcm.agent.log.to.agent.manager:
+        level: DEBUG
+        handlers: [dcm_logger, message_request_tracer]
         propagate: no
 
 

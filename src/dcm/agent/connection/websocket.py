@@ -76,7 +76,8 @@ class _WebSocketClient(ws4py_client.WebSocketClient):
 
     def close(self, code=1000, reason=''):
         self._dcm_closed_called = True
-        return ws4py_client.WebSocketClient.close(self, code=code, reason=reason)
+        return ws4py_client.WebSocketClient.close(
+            self, code=code, reason=reason)
 
     def received_message(self, m):
         _g_logger.debug("WS message received " + m.data)
@@ -125,6 +126,7 @@ class WebSocketConnection(threading.Thread):
         self._cond.notify()
 
     def close(self):
+        _g_logger.debug("Websocket connection closed.")
         self.event_close()
 
     @utils.class_method_sync
@@ -135,7 +137,7 @@ class WebSocketConnection(threading.Thread):
                 self._cond.wait(self._backoff_time)
             except Exception as ex:
                 _g_logger.exception("The ws connection poller loop had "
-                                        "an unexpected exception.")
+                                    "an unexpected exception.")
                 self._throw_error(ex)
 
     #########
@@ -167,6 +169,7 @@ class WebSocketConnection(threading.Thread):
         self._errors_since_success += 1
 
     def _throw_error(self, exception):
+        _g_logger.debug("throwing error %s" % str(exception))
         parent_receive_q.register_user_callback(self.event_error,
                                                 {"exception": exception})
         self._cond.notify()
@@ -191,6 +194,7 @@ class WebSocketConnection(threading.Thread):
                 protocols=['http-only', 'chat'])
             self._ws.connect()
             self._ws.send_handshake(self._hs_string)
+            self._backoff_time = None
         except Exception as ex:
             self._throw_error(ex)
 
@@ -204,8 +208,8 @@ class WebSocketConnection(threading.Thread):
             self._backoff_time = None
             rc = self.handshake_observer(incoming_handshake)
             if not rc:
-                # this means the the AM rejected the handshake.  This is an error
-                # and the connection returns to the waiting state
+                # this means the the AM rejected the handshake.  This is an
+                # error and the connection returns to the waiting state
                 ex = exceptions.AgentHandshakeException(incoming_handshake)
                 self._throw_error(ex)
         except Exception as ex:
@@ -221,6 +225,8 @@ class WebSocketConnection(threading.Thread):
         """
         A user called close while the connection was open
         """
+        _g_logger.debug("close called when open")
+
         self._done_event.set()
         self._cond.notify()
 
@@ -228,6 +234,7 @@ class WebSocketConnection(threading.Thread):
         """
         A user called close while waiting for a handshake
         """
+        _g_logger.debug("close event while handshaking")
         self._done_event.set()
         self._cond.notify()
 
@@ -235,6 +242,7 @@ class WebSocketConnection(threading.Thread):
         """
         A user called close when the connection was not open
         """
+        _g_logger.debug("close event while not open")
         self._done_event.set()
         self._cond.notify()
 

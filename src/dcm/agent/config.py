@@ -7,6 +7,7 @@ import threading
 import yaml
 import dcm
 import libcloud.security
+from dcm.agent import utils
 
 from dcm.agent.cloudmetadata import CLOUD_TYPES
 import dcm.agent.connection.websocket as websocket
@@ -67,7 +68,7 @@ def get_connection_object(conf):
 class ConfigOpt(object):
 
     def __init__(self, section, name, t, default=None,
-                 options=None, minv=None, maxv=None, help=None):
+                 options=None, minv=None, maxv=None, help_msg=None):
         self.section = section
         self.name = name
         self.my_type = t
@@ -75,7 +76,7 @@ class ConfigOpt(object):
         self.default = default
         self.minv = minv
         self.maxv = maxv
-        self.help = help
+        self.help_msg = help_msg
 
     def get_option_name(self):
         option_name = "%s_%s" % (self.section, self.name)
@@ -85,7 +86,7 @@ class ConfigOpt(object):
         return self.default
 
     def get_help(self):
-        return self.help
+        return self.help_msg
 
     def get_value(self, parser, default=None, **kwargs):
         if default is None:
@@ -133,9 +134,9 @@ class ConfigOpt(object):
 
 class FilenameOpt(ConfigOpt):
 
-    def __init__(self, section, name, default=None, help=None):
+    def __init__(self, section, name, default=None, help_msg=None):
         super(FilenameOpt, self).__init__(section, name, str, default=default,
-                                          help=help)
+                                          help_msg=help_msg)
 
     def get_value(self, parser, relative_path=None, **kwarg):
         v = super(FilenameOpt, self).get_value(parser)
@@ -152,7 +153,7 @@ class AgentConfig(object):
     When/if multiprocessing is used it will be send to the worker threads.
 
     It is semi-read-only.  Any write operation must be done with thread
-    primatives.  The exception is set handshake because that will be done
+    primitives.  The exception is set handshake because that will be done
     before any thread is created.
     """
 
@@ -171,6 +172,7 @@ class AgentConfig(object):
         self.server_id = None
         self.server_name = None
         self.storage_idfile = None
+        self.storage_dbfile = None
 
         self.imaging_event = threading.Event()
 
@@ -179,6 +181,9 @@ class AgentConfig(object):
         if self.storage_idfile is None:
             self.storage_idfile = \
                 os.path.join(self.storage_base_dir, "etc", "agentid.txt")
+        if self.storage_dbfile is None:
+            self.storage_dbfile = \
+                os.path.join(self.storage_base_dir, "etc", "agentdb.sql")
         if self.storage_script_dir is None:
             self.storage_script_dir = \
                 os.path.join(self.storage_base_dir, "bin")
@@ -192,6 +197,7 @@ class AgentConfig(object):
             libcloud.security.VERIFY_SSL_CERT = False
 
         setup_logging(self.logging_configfile)
+        self.token = utils.generate_token()
 
     def set_handshake(self, handshake_doc):
         self.state = "WAITING"
@@ -203,19 +209,6 @@ class AgentConfig(object):
         self.zone_id = handshake_doc["zoneId"]
         self.server_id = handshake_doc["serverId"]
         self.server_name = handshake_doc["serverName"]
-        #self.ephemeral_file_system = handshake_doc["ephemeralFileSystem"]
-        #self.encrypted_ephemeral_fs_key = \
-        #    handshake_doc["encryptedEphemeralFsKey"]
-        #else:
-        #    raise exceptions.AgentHandshakeException()
-
-        if self.storage_idfile:
-            try:
-                with open(self.storage_idfile, "w") as fptr:
-                    fptr.write(str(self.agent_id))
-            except Exception as ex:
-                _g_logger.exception("Failed to write the agent ID to "
-                                    "%s" % self.storage_idfile)
 
     def get_script_location(self, name):
         if self.storage_script_dir is not None:
@@ -264,33 +257,34 @@ class AgentConfig(object):
 def _build_options_list():
     option_list = [
         ConfigOpt("pydev", "host", str, default=None, options=None,
-                  help="The hostname of the pydev debugger"),
+                  help_msg="The hostname of the pydev debugger"),
         ConfigOpt("pydev", "port", int, default=None, options=None,
-                  help="The port where the pydev debugger is listening"),
+                  help_msg="The port where the pydev debugger is listening"),
 
-        ConfigOpt("workers", "count", int, default=4, options=None,
-                  help="The number of worker threads that will be "
-                       "processing incoming requests"),
+        ConfigOpt("workers", "count", int, default=1, options=None,
+                  help_msg="The number of worker threads that will be "
+                           "processing incoming requests"),
 
         ConfigOpt("workers", "long_runner_threads", int, default=1,
                   options=None,
-                  help="The number of worker threads that will be "
-                       "processing long running jobs (anything that "
-                       "returns a job description)"),
+                  help_msg="The number of worker threads that will be "
+                           "processing long running jobs (anything that "
+                           "returns a job description)"),
 
-        ConfigOpt("connection", "type", str, default=None, options=None,
-                  help="The type of connection object to use.  Supported "
-                       "types are ws and fallback"),
+        ConfigOpt("connection", "type", str, default="wss"
+                                                     "", options=None,
+                  help_msg="The type of connection object to use.  Supported "
+                           "types are ws and fallback"),
         FilenameOpt("connection", "source_file", default=None),
         FilenameOpt("connection", "dest_file", default=None),
         ConfigOpt("connection", "agentmanager_url", str, default=None,
-                  help="The url of the agent manager with which this "
-                       "agent will communicate."),
+                  help_msg="The url of the agent manager with which this "
+                           "agent will communicate."),
         FilenameOpt("logging", "configfile", default=None,
-                    help="The location of the log configuration file"),
+                    help_msg="The location of the log configuration file"),
 
         FilenameOpt("plugin", "configfile",
-                    help="The location of the plugin configuration file"),
+                    help_msg="The location of the plugin configuration file"),
 
         FilenameOpt("storage", "temppath", default="/tmp"),
         FilenameOpt("storage", "services_dir", default="/mnt/services"),
@@ -298,6 +292,7 @@ def _build_options_list():
         FilenameOpt("storage", "ephemeral_mountpoint", default="/mnt"),
         FilenameOpt("storage", "operations_path", default="/mnt"),
         FilenameOpt("storage", "idfile", default=None),
+        FilenameOpt("storage", "dbfile", default=None),
         FilenameOpt("storage", "script_dir", default=None),
 
         FilenameOpt("storagecloud", "ca_cert_dir", default=None),
@@ -309,34 +304,30 @@ def _build_options_list():
         ConfigOpt("system", "user", str, default="dcm"),
 
         ConfigOpt("cloud", "type", str, default=CLOUD_TYPES.Amazon,
-                  help="The type of cloud on which this agent is running"),
+                  help_msg="The type of cloud on which this agent is running"),
         ConfigOpt("cloud", "metadata_url", str,
                   default=None,
-                  help="The url of the metadata server.  Not applicable "
-                       "to all clouds."),
+                  help_msg="The url of the metadata server.  Not applicable "
+                           "to all clouds."),
 
         ConfigOpt("messaging", "retransmission_timeout", float,
                   default=5),
         ConfigOpt("messaging", "max_at_once", int, default=-1,
-                  help="The maximum number of commands that can be "
-                       "outstanding at once.  -1 means infinity."),
+                  help_msg="The maximum number of commands that can be "
+                           "outstanding at once.  -1 means infinity."),
 
         ConfigOpt("platform", "script_locations", list,
                   default="common-linux"),
         ConfigOpt("platform", "name", str, default=None,
-                  help="The platform/distribution on which this agent is"
-                       "being installed.",
+                  help_msg="The platform/distribution on which this agent is"
+                           "being installed.",
                   options=["ubuntu", "el", "suse", "debian"]),
         ConfigOpt("jobs", "retain_job_time", int, default=3600),
         ConfigOpt("test", "skip_handshake", bool, default=False),
 
-        ConfigOpt("intrusion", "type", str, default="ossec",
-                  help="The name of the intrusion detection system to use.  "
-                       "Currently only ossec is available."),
-        ConfigOpt("intrusion", "enabled", bool, default=True),
-        ConfigOpt("intrusion", "file", str,
-                  default="/var/ossec/logs/alerts/alerts.log",
-                  help="The file where alerts are logged."),
+        ConfigOpt("intrusion", "module", str, default=None,
+                  help_msg="The python module to be loaded for handling "
+                           "intrusion detection.")
     ]
 
     return option_list

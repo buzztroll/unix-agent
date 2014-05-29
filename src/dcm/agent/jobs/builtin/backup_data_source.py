@@ -40,10 +40,13 @@ class BackupDataSource(direct_pass.DirectPass):
                            "backup will be sent", True, str),
         "primaryRegionId": ("The region ID of the cloud where the backup "
                             "will be stored", False, str),
-        "primaryApiKey": ("The API key for the backup cloud", True, str),
-        "primarySecretKey": ("The API secret for the backup cloud", True, str),
+        "primaryApiKey": ("The API key for the backup cloud", True,
+                          utils.base64type_convertor),
+        "primarySecretKey": ("The API secret for the backup cloud", True,
+                             utils.base64type_convertor),
         "configuration": ("The configuration data that will be passed to "
-                          "enstratus-backupDataSource", True, str),
+                          "enstratus-backupDataSource", True,
+                          utils.base64type_convertor),
         "secondaryEndpoint": ("The endpoint for the off site account",
                               False, str),
         "secondaryAccount": ("The account for the off site cloud.",
@@ -53,9 +56,9 @@ class BackupDataSource(direct_pass.DirectPass):
         "secondaryRegionId": ("The region ID for the secondary cloud",
                               False, str),
         "secondaryApiKey": ("The access key for the secondary cloud",
-                            False, str),
+                            False, utils.base64type_convertor),
         "secondarySecretKey": ("The secret API key for the secondary cloud",
-                               False, str),
+                               False, utils.base64type_convertor),
         "apiEndpoint": ("The endpoint contact string of the primary backup "
                         "cloud", False, str),
         "apiAccount": ("The API account of the primary backup cloud",
@@ -68,9 +71,9 @@ class BackupDataSource(direct_pass.DirectPass):
         "storageAccount": ("The storage cloud account for the separate storage"
                            " cloud", False, str),
         "storageApiKey": ("The separate storage cloud API key",
-                          False, str),
+                          False, utils.base64type_convertor),
         "storageSecretKey": ("The separate storage cloud secret key",
-                             False, str),
+                             False, utils.base64type_convertor),
         "secondaryApiEndpoint": ("The endpoint contact string for the "
                                  "secondary backup cloud.", False, str),
         "secondaryApiAccount": ("The secondary cloud API account",
@@ -86,10 +89,10 @@ class BackupDataSource(direct_pass.DirectPass):
                                     False, str),
         "secondaryStorageApiKey": ("The API key for the secondary storage "
                                    "separate cloud.",
-                                   False, str),
+                                   False, utils.base64type_convertor),
         "secondaryStorageSecretKey": ("The API secret key for the secondary "
                                       "storage cloud.",
-                                      False, str),
+                                      False, utils.base64type_convertor),
     }
 
     def __init__(self, conf, job_id, items_map, name, arguments):
@@ -112,11 +115,11 @@ class BackupDataSource(direct_pass.DirectPass):
             service_dir, "cfg", "enstratiusinitd.cfg")
         if not utils.safe_delete(config_file_path):
             msg = "Could not overwrite existing enstratiusinitd.cfg file."
-            _g_logger.warn(msg)
+            utils.log_to_dcm(logging.WARN, msg)
             raise exceptions.AgentJobException(msg)
 
         with open(config_file_path, "w") as fptr:
-            fptr.write(self.args.configuration.decode("utf-8"))
+            fptr.write(self.args.configuration)
 
         tm_str = utils.get_time_backup_string()
         backup_file = "%s-%s-%s.zip" % \
@@ -142,8 +145,9 @@ class BackupDataSource(direct_pass.DirectPass):
             _g_logger.warn(msg)
             raise exceptions.AgentJobException(msg)
 
-        _g_logger.info("Uploading backup %s to primary storage cloud." %
-                       backup_path)
+        utils.log_to_dcm(
+            logging.INFO,
+            "Uploading backup %s to primary storage cloud." % backup_path)
 
         primary_cloud_id = int(self.args.primaryCloudId)
         primary_api_key = self.args.primaryApiKey

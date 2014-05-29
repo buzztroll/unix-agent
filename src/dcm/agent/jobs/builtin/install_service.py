@@ -36,10 +36,10 @@ class InstallService(direct_pass.DirectPass):
          True, str),
         "apiAccessKey":
         ("The access key for the cloud storing the service image.",
-         True, str),
+         True, utils.base64type_convertor),
         "apiSecretKey":
         ("The secret key for the cloud storing the service image.",
-         True, str),
+         True, utils.base64type_convertor),
         "serviceImageDirectory":
         ("The directory or bucket in the storage cloud that is holding"
          "the service image file.", True, str),
@@ -58,9 +58,11 @@ class InstallService(direct_pass.DirectPass):
         "storageAccount":
         ("The separate storage cloud account information.", False, str),
         "storageAccessKey":
-        ("The separate storage cloud API key.", False, str),
+        ("The separate storage cloud API key.",
+         False, utils.base64type_convertor),
         "storageSecretKey":
-        ("The separate storage cloud secret key.", False, str),
+        ("The separate storage cloud secret key.",
+         False, utils.base64type_convertor),
         "storageDelegate":
         ("For clouds that have separate contact information for their "
          "storage clouds this servers as the cloud ID.", False, str)

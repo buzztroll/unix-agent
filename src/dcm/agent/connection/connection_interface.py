@@ -21,7 +21,8 @@ class ConnectionInterface(object):
         pass
 
     @agent_util.not_implemented_decorator
-    def connect(self, receive_object, incoming_handshake_object, outgoing_handshake_doc):
+    def connect(self, receive_object, incoming_handshake_object,
+                outgoing_handshake_doc):
         """
         Start the connection object.  The incoming data will be sent to the
         receive_object which should implement ParentReceiveQObserver.  In

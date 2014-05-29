@@ -1,11 +1,11 @@
 import logging
-from dcm.agent import longrunners
+from dcm.agent import longrunners, utils
 import Queue
 import threading
 
 import dcm.agent.jobs as jobs
-from dcm.eventlog import tracer
-from dcm.agent import parent_receive_q
+import dcm.eventlog.tracer as tracer
+import dcm.agent.parent_receive_q as parent_receive_q
 
 
 _g_logger = logging.getLogger(__name__)
@@ -34,15 +34,22 @@ def _run_plugin(conf, items_map, request_id, command, arguments):
             command,
             arguments)
 
-        _g_logger.info("Starting job " + str(plugin))
+        utils.log_to_dcm(
+            logging.INFO,
+            "Starting job for command %s %s" % (command, request_id))
         reply_doc = plugin.run()
-        _g_logger.info(
-            "Completed successfully job " + str(plugin))
+        utils.log_to_dcm(
+            logging.INFO,
+            "Completed successfully job %s %s" % (command, request_id))
     except Exception as ex:
         _g_logger.exception(
             "Worker %s thread had a top level error when "
             "running job %s : %s"
             % (threading.current_thread().getName(), request_id, ex.message))
+        utils.log_to_dcm(
+            logging.ERROR,
+            "A top level error occurred handling %s %s" % (command,
+                                                           request_id))
         reply_doc = {
             'Exception': ex.message,
             'return_code': 1}
@@ -68,7 +75,8 @@ class Worker(threading.Thread):
         self._exit.set()
 
     def run(self):
-        _g_logger.info("Worker %s thread starting." % self.getName())
+        utils.log_to_dcm(
+            logging.INFO, "Worker %s thread starting." % self.getName())
 
         done = False
         while not done:
@@ -96,7 +104,7 @@ class Worker(threading.Thread):
 
                     work_reply = WorkReply(workload.request_id, reply_doc)
                     self.reply_q.put(work_reply)
-                    _g_logger.debug("Reply message sent")
+                    utils.log_to_dcm(logging.INFO, "Reply message sent")
             except Queue.Empty:
                 pass
             except:
@@ -120,7 +128,8 @@ class Dispatcher(object):
         self.request_listener = None
 
     def start_workers(self, request_listener):
-        _g_logger.info("Starting %d workers." % self._conf.workers_count)
+        utils.log_to_dcm(
+            logging.INFO, "Starting %d workers." % self._conf.workers_count)
         self.request_listener = request_listener
         for i in range(self._conf.workers_count):
             worker = Worker(self._conf, self.worker_q, self.reply_q)
@@ -129,7 +138,7 @@ class Dispatcher(object):
             self.workers.append(worker)
 
     def stop(self):
-        _g_logger.info("Stopping workers.")
+        utils.log_to_dcm(logging.INFO, "Stopping workers.")
 
         for w in self.workers:
             workload = WorkLoad(None, None, None)
@@ -157,7 +166,19 @@ class Dispatcher(object):
 
         items_map = jobs.parse_plugin_doc(self._conf, payload["command"])
 
-        if "longer_runner" in items_map:
+        utils.log_to_dcm(
+            logging.INFO,
+            "Incoming request for command %s" % payload["command"])
+
+        immediate = "immediate" in items_map
+        long_runner = "longer_runner" in items_map
+        if "longer_runner" in payload:
+            long_runner = bool(payload["longer_runner"])
+
+        # we ack first.  This will write it to the persistent store before
+        # sending the message so the agent will have it for restarts
+        reply_obj.ack(None, None, None)
+        if long_runner:
             dj = self._long_runner.start_new_job(
                 self._conf,
                 request_id,
@@ -172,7 +193,7 @@ class Dispatcher(object):
             }
             wr = WorkReply(request_id, reply_doc)
             self.reply_q.put(wr)
-        elif "immediate" in items_map:
+        elif immediate:
             items_map["long_runner"] = self._long_runner
             reply_doc = _run_plugin(self._conf,
                                     items_map,
@@ -185,11 +206,6 @@ class Dispatcher(object):
             workload = WorkLoad(request_id, payload, items_map)
             self.worker_q.put(workload)
 
-        # there is an open window when the worker could pull the
-        # command from the queue before it is acked.  A lock could
-        # prevent this but it is safe so long as poll and incoming_request
-        # are called in the same thread
-        reply_obj.ack(None, None, None)
         _g_logger.debug(
             "The request %s has been set to send an ACK" % request_id)
 

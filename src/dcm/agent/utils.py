@@ -11,10 +11,13 @@
 #   this material is strictly forbidden unless prior written permission
 #   is obtained from Dell, Inc.
 #  ======================================================================
+import base64
 
 import os
 import tempfile
 import datetime
+import traceback
+import sys
 import exceptions
 import logging
 import random
@@ -119,6 +122,7 @@ def setup_remote_pydev(host, port):
                         stdoutToServer=True,
                         stderrToServer=True,
                         suspend=True)
+
         return True
     except Exception:
         return False
@@ -176,13 +180,13 @@ class Lock(object):
         (stdout, stderr, rc) = run_script("lockServices")
 
 
-def make_friendly_id(prefix, id):
-    str_id = "%s%09d" % (prefix, id)
+def make_friendly_id(prefix, uid):
+    str_id = "%s%09d" % (prefix, uid)
     return str_id[0:3] + "-" + str_id[3:6] + "-" + str_id[6:9]
 
 
-def make_id_string(prefix, id):
-    return "%s%03d" % (prefix, id)
+def make_id_string(prefix, uid):
+    return "%s%03d" % (prefix, uid)
 
 
 def get_time_backup_string():
@@ -215,7 +219,7 @@ def get_device_mappings(conf):
 
     (stdout, stderr, rc) = run_command(conf, command)
     if rc != 0:
-        raise exceptions.AgentExecutableException("listDevices failed")
+        raise exceptions.AgentExecutableException(command, rc, stdout, stderr)
 
     device_mapping_list = []
     lines = stdout.split(os.linesep)
@@ -262,7 +266,7 @@ def unmount(conf, mount_point):
     command = [conf.get_script_location("unmount"), mount_point]
     (stdout, stderr, rc) = run_command(conf, command)
     if rc != 0:
-        raise exceptions.AgentExecutableException(rc, stdout, stderr)
+        raise exceptions.AgentExecutableException(command, rc, stdout, stderr)
 
     return rc
 
@@ -275,11 +279,11 @@ def mount(conf, device_id, file_system, mount_point):
                device_id, file_system, mount_point]
     (stdout, stderr, rc) = run_command(conf, command)
     if rc != 0:
-        raise exceptions.AgentExecutableException(rc, stdout, stderr)
+        raise exceptions.AgentExecutableException(command, rc, stdout, stderr)
     return rc
 
 
-def format(conf, device_id, file_system, mount_point, encryption_key):
+def agent_format(conf, device_id, file_system, mount_point, encryption_key):
     enc_str = str(encryption_key is not None).lower()
     command = [conf.get_script_location("format"),
                device_id,
@@ -288,7 +292,7 @@ def format(conf, device_id, file_system, mount_point, encryption_key):
                enc_str]
     (stdout, stderr, rc) = run_command(conf, command)
     if rc != 0:
-        raise exceptions.AgentExecutableException(rc, stdout, stderr)
+        raise exceptions.AgentExecutableException(command, rc, stdout, stderr)
     return rc
 
 
@@ -299,7 +303,7 @@ def open_encrypted_device(conf, raw_device_id, encrypted_device_id, key_file):
                key_file]
     (stdout, stderr, rc) = run_command(conf, command)
     if rc != 0:
-        raise exceptions.AgentExecutableException(rc, stdout, stderr)
+        raise exceptions.AgentExecutableException(command, rc, stdout, stderr)
     return rc
 
 
@@ -308,5 +312,38 @@ def close_encrypted_device(conf, encrypted_device_id):
                encrypted_device_id]
     (stdout, stderr, rc) = run_command(conf, command)
     if rc != 0:
-        raise exceptions.AgentExecutableException(rc, stdout, stderr)
+        raise exceptions.AgentExecutableException(command, rc, stdout, stderr)
     return rc
+
+
+def log_to_dcm(lvl, msg, *args, **kwargs):
+    l_logger = logging.getLogger("dcm.agent.log.to.agent.manager")
+    l_logger.log(lvl, msg, *args, **kwargs)
+
+
+def build_assertion_exception(logger, msg):
+    details_out = " === Stack trace Begin === " + os.linesep
+    for threadId, stack in sys._current_frames().items():
+        details_out = details_out + os.linesep + \
+            "##### Thread %s #####" % threadId + os.linesep
+        for filename, lineno, name, line in traceback.extract_stack(stack):
+            details_out = details_out + os.linesep + \
+                'File: "%s", line %d, in %s' % (filename, lineno, name)
+        if line:
+            details_out = details_out + os.linesep + line.strip()
+
+    details_out = " === Stack trace End === " + os.linesep
+
+    msg = msg + " | " + details_out
+    logger.error(msg)
+
+
+def generate_token():
+    l = 30 + random.randint(0, 29)
+    token = ''.join(random.choice(string.ascii_letters + string.digits +
+                                  "-_!@#^(),.=+") for x in range(l))
+    return token
+
+
+def base64type_convertor(b64str):
+    return base64.b64decode(b64str).decode("utf-8")

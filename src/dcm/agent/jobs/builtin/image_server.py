@@ -13,7 +13,7 @@
 #  ======================================================================
 
 import os
-from dcm.agent import exceptions
+from dcm.agent import exceptions, utils
 import dcm.agent.jobs.direct_pass as direct_pass
 
 
@@ -38,14 +38,14 @@ class ImageServer(direct_pass.DirectPass):
         ("The architecture of the image.", True, str),
         "cloudAccessKey":
         ("The access key for the cloud where the server is being imaged.",
-         True, str),
+         True, utils.base64type_convertor),
         "cloudSecretKey":
         ("The secret key for the cloud where the server is being imaged.",
-         True, str),
+         True, utils.base64type_convertor),
         "storageCertificate":
-        ("The storage certificate.", True, str),
+        ("The storage certificate.", True, utils.base64type_convertor),
         "storagePrivateKey":
-        ("The storage private key.", True, str)
+        ("The storage private key.", True, utils.base64type_convertor)
     }
 
     def __init__(self, conf, job_id, items_map, name, arguments):
@@ -79,8 +79,8 @@ class ImageServer(direct_pass.DirectPass):
                 self.arguments["type"],
                 self.arguments["accountNumber"],
                 build_dir,
-                self.arguments["cloudAccessKey"].decode("utf-8"),
-                self.arguments["cloudSecretKey"].decode("utf-8"),
+                self.arguments["cloudAccessKey"],
+                self.arguments["cloudSecretKey"],
                 cert_file_name,
                 pk_file_name]
             try:

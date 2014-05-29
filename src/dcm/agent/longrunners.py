@@ -63,7 +63,7 @@ class JobRunner(threading.Thread):
         done = False
         while not done:
             try:
-                work = self._queue.get(False)
+                work = self._queue.get(True)
                 if work.quit:
                     done = True
                     continue
@@ -98,7 +98,8 @@ class JobRunner(threading.Thread):
                                                    job_reply.job_status))
 
             except Queue.Empty:
-                pass
+                _g_logger.exception("The queue was empty.  This shouldn't "
+                                    "happen often")
             except:
                 _g_logger.exception("Something went wrong processing the job")
             finally:
@@ -174,7 +175,7 @@ class LongRunner(parent_receive_q.ParentReceiveQObserver):
 
     def _job_cleanup(self, job_id):
         with self._lock:
-            _g_logger.debug("####### Removing job %d from the table" % job_id)
+            _g_logger.debug("Removing job %d from the table" % job_id)
             del self._job_table[job_id]
 
     def lookup_job(self, job_id):

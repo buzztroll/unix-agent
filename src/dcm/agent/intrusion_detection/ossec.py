@@ -2,11 +2,13 @@ import logging
 import os
 import time
 
+import dcm.agent.intrusion_detection.interface as id_iface
+
 
 _g_logger = logging.getLogger(__name__)
 
 
-class OssecIntrusion(object):
+class OssecIntrusion(id_iface.AgentIntrusionDetection):
     def __init__(self, conf, log_alert):
         self._conf = conf
         self._log_alert = None
@@ -96,9 +98,9 @@ class OssecIntrusion(object):
                 elif level == 9 or level == 10:
                     level = 5
                 elif level < 16:
-                    level = level - 5;
+                    level -= 5
                 else:
-                    level = 10;
+                    level = 10
 
                 if level > 0:
                     if subject is None:
@@ -109,3 +111,12 @@ class OssecIntrusion(object):
 
                 self._last_alert = tm
 
+    def start(self):
+        pass
+
+    def stop(self):
+        pass
+
+
+def load_plugin(conf, alert_sender):
+    return OssecIntrusion(conf, alert_sender)

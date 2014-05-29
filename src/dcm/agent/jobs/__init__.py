@@ -37,7 +37,13 @@ class Plugin(object):
         self.items_map = items_map
         self.arguments = arguments
         self.args = ArgHolder()
-        self._validate_arguments()
+        try:
+            self._validate_arguments()
+        except exceptions.AgentPluginBadParameterException:
+            raise
+        except Exception as ex:
+            raise exceptions.AgentPluginBadParameterException(
+                self.name, ex.message)
 
     def _validate_arguments(self):
         # validate that all of the required arguments were sent
@@ -50,14 +56,20 @@ class Plugin(object):
         # validate that nothing extra was sent
         for arg in self.arguments:
             if arg not in self.protocol_arguments:
-                _g_logger.warn("The argument %s was sent from the agent "
-                               "manager but is not understood by this "
-                               "command." % arg)
+                utils.log_to_dcm(logging.WARN,
+                                 "The argument %s was sent from the agent "
+                                 "manager but is not understood by this "
+                                 "command." % arg)
             else:
                 h, mandatory, t = self.protocol_arguments[arg]
                 a = self.arguments[arg]
                 if a is not None:
-                    a = t(a)
+                    try:
+                        a = t(a)
+                    except:
+                        raise exceptions.AgentPluginBadParameterException(
+                            self.name, "Parameter %s has an invalid "
+                                       "value" % arg)
                 setattr(self.args, arg, a)
 
     @utils.not_implemented_decorator
@@ -72,7 +84,6 @@ class Plugin(object):
 
     def cancel(self, reply_rpc, *args, **kwargs):
         pass
-
 
 
 # a fork plugin.  Fork an executable and wait for it to complete.
@@ -126,7 +137,7 @@ class ExePlugin(Plugin):
         pass
 
 
-# we should use stevedore for this
+# we could use stevedore for this if we are ok with another dependency
 def load_python_module(
         module_name, conf, request_id, items_map, name, arguments):
     try:
@@ -208,10 +219,10 @@ def parse_plugin_doc(conf, name):
                     raise exceptions.AgentPluginConfigException(
                         "The section %s does not have an entry for type."
                         % section_name)
-                type = items_map["type"]
-                if type not in g_type_to_obj_map:
+                atype = items_map["type"]
+                if atype not in g_type_to_obj_map:
                     raise exceptions.AgentPluginConfigException(
-                        "The module type %s is not valid." % type)
+                        "The module type %s is not valid." % atype)
 
                 return items_map
             except ConfigParser.NoOptionError as conf_ex:

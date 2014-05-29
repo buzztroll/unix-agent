@@ -1,13 +1,17 @@
 import mock
-import unittest
 import time
 
 import dcm.agent.exceptions as exceptions
+from dcm.agent.messaging import persistence
 import dcm.agent.messaging.reply as reply
 import dcm.agent.messaging.types as types
+import dcm.agent.tests.unit.test_utils as test_utils
 
 
-class TestRequesterStandardPath(unittest.TestCase):
+class TestRequesterStandardPath(test_utils.AgentBaseUnitTester):
+
+    def setUp(self):
+        self.db = mock.Mock()
 
     def test_reply_ack_simple(self):
 
@@ -19,7 +23,8 @@ class TestRequesterStandardPath(unittest.TestCase):
         reply_payload = {"reply": "payload"}
 
         reply_rpc = reply.ReplyRPC(
-            reply_listener, "AGENT_ID", conn, request_id, message_id, {})
+            reply_listener, "AGENT_ID", conn, request_id,
+            {"request_id": request_id}, self.db)
         reply_rpc.ack(None, None, None)
         reply_rpc.reply(reply_payload)
 
@@ -37,7 +42,6 @@ class TestRequesterStandardPath(unittest.TestCase):
 
         self.assertEqual(ack_doc["type"], types.MessageTypes.ACK)
         self.assertEqual(ack_doc["request_id"], request_id)
-        self.assertEqual(ack_doc["message_id"], message_id)
 
         (param_list, keywords) = conn.send.call_args_list[1]
         reply_doc = param_list[0]
@@ -59,7 +63,7 @@ class TestRequesterStandardPath(unittest.TestCase):
 
         reply_rpc = reply.ReplyRPC(
             reply_listener, "AGENTID",
-            conn, request_id, message_id, incoming_message)
+            conn, request_id, incoming_message, self.db)
         reply_rpc.reply(reply_payload)
 
         reply_doc = {"type": types.MessageTypes.ACK,
@@ -89,7 +93,7 @@ class TestRequesterStandardPath(unittest.TestCase):
 
         reply_rpc = reply.ReplyRPC(
             reply_listener, "AGENTID",
-            conn, request_id, message_id, reply_payload)
+            conn, request_id, reply_payload, self.db)
         request_retrans_doc = {
             'type': types.MessageTypes.REQUEST,
             'request_id': request_id,
@@ -109,7 +113,7 @@ class TestRequesterStandardPath(unittest.TestCase):
 
         reply_rpc = reply.ReplyRPC(
             reply_listener, "AGENTID",
-            conn, request_id, message_id, reply_payload)
+            conn, request_id, reply_payload, self.db)
         request_retrans_doc = {
             'type': types.MessageTypes.REQUEST,
             'request_id': request_id,
@@ -131,7 +135,7 @@ class TestRequesterStandardPath(unittest.TestCase):
 
         reply_rpc = reply.ReplyRPC(
             reply_listener, "AGENTID",
-            conn, request_id, message_id, reply_payload)
+            conn, request_id, reply_payload, self.db)
         request_retrans_doc = {
             'type': types.MessageTypes.REQUEST,
             'request_id': request_id,
@@ -159,7 +163,7 @@ class TestRequesterStandardPath(unittest.TestCase):
 
         reply_rpc = reply.ReplyRPC(
             reply_listener, "AGENTID",
-            conn, request_id, message_id, reply_payload)
+            conn, request_id, reply_payload, self.db)
         reply_rpc.nak({})
 
     def test_reply_ack_timeout(self):
@@ -173,7 +177,7 @@ class TestRequesterStandardPath(unittest.TestCase):
 
         reply_rpc = reply.ReplyRPC(
             reply_listener, "AGENTID",
-            conn, request_id, message_id, incoming_message,
+            conn, request_id, incoming_message, self.db,
             timeout=1)
         reply_rpc.reply(reply_payload)
 
@@ -197,7 +201,7 @@ class TestRequesterStandardPath(unittest.TestCase):
 
         reply_rpc = reply.ReplyRPC(
             reply_listener, "AGENTID",
-            conn, request_id, message_id, reply_payload)
+            conn, request_id, reply_payload, self.db)
         reply_rpc.nak({})
 
         request_retrans_doc = {
@@ -215,7 +219,7 @@ class TestRequesterStandardPath(unittest.TestCase):
         message_id = "messageID"
         reply_payload = {"reply": "payload"}
         reply_rpc = reply.ReplyRPC(
-            None, "AGENTID", None, request_id, message_id, reply_payload)
+            None, "AGENTID", None, request_id, reply_payload, self.db)
         reply_doc = {
             "request_id": request_id,
             "message_id": message_id,
@@ -229,7 +233,10 @@ class TestRequesterStandardPath(unittest.TestCase):
         reply_rpc._sm.mapping_to_digraph()
 
 
-class TestRequestListener(unittest.TestCase):
+class TestRequestListener(test_utils.AgentBaseUnitTester):
+
+    def setUp(self):
+        self.db = persistence.AgentDB(":memory:")
 
     def test_read_request(self):
         conn = mock.Mock()
@@ -247,7 +254,7 @@ class TestRequestListener(unittest.TestCase):
         }
         disp.incoming_request.return_value = None
 
-        reply_listener = reply.RequestListener(conf, conn, disp)
+        reply_listener = reply.RequestListener(conf, conn, disp, self.db)
         reply_listener.incoming_parent_q_message(request_doc)
         self.assertTrue(disp.incoming_request.called)
 
@@ -266,7 +273,7 @@ class TestRequestListener(unittest.TestCase):
             'payload': {}
         }
         # just make sure that everything doesnt blow up on a repeated request
-        reply_listener = reply.RequestListener(conf, conn, disp)
+        reply_listener = reply.RequestListener(conf, conn, disp, self.db)
         reply_listener.incoming_parent_q_message(request_doc)
         reply_listener.incoming_parent_q_message(request_doc)
 
@@ -285,7 +292,7 @@ class TestRequestListener(unittest.TestCase):
             "payload": {}
         }
 
-        reply_listener = reply.RequestListener(conf, conn, disp)
+        reply_listener = reply.RequestListener(conf, conn, disp, self.db)
         reply_listener.incoming_parent_q_message(ack_doc)
 
         (param_list, keywords) = conn.send.call_args

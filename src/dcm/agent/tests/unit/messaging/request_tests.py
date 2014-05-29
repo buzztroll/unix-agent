@@ -116,10 +116,10 @@ class TestRequesterStandardPath(unittest.TestCase):
 
     def test_standard_with_callback_path(self):
 
-        called = False
+        self.called = False
 
         def reply_called(*args, **kwargs):
-            called = True
+            self.called = True
 
         with mock.patch('threading.Timer'):
             conn = mock.Mock()
@@ -144,7 +144,10 @@ class TestRequesterStandardPath(unittest.TestCase):
                          'request_id': send_doc['request_id']}
 
             requester.incoming_message(reply_doc)
-            parent_receive_q.poll()
+
+            while requester._sm._current_state !=\
+                    states.RequesterStates.ACK_SENT:
+                parent_receive_q.poll()
 
             self.assertEqual(states.RequesterStates.ACK_SENT,
                              requester._sm._current_state)

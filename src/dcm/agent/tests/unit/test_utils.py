@@ -5,6 +5,22 @@ import unittest
 import dcm.agent.utils as utils
 import dcm.agent.cmd.service as service
 
+_debugger_connected = False
+
+
+class AgentBaseUnitTester(unittest.TestCase):
+
+    @classmethod
+    def setUpClass(cls):
+        global _debugger_connected
+
+        PYDEVD_CONTACT = "PYDEVD_CONTACT"
+        if PYDEVD_CONTACT in os.environ and not _debugger_connected:
+            pydev_contact = os.environ[PYDEVD_CONTACT]
+            host, port = pydev_contact.split(":", 1)
+            utils.setup_remote_pydev(host, int(port))
+            _debugger_connected = True
+
 
 class TestProtocolCommands(unittest.TestCase):
 

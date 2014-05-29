@@ -51,7 +51,7 @@ class InitializeJob(jobs.Plugin):
          True, str),
         "encryptedEphemeralFsKey":
         ("The file system key for encrypted ephemeral file systems.",
-         True, str)
+         True, utils.base64type_convertor)
     }
 
     def __init__(self, conf, job_id, items_map, name, arguments):
@@ -75,37 +75,50 @@ class InitializeJob(jobs.Plugin):
                                      "c", self.args.customerId)})
 
     def run(self):
-        _g_logger.debug("Initialize run")
+        utils.log_to_dcm(logging.DEBUG, "Initialize run")
         # verify that the parameters in initialize match what came in on the
         # connection
         try:
             # TODO WALK THE INIT STEPS
             # rename
-            self.logger.info("Renaming the host to %s" % self.args.serverName)
+            utils.log_to_dcm(logging.INFO,
+                             "Renaming the host to %s" % self.args.serverName)
             res_doc = self.rename.run()
             if res_doc["return_code"] != 0:
                 res_doc["message"] = res_doc["message"] + " : rename failed"
                 return res_doc
 
             if self.conf.storage_mount_enabled:
-                self.logger.debug("Mount is enabled")
+                utils.log_to_dcm(logging.INFO, "Mount is enabled")
                 if self.args.encryptedEphemeralFsKey:
                     self.logger.info(
                         "Attempting to mount the ephemeral file system")
                     # TODO mount encrypted FS
 
             # make the temp directory
-            self.logger.info("Create the temporary directory")
+            utils.log_to_dcm(logging.INFO, "Create the temporary directory")
             res_doc = self.make_temp.run()
             if res_doc["return_code"] != 0:
                 res_doc["message"] = res_doc["message"] + " : makeTemp failed"
                 return res_doc
             # add customer user
-            self.logger.info("Adding the user")
+            utils.log_to_dcm(logging.INFO, "Adding the user")
             res_doc = self.add_user.run()
             if res_doc["return_code"] != 0:
                 res_doc["message"] = res_doc["message"] + " : addUser failed"
                 return res_doc
+
+            # we wait until initialize is called to write out the agent ID
+            # because it is not until this point that the full handshake
+            # is complete.  prior to this point we cannot shortcut the
+            # handshake
+            if self.conf.storage_idfile:
+                try:
+                    with open(self.conf.storage_idfile, "w") as fptr:
+                        fptr.write(str(self.conf.agent_id))
+                except Exception as ex:
+                    _g_logger.exception("Failed to write the agent ID to "
+                                        "%s" % self.storage_idfile)
 
             self.conf.state = "RUNNING"
             return {"return_code": 0, "message": "",

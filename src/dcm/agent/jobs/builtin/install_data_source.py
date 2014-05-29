@@ -32,13 +32,13 @@ class InstallDataSource(direct_pass.DirectPass):
         "cloudId":
         ("The ID or delegate of the cloud holding the data.", True, str),
         "apiAccessKey":
-        ("The cloud API access key.", True, str),
+        ("The cloud API access key.", True, utils.base64type_convertor),
         "apiSecretKey":
-        ("The cloud API secret key.", True, str),
+        ("The cloud API secret key.", True, utils.base64type_convertor),
         "configuration":
         ("The configuration data used to install the data source.  This "
          "is written to a file and passed to the installer script.",
-         True, str),
+         True, utils.base64type_convertor),
         "regionId":
         ("The cloud region ID that is holding the data.", False, str),
         "apiEndpoint":
@@ -54,9 +54,11 @@ class InstallDataSource(direct_pass.DirectPass):
         "storageAccount":
         ("The separate storage cloud account.", False, str),
         "storagePublicKey":
-        ("The separate storage cloud API access key.", False, str),
+        ("The separate storage cloud API access key.",
+         False, utils.base64type_convertor),
         "storagePrivateKey":
-        ("The separate storage cloud API secret key.", False, str)
+        ("The separate storage cloud API secret key.",
+         False, utils.base64type_convertor)
     }
 
     def __init__(self, conf, job_id, items_map, name, arguments):
@@ -64,25 +66,25 @@ class InstallDataSource(direct_pass.DirectPass):
             conf, job_id, items_map, name, arguments)
 
     def run(self):
-        service_id = self.arguments["serviceId"]
-        object_name = self.arguments["dataSourceImage"]
-        container_name = self.arguments["imageDirectory"]
-        configuration = self.arguments["configuration"]
+        service_id = self.args.serviceId
+        object_name = self.args.dataSourceImage
+        container_name = self.args.imageDirectory
+        configuration = self.args.configuration
 
-        endpoint = self.arguments.get("apiEndpoint", None)
-        account = self.arguments.get("apiAccount", None)
-        cloud_id = self.arguments["cloudId"]
-        access_key = self.arguments["apiAccessKey"]
-        secret_key = self.arguments["apiSecretKey"]
+        endpoint = self.args.apiEndpoint
+        account = self.args.apiAccount
+        cloud_id = self.args.cloudId
+        access_key = self.args.apiAccessKey
+        secret_key = self.args.apiSecretKey
         region_id = self.arguments.get("regionId", self.conf.region_id)
 
         if "storageDelegate" in self.arguments:
-            endpoint = self.arguments.get("storageEndpoint", None)
-            account = self.arguments.get("storageAccount", None)
-            cloud_id = self.arguments["storageDelegate"]
+            endpoint = self.args.storageEndpoint
+            account = self.args.storageAccount
+            cloud_id = self.args.storageDelegate
             region_id = self.arguments.get("regionId", self.conf.region_id)
-            access_key = self.arguments["storagePublicKey"]
-            secret_key = self.arguments["storagePrivateKey"]
+            access_key = self.args.storagePublicKey
+            secret_key = self.args.storagePrivateKey
 
         conf_file = self.conf.get_temp_file("installds.cfg")
         restore_file = self.conf.get_temp_file(object_name)

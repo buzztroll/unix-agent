@@ -95,8 +95,8 @@ class JobRunnerWorker(multiprocessing.Process):
                     elif wrk[0] == JobRunnerWorker.UNLOCK_JOB:
                         reply = self._unlock(wrk)
                     else:
-                        _g_logger.error("An unknown work type was received %s" %
-                                        wrk[0])
+                        _g_logger.error(
+                            "An unknown work type was received %s" % wrk[0])
                         continue
                     self._pipe.send(reply)
         except EOFError as eofEx:
@@ -125,8 +125,8 @@ class JobRunner(object):
         _g_logger.info("Sending the command %s to the child runner" % cmd)
         self._parent_conn.send((JobRunnerWorker.SYNC_JOB, cmd, cwd, env))
         (rc, stdout, stderr) = self._parent_conn.recv()
-        _g_logger.info("Output frim the command %s. rc=%d, stdout=%s, "
-                        "stderr=%s" % (cmd, rc, stdout, stderr))
+        _g_logger.info("Output from the command %s. rc=%d, stdout=%s, "
+                       "stderr=%s" % (cmd, rc, stdout, stderr))
         return (stdout, stderr, rc)
 
     def lock(self, timeout, lock_fs):

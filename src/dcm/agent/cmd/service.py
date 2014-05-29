@@ -5,15 +5,16 @@ import signal
 import sys
 
 import dcm.agent
-import dcm.agent.am_sender as am_sender
 import dcm.agent.config as config
 import dcm.agent.dispatcher as dispatcher
 import dcm.agent.exceptions as exceptions
 import dcm.agent.logger as logger
+from dcm.agent.messaging import persistence
 import dcm.agent.messaging.handshake as handshake
 import dcm.agent.messaging.reply as reply
 import dcm.agent.parent_receive_q as parent_receive_q
 import dcm.agent.utils as utils
+import dcm.agent.intrusion_detection as intrusion_detect
 
 
 _g_conf_file_env = "DCM_AGENT_CONF"
@@ -50,9 +51,15 @@ class DCMAgent(object):
         self.request_listener = None
         self.incoming_handshake_doc = None
         self.g_logger = logging.getLogger(__name__)
+        self.g_logger.info("Using DB %s" % conf.storage_dbfile)
+        self._db = persistence.AgentDB(conf.storage_dbfile)
+        self._intrusion_detection = None
 
     def kill_handler(self, signum, frame):
         self.shutdown_main_loop()
+
+    def stack_trace_handler(self, signum, frame):
+        utils.build_assertion_exception(self.g_logger, "signal stack")
 
     def shutdown_main_loop(self):
         self.shutting_down = True
@@ -61,6 +68,7 @@ class DCMAgent(object):
     def pre_threads(self):
         signal.signal(signal.SIGINT, self.kill_handler)
         signal.signal(signal.SIGTERM, self.kill_handler)
+        signal.signal(signal.SIGUSR2, self.stack_trace_handler)
 
         if self.conf.pydev_host:
             utils.setup_remote_pydev(self.conf.pydev_host,
@@ -76,12 +84,18 @@ class DCMAgent(object):
             # def get a connection object
             self.conn = config.get_connection_object(self.conf)
             self.disp = dispatcher.Dispatcher(self.conf)
-            self.request_listener = \
-                reply.RequestListener(self.conf, self.conn, self.disp)
+            self.request_listener = reply.RequestListener(
+                self.conf, self.conn, self.disp, self._db)
+
+            self._intrusion_detection = \
+                intrusion_detect.setup_intrusion_detection(self.conf, self.conn)
+            if self._intrusion_detection:
+                self._intrusion_detection.start()
 
             handshake_doc = handshake.get_handshake(self.conf)
             self.g_logger.debug("Using outgoing handshake document %s"
                                 % str(handshake_doc))
+            logger.set_dcm_connection(self.conf, self.conn)
             self.conn.connect(
                 self.request_listener, self.incoming_handshake, handshake_doc)
 
@@ -91,7 +105,8 @@ class DCMAgent(object):
             self.cleanup_agent()
 
     def incoming_handshake(self, incoming_handshake_doc):
-        self.g_logger.info("Incoming handshake %s" % str(incoming_handshake_doc))
+        self.g_logger.info(
+            "Incoming handshake %s" % str(incoming_handshake_doc))
         if self.incoming_handshake_doc is not None:
             # we already received a handshake, just return
             return True
@@ -101,8 +116,8 @@ class DCMAgent(object):
             return False
 
         self.conf.set_handshake(incoming_handshake_doc["handshake"])
-        ams = am_sender.LogAlert(self.conn)
-        logger.set_dcm_connection(ams)
+        utils.log_to_dcm(
+            logging.INFO, "A handshake was successful, starting the workers")
         self.disp.start_workers(self.request_listener)
 
         return True
@@ -112,9 +127,14 @@ class DCMAgent(object):
             try:
                 parent_receive_q.poll()
             except Exception as ex:
+                utils.log_to_dcm(
+                    logging.ERROR,
+                    "A top level exception occurred: %s" % ex.message)
                 self.g_logger.exception("A top level exception occurred")
 
     def cleanup_agent(self):
+        if self._intrusion_detection:
+            self._intrusion_detection.stop()
         if self.conf.jr:
             self.g_logger.debug("Shutting down the job runner")
             self.conf.jr.shutdown()
@@ -155,8 +175,8 @@ def parse_command_line(argv):
 
 def main(args=sys.argv):
     agent = None
+    cli_args, remaining_argv = parse_command_line(args)
     try:
-        cli_args, remaining_argv = parse_command_line(args)
 
         config_files = get_config_files(conffile=cli_args.conffile)
         conf = config.AgentConfig(config_files)

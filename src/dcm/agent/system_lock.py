@@ -19,15 +19,16 @@ class ServiceLockProcess(object):
         self._locked = False
         self._exe_path = exe_path
         self._lock_file = temp_file_path
-        (_, _, _, _, _, _, _, _, self._start_time, _) = os.stat(self._lock_file)
+        (_, _, _, _, _, _, _, _, self._start_time, _) =\
+            os.stat(self._lock_file)
 
         cmd = [exe_path, service_path, self._lock_file, str(timeout), name]
         _g_logger.debug("Running lock command %s" % str(cmd))
         self._process = subprocess.Popen(" ".join(cmd),
-                                   shell=True,
-                                   stdout=subprocess.PIPE,
-                                   stderr=subprocess.PIPE,
-                                   stdin=subprocess.PIPE)
+                                         shell=True,
+                                         stdout=subprocess.PIPE,
+                                         stderr=subprocess.PIPE,
+                                         stdin=subprocess.PIPE)
 
     def is_locked(self):
         # wait for the tmp file to be touched
@@ -85,7 +86,7 @@ class ServiceLock(object):
             raise exceptions.AgentPluginOperationException("Already locked")
 
         lock_timeout = datetime.datetime.now() + \
-                       datetime.timedelta(milliseconds=timeout)
+            datetime.timedelta(milliseconds=timeout)
 
         self._cond.acquire()
         try:

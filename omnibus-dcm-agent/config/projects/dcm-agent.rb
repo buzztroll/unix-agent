@@ -12,6 +12,7 @@ build_iteration 1
 dependency "preparation"
 
 # dcm-agent dependencies/components
+dependency "sqlite"
 dependency "python"
 dependency "pip"
 dependency "pyyaml"
