@@ -68,7 +68,7 @@ def get_connection_object(conf):
 class ConfigOpt(object):
 
     def __init__(self, section, name, t, default=None,
-                 options=None, minv=None, maxv=None, help=None):
+                 options=None, minv=None, maxv=None, help_msg=None):
         self.section = section
         self.name = name
         self.my_type = t
@@ -76,7 +76,7 @@ class ConfigOpt(object):
         self.default = default
         self.minv = minv
         self.maxv = maxv
-        self.help = help
+        self.help_msg = help_msg
 
     def get_option_name(self):
         option_name = "%s_%s" % (self.section, self.name)
@@ -86,7 +86,7 @@ class ConfigOpt(object):
         return self.default
 
     def get_help(self):
-        return self.help
+        return self.help_msg
 
     def get_value(self, parser, default=None, **kwargs):
         if default is None:
@@ -134,9 +134,9 @@ class ConfigOpt(object):
 
 class FilenameOpt(ConfigOpt):
 
-    def __init__(self, section, name, default=None, help=None):
+    def __init__(self, section, name, default=None, help_msg=None):
         super(FilenameOpt, self).__init__(section, name, str, default=default,
-                                          help=help)
+                                          help_msg=help_msg)
 
     def get_value(self, parser, relative_path=None, **kwarg):
         v = super(FilenameOpt, self).get_value(parser)
@@ -153,7 +153,7 @@ class AgentConfig(object):
     When/if multiprocessing is used it will be send to the worker threads.
 
     It is semi-read-only.  Any write operation must be done with thread
-    primatives.  The exception is set handshake because that will be done
+    primitives.  The exception is set handshake because that will be done
     before any thread is created.
     """
 
@@ -209,11 +209,6 @@ class AgentConfig(object):
         self.zone_id = handshake_doc["zoneId"]
         self.server_id = handshake_doc["serverId"]
         self.server_name = handshake_doc["serverName"]
-        #self.ephemeral_file_system = handshake_doc["ephemeralFileSystem"]
-        #self.encrypted_ephemeral_fs_key = \
-        #    handshake_doc["encryptedEphemeralFsKey"]
-        #else:
-        #    raise exceptions.AgentHandshakeException()
 
     def get_script_location(self, name):
         if self.storage_script_dir is not None:
@@ -330,13 +325,9 @@ def _build_options_list():
         ConfigOpt("jobs", "retain_job_time", int, default=3600),
         ConfigOpt("test", "skip_handshake", bool, default=False),
 
-        ConfigOpt("intrusion", "type", str, default="ossec",
-                  help="The name of the intrusion detection system to use.  "
-                       "Currently only ossec is available."),
-        ConfigOpt("intrusion", "enabled", bool, default=True),
-        ConfigOpt("intrusion", "file", str,
-                  default="/var/ossec/logs/alerts/alerts.log",
-                  help="The file where alerts are logged."),
+        ConfigOpt("intrusion", "module", str, default=None,
+                  help="The python module to be loaded for handling intrusion "
+                       "detection.")
     ]
 
     return option_list

@@ -137,7 +137,7 @@ class ExePlugin(Plugin):
         pass
 
 
-# we should use stevedore for this
+# we could use stevedore for this if we are ok with another dependency
 def load_python_module(
         module_name, conf, request_id, items_map, name, arguments):
     try:

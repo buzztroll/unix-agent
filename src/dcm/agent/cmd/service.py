@@ -14,6 +14,7 @@ import dcm.agent.messaging.handshake as handshake
 import dcm.agent.messaging.reply as reply
 import dcm.agent.parent_receive_q as parent_receive_q
 import dcm.agent.utils as utils
+import dcm.agent.intrusion_detection as intrusion_detect
 
 
 _g_conf_file_env = "DCM_AGENT_CONF"
@@ -52,6 +53,7 @@ class DCMAgent(object):
         self.g_logger = logging.getLogger(__name__)
         self.g_logger.info("Using DB %s" % conf.storage_dbfile)
         self._db = persistence.AgentDB(conf.storage_dbfile)
+        self._intrusion_detection = None
 
     def kill_handler(self, signum, frame):
         self.shutdown_main_loop()
@@ -84,6 +86,11 @@ class DCMAgent(object):
             self.disp = dispatcher.Dispatcher(self.conf)
             self.request_listener = reply.RequestListener(
                 self.conf, self.conn, self.disp, self._db)
+
+            self._intrusion_detection = \
+                intrusion_detect.setup_intrusion_detection(self.conf, self.conn)
+            if self._intrusion_detection:
+                self._intrusion_detection.start()
 
             handshake_doc = handshake.get_handshake(self.conf)
             self.g_logger.debug("Using outgoing handshake document %s"
@@ -126,6 +133,8 @@ class DCMAgent(object):
                 self.g_logger.exception("A top level exception occurred")
 
     def cleanup_agent(self):
+        if self._intrusion_detection:
+            self._intrusion_detection.stop()
         if self.conf.jr:
             self.g_logger.debug("Shutting down the job runner")
             self.conf.jr.shutdown()
