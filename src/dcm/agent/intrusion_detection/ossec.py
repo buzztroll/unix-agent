@@ -98,9 +98,9 @@ class OssecIntrusion(id_iface.AgentIntrusionDetection):
                 elif level == 9 or level == 10:
                     level = 5
                 elif level < 16:
-                    level = level - 5;
+                    level -= 5
                 else:
-                    level = 10;
+                    level = 10
 
                 if level > 0:
                     if subject is None:

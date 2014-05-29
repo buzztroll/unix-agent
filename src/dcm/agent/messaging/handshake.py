@@ -12,7 +12,6 @@
 #   is obtained from Dell, Inc.
 #  ======================================================================
 import os
-import socket
 from dcm.agent import cloudmetadata
 
 import dcm.agent

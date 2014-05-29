@@ -257,34 +257,34 @@ class AgentConfig(object):
 def _build_options_list():
     option_list = [
         ConfigOpt("pydev", "host", str, default=None, options=None,
-                  help="The hostname of the pydev debugger"),
+                  help_msg="The hostname of the pydev debugger"),
         ConfigOpt("pydev", "port", int, default=None, options=None,
-                  help="The port where the pydev debugger is listening"),
+                  help_msg="The port where the pydev debugger is listening"),
 
         ConfigOpt("workers", "count", int, default=1, options=None,
-                  help="The number of worker threads that will be "
-                       "processing incoming requests"),
+                  help_msg="The number of worker threads that will be "
+                           "processing incoming requests"),
 
         ConfigOpt("workers", "long_runner_threads", int, default=1,
                   options=None,
-                  help="The number of worker threads that will be "
-                       "processing long running jobs (anything that "
-                       "returns a job description)"),
+                  help_msg="The number of worker threads that will be "
+                           "processing long running jobs (anything that "
+                           "returns a job description)"),
 
         ConfigOpt("connection", "type", str, default="wss"
                                                      "", options=None,
-                  help="The type of connection object to use.  Supported "
-                       "types are ws and fallback"),
+                  help_msg="The type of connection object to use.  Supported "
+                           "types are ws and fallback"),
         FilenameOpt("connection", "source_file", default=None),
         FilenameOpt("connection", "dest_file", default=None),
         ConfigOpt("connection", "agentmanager_url", str, default=None,
-                  help="The url of the agent manager with which this "
-                       "agent will communicate."),
+                  help_msg="The url of the agent manager with which this "
+                           "agent will communicate."),
         FilenameOpt("logging", "configfile", default=None,
-                    help="The location of the log configuration file"),
+                    help_msg="The location of the log configuration file"),
 
         FilenameOpt("plugin", "configfile",
-                    help="The location of the plugin configuration file"),
+                    help_msg="The location of the plugin configuration file"),
 
         FilenameOpt("storage", "temppath", default="/tmp"),
         FilenameOpt("storage", "services_dir", default="/mnt/services"),
@@ -304,30 +304,30 @@ def _build_options_list():
         ConfigOpt("system", "user", str, default="dcm"),
 
         ConfigOpt("cloud", "type", str, default=CLOUD_TYPES.Amazon,
-                  help="The type of cloud on which this agent is running"),
+                  help_msg="The type of cloud on which this agent is running"),
         ConfigOpt("cloud", "metadata_url", str,
                   default=None,
-                  help="The url of the metadata server.  Not applicable "
-                       "to all clouds."),
+                  help_msg="The url of the metadata server.  Not applicable "
+                           "to all clouds."),
 
         ConfigOpt("messaging", "retransmission_timeout", float,
                   default=5),
         ConfigOpt("messaging", "max_at_once", int, default=-1,
-                  help="The maximum number of commands that can be "
-                       "outstanding at once.  -1 means infinity."),
+                  help_msg="The maximum number of commands that can be "
+                           "outstanding at once.  -1 means infinity."),
 
         ConfigOpt("platform", "script_locations", list,
                   default="common-linux"),
         ConfigOpt("platform", "name", str, default=None,
-                  help="The platform/distribution on which this agent is"
-                       "being installed.",
+                  help_msg="The platform/distribution on which this agent is"
+                           "being installed.",
                   options=["ubuntu", "el", "suse", "debian"]),
         ConfigOpt("jobs", "retain_job_time", int, default=3600),
         ConfigOpt("test", "skip_handshake", bool, default=False),
 
         ConfigOpt("intrusion", "module", str, default=None,
-                  help="The python module to be loaded for handling intrusion "
-                       "detection.")
+                  help_msg="The python module to be loaded for handling "
+                           "intrusion detection.")
     ]
 
     return option_list

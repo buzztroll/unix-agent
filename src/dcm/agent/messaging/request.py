@@ -98,7 +98,7 @@ class RequestRPC(object):
     def _send_reply_ack(self):
         # the ack reuses the message id that it is acknowledging
         # this is here just to help track exchanges
-        self.ack_sender = self.ack_sender + 1
+        self.ack_sender += 1
         if self.ack_sender > 1:
             pass
         message_id = self._reply_doc['message_id']
@@ -205,11 +205,13 @@ class RequestRPC(object):
             msg = ("When a reply happens in the REQUESTING state the message "
                    "should always be in the list.  This situation should "
                    "never occur")
+            _g_logger.error(msg)
 
         if self._reply_doc is not None:
             msg = ("There should be exactly 1 reply received.  Thus is the "
                    "reply_doc attribute is not None something we terribly "
                    "wrong.")
+            _g_logger.error(msg)
 
         self._reply_doc = message
 
@@ -240,11 +242,13 @@ class RequestRPC(object):
         if self._message_timer is not None:
             msg = ("In the REQUESTED state the message ID should not be in the"
                    " list")
+            _g_logger.error(msg)
 
         if self._reply_doc is not None:
             msg = ("There should be exactly 1 reply received.  Thus is the "
                    "reply_doc attribute is not None something we terribly "
                    "wrong.")
+            _g_logger.error(msg)
 
         _g_logger.debug("The incoming reply is %s" % str(message))
         self._reply_doc = message
