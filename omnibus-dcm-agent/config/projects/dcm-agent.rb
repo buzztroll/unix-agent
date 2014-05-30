@@ -1,4 +1,3 @@
-
 name "dcm-agent"
 maintainer "Dell Software Group"
 homepage "http://www.enstratius.com/"

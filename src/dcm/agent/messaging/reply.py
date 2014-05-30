@@ -595,7 +595,7 @@ class ReplyRPC(object):
 
 class RequestListener(object):
 
-    def __init__(self, conf, sender_connection, dispatcher, db):
+    def __init__(self, conf, sender_connection, dispatcher, db, id_system=None):
         self._conn = sender_connection
         self._dispatcher = dispatcher
         self._requests = {}
@@ -606,6 +606,7 @@ class RequestListener(object):
         self._shutdown = False
         self._conf = conf
         self._db = db
+        self._id_system = id_system
 
         self._db.starting_agent()
 
@@ -654,6 +655,12 @@ class RequestListener(object):
                 # send it through, state machine will deal with it
                 req = self._requests[request_id]
                 req.incoming_message(incoming_doc)
+                return
+
+            # if it is a alert message short circuit
+            if incoming_doc["type"] == types.MessageTypes.ALERT_ACK:
+                if self._id_system:
+                    self._id_system.incoming_message(incoming_doc)
                 return
 
             # is this an old completed request that is in the DB

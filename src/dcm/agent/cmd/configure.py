@@ -215,6 +215,8 @@ def pick_meta_data(conf_d):
         mu = "http://169.254.169.254/1.0/meta-data/"
     elif cloud == "OpenStack":
         mu = "http://169.254.169.254/openstack/2012-08-10/meta_data.json"
+    elif cloud == "Google":
+        mu = "http://metadata.google.internal/computeMetadata/v1"
     elif cloud == "CloudStack":
         mu = "lastest/instance-id"
     elif cloud == "CloudStack3":
