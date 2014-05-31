@@ -1,5 +1,5 @@
 source 'https://rubygems.org'
 
-gem 'chef', '~> 11.10.0'
-gem 'omnibus', '~> 1.3.0'
+gem 'chef', '~> 11.10.2'
+gem 'omnibus', '~> 2.0'
 gem 'omnibus-software', :git => 'git://github.com/opscode/omnibus-software.git', :branch => 'master'

@@ -13,6 +13,7 @@ project_name = 'dcm-agent'
 
 Vagrant.configure('2') do |config|
 
+  config.vm.boot_timeout=1200
   config.vm.hostname = "#{project_name}-omnibus-build-lab"
 
   config.vm.define 'ubuntu-10.04' do |c|
