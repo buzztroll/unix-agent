@@ -34,7 +34,7 @@ class JobRunnerWorker(multiprocessing.Process):
                            % (cmd, env))
 
             process = subprocess.Popen(cmd,
-                                       shell=True,
+                                       #shell=True,
                                        stdout=subprocess.PIPE,
                                        stderr=subprocess.PIPE,
                                        cwd=cwd,
@@ -119,8 +119,8 @@ class JobRunner(object):
         self._child.start()
 
     def run_command(self, cmd, cwd=None, env=None):
-        if type(cmd) == list or type(cmd) == tuple:
-            cmd = " ".join([str(i) for i in cmd])
+        # if type(cmd) == list or type(cmd) == tuple:
+        #     cmd = " ".join([str(i) for i in cmd])
 
         _g_logger.info("Sending the command %s to the child runner" % cmd)
         self._parent_conn.send((JobRunnerWorker.SYNC_JOB, cmd, cwd, env))

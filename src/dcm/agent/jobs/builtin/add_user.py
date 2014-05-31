@@ -42,7 +42,7 @@ class AddUser(direct_pass.DirectPass):
                                    self.args.lastName,
                                    self.args.administrator,
                                    self.args.password]
-        self.ssh_public_key = arguments["authentication"]
+        self.ssh_public_key = self.args.authentication
 
     def run(self):
         key_file = os.path.join(
