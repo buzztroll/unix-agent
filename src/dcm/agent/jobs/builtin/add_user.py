@@ -21,7 +21,6 @@ class AddUser(direct_pass.DirectPass):
 
     protocol_arguments = {
         "userId": ("The new unix account name to be created", True, str),
-        "password": ("The user's password", False, str),
         "firstName": ("The user's first name", True, str),
         "lastName": ("The user's last name", True, str),
         "authentication": ("The user's ssh public key", True, str),
@@ -34,24 +33,21 @@ class AddUser(direct_pass.DirectPass):
         super(AddUser, self).__init__(
             conf, job_id, items_map, name, arguments)
 
-        if not self.args.password:
-            self.args.password = utils.generate_password()
         self.ordered_param_list = [self.args.userId,
                                    self.args.userId,
                                    self.args.firstName,
                                    self.args.lastName,
-                                   self.args.administrator,
-                                   self.args.password]
+                                   self.args.administrator]
         self.ssh_public_key = self.args.authentication
 
     def run(self):
-        key_file = os.path.join(
-            self.conf.storage_temppath, self.args.userId + ".pub")
+        key_file = self.conf.get_temp_file(self.args.userId + ".pub")
 
         try:
             if self.ssh_public_key:
                 with open(key_file, "w") as f:
                     f.write(self.ssh_public_key)
+                self.ordered_param_list.append(key_file)
             return super(AddUser, self).run()
         finally:
             if os.path.exists(key_file):
