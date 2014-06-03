@@ -1,7 +1,9 @@
 name "sqlite"
-version "3.7.16.2"
+default_version "3.7.16.2"
 
-vtag = version.split('.').map { |elt| '%02d' % elt.to_i }.join[1..-1]
+dependency "gdbm"
+
+vtag = default_version.split('.').map { |elt| '%02d' % elt.to_i }.join[1..-1]
 
 source :url => "http://www.sqlite.org/2013/sqlite-autoconf-#{vtag}.tar.gz",
        :md5 => "ce7d2bc0d9b8dd18995b888c6b0b220f"

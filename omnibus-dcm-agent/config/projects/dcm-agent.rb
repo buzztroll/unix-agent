@@ -2,7 +2,7 @@ name "dcm-agent"
 maintainer "Dell Software Group"
 homepage "http://www.enstratius.com/"
 
-replaces        "dcm-agent"
+name            "dcm-agent"
 install_path    "/opt/dcm-agent"
 build_version   Omnibus::BuildVersion.new.semver
 build_iteration 1

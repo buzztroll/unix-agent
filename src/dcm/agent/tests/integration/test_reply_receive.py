@@ -288,7 +288,6 @@ class TestProtocolCommands(reply.ReplyObserverInterface):
             "command": "add_user",
             "arguments": {"customerId": self.customer_id,
                           "userId": user_name,
-                          "password": None,
                           "firstName": "buzz",
                           "lastName": "troll",
                           "authentication": "public key data",
