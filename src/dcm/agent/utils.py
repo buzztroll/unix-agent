@@ -342,8 +342,7 @@ def build_assertion_exception(logger, msg):
         if line:
             details_out = details_out + os.linesep + line.strip()
 
-    details_out = " === Stack trace End === " + os.linesep
-
+    details_out = details_out + os.linesep + " === Stack trace End === "
     msg = msg + " | " + details_out
     logger.error(msg)
 

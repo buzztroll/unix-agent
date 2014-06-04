@@ -68,11 +68,11 @@ class _WebSocketClient(ws4py_client.WebSocketClient):
         _g_logger.debug("Web socket %s has been opened" % self._url)
 
     def closed(self, code, reason=None):
-        _g_logger.debug("Web socket %s has been closed %d %s"
+        _g_logger.info("Web socket %s has been closed %d %s"
                         % (self._url, code, reason))
-        if not self._dcm_closed_called:
-            self.manager.event_error(Exception(
-                "Connection unexpectedly closed: %d %s" % (code, reason)))
+        _g_logger.debug("Sending error event to connection manager.")
+        self.manager.throw_error(Exception(
+            "Connection unexpectedly closed: %d %s" % (code, reason)))
 
     def close(self, code=1000, reason=''):
         self._dcm_closed_called = True
@@ -167,12 +167,16 @@ class WebSocketConnection(threading.Thread):
             self._backoff_time = self._max_backoff
         self._total_errors += 1
         self._errors_since_success += 1
+        self._cond.notify()
 
     def _throw_error(self, exception):
         _g_logger.debug("throwing error %s" % str(exception))
         parent_receive_q.register_user_callback(self.event_error,
                                                 {"exception": exception})
         self._cond.notify()
+
+    def throw_error(self, exception):
+        self._throw_error(exception)
 
     def lock(self):
         self._cond.acquire()

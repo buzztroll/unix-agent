@@ -271,8 +271,7 @@ def _build_options_list():
                            "processing long running jobs (anything that "
                            "returns a job description)"),
 
-        ConfigOpt("connection", "type", str, default="wss"
-                                                     "", options=None,
+        ConfigOpt("connection", "type", str, default="ws", options=None,
                   help_msg="The type of connection object to use.  Supported "
                            "types are ws and fallback"),
         FilenameOpt("connection", "source_file", default=None),
