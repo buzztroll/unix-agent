@@ -7,12 +7,11 @@ cd $DIR
 
 pkg_base=$1
 
-p=`ls -tc1 /agent/pkgs/*$pkg_base*.deb`
-if [ $? -eq 0 ]; then
-    pkg=`echo $p | head -n 1`
+if [ -e /agent/pkgs/$pkg_base ]; then
+    pkg=/agent/pkgs/$pkg_base
 else
-   echo "No package found for $t.  Skipping this test"
-   exit 1
+    echo "The package $1 was not found"
+    exit 1
 fi
 
 output_dir=$DIR/testoutput/`hostname`
@@ -26,4 +25,6 @@ else
 fi
 
 export SYSTEM_CHANGING_TEST=1
-/opt/dcm-agent/embedded/bin/nosetests -vx --tests dcm.agent.tests.integration.test_reply_receive 2>&1 | tee $output_dir/nosetests.output
+/opt/dcm-agent/embedded/bin/dcm-agent-configure --cloud Amazon --url ws:/enstratius.com:16309/ws --base-path /dcm
+
+/opt/dcm-agent/embedded/bin/nosetests dcm.agent.tests 2>&1 | tee $output_dir/nosetests.output

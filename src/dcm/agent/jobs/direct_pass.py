@@ -54,6 +54,7 @@ class DirectPass(jobs.Plugin):
         command_list = [self.exe_path]
         command_list.extend(self.ordered_param_list)
         _g_logger.debug("Plugin running the command %s" % str(command_list))
+
         (stdout, stderr, rc) = utils.run_command(
             self.conf, command_list, cwd=self.cwd)
         _g_logger.debug("Command %s: stdout %s.  stderr: %s" %
