@@ -11,7 +11,7 @@ for p in $packages;
 do
     echo "Making the package for $p..."
     kitchen converge $p
-    for f in pkg/*;
+    for f in pkg/{*.deb,*.rpm};
     do
         mv $f $f.$p
     done
