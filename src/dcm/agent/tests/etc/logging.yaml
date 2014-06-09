@@ -46,11 +46,11 @@ handlers:
         stream: ext://sys.stdout
 
     dcm_logger:
-        class: dcm.agent.logger.dcmLogger
-        level: DEBUG
-        formatter: simple
+        class: logging.StreamHandler
         filters: [add_request]
-        encoding: utf8
+        level: DEBUG
+        formatter: message
+        stream: ext://sys.stdout
 
 
 loggers:

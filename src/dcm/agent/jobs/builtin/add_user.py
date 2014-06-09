@@ -33,25 +33,21 @@ class AddUser(direct_pass.DirectPass):
         super(AddUser, self).__init__(
             conf, job_id, items_map, name, arguments)
 
-        self.ordered_param_list = [arguments["userId"],
-                                   arguments["userId"],
-                                   arguments["firstName"],
-                                   arguments["lastName"],
-                                   arguments["administrator"],
-                                   arguments["password"]]
-        self.ssh_public_key = arguments["authentication"]
-
-        if not arguments['password']:
-            self.arguments["password"] = utils.generate_password()
+        self.ordered_param_list = [self.args.userId,
+                                   self.args.userId,
+                                   self.args.firstName,
+                                   self.args.lastName,
+                                   self.args.administrator]
+        self.ssh_public_key = self.args.authentication
 
     def run(self):
-        key_file = os.path.join(
-            self.conf.storage_temppath, self.arguments["userId"] + ".pub")
+        key_file = self.conf.get_temp_file(self.args.userId + ".pub")
 
         try:
             if self.ssh_public_key:
                 with open(key_file, "w") as f:
                     f.write(self.ssh_public_key)
+                self.ordered_param_list.append(key_file)
             return super(AddUser, self).run()
         finally:
             if os.path.exists(key_file):

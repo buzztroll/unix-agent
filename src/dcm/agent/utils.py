@@ -129,13 +129,23 @@ def setup_remote_pydev(host, port):
 
 
 def run_command(conf, cmd_line, cwd=None, env=None):
+    log_file = None
     if env is None:
+        _, log_file = tempfile.mkstemp(dir=conf.storage_temppath)
         env = {"DCM_USER": conf.system_user,
                "DCM_BASEDIR": conf.storage_base_dir,
-               "DCM_SERVICES_DIR": conf.storage_services_dir}
+               "DCM_SERVICES_DIR": conf.storage_services_dir,
+               "DCM_LOG_FILE": log_file}
     if type(cmd_line) == list or type(cmd_line) == tuple:
         " ".join([str(i) for i in cmd_line])
-    return conf.jr.run_command(cmd_line, cwd=cwd, env=env)
+    rc = conf.jr.run_command(cmd_line, cwd=cwd, env=env)
+    if log_file:
+        # read everything logged and send it to the logger
+        with open(log_file, "r") as fptr:
+            for line in fptr.readlines():
+                log_to_dcm(logging.INFO, line)
+        os.remove(log_file)
+    return rc
 
 
 def run_script(conf, name, args):
@@ -332,8 +342,7 @@ def build_assertion_exception(logger, msg):
         if line:
             details_out = details_out + os.linesep + line.strip()
 
-    details_out = " === Stack trace End === " + os.linesep
-
+    details_out = details_out + os.linesep + " === Stack trace End === "
     msg = msg + " | " + details_out
     logger.error(msg)
 

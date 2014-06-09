@@ -9,3 +9,4 @@ class MessageTypes(object):
     REPLY = "REPLY"
     LOG = "LOG"
     ALERT = "ALERT"
+    ALERT_ACK = "ALERT_ACK"

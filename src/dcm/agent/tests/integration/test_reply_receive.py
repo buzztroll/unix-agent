@@ -11,6 +11,7 @@ import tempfile
 import threading
 import pwd
 import datetime
+import unittest
 import uuid
 import logging
 import nose
@@ -119,6 +120,7 @@ class TestProtocolCommands(reply.ReplyObserverInterface):
         PYDEVD_CONTACT = "PYDEVD_CONTACT"
         if PYDEVD_CONTACT in os.environ:
             pydev_contact = os.environ[PYDEVD_CONTACT]
+            print pydev_contact
             host, port = pydev_contact.split(":", 1)
             utils.setup_remote_pydev(host, int(port))
         # create the config file and other needed dirs
@@ -288,7 +290,6 @@ class TestProtocolCommands(reply.ReplyObserverInterface):
             "command": "add_user",
             "arguments": {"customerId": self.customer_id,
                           "userId": user_name,
-                          "password": None,
                           "firstName": "buzz",
                           "lastName": "troll",
                           "authentication": "public key data",

@@ -16,7 +16,7 @@
 #
 
 name "python"
-version "2.7.5"
+default_version "2.7.5"
 
 dependency "ncurses"
 dependency "zlib"
@@ -29,6 +29,7 @@ source :url => "http://python.org/ftp/python/#{version}/Python-#{version}.tgz",
 relative_path "Python-#{version}"
 
 env = {
+  "CPPFLAGS" => "-I#{install_dir}/embedded/include -O3 -g -pipe",
   "CFLAGS" => "-I#{install_dir}/embedded/include -O3 -g -pipe",
   "LDFLAGS" => "-Wl,-rpath,#{install_dir}/embedded/lib -L#{install_dir}/embedded/lib"
 }

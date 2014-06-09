@@ -27,7 +27,7 @@ LOGGER=$DIRNAME/log
 
 echo "running ${@}" | $LOGGER
 if [ $# -lt 5 ] ; then 
-   echo "Syntax: addUser CUST_ID USER_ID FIRST_NAME LAST_NAME ADMINISTRATOR" 2>&1 | $LOGGER -t "$logTag"
+   echo "Syntax: addUser CUST_ID USER_ID FIRST_NAME LAST_NAME ADMINISTRATOR SSHKEY_FILE" 2>&1 | $LOGGER -t "$logTag"
    exit 1
 fi
 
@@ -74,6 +74,12 @@ FIRST_NAME=${3}
 LAST_NAME=${4}
 ADMINISTRATOR=${5}
 
+if [ $# -gt 5 ] ; then
+    SSH_KEY_FILE=${6}
+else
+    SSH_KEY_FILE=""
+fi
+
 if [ -x ${CUSTOM}-pre ] ; then
 	${CUSTOM}-pre "$@" 2>&1 | $LOGGER -t "$logTag"
 	exit_if_pipe_false "${CUSTOM}-pre $@ failed."
@@ -119,11 +125,13 @@ fi
 sudo chown ${USER_ID}:${CUST_ID} /home/${USER_ID}/.ssh 2>&1 | $LOGGER -t "$logTag"
 sudo chmod 700 /home/${USER_ID}/.ssh 2>&1 | $LOGGER -t "$logTag"
 
-cat /mnt/tmp/${USER_ID}.pub | sudo tee -a /home/${USER_ID}/.ssh/authorized_keys 
-sudo chown ${USER_ID}:${CUST_ID} /home/${USER_ID}/.ssh/authorized_keys 2>&1 | $LOGGER -t "$logTag"
-sudo chmod 600 /home/${USER_ID}/.ssh/authorized_keys 2>&1 | $LOGGER -t "$logTag"
-ret=${PIPESTATUS}
-
+ret=0
+if [ "X${SSH_KEY_FILE}" != "X" ]; then
+    cat ${SSH_KEY_FILE} | sudo tee -a /home/${USER_ID}/.ssh/authorized_keys
+    sudo chown ${USER_ID}:${CUST_ID} /home/${USER_ID}/.ssh/authorized_keys 2>&1 | $LOGGER -t "$logTag"
+    sudo chmod 600 /home/${USER_ID}/.ssh/authorized_keys 2>&1 | $LOGGER -t "$logTag"
+    ret=${PIPESTATUS}
+fi
 if [ $(id -Z) ]; then
 	if [ -x /sbin/restorecon ]; then
 		sudo /sbin/restorecon -R /home/${USER_ID}

@@ -83,7 +83,8 @@ def get_cloud_metadata(conf, key):
     try:
         result = None
         if conf.cloud_type == CLOUD_TYPES.Amazon or\
-                conf.cloud_type == CLOUD_TYPES.Eucalyptus:
+                conf.cloud_type == CLOUD_TYPES.Eucalyptus or\
+                conf.cloud_type == CLOUD_TYPES.Google:
             if conf.cloud_metadata_url is None:
                 _g_logger.warn("The metadata server is None")
                 return None
@@ -137,6 +138,9 @@ def get_instance_id(conf):
             instance_id = get_cloud_metadata(conf, "vm-id")
         elif conf.cloud_type == CLOUD_TYPES.OpenStack:
             instance_id = get_cloud_metadata(conf, "uuid")
+        elif conf.cloud_type == CLOUD_TYPES.Google:
+            instance_id = get_cloud_metadata(
+                conf, "instance/attributes/es-dmcm-launch-id")
         else:
             instance_id = None
         conf.instance_id = instance_id
