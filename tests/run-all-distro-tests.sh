@@ -7,8 +7,10 @@ if [ "X$1" == "X" ]; then
     cd ../omnibus-dcm-agent
     tests=`kitchen list -b`
 else
-    tests=$1
+    tests=$@
 fi
+
+cd $this_dir
 
 success=""
 fail=""
