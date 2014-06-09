@@ -6,7 +6,7 @@ Vagrant.configure("2") do |config|
   vagrant_root = File.dirname(vagrant_root)
   config.vm.synced_folder "../", vagrant_root
 
-  config.vm.define 'ubuntu-10.04-386' do |c|
+  config.vm.define 'default-ubuntu-1004-i386' do |c|
     c.vm.hostname="ubuntu-1004-386"
     c.vm.box = "opscode-ubuntu-10.04-386"
     c.vm.box_url = "http://opscode-vm-bento.s3.amazonaws.com/vagrant/virtualbox/opscode_ubuntu-10.04-i386_chef-provisionerless.box"
@@ -21,10 +21,10 @@ Vagrant.configure("2") do |config|
     end
   end
 
-  config.vm.define 'ubuntu-10.04' do |c|
+  config.vm.define 'default-ubuntu-1004' do |c|
     c.vm.hostname="ubuntu-1004-amd64"
-    c.vm.box = "opscode-ubuntu-10.04"
-    c.vm.box_url = "http://opscode-vm-bento.s3.amazonaws.com/vagrant/virtualbox/opscode_ubuntu-10.04_chef-provisionerless.box"
+  c.vm.box = "opscode-ubuntu-10.04"
+  c.vm.box_url = "https://opscode-vm-bento.s3.amazonaws.com/vagrant/virtualbox/opscode_ubuntu-10.04_chef-provisionerless.box"
 
     $ES_PACKAGE = "/agent/pkgs/default-ubuntu-1004/"
     $ES_STORAGE_CREDS = ENV['DCM_AGENT_STORAGE_CREDS']
@@ -36,7 +36,7 @@ Vagrant.configure("2") do |config|
     end
   end
 
-  config.vm.define 'ubuntu-11.04' do |c|
+  config.vm.define 'default-ubuntu-1104' do |c|
     c.vm.hostname="ubuntu-1104-amd64"
     c.vm.box = "opscode-ubuntu-11.04"
     c.vm.box_url = "https://opscode-vm-bento.s3.amazonaws.com/vagrant/virtualbox/opscode_ubuntu-11.04_chef-provisionerless.box"
@@ -51,14 +51,7 @@ Vagrant.configure("2") do |config|
     end
   end
 
-  config.vm.define 'ubuntu-11.04-386' do |c|
-    c.vm.hostname="ubuntu-1104-386"
-    ES_SECOND_CONTROLLER = "SATA Controller"
-    c.vm.box = "ubuntu-11.04-386"
-    c.vm.box_url = "http://dl.dropbox.com/u/7490647/talifun-ubuntu-11.04-server-i386.box"
-  end
-
-  config.vm.define 'ubuntu-12.04' do |c|
+  config.vm.define 'default-ubuntu-1204' do |c|
     c.vm.hostname="ubuntu-1204-amd64"
     c.vm.box = "opscode-ubuntu-12.04-amd64"
     c.vm.box_url = "https://opscode-vm-bento.s3.amazonaws.com/vagrant/virtualbox/opscode_ubuntu-12.04_chef-provisionerless.box"
@@ -73,7 +66,7 @@ Vagrant.configure("2") do |config|
     end
   end
 
-  config.vm.define 'ubuntu-12.04-386' do |c|
+  config.vm.define 'default-ubuntu-1204-i386' do |c|
     c.vm.hostname="ubuntu-1204-386"
     c.vm.box = "opscode-ubuntu-12.04-386"
     c.vm.box_url = "http://opscode-vm-bento.s3.amazonaws.com/vagrant/virtualbox/opscode_ubuntu-12.10-i386_chef-provisionerless.box"
@@ -88,7 +81,7 @@ Vagrant.configure("2") do |config|
     end
   end
 
-  config.vm.define 'ubuntu-13.04' do |c|
+  config.vm.define 'default-ubuntu-1304' do |c|
     c.vm.hostname="ubuntu-1304-amd64"
     c.vm.box = "opscode-ubuntu-13.04-amd64"
     c.vm.box_url = "https://opscode-vm-bento.s3.amazonaws.com/vagrant/virtualbox/opscode_ubuntu-13.04_chef-provisionerless.box"
@@ -103,7 +96,7 @@ Vagrant.configure("2") do |config|
     end
   end
 
-  config.vm.define 'ubuntu-13.04-386' do |c|
+  config.vm.define 'default-ubuntu-1304-i386' do |c|
     c.vm.hostname="ubuntu-1304-386"
     c.vm.box = "opscode-ubuntu-13.04-386"
     c.vm.box_url = "http://opscode-vm-bento.s3.amazonaws.com/vagrant/virtualbox/opscode_ubuntu-13.10-i386_chef-provisionerless.box"
@@ -118,7 +111,7 @@ Vagrant.configure("2") do |config|
     end
   end
 
-  config.vm.define 'ubuntu-14.04' do |c|
+  config.vm.define 'default-ubuntu-1404' do |c|
     c.vm.hostname="ubuntu-1404-amd64"
     c.vm.box = "opscode-ubuntu-14.04-amd64"
     c.vm.box_url = "http://opscode-vm-bento.s3.amazonaws.com/vagrant/virtualbox/opscode_ubuntu-14.04_chef-provisionerless.box"
@@ -133,7 +126,7 @@ Vagrant.configure("2") do |config|
     end
   end
 
-  config.vm.define 'ubuntu-14.04-386' do |c|
+  config.vm.define 'default-ubuntu-1404-i386' do |c|
     c.vm.hostname="ubuntu-1404-386"
     c.vm.box = "opscode-ubuntu-14.04-386"
     c.vm.box_url = "http://opscode-vm-bento.s3.amazonaws.com/vagrant/virtualbox/opscode_ubuntu-14.04-i386_chef-provisionerless.box"
@@ -148,13 +141,13 @@ Vagrant.configure("2") do |config|
     end
   end
 
-  config.vm.define 'centos-65' do |c|
+  config.vm.define 'default-centos-65' do |c|
     c.vm.box = "opscode-centos-6.5"
     c.vm.box_url = "http://opscode-vm-bento.s3.amazonaws.com/vagrant/virtualbox/opscode_centos-6.5_chef-provisionerless.box"
     ES_SECOND_CONTROLLER = "SATA Controller"
   end
 
-  config.vm.define 'centos-65-i386' do |c|
+  config.vm.define 'default-centos-65-i386' do |c|
     c.vm.box = "opscode-centos-6.5-i386"
     c.vm.box_url = "http://opscode-vm-bento.s3.amazonaws.com/vagrant/virtualbox/opscode_centos-6.5-i386_chef-provisionerless.box"
     ES_SECOND_CONTROLLER = "SATA Controller"

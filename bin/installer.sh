@@ -110,33 +110,94 @@ function install_chef_client {
 # Identify platform.
 if [ -x "/usr/bin/lsb_release" ]; then
 	lsb_info=$(/usr/bin/lsb_release -i | cut -f2)
+	distro_version=$(/usr/bin/lsb_release -r | cut -f2)
 	case $lsb_info in
-		"Ubuntu") platform="ubuntu";;
-		"CentOS") platform="el";;
-		"RedHatEnterpriseServer") platform="el";;
-		"SUSE LINUX") platform="suse";;
-		"n/a") platform="el";;
+		"Ubuntu")
+		    platform="ubuntu"
+            distro_name="ubuntu"
+            pkg_ext="deb"
+		    ;;
+		"Debian")
+		    platform="debian"
+            distro_name="debian"
+            pkg_ext="deb"
+		    ;;
+		"CentOS")
+		    platform="el"
+            distro_name="centos"
+            pkg_ext="rpm"
+		    ;;
+		"RedHatEnterpriseServer")
+		    platform="el"
+		    distro_name="rhel"
+            pkg_ext="rpm"
+		    ;;
+		"SUSE LINUX")
+		    platform="suse"
+		    distro_name="suse"
+            pkg_ext="deb"
+		    ;;
+		"n/a")
+		    echo "Sorry we could not detect your environment"
+		    exit 1
+		    ;;
 	esac
 elif [ -f "/etc/redhat-release" ]; then
-	redhat_info=$(cat /etc/redhat-release | awk '{print $1}')
-	case $redhat_info in
-		CentOS) platform="el";;
-		Red) platform="el";;
+	redhat_info=$(cat /etc/redhat-release)
+	distro=$(echo $redhat_info | awk '{print $1}')
+	case $distro in
+		CentOS)
+		    platform="el"
+		    distro_version=$(echo $redhat_info | awk '{print $3}')
+		    distro_name="centos"
+            pkg_ext="rpm"
+		;;
+		Red)
+		    platform="el"
+            distro_version=$(echo $redhat_info | awk '{print $4}')
+		    distro_name="rhel"
+            pkg_ext="rpm"
+		;;
 	esac
 elif [ -f "/etc/debian_version" ]; then
 	platform="debian"
+	distro_version=$(cat /etc/debian_version)
+    distro_name="debian"
+    pkg_ext="deb"
 elif [ -f "/etc/SuSE-release" ]; then
+	distro_version=$(cat /etc/issue | awk '{print $2}')
+    distro_name="suse"
 	platform="suse"
+    pkg_ext="deb"
 elif [ -f "/etc/system-release" ]; then
 	platform=$(sed 's/^\(.\+\) release.\+/\1/' /etc/system-release | tr '[A-Z]' '[a-z]')
 	# amazon is built off of fedora, so act like RHEL
 	if [ "$platform" = "amazon linux ami" ]; then
 		platform="el"
+        pkg_ext="rpm"
 	fi
 else
 	echo "[ERROR] Unable to identify platform."
 	exit 1
 fi
+
+distro_version=`echo $distro_version | awk -F '.' '{ print $1 "." $2 }'`
+
+echo "$distro_name $distro_version"
+
+echo "determining architecture..."
+tmp_bits=`uname -m`
+if [ "Xx86_64" == "X$tmp_bits" ]; then
+    arch="amd64"
+else
+    arch="i386"
+fi
+echo $arch
+echo "done"
+
+main_url_base="https://enstratius.dell.com/pyagent/stable/dcm_agent-$distro_name-$distro_version-$arch.$pkg_ext"
+
+echo $main_url_base
 
 echo "Starting the installation process..."
 

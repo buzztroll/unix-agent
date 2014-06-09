@@ -1,7 +1,11 @@
 #!/bin/bash
 
+cd `dirname $0`
+this_dir=`pwd`
+
 if [ "X$1" == "X" ]; then
-    tests="ubuntu-12.04 ubuntu-14.04 ubuntu-11.04"
+    cd ../omnibus-dcm-agent
+    tests=`kitchen list -b`
 else
     tests=$1
 fi
