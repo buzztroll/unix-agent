@@ -173,9 +173,9 @@ echo "$distro_name $distro_version"
 echo "determining architecture..."
 tmp_bits=`uname -m`
 if [ "Xx86_64" == "X$tmp_bits" ]; then
-    arch="amd64"
+    arch=""
 else
-    arch="i386"
+    arch="-i386"
 fi
 echo $arch
 echo "done"
@@ -186,7 +186,7 @@ else
     base_url=$AGENT_BASE_URL
 fi
 
-fname="dcm-agent_$distro_name"_$distro_version"_$arch.$pkg_ext"
+fname="dcm-agent-$distro_name"-$distro_version"$arch.$pkg_ext"
 
 echo "Starting the installation process..."
 

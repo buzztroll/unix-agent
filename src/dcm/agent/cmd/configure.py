@@ -87,7 +87,7 @@ def setup_command_line_parser():
                         dest="on_boot",
                         action='store_true',
                         default=False,
-                        help="The path to enstratius")
+                        help="Setup the agent to start when the VM boots")
 
     parser.add_argument("--services-path", "-s",
                         dest="services_path",
