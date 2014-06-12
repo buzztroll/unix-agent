@@ -5,6 +5,8 @@ source 'https://api.berkshelf.com'
 cookbook 'apt', '~> 2.0'
 
 cookbook 'omnibus'
+cookbook 'build-essential', :github => 'opscode-cookbooks/build-essential'
+cookbook 'git', :github => 'opscode-cookbooks/git'
 
 cookbook 'build_dcm_pyagent', path: 'site-cookbooks/build_dcm_pyagent'
 # Uncomment to use the latest version of the Omnibus cookbook from GitHub
