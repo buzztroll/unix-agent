@@ -18,13 +18,22 @@ export AGENT_BASE_URL=file:////agent/pkgs/
 export SYSTEM_CHANGING_TEST=1
 echo "running configure"
 
-sudo apt-get -y update
-sudo apt-get -y install curl
-sudo yum -y update
-sudo yum -y install curl
+apt-get -y update
+apt-get -y install curl
+yum -y update
+yum -y install curl
 
-sudo -E /agent/bin/installer.sh --cloud Amazon --url ws://enstratius.com:16309/ws --base-path /dcm
+/agent/bin/installer.sh --cloud Amazon --url ws://enstratius.com:16309/ws --base-path /dcm
 
-sudo -E /opt/dcm-agent/embedded/bin/nosetests dcm.agent.tests 2>&1 | tee $output_dir/nosetests.output
+if [ $? -ne 0 ]; then
+    echo "Failed to install"
+    exit 1
+fi
+
+/opt/dcm-agent/embedded/bin/nosetests dcm.agent.tests 2>&1 | tee $output_dir/nosetests.output
+if [ ${PIPESTATUS[0]} -ne 0 ]; then
+    echo "Failed to test"
+    exit 2
+fi
 
 exit 0

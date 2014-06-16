@@ -46,7 +46,6 @@ function install_agent(){
 
     if [ ! -s /tmp/$filename ]; then
         echo "[ERROR] Unable to retrieve a valid package!"
-        report_bug
         echo "URL: $url"
         exit 1
     fi
@@ -57,7 +56,6 @@ function install_agent(){
     $installer_cmd $filename
     if [ $? -ne 0 ]; then
         echo "[ERROR] Installation failed."
-        report_bug
         exit 1
     fi
 
@@ -139,14 +137,14 @@ elif [ -f "/etc/redhat-release" ]; then
             distro_version=$(echo $redhat_info | awk '{print $3}')
             distro_name="centos"
             pkg_ext="rpm"
-            installer_cmd="dpkg -i"
+            installer_cmd="rpm -Uvh"
         ;;
         Red)
             platform="el"
             distro_version=$(echo $redhat_info | awk '{print $4}')
             distro_name="rhel"
             pkg_ext="rpm"
-            installer_cmd="dpkg -i"
+            installer_cmd="rpm -Uvh"
         ;;
     esac
 elif [ -f "/etc/debian_version" ]; then
