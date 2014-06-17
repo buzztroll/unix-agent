@@ -1,9 +1,7 @@
 #!/bin/bash
 
-set -e
-
-if [ "X$2" != "X" ]; then
-    export DCM_AGENT_STORAGE_CREDS=$2
+if [ "X$1" != "X" ]; then
+    export DCM_AGENT_STORAGE_CREDS=$1
 fi
 
 DIR=`dirname $0`
@@ -14,23 +12,28 @@ mkdir -p $output_dir
 
 pbase=`hostname`
 echo "selecting the package for $pbase"
-pkg_dir=$1
 
-echo "installing the package $pkg"
-which dpkg
-if [ $? -eq 0 ]; then
-    pkg=`ls -C1 $pkg_dir/*.deb`
-    sudo dpkg -i $pkg >&1 | tee $output_dir/build.output
-else
-    pkg=`ls -C1 $pkg_dir/*.rpm`
-    sudo rpm -i $pkg >&1 | tee $output_dir/build.output
-fi
+export AGENT_BASE_URL=file:////agent/pkgs/
 
 export SYSTEM_CHANGING_TEST=1
-
 echo "running configure"
-sudo /opt/dcm-agent/embedded/bin/dcm-agent-configure --cloud Amazon --url ws://enstratius.com:16309/ws --base-path /dcm
 
-sudo /opt/dcm-agent/embedded/bin/nosetests dcm.agent.tests 2>&1 | tee $output_dir/nosetests.output
+apt-get -y update
+apt-get -y install curl
+yum -y update
+yum -y install curl
+
+/agent/bin/installer.sh --cloud Amazon --url ws://enstratius.com:16309/ws --base-path /dcm
+
+if [ $? -ne 0 ]; then
+    echo "Failed to install"
+    exit 1
+fi
+
+/opt/dcm-agent/embedded/bin/nosetests dcm.agent.tests 2>&1 | tee $output_dir/nosetests.output
+if [ ${PIPESTATUS[0]} -ne 0 ]; then
+    echo "Failed to test"
+    exit 2
+fi
 
 exit 0

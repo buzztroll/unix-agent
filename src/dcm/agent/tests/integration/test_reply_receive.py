@@ -29,6 +29,20 @@ import dcm.agent.tests.utils as test_utils
 import dcm.agent.tests.utils.test_connection as test_conn
 
 
+_debugger_connected = False
+
+
+def connect_debugger():
+    global _debugger_connected
+
+    PYDEVD_CONTACT = "PYDEVD_CONTACT"
+    if PYDEVD_CONTACT in os.environ and not _debugger_connected:
+        pydev_contact = os.environ[PYDEVD_CONTACT]
+        host, port = pydev_contact.split(":", 1)
+        utils.setup_remote_pydev(host, int(port))
+        _debugger_connected = True
+
+
 # does not inherit from unittest because of the python generators for
 # testing storage clouds
 class TestProtocolCommands(reply.ReplyObserverInterface):
@@ -117,14 +131,8 @@ class TestProtocolCommands(reply.ReplyObserverInterface):
 
     @classmethod
     def setUpClass(cls):
-        PYDEVD_CONTACT = "PYDEVD_CONTACT"
-        if PYDEVD_CONTACT in os.environ:
-            pydev_contact = os.environ[PYDEVD_CONTACT]
-            print pydev_contact
-            host, port = pydev_contact.split(":", 1)
-            utils.setup_remote_pydev(host, int(port))
-        # create the config file and other needed dirs
-
+        print "SETUP CLASS"
+        connect_debugger()
         cls.run_as_user = getpass.getuser()
         cls.test_base_path = tempfile.mkdtemp()
         conf_args = ["-c", "Amazon",
@@ -1212,7 +1220,13 @@ class TestProtocolCommands(reply.ReplyObserverInterface):
     @test_utils.system_changing
     def test_mount_variety(self):
         mount_point = tempfile.mkdtemp()
-        device_id = "sdb"
+
+        if os.path.exists("/dev/sdb"):
+            device_id = "sdb"
+        elif os.path.exists("/dev/hdb"):
+            device_id = "hdb"
+        else:
+            raise skip.SkipTest("No second drive was found")
 
         mappings = utils.get_device_mappings(self.conf_obj)
         for dm in mappings:
@@ -1250,7 +1264,7 @@ class TestProtocolCommands(reply.ReplyObserverInterface):
                           "raidLevel": "NONE",
                           "encryptionKey": None,
                           "mountPoint": mount_point,
-                          "devices": ["sdb"]}}
+                          "devices": [device_id]}}
         req_rpc = self._rpc_wait_reply(doc)
         r = req_rpc.get_reply()
         jd = r["payload"]["reply_object"]

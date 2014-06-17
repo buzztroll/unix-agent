@@ -82,8 +82,8 @@ class ReplyRPC(object):
                 try:
                     self._reply_message_timer.cancel()
                 except Exception as ex:
-                    _g_logger.info("an exception occurred when trying to cancel"
-                                   "the timer: " + ex.message)
+                    _g_logger.info("an exception occurred when trying to "
+                                   "cancel the timer: " + ex.message)
 
     @utils.class_method_sync
     def ack(self,
@@ -595,7 +595,8 @@ class ReplyRPC(object):
 
 class RequestListener(object):
 
-    def __init__(self, conf, sender_connection, dispatcher, db, id_system=None):
+    def __init__(self, conf, sender_connection, dispatcher,
+                 db, id_system=None):
         self._conn = sender_connection
         self._dispatcher = dispatcher
         self._requests = {}
@@ -611,7 +612,7 @@ class RequestListener(object):
         self._db.starting_agent()
 
         # create live entries for all that may need to resend their replies
-        old_replies = self._db.get_all_active()
+        old_replies = self._db.get_all_reply()
         for db_rec in old_replies:
             req = ReplyRPC(
                 self,

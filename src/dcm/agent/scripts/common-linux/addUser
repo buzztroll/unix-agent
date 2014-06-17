@@ -92,6 +92,8 @@ else
 	exists=0
 fi
 
+echo "LOG FILE=$DCM_LOG_FILE"
+
 sudo "$GROUPADD" ${CUST_ID} 2>&1 | $LOGGER -t "$logTag"
 ret=${PIPESTATUS}
 if [ $ret -ne 9 -a $ret -ne 0 ]; then
@@ -136,7 +138,7 @@ if [ $(id -Z) ]; then
 	if [ -x /sbin/restorecon ]; then
 		sudo /sbin/restorecon -R /home/${USER_ID}
 		if [ $? -eq 0 ]; then
-			$LOGGER -t "$logTag" "SELinux context congiured on /home/${USER_ID}"
+			$LOGGER -t "$logTag" "SELinux context configured on /home/${USER_ID}"
 		else
 			$LOGGER -t "$logTag" "Failed to configure SELinux context."
 			exit 50

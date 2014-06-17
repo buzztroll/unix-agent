@@ -136,8 +136,6 @@ def run_command(conf, cmd_line, cwd=None, env=None):
                "DCM_BASEDIR": conf.storage_base_dir,
                "DCM_SERVICES_DIR": conf.storage_services_dir,
                "DCM_LOG_FILE": log_file}
-    if type(cmd_line) == list or type(cmd_line) == tuple:
-        " ".join([str(i) for i in cmd_line])
     rc = conf.jr.run_command(cmd_line, cwd=cwd, env=env)
     if log_file:
         # read everything logged and send it to the logger

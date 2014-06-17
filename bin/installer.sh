@@ -2,6 +2,7 @@
 # DCM Agent Installer for Linux
 
 SHELL_PID=$$
+installer_cmd=""
 
 # Read input from terminal even if stdin is pipe.
 # This function is to be used for interactive dialogue.
@@ -30,20 +31,21 @@ function install_agent(){
     echo "Downloading DCM Agent from $url"
     echo "This may take a few minutes."
 
-        if [ "X$AGENT_LOCAL_PACKAGE" == "X" ]; then
-            curl -s -L $url > /tmp/$filename
-        else
+    if [ "X$AGENT_LOCAL_PACKAGE" == "X" ]; then
+        curl -L $url > /tmp/$filename
+    else
         cp $AGENT_LOCAL_PACKAGE /tmp/$filename
-        fi
+    fi
 
     if [ $? -ne 0 ]; then
         echo "[ERROR] Download failed. Cannot install the agent."
+        echo "$url was not found."
+        echo "Your distribution may not be supported."
         exit 1
     fi
 
     if [ ! -s /tmp/$filename ]; then
         echo "[ERROR] Unable to retrieve a valid package!"
-        report_bug
         echo "URL: $url"
         exit 1
     fi
@@ -51,15 +53,9 @@ function install_agent(){
     echo "Installing DCM Agent."
     cd /tmp
 
-    case $platform in
-        ubuntu )
-            dpkg -i $filename;;
-        el | suse )
-            rpm -Uvh $filename;;
-    esac
+    $installer_cmd $filename
     if [ $? -ne 0 ]; then
         echo "[ERROR] Installation failed."
-        report_bug
         exit 1
     fi
 
@@ -101,26 +97,31 @@ if [ -x "/usr/bin/lsb_release" ]; then
             platform="ubuntu"
             distro_name="ubuntu"
             pkg_ext="deb"
+            installer_cmd="dpkg -i"
             ;;
         "Debian")
             platform="debian"
             distro_name="debian"
             pkg_ext="deb"
+            installer_cmd="dpkg -i"
             ;;
         "CentOS")
             platform="el"
             distro_name="centos"
             pkg_ext="rpm"
+            installer_cmd="rpm -Uvh"
             ;;
         "RedHatEnterpriseServer")
             platform="el"
             distro_name="rhel"
             pkg_ext="rpm"
+            installer_cmd="rpm -Uvh"
             ;;
         "SUSE LINUX")
             platform="suse"
             distro_name="suse"
             pkg_ext="deb"
+            installer_cmd="dpkg -i"
             ;;
         "n/a")
             echo "Sorry we could not detect your environment"
@@ -136,12 +137,14 @@ elif [ -f "/etc/redhat-release" ]; then
             distro_version=$(echo $redhat_info | awk '{print $3}')
             distro_name="centos"
             pkg_ext="rpm"
+            installer_cmd="rpm -Uvh"
         ;;
         Red)
             platform="el"
             distro_version=$(echo $redhat_info | awk '{print $4}')
             distro_name="rhel"
             pkg_ext="rpm"
+            installer_cmd="rpm -Uvh"
         ;;
     esac
 elif [ -f "/etc/debian_version" ]; then
@@ -149,17 +152,20 @@ elif [ -f "/etc/debian_version" ]; then
     distro_version=$(cat /etc/debian_version)
     distro_name="debian"
     pkg_ext="deb"
+    installer_cmd="dpkg -i"
 elif [ -f "/etc/SuSE-release" ]; then
     distro_version=$(cat /etc/issue | awk '{print $2}')
     distro_name="suse"
     platform="suse"
     pkg_ext="deb"
+    installer_cmd="dpkg -i"
 elif [ -f "/etc/system-release" ]; then
     platform=$(sed 's/^\(.\+\) release.\+/\1/' /etc/system-release | tr '[A-Z]' '[a-z]')
     # amazon is built off of fedora, so act like RHEL
     if [ "$platform" = "amazon linux ami" ]; then
         platform="el"
         pkg_ext="rpm"
+        installer_cmd="rpm -Uvh"
     fi
 else
     echo "[ERROR] Unable to identify platform."
@@ -181,7 +187,7 @@ echo $arch
 echo "done"
 
 if [ "X$AGENT_BASE_URL" == "X" ]; then
-    base_url="wont_work_yet"
+    base_url="https://s3.amazonaws.com/buzzdcmpyagent"
 else
     base_url=$AGENT_BASE_URL
 fi
@@ -196,7 +202,16 @@ echo "Starting the installation process..."
 install_agent $base_url $fname
 
 # Create configuration file.
-/opt/dcm-agent/embedded/bin/dcm-agent-configure -i --base-path /dcm
+if [ "X$1" == "X" ]; then
+    echo /opt/dcm-agent/embedded/bin/dcm-agent-configure -i --base-path /dcm
+    /opt/dcm-agent/embedded/bin/dcm-agent-configure -i --base-path /dcm
+    # Install optional packages.
+    install_chef_client
+else
+    echo /opt/dcm-agent/embedded/bin/dcm-agent-configure $@
+    /opt/dcm-agent/embedded/bin/dcm-agent-configure $@
+fi
+
 
 # Notification for non-native packages.
 if [[ $platform != 'ubuntu' ]]; then
@@ -207,5 +222,3 @@ if [[ $platform != 'ubuntu' ]]; then
     echo "========================================================================================="
 fi
 
-# Install optional packages.
-install_chef_client
