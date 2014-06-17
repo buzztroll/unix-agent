@@ -69,7 +69,7 @@ class _WebSocketClient(ws4py_client.WebSocketClient):
 
     def closed(self, code, reason=None):
         _g_logger.info("Web socket %s has been closed %d %s"
-                        % (self._url, code, reason))
+                       % (self._url, code, reason))
         _g_logger.debug("Sending error event to connection manager.")
         self.manager.throw_error(Exception(
             "Connection unexpectedly closed: %d %s" % (code, reason)))

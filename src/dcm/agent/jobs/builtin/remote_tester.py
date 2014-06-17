@@ -39,7 +39,8 @@ class RemoteTester(jobs.Plugin):
                                            % str(self.arguments))
             for i in range(3):
                 try:
-                    self.sock = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
+                    self.sock = socket.socket(socket.AF_INET,
+                                              socket.SOCK_STREAM)
                     self.sock.connect((self._host, self._port))
                     break
                 except:

@@ -20,5 +20,8 @@ fi
 if [ -z $DCM_LOG_FILE ]; then
     echo "$tag[$msg]" 1>&2
 else
+    if [ ! -e $DCM_LOG_FILE ]; then
+        touch $DCM_LOG_FILE
+    fi
     echo "$tag[$msg]" >> $DCM_LOG_FILE
 fi

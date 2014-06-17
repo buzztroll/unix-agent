@@ -99,7 +99,38 @@ class AgentDB(object):
         self._session.commit()
 
     @messaging_utils.class_method_sync
-    def get_all_active(self):
+    def get_all_complete(self):
+        # load every object
+        complete_tasks = self._session.query(RequestDBObject).filter(
+            RequestDBObject.state==messaging_states.ReplyStates.REPLY_ACKED).\
+            all()
+        return complete_tasks
+
+    @messaging_utils.class_method_sync
+    def get_all_rejected(self):
+        # load every object
+        complete_tasks = self._session.query(RequestDBObject).filter(
+            RequestDBObject.state==messaging_states.ReplyStates.NACKED).\
+            all()
+        return complete_tasks
+
+    @messaging_utils.class_method_sync
+    def get_all_reply_nacked(self):
+        # load every object
+        complete_tasks = self._session.query(RequestDBObject).filter(
+            RequestDBObject.state==messaging_states.ReplyStates.REPLY_NACKED).\
+            all()
+        return complete_tasks
+
+    @messaging_utils.class_method_sync
+    def get_all_ack(self):
+        # load every object
+        complete_tasks = self._session.query(RequestDBObject).filter(
+            RequestDBObject.state==messaging_states.ReplyStates.ACKED).all()
+        return complete_tasks
+
+    @messaging_utils.class_method_sync
+    def get_all_reply(self):
         # load every object
         re_inflate_tasks = self._session.query(RequestDBObject).filter(
             RequestDBObject.state==messaging_states.ReplyStates.REPLY).all()

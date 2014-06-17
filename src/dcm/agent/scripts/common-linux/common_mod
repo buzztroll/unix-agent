@@ -37,9 +37,10 @@ function exit_with_pipe_value() {
 	exit $ret
 }
 
+REAL_SUDO=/usr/bin/sudo
+
 # Overrides sudo to use dcm user's path. Implemented to support cross-distro scripts.
 function sudo() {
-	/usr/bin/sudo env PATH=${PATH} "$@"
+	/usr/bin/sudo /usr/bin/env PATH=${PATH} "$@"
 }
 
-REAL_SUDO=`which sudo`
