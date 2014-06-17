@@ -1,10 +1,12 @@
 import json
+import datetime
 import argparse
 import logging
 import os
 import signal
 import sys
 import clint
+import psutil
 
 import dcm.agent
 import dcm.agent.messaging as messaging
@@ -263,36 +265,69 @@ def get_status(cli_args):
             status = "INITIALIZATION REJECTED"
             color_func = clint.textui.colored.red
 
-    status_label = "Agent Status: "
-    clint.textui.puts(
-        clint.textui.columns([status_label, len(status_label)],
-                             [color_func(status), 30]))
-
+    clint.textui.puts(color_func(status))
     complete = db_obj.get_all_complete()
     replied = db_obj.get_all_reply()
     rejected = db_obj.get_all_rejected()
     acked = db_obj.get_all_ack()
     reply_nacked = db_obj.get_all_reply_nacked()
 
-    clint.textui.puts(
-        clint.textui.columns([status_label, len(status_label)],
-                             [color_func(status), 30]))
-
+    label_col_width = 30
     vals = [(complete, "Commands processed: "),
-            (rejected, "Commands rejected: ")
-            (acked, "Commands being processed: ")
-            (replied, "Commands being replying to: ")
+            (rejected, "Commands rejected: "),
+            (acked, "Commands being processed: "),
+            (replied, "Commands being replying to: "),
             (reply_nacked, "Replies rejected: ")]
-    for v, k in vals:
-        clint.textui.puts(
-            clint.textui.columns([k, 20], [len(v), 5]))
-    return 0
+    with clint.textui.indent(4):
+        for v, k in vals:
+            clint.textui.puts(
+                clint.textui.columns([k, label_col_width], [str(len(v)), 5]))
+
+    try:
+        pid_file = os.path.join(conf.storage_base_dir, "dcm-agent.pid")
+        if not os.path.exists(pid_file):
+            run_status = "NOT RUNNING"
+            run_reason = "PID file not found"
+        else:
+            with open(pid_file, "r") as fptr:
+                pid = int(fptr.read().strip())
+            p = psutil.Process(pid)
+            clint.textui.puts(clint.textui.colored.green("RUNNING"))
+            start_time_str = datetime.datetime.fromtimestamp(
+                p.create_time).strftime("%Y-%m-%d %H:%M:%S")
+            with clint.textui.indent(4):
+                clint.textui.puts(clint.textui.columns(
+                    ["Started at:", label_col_width],
+                    [start_time_str, 70 - label_col_width]))
+                clint.textui.puts(clint.textui.columns(
+                    ["User:", label_col_width],
+                    [p.username, 70 - label_col_width]))
+                clint.textui.puts(clint.textui.columns(
+                    ["Status:", label_col_width],
+                    [p.status, 70 - label_col_width]))
+                clint.textui.puts(clint.textui.columns(
+                    ["Pid:", label_col_width],
+                    [str(pid), 70 - label_col_width]))
+
+            return 0
+    except psutil.NoSuchProcess:
+        run_status = "NOT RUNNING"
+        run_reason = "The PID %d was not found" % pid
+    except Exception as ex:
+        run_reason = ex.message
+        run_status = "UNKNOWN"
+
+    clint.textui.puts(clint.textui.colored.red(run_status))
+    clint.textui.puts(clint.textui.colored.red(run_reason))
+
+    return 1
 
 
 def main(args=sys.argv):
     cli_args, remaining_argv = parse_command_line(args)
 
-    if remaining_argv and remaining_argv[0].lower() == "status":
+    print remaining_argv
+    if remaining_argv and remaining_argv[1].lower() == "status":
         # do status reporting
         return get_status(cli_args)
     else:
