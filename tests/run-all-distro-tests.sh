@@ -4,8 +4,8 @@ cd `dirname $0`
 this_dir=`pwd`
 
 if [ "X$1" == "X" ]; then
+    tests="default-ubuntu-1004 default-ubuntu-1004-i386 default-ubuntu-1204 default-ubuntu-1204-i386 default-ubuntu-1310 default-ubuntu-1310-i386 default-centos-510-i386 default-centos-510 default-debian-720 default-debian-720-i386 default-debian-608 default-debian-608-i386 default-ubuntu-1404 default-ubuntu-1404-i386 default-centos-65 default-centos-65-i386"
     cd ../omnibus-dcm-agent
-    tests=`kitchen list -b`
 else
     tests=$@
 fi

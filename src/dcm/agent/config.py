@@ -171,16 +171,12 @@ class AgentConfig(object):
         self.zone_id = None
         self.server_id = None
         self.server_name = None
-        self.storage_idfile = None
         self.storage_dbfile = None
 
         self.imaging_event = threading.Event()
 
         parse_config_files(self, conf_files)
 
-        if self.storage_idfile is None:
-            self.storage_idfile = \
-                os.path.join(self.storage_base_dir, "etc", "agentid.txt")
         if self.storage_dbfile is None:
             self.storage_dbfile = \
                 os.path.join(self.storage_base_dir, "etc", "agentdb.sql")
@@ -290,7 +286,6 @@ def _build_options_list():
         FilenameOpt("storage", "base_dir", default="/dcm"),
         FilenameOpt("storage", "ephemeral_mountpoint", default="/mnt"),
         FilenameOpt("storage", "operations_path", default="/mnt"),
-        FilenameOpt("storage", "idfile", default=None),
         FilenameOpt("storage", "dbfile", default=None),
         FilenameOpt("storage", "script_dir", default=None),
 

@@ -18,15 +18,6 @@ import dcm.agent
 import dcm.agent.cloudmetadata as cloud_instance
 
 
-def _get_agent_id(conf):
-    if not conf.storage_idfile or not os.path.exists(conf.storage_idfile):
-        return None
-
-    with open(conf.storage_idfile, "r") as fptr:
-        agent_id = fptr.readline().strip()
-        return agent_id
-
-
 def get_handshake(conf):
     if conf.test_skip_handshake:
         # TODO make this configurable from the test conf files
@@ -45,7 +36,7 @@ def get_handshake(conf):
     ipv4s = cloudmetadata.get_ipv4_addresses(conf)
     ipv6s = []
     injected_id = None
-    agent_id = _get_agent_id(conf)
+    agent_id = None
 
     vm_instance = cloud_instance.get_instance_id(conf)
 
