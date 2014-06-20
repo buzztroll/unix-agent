@@ -298,6 +298,23 @@ class ReplyRPC(object):
                                            reply_doc)
         self._send_reply_message(message_timer)
 
+    def _sm_acked_re_reply(self, **kwargs):
+        self._db.update_record(self._request_id,
+                               states.ReplyStates.REPLY,
+                               reply_doc=self._response_doc)
+
+        reply_doc = {'type': types.MessageTypes.REPLY,
+                     'message_id': utils.new_message_id(),
+                     'request_id': self._request_id,
+                     'payload': self._response_doc,
+                     'entity': "acked_reply",
+                     'agent_id': self._agent_id}
+
+        message_timer = utils.MessageTimer(self._timeout,
+                                           self.reply_timeout,
+                                           reply_doc)
+        self._send_reply_message(message_timer)
+
     def _sm_reply_request_retrans(self, **kwargs):
         """
         After replying to a message we receive a retransmission of the
@@ -537,6 +554,13 @@ class ReplyRPC(object):
                                 states.ReplyStates.REPLY,
                                 self._sm_send_status)
 
+        # If the user replies twice we should sent a second reply.  This
+        # happens when the agent dies and restarts
+        self._sm.add_transition(states.ReplyStates.REPLY,
+                                states.ReplyEvents.USER_REPLIES,
+                                states.ReplyStates.REPLY,
+                                self._sm_acked_re_reply)
+
         self._sm.add_transition(states.ReplyStates.NACKED,
                                 states.ReplyEvents.REQUEST_RECEIVED,
                                 states.ReplyStates.NACKED,
@@ -638,6 +662,7 @@ class RequestListener(object):
                 func = getattr(o, func_name)
                 func(argument)
             except:
+                _g_logger.exception("A bad observer threw an exception.")
                 # dont let some crappy observer ruin everything
                 pass
 

@@ -3,6 +3,8 @@ version: 1
 disable_existing_loggers: False
 formatters:
     simple:
+        format: "%(levelname)s %(asctime)s [%(name)s] %(filename)s:%(lineno)d [(REQUEST=%(dcm_request_id)s)] %(message)s"
+    todcm:
         format: "%(asctime)s [%(name)s] %(filename)s:%(lineno)d [(REQUEST=%(dcm_request_id)s)] %(message)s"
 
 
@@ -25,7 +27,7 @@ handlers:
     dcm_logger:
         class: dcm.agent.logger.dcmLogger
         level: DEBUG
-        formatter: simple
+        formatter: todcm
         filters: [add_request]
         encoding: utf8
 
