@@ -14,6 +14,7 @@ dependency "preparation"
 dependency "sqlite"
 dependency "python"
 dependency "pip"
+dependency "virtualenv"
 dependency "pyyaml"
 dependency "dcm-agent"
 

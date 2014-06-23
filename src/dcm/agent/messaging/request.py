@@ -129,6 +129,9 @@ class RequestRPC(object):
         if self._completion_timer:
             self._completion_timer.cancel()
 
+    def _register_failed_callback(self):
+        pass
+
     ###################################################################
     # state machine event handlers
     # ever method that starts with _sm_ is called under the same lock.
