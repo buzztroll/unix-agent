@@ -2,8 +2,12 @@
 
 set -u
 
+DIRNAME=`dirname $0`
+. "$DIRNAME/common_mod"
+BASENAME=`basename $0`
+
 logTag="runConfigurationManagement-PUPPET"
-LOGGER=/enstratus/bin/log
+LOGGER=$DCM_BASEDIR/bin/log
 CERT_DIR=/etc/puppetlabs/puppet/ssl/certs/
 KEY_DIR=/etc/puppetlabs/puppet/ssl/private_keys/
 PUPPET_CONF=/etc/puppetlabs/puppet/puppet.conf

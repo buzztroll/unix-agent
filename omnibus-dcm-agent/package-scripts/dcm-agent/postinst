@@ -106,7 +106,7 @@ echo "Done."
 
 
 echo "Create the configuration file"
-/opt/dcm-agent/embedded/bin/dcm-agent-configure -v -I -U $DCM_USERNAME -p $BASEDIRNAME
+/opt/dcm-agent/embedded/agentve/bin/dcm-agent-configure -v -I -U $DCM_USERNAME -p $BASEDIRNAME
 if [ $? -ne 0 ]; then
     echo "The default configuration failed"
     exit 1

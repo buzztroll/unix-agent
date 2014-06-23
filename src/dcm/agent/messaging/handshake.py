@@ -18,6 +18,9 @@ import dcm.agent
 import dcm.agent.cloudmetadata as cloud_instance
 
 
+FOR_TEST_AGENT_ID_ENV = "FOR_TEST_AGENT_ID_ENV"
+
+
 def get_handshake(conf):
     if conf.test_skip_handshake:
         # TODO make this configurable from the test conf files
@@ -37,6 +40,8 @@ def get_handshake(conf):
     ipv6s = []
     injected_id = None
     agent_id = None
+    if FOR_TEST_AGENT_ID_ENV in os.environ:
+        agent_id = os.environ[FOR_TEST_AGENT_ID_ENV]
 
     vm_instance = cloud_instance.get_instance_id(conf)
 

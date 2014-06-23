@@ -11,12 +11,12 @@ import tempfile
 import threading
 import pwd
 import datetime
-import unittest
 import uuid
 import logging
 import nose
 from nose.plugins import skip
 
+import dcm.agent
 import dcm.agent.utils as utils
 from dcm.agent.cmd import service, configure
 import dcm.agent.storagecloud as storagecloud
@@ -35,9 +35,12 @@ _debugger_connected = False
 def connect_debugger():
     global _debugger_connected
 
+    print _debugger_connected
     PYDEVD_CONTACT = "PYDEVD_CONTACT"
+    print  PYDEVD_CONTACT
     if PYDEVD_CONTACT in os.environ and not _debugger_connected:
         pydev_contact = os.environ[PYDEVD_CONTACT]
+        print pydev_contact
         host, port = pydev_contact.split(":", 1)
         utils.setup_remote_pydev(host, int(port))
         _debugger_connected = True
@@ -131,7 +134,6 @@ class TestProtocolCommands(reply.ReplyObserverInterface):
 
     @classmethod
     def setUpClass(cls):
-        print "SETUP CLASS"
         connect_debugger()
         cls.run_as_user = getpass.getuser()
         cls.test_base_path = tempfile.mkdtemp()
@@ -1376,3 +1378,36 @@ class TestProtocolCommands(reply.ReplyObserverInterface):
             lines = fptr.readlines()
             nose.tools.eq_(len(lines), 3)
             nose.tools.eq_("UNLOCKED", lines[2].strip())
+
+
+    def test_upgrade(self):
+        _, tmpfname = tempfile.mkstemp();
+        _, exefname = tempfile.mkstemp();
+        exe_data = """#!/bin/bash
+                      echo $@ > %s
+                   """ % tmpfname
+
+        print exe_data
+        print tmpfname
+        url = "file:///%s" % exefname
+        newVersion = "10.100.newversion"
+        with open(exefname, "w") as fptr:
+            fptr.write(exe_data)
+
+        doc = {
+            "command": "upgrade",
+            "arguments": {"url": url,
+                          "newVersion": newVersion,
+                          "args": ["arg1", "arg2"]}
+        }
+        req_reply = self._rpc_wait_reply(doc)
+        r = req_reply.get_reply()
+        nose.tools.eq_(r["payload"]["return_code"], 0)
+
+        with open(tmpfname, "r") as fptr:
+            line = fptr.readline()
+        nose.tools.ok_(line)
+        la = line.split()
+
+        nose.tools.eq_(la[0], newVersion)
+        nose.tools.eq_(la[1], dcm.agent.g_version)
