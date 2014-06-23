@@ -24,6 +24,7 @@ _g_logger = logging.getLogger(__name__)
 
 class ConfigureServer(jobs.Plugin):
 
+
     protocol_arguments = {
         "configType":
         ("", True, str),
@@ -70,6 +71,9 @@ class ConfigureServer(jobs.Plugin):
     def __init__(self, conf, job_id, items_map, name, arguments):
         super(ConfigureServer, self).__init__(
             conf, job_id, items_map, name, arguments)
+        if not self.args.runAsUser:
+            self.args.runAsUser = \
+                utils.make_id_string("c", self.conf.customer_id)
 
     def configure_server_legacy(self):
         """
@@ -84,8 +88,8 @@ class ConfigureServer(jobs.Plugin):
         # set the token
         if self.args.configToken:
             token = self.args.configToken
-        elif self.args.authSecret:
-            token = self.args.authSecret
+        elif self.args.encryptedAuthSecret:
+            token = self.args.encryptedAuthSecret
         else:
             token = None
 
@@ -118,8 +122,8 @@ class ConfigureServer(jobs.Plugin):
         token_file_path = self.conf.get_temp_file("token.pem")
 
         try:
-            if self.args.authSecret:
-                token = self.args.authSecret
+            if self.args.encryptedAuthSecret:
+                token = self.args.encryptedAuthSecret
             else:
                 token = "NULL"
 
@@ -133,7 +137,7 @@ class ConfigureServer(jobs.Plugin):
             environmentId = self.args.environmentId
             if environmentId is None:
                 environmentId = "NULL"
-            chef_json = {"run_list": self.args.runList}
+            chef_json = {"run_list": self.args.runListIds}
             with open(run_list_file_name, "w") as fptr:
                 fptr.write(json.dumps(chef_json))
 
@@ -145,7 +149,7 @@ class ConfigureServer(jobs.Plugin):
                 "runConfigurationManagement-CHEF")
             cmd_list = [exe,
                         self.args.runAsUser,
-                        self.args.nodeName,
+                        self.args.configClientName,
                         token_file_path,
                         run_list_file_name,
                         authId,

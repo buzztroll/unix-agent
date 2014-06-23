@@ -2,6 +2,10 @@
 
 set -u
 
+DIRNAME=`dirname $0`
+. "$DIRNAME/common_mod"
+BASENAME=`basename $0`
+
 logTag="runConfigurationManagement-CHEF"
 LOGGER=$DIRNAME/log
 FIRST_BOOT='/etc/chef/first-boot.json'
