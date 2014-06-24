@@ -7,10 +7,20 @@ DIRNAME=`dirname $0`
 BASENAME=`basename $0`
 
 logTag="runConfigurationManagement-PUPPET"
-LOGGER=$DCM_BASEDIR/bin/log
-CERT_DIR=/etc/puppetlabs/puppet/ssl/certs/
-KEY_DIR=/etc/puppetlabs/puppet/ssl/private_keys/
-PUPPET_CONF=/etc/puppetlabs/puppet/puppet.conf
+LOGGER=$DIRNAME/log
+
+# If we're running open source
+# use this directory structure.
+# Default to enterprise.
+if [ -d "/var/lib/puppet" ]; then
+  CERT_DIR=/var/lib/puppet/ssl/certs/
+  KEY_DIR=/var/lib/puppet/ssl/private_keys/
+  PUPPET_CONF=/etc/puppet/puppet.conf
+else
+  CERT_DIR=/etc/puppetlabs/puppet/ssl/certs/
+  KEY_DIR=/etc/puppetlabs/puppet/ssl/private_keys/
+  PUPPET_CONF=/etc/puppetlabs/puppet/puppet.conf
+fi
 
 $LOGGER -t "$logTag" runConfigurationManagement-PUPPET "$@"
 
@@ -21,9 +31,19 @@ fi
 
 $LOGGER -t "$logTag" "Running configuration management for Puppet..."
 
+# Create the cert and key dirs if missing
+if [ ! -d ${CERT_DIR} ]; then
+  $LOGGER -t "$logTag" "Puppet cert dir missing. Creating cert and key dirs now."
+
+  sudo mkdir -p ${CERT_DIR} > /dev/null 2>&1
+  sudo chown puppet:puppet ${CERT_DIR}
+
+  sudo mkdir -p ${KEY_DIR} > /dev/null 2>&1
+  sudo chown puppet:puppet ${KEY_DIR}
+fi
+
 RUN_AS_USER=$1
 NODE_NAME=$2
-#PUPPET_MASTER=$3
 PUPPET_MASTER_URL=$3
 PUPPET_MASTER=`echo ${PUPPET_MASTER_URL} | sed -e "s/[^/]*\/\/\([^@]*@\)\?\([^:/]*\).*/\2/"`
 CERT_FILE_PATH=$4
@@ -33,19 +53,19 @@ PUPPET_BIN=`sudo which puppet`
 
 # This is to guard against sudo not having the right environment for root.
 if [ $? != 0 ]; then
-	$LOGGER -t "$logTag" "No puppet installation found"
-	$LOGGER -t "$logTag" "Checking alternate locations"
-	if [ -x "/opt/puppet/bin/puppet" ]; then
-		$LOGGER -t "$logTag" "Checking /opt/puppet/bin/puppet"
-		PUPPET_BIN=/opt/puppet/bin/puppet
-		$LOGGER -t "$logTag" "Found puppet in `echo ${PUPPET_BIN}`"
-	elif [ -x "/usr/local/bin/puppet" ]; then
-		$LOGGER -t "$logTag" "Checking /usr/local/bin/puppet"
-		PUPPET_BIN=/usr/local/bin/puppet
-		$LOGGER -t "$logTags" "Found puppet in `echo ${PUPPET_BIN}`"
-	else
-		exit 99
-	fi
+  $LOGGER -t "$logTag" "No puppet installation found"
+  $LOGGER -t "$logTag" "Checking alternate locations"
+  if [ -x "/opt/puppet/bin/puppet" ]; then
+    $LOGGER -t "$logTag" "Checking /opt/puppet/bin/puppet"
+    PUPPET_BIN=/opt/puppet/bin/puppet
+    $LOGGER -t "$logTag" "Found puppet in `echo ${PUPPET_BIN}`"
+  elif [ -x "/usr/local/bin/puppet" ]; then
+    $LOGGER -t "$logTag" "Checking /usr/local/bin/puppet"
+    PUPPET_BIN=/usr/local/bin/puppet
+    $LOGGER -t "$logTags" "Found puppet in `echo ${PUPPET_BIN}`"
+  else
+    exit 99
+  fi
 fi
 
 $LOGGER -t "$logTag" "Using puppet in `echo ${PUPPET_BIN}`"
@@ -55,13 +75,13 @@ echo "$PUPPET_MASTER" | grep -E '\b((25[0-5]|2[0-4][0-9]|[01]?[0-9][0-9]?)(\.|$)
 IS_IP=$?
 
 if [[ $IS_IP == 0 ]]; then
-	$LOGGER -t "$logTag" "Detected $PUPPET_MASTER as an IP address. Adding hosts file entry"
-	# This should be changed before release
-	echo "$PUPPET_MASTER puppet puppetmaster-dev puppetmaster" | sudo tee -a /etc/hosts
-	# debug to check hosts file
-	$LOGGER -t "$logTag" "Checking hosts file"
-	while read line;do $LOGGER -t "$logTag" "$line"; done </etc/hosts
-	PUPPET_MASTER="puppet"
+  $LOGGER -t "$logTag" "Detected $PUPPET_MASTER as an IP address. Adding hosts file entry"
+  # This should be changed before release
+  echo "$PUPPET_MASTER puppet puppetmaster-dev puppetmaster" | sudo tee -a /etc/hosts
+  # debug to check hosts file
+  $LOGGER -t "$logTag" "Checking hosts file"
+  while read line;do $LOGGER -t "$logTag" "$line"; done </etc/hosts
+  PUPPET_MASTER="puppet"
 fi
 
 # debug to check hosts file
@@ -98,7 +118,7 @@ EXIT=$?
 
 if [[ $EXIT == 4 || $EXIT == 6 || $EXIT == 1 ]]; then
         $LOGGER -t "$logTag" "Initial puppet run failed: $EXIT"
-	while read line; do $LOGGER -t "$logTag" "$line"; done </mnt/tmp/es-puppet-firstrun.log
+  while read line; do $LOGGER -t "$logTag" "$line"; done </mnt/tmp/es-puppet-firstrun.log
         exit 99
 fi
 

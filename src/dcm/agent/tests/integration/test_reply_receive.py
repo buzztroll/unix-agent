@@ -1411,3 +1411,29 @@ class TestProtocolCommands(reply.ReplyObserverInterface):
 
         nose.tools.eq_(la[0], newVersion)
         nose.tools.eq_(la[1], dcm.agent.g_version)
+
+    def test_run_script(self):
+        _, tmpfname = tempfile.mkstemp();
+        _, exefname = tempfile.mkstemp();
+        args = ["arg1", "hello", "args3"]
+        exe_data = """#!/bin/bash
+                      echo $@ > %s
+                   """ % tmpfname
+
+        doc = {
+            "command": "upgrade",
+            "arguments":{
+                "b64script": base64.b64encode(exe_data),
+                "arguments": args
+            }
+        }
+        req_reply = self._rpc_wait_reply(doc)
+        r = req_reply.get_reply()
+        nose.tools.eq_(r["payload"]["return_code"], 0)
+
+        with open(tmpfname, "r") as fptr:
+            line = fptr.readline()
+        nose.tools.ok_(line)
+        la = line.split()
+
+        nose.tools.eq_(la, args)

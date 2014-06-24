@@ -22,6 +22,8 @@ case $OS in
 		esac
 	elif [ -f /etc/SuSE-release ]; then
 		echo "SUSE"
+        else
+                echo "UNIX"
 	fi
    	;;
    FreeBSD) echo "FREE_BSD" ;;
