@@ -60,9 +60,16 @@ if ! validatehostname $newhostname  ; then
 	exit 1
 fi
 
+# For a Dynamic Load Balancer on OpenStack the hostname is already set, but there is no /etc/host entry for it
+# and so the startPorxy script fails.
+# Added a check to see if there is an /etc/host entry for the ipaddress and hostname passed to the rename script.
+# If not then don't exit, continue and add an /etc/host entry
 if [ $oldhostname = $newhostname ]; then
-	$LOGGER -t "$logTag" "hostname has not changed"
-	exit 0
+       grep -wq "^${IPADDRESS}.*${newhostname}" /etc/hosts
+       if [ $? -eq 0 ]; then
+               $LOGGER -t "$logTag" "hostname has not changed"
+               exit 0
+       fi
 fi
 
 # Set /etc/hosts file before using sudo (prevent sudo:unable to resolve host)

@@ -57,13 +57,13 @@ class ConfigureServer(jobs.Plugin):
         "environmentId":
         ("", False, str),
         "personalityFiles":
-        ("", False, str),
+        ("", False, list),
         "configClientName":
         ("", False, str),
         "configCert":
         ("", False, utils.base64type_convertor),
         "runListIds":
-        ("", False, str),
+        ("", False, list),
         "parameterList":
         ("", False, utils.base64type_convertor),
     }
@@ -72,8 +72,7 @@ class ConfigureServer(jobs.Plugin):
         super(ConfigureServer, self).__init__(
             conf, job_id, items_map, name, arguments)
         if not self.args.runAsUser:
-            self.args.runAsUser = \
-                utils.make_id_string("c", self.conf.customer_id)
+            self.args.runAsUser = self.conf.system_user
 
     def configure_server_legacy(self):
         """
@@ -179,7 +178,7 @@ class ConfigureServer(jobs.Plugin):
                 "runConfigurationManagement-PUPPET")
             cmd = [exe,
                    self.args.runAsUser,
-                   self.args.nodeName,
+                   self.args.configClientName,
                    endpoint,
                    cert_file_path,
                    key_file_path]
@@ -234,9 +233,6 @@ class ConfigureServer(jobs.Plugin):
 
         _g_logger.info("Running configuration management of type " +
                        self.args.configType)
-
-        if self.args.runAsUser is None:
-            self.args.runAsUser = self.conf.system_user
 
         if self.name == "configure_server" or\
                 self.name == "configure_server_15":

@@ -87,6 +87,8 @@ fi
 sudo $CHEF_CLIENT -j $FIRST_BOOT -E $CHEF_ENVIRONMENT -L /mnt/tmp/enstratus-chefrun.log > /dev/null 2>&1
 EXIT=$?
 
+sudo chmod 644 /mnt/tmp/enstratus-chefrun.log
+
 if [ $EXIT != 0 ]; then
         echo "chef-client run failed: $EXIT" 2>&1 | $LOGGER -t "$logTag"
         while read line; do $LOGGER -t "$logTag" "$line"; done </mnt/tmp/enstratus-chefrun.log
