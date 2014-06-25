@@ -307,7 +307,7 @@ def make_dirs(conf_d):
         (conf_d["storage"]["services_dir"][1], 0755),
         (conf_d["storage"]["operations_path"][1], 0750),
         (conf_d["storage"]["ephemeral_mountpoint"][1], 0750),
-        (os.path.join("/mnt", "tmp"), 0750),
+        (os.path.join("/mnt", "tmp"), 0755),
         (conf_d["storage"]["temppath"][1], 01777),
     ]
 

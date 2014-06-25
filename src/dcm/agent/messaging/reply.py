@@ -25,7 +25,8 @@ class ReplyRPC(object):
                  request_document,
                  db,
                  timeout=1.0,
-                 reply_doc=None):
+                 reply_doc=None,
+                 start_state=None):
         self._agent_id = agent_id
         self._request_id = request_id
         self._request_document = request_document
@@ -46,14 +47,15 @@ class ReplyRPC(object):
             starting_event = states.ReplyEvents.REQUEST_RECEIVED
             message = {}
         else:
-            starting_state = states.ReplyStates.REPLY
+            starting_state = start_state
             starting_event = states.ReplyEvents.USER_REPLIES
             message = reply_doc
 
         self._sm = states.StateMachine(starting_state)
         self._setup_states()
         self._db = db
-        self._sm.event_occurred(starting_event, message=message)
+        with tracer.RequestTracer(self._request_id):
+            self._sm.event_occurred(starting_event, message=message)
 
     def get_request_id(self):
         return self._request_id
@@ -123,12 +125,14 @@ class ReplyRPC(object):
         done with this object.
         """
         with tracer.RequestTracer(self._request_id):
+            _g_logger.debug("reply() has been called")
             self._sm.event_occurred(states.ReplyEvents.USER_REPLIES,
                                     message=response_document)
 
     @utils.class_method_sync
     def reply_timeout(self, message_timer):
         with tracer.RequestTracer(self._request_id):
+            _g_logger.debug("reply timeout occurred, resending.")
             self._sm.event_occurred(states.RequesterEvents.TIMEOUT,
                                     message_timer=message_timer)
 
@@ -139,7 +143,6 @@ class ReplyRPC(object):
                 types.MessageTypes.ACK: states.ReplyEvents.REPLY_ACK_RECEIVED,
                 types.MessageTypes.NACK:
                 states.ReplyEvents.REPLY_NACK_RECEIVED,
-                types.MessageTypes.REPLY: states.ReplyEvents.USER_REPLIES,
                 types.MessageTypes.CANCEL: states.ReplyEvents.CANCEL_RECEIVED,
                 types.MessageTypes.STATUS: states.ReplyEvents.STATUS_RECEIVED,
                 types.MessageTypes.REQUEST: states.ReplyEvents.REQUEST_RECEIVED
@@ -364,6 +367,7 @@ class ReplyRPC(object):
         """
         self._db.update_record(self._request_id,
                                states.ReplyStates.REPLY_NACKED)
+
         self._reply_message_timer.cancel()
         self._reply_message_timer = None
         self._reply_listener.message_done(self)
@@ -420,6 +424,14 @@ class ReplyRPC(object):
                       'state': self._sm._current_state,
                       'reply': self._response_doc}
         self._conn.send(status_doc)
+
+    def _sm_reinflated_reply_ack(self):
+        _g_logger.warn("The agent manager sent a message for this request "
+                       "after it was in the REPLY_ACK state")
+
+    def _sm_reinflated_reply_nack(self):
+        _g_logger.warn("The agent manager sent a message for this request "
+                       "after it was in the REPLY_NACK state")
 
     def _reinflate_done(self):
         if self._reply_message_timer:
@@ -554,10 +566,8 @@ class ReplyRPC(object):
                                 states.ReplyStates.REPLY,
                                 self._sm_send_status)
 
-        # If the user replies twice we should sent a second reply.  This
-        # happens when the agent dies and restarts
         self._sm.add_transition(states.ReplyStates.REPLY,
-                                states.ReplyEvents.USER_REPLIES,
+                                states.ReplyEvents.DB_INFLATE,
                                 states.ReplyStates.REPLY,
                                 self._sm_acked_re_reply)
 
@@ -595,6 +605,13 @@ class ReplyRPC(object):
                                 states.ReplyStates.REPLY_ACKED,
                                 None)
 
+        # this transition should only occur when the AM makes a mistake
+        # or messages are received out of order.
+        self._sm.add_transition(states.ReplyStates.REPLY_ACKED,
+                                states.ReplyEvents.DB_INFLATE,
+                                states.ReplyStates.REPLY_ACKED,
+                                self._sm_reinflated_reply_ack)
+
         self._sm.add_transition(states.ReplyStates.REPLY_NACKED,
                                 states.ReplyEvents.REQUEST_RECEIVED,
                                 states.ReplyStates.REPLY_NACKED,
@@ -615,6 +632,13 @@ class ReplyRPC(object):
                                 states.ReplyEvents.STATUS_RECEIVED,
                                 states.ReplyStates.REPLY_NACKED,
                                 self._sm_send_status)
+
+        # this next state should only occur when a message is out
+        # of order or the agent manager made a mistake
+        self._sm.add_transition(states.ReplyStates.REPLY_NACKED,
+                                states.ReplyEvents.DB_INFLATE,
+                                states.ReplyStates.REPLY_NACKED,
+                                self._sm_reinflated_reply_ack)
 
 
 class RequestListener(object):
@@ -692,6 +716,7 @@ class RequestListener(object):
             # is this an old completed request that is in the DB
             db_record = self._db.lookup_req(request_id)
             if db_record:
+                _g_logger.debug("Inflating the record from the DB.")
                 req = ReplyRPC(
                     self,
                     self._conf.agent_id,
@@ -700,7 +725,8 @@ class RequestListener(object):
                     incoming_doc,
                     self._db,
                     timeout=self._timeout,
-                    reply_doc=db_record.reply_doc)
+                    reply_doc=db_record.reply_doc,
+                    start_state=db_record.state)
 
                 # this will probably be used in the near future so get it
                 # on the memory list

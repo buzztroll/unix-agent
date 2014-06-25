@@ -1,6 +1,7 @@
 import base64
 from collections import namedtuple
 import getpass
+import hashlib
 import os
 import random
 import re
@@ -35,9 +36,7 @@ _debugger_connected = False
 def connect_debugger():
     global _debugger_connected
 
-    print _debugger_connected
     PYDEVD_CONTACT = "PYDEVD_CONTACT"
-    print  PYDEVD_CONTACT
     if PYDEVD_CONTACT in os.environ and not _debugger_connected:
         pydev_contact = os.environ[PYDEVD_CONTACT]
         print pydev_contact
@@ -1420,11 +1419,16 @@ class TestProtocolCommands(reply.ReplyObserverInterface):
                       echo $@ > %s
                    """ % tmpfname
 
+        sha256 = hashlib.sha256()
+        sha256.update(exe_data)
+        checksum = sha256.hexdigest()
+
         doc = {
-            "command": "upgrade",
+            "command": "run_script",
             "arguments":{
                 "b64script": base64.b64encode(exe_data),
-                "arguments": args
+                "arguments": args,
+                "checksum": checksum
             }
         }
         req_reply = self._rpc_wait_reply(doc)

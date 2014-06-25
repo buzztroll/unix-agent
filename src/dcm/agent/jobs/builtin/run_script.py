@@ -11,6 +11,8 @@
 #   this material is strictly forbidden unless prior written permission
 #   is obtained from Dell, Inc.
 #  ======================================================================
+from dcm.agent import exceptions
+import hashlib
 import logging
 import os
 
@@ -38,13 +40,19 @@ class RunScript(jobs.Plugin):
     def run(self):
 
         script_file = self.conf.get_temp_file("exe_script")
+        sha256 = hashlib.sha256()
+        sha256.update(self.args.b64script)
+        actual_checksum = sha256.hexdigest()
+        if actual_checksum != self.args.checksum:
+            raise exceptions.AgentPluginOperationException(
+                "The checksum did not match")
         try:
             with open(script_file, "w") as f:
                 f.write(self.args.b64script)
             os.chmod(script_file, 0x755)
 
             command_list = [script_file]
-            command_list.extend(self.args.args)
+            command_list.extend(self.args.arguments)
             _g_logger.debug("Plugin running the command %s"
                             % str(command_list))
             (stdout, stderr, rc) = utils.run_command(self.conf, command_list)
