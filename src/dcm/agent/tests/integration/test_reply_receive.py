@@ -178,8 +178,9 @@ class TestProtocolCommands(reply.ReplyObserverInterface):
                 pass
 
     def setUp(self):
-        test_conf_path = os.path.join(self.test_base_path, "etc", "agent.conf")
-        self.conf_obj = config.AgentConfig([test_conf_path])
+        self.test_conf_path = \
+            os.path.join(self.test_base_path, "etc", "agent.conf")
+        self.conf_obj = config.AgentConfig([self.test_conf_path])
         self.svc = service.DCMAgent(self.conf_obj)
 
         self._event = threading.Event()
@@ -1581,5 +1582,5 @@ class TestProtocolCommands(reply.ReplyObserverInterface):
         line1_a = lines[0].split()
         nose.tools.eq_(line1_a[1], confClientName)
 
-
-
+    def test_agent_status(self):
+        service.main(args=["-c", self.test_conf_path, "status"])

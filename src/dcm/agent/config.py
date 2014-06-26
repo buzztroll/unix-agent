@@ -26,12 +26,6 @@ def get_python_script_dir():
     return os.path.join(_ROOT, 'scripts')
 
 
-class AgentToken(object):
-    def __init__(self, encrypted_token, date_string):
-        self.encrypted_token = encrypted_token
-        self.date_string = date_string
-
-
 def get_connection_object(conf):
     con_type = conf.connection_type
     if not con_type:
