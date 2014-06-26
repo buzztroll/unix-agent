@@ -1,3 +1,4 @@
+import logging
 import os
 import tempfile
 import unittest
@@ -43,3 +44,6 @@ class TestProtocolCommands(unittest.TestCase):
             utils.safe_delete(path)
             utils.safe_delete(path2)
             os.rmdir(tmp_d)
+
+    def test_stack_trace(self):
+        utils.build_assertion_exception(logging, "a message")

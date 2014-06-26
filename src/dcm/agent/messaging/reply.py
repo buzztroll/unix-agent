@@ -811,9 +811,6 @@ class RequestListener(object):
         # the command to be run again
         #
         #  TODO note thread safety
-
-        # TODO put a soft state timer on the expired request IDs so that they
-        # do not leak out forever
         request_id = reply_message.get_request_id()
         del self._requests[request_id]
         self._messages_processed += 1

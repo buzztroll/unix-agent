@@ -37,44 +37,6 @@ class OperationalState(object):
     CONFIGURATION_FAILURE = "CONFIGURATION_FAILURE"
 
 
-class JobLogHandler(logging.FileHandler):
-
-    def __init__(self, filename_format="%(logname)s.log", mode='a',
-                 encoding=None):
-        self.filename_format = filename_format
-        self.file_handles = {}
-        base_filename = 'jobs.log'
-        super(JobLogHandler, self).__init__(base_filename, mode=mode,
-                                            encoding=encoding, delay=1)
-
-    def emit(self, record):
-        names_a = record.name.rsplit('.', 1)
-        if len(names_a) == 2:
-            logname = names_a[1]
-        else:
-            logname = self.baseFilename
-
-        variables = {'logname': logname,
-                     'job_id': getattr(record, 'job_id', "None"),
-                     'thread_name': getattr(record, 'threadName', "None")}
-
-        filename = self.filename_format % variables
-        if filename in self.file_handles:
-            self.stream = self.file_handles[filename]
-        else:
-            self.baseFilename = filename
-            self.stream = self._open()
-            self.file_handles[filename] = self.stream
-        super(JobLogHandler, self).emit(record)
-
-    def close(self):
-        super(JobLogHandler, self).close()
-        for fname in self.file_handles:
-            f = self.file_handles[fname]
-            f.close()
-        self.file_handles = {}
-
-
 # A decorator for abstract classes
 def not_implemented_decorator(func):
     def call(self, *args, **kwargs):

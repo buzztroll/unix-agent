@@ -24,7 +24,6 @@ _g_logger = logging.getLogger(__name__)
 
 class ConfigureServer(jobs.Plugin):
 
-
     protocol_arguments = {
         "configType":
         ("", True, str),
@@ -61,6 +60,8 @@ class ConfigureServer(jobs.Plugin):
         "configClientName":
         ("", False, str),
         "configCert":
+        ("", False, utils.base64type_convertor),
+        "configKey":
         ("", False, utils.base64type_convertor),
         "runListIds":
         ("", False, list),
@@ -214,7 +215,7 @@ class ConfigureServer(jobs.Plugin):
                     "runConfigurationManagement-ENSTRATUS")
                 cmd = [exe,
                        self.args.runAsUser,
-                       self.conf.customer_id,
+                       str(self.conf.customer_id),
                        temp_script_path]
                 (stdout, stderr, rc) = utils.run_command(self.conf, cmd)
                 if rc != 0:

@@ -126,7 +126,7 @@ class InstallService(direct_pass.DirectPass):
 
             self.cwd = os.path.dirname(service_image_path)
             self.ordered_param_list = [self.args.serviceId,
-                                       self.args.customerId,
+                                       str(self.args.customerId),
                                        self.args.runAsUser,
                                        service_image_path]
             return super(InstallService, self).run()

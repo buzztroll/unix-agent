@@ -14,6 +14,7 @@
 import json
 import logging
 import os
+import socket
 import urllib2
 from dcm.agent import exceptions
 
@@ -141,6 +142,12 @@ def get_instance_id(conf):
         elif conf.cloud_type == CLOUD_TYPES.Google:
             instance_id = get_cloud_metadata(
                 conf, "instance/attributes/es-dmcm-launch-id")
+        elif conf.cloud_type == CLOUD_TYPES.Azure:
+            hostname = socket.gethostname()
+            if not hostname:
+                return None
+            ha = hostname.split(".")
+            return "%s:%s:%s" % (ha[0], ha[0], ha[0])
         else:
             instance_id = None
         conf.instance_id = instance_id
