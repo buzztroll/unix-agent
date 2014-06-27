@@ -14,7 +14,6 @@
 import logging
 from libcloud.common.types import LibcloudError
 
-import libcloud.security
 from libcloud.storage.types import Provider, ContainerDoesNotExistError
 import libcloud.storage.providers as libcloud_providers
 from dcm.agent.cloudmetadata import CLOUD_TYPES

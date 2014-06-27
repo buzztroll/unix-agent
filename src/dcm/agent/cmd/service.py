@@ -326,9 +326,8 @@ def get_status(cli_args):
 def main(args=sys.argv):
     cli_args, remaining_argv = parse_command_line(args)
 
-    print remaining_argv
-    if remaining_argv and len(remaining_argv) > 1 and \
-                    remaining_argv[1].lower() == "status":
+    if remaining_argv and len(remaining_argv) > 0 and \
+                    remaining_argv[0].lower() == "status":
         # do status reporting
         return get_status(cli_args)
     else:

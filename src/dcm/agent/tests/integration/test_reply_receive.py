@@ -31,21 +31,6 @@ import dcm.agent.tests.utils as test_utils
 import dcm.agent.tests.utils.test_connection as test_conn
 
 
-_debugger_connected = False
-
-
-def connect_debugger():
-    global _debugger_connected
-
-    PYDEVD_CONTACT = "PYDEVD_CONTACT"
-    if PYDEVD_CONTACT in os.environ and not _debugger_connected:
-        pydev_contact = os.environ[PYDEVD_CONTACT]
-        print pydev_contact
-        host, port = pydev_contact.split(":", 1)
-        utils.setup_remote_pydev(host, int(port))
-        _debugger_connected = True
-
-
 # does not inherit from unittest because of the python generators for
 # testing storage clouds
 class TestProtocolCommands(reply.ReplyObserverInterface):
@@ -134,7 +119,8 @@ class TestProtocolCommands(reply.ReplyObserverInterface):
 
     @classmethod
     def setUpClass(cls):
-        connect_debugger()
+        print "start class"
+        test_utils.connect_to_debugger()
         cls.run_as_user = getpass.getuser()
         cls.test_base_path = tempfile.mkdtemp()
         conf_args = ["-c", "Amazon",
@@ -153,6 +139,8 @@ class TestProtocolCommands(reply.ReplyObserverInterface):
             cls._setup_buckets()
         except Exception as ex:
             raise
+
+        print "end class"
 
     @classmethod
     def tearDownClass(cls):
@@ -1582,5 +1570,15 @@ class TestProtocolCommands(reply.ReplyObserverInterface):
         line1_a = lines[0].split()
         nose.tools.eq_(line1_a[1], confClientName)
 
-    def test_agent_status(self):
-        service.main(args=["-c", self.test_conf_path, "status"])
+    def test_bad_arguments(self):
+        orig_hostname = socket.gethostname()
+
+        new_hostname = "@pp1#"
+        doc = {
+            "command": "rename",
+            "arguments": {"NotAName": new_hostname}
+        }
+        req_reply = self._rpc_wait_reply(doc)
+        r = req_reply.get_reply()
+        nose.tools.ok_(r["payload"]["return_code"] != 0)
+        nose.tools.eq_(socket.gethostname(), orig_hostname)
