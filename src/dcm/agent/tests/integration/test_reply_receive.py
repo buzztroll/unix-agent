@@ -119,7 +119,6 @@ class TestProtocolCommands(reply.ReplyObserverInterface):
 
     @classmethod
     def setUpClass(cls):
-        print "start class"
         test_utils.connect_to_debugger()
         cls.run_as_user = getpass.getuser()
         cls.test_base_path = tempfile.mkdtemp()

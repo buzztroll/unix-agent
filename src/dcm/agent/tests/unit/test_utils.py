@@ -7,7 +7,7 @@ import dcm.agent.utils as utils
 import dcm.agent.cmd.service as service
 
 
-class TestProtocolCommands(unittest.TestCase):
+class TestUtils(unittest.TestCase):
 
     def test_safe_delete_no_exists(self):
         # test non existent file
