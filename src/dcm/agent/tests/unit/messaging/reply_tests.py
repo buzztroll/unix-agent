@@ -1,14 +1,19 @@
 import mock
 import time
+import nose
 
 import dcm.agent.exceptions as exceptions
 from dcm.agent.messaging import persistence
 import dcm.agent.messaging.reply as reply
 import dcm.agent.messaging.types as types
-import dcm.agent.tests.unit.test_utils as test_utils
+import dcm.agent.tests.utils as test_utils
 
 
-class TestRequesterStandardPath(test_utils.AgentBaseUnitTester):
+class TestRequesterStandardPath(object):
+
+    @classmethod
+    def setUpClass(cls):
+        test_utils.connect_to_debugger()
 
     def setUp(self):
         self.db = mock.Mock()
@@ -35,22 +40,23 @@ class TestRequesterStandardPath(test_utils.AgentBaseUnitTester):
         reply_rpc.incoming_message(reply_doc)
         reply_listener.message_done.assert_called_once_with(reply_rpc)
 
-        self.assertEqual(conn.send.call_count, 2)
+        nose.tools.eq_(conn.send.call_count, 2)
 
         (param_list, keywords) = conn.send.call_args_list[0]
         ack_doc = param_list[0]
 
-        self.assertEqual(ack_doc["type"], types.MessageTypes.ACK)
-        self.assertEqual(ack_doc["request_id"], request_id)
+        nose.tools.eq_(ack_doc["type"], types.MessageTypes.ACK)
+        nose.tools.eq_(ack_doc["request_id"], request_id)
 
         (param_list, keywords) = conn.send.call_args_list[1]
         reply_doc = param_list[0]
 
-        self.assertTrue('message_id' in reply_doc)
-        self.assertTrue('request_id' in reply_doc)
-        self.assertTrue('type' in reply_doc)
-        self.assertEqual(reply_doc['type'], types.MessageTypes.REPLY)
-        self.assertEqual(reply_doc['payload'], reply_payload)
+        nose.tools.ok_('message_id' in reply_doc)
+
+        nose.tools.ok_('request_id' in reply_doc)
+        nose.tools.ok_('type' in reply_doc)
+        nose.tools.eq_(reply_doc['type'], types.MessageTypes.REPLY)
+        nose.tools.eq_(reply_doc['payload'], reply_payload)
 
     def test_reply_skip(self):
         conn = mock.Mock()
@@ -76,12 +82,12 @@ class TestRequesterStandardPath(test_utils.AgentBaseUnitTester):
 
         (param_list, keywords) = conn.send.call_args
         send_doc = param_list[0]
-        self.assertTrue('message_id' in send_doc)
-        self.assertTrue('request_id' in send_doc)
-        self.assertTrue('type' in send_doc)
-        self.assertEqual(send_doc['type'], types.MessageTypes.REPLY)
-        self.assertEqual(send_doc['payload'], reply_payload)
-        self.assertEqual(conn.send.call_count, 1)
+        nose.tools.ok_('message_id' in send_doc)
+        nose.tools.ok_('request_id' in send_doc)
+        nose.tools.ok_('type' in send_doc)
+        nose.tools.eq_(send_doc['type'], types.MessageTypes.REPLY)
+        nose.tools.eq_(send_doc['payload'], reply_payload)
+        nose.tools.eq_(conn.send.call_count, 1)
 
     def test_request_retrans_before_ack(self):
         conn = mock.Mock()
@@ -123,7 +129,7 @@ class TestRequesterStandardPath(test_utils.AgentBaseUnitTester):
         reply_rpc.ack(None, None, None)
         reply_rpc.incoming_message(request_retrans_doc)
 
-        self.assertEqual(conn.send.call_count, 2)
+        nose.tools.eq_(conn.send.call_count, 2)
 
     def test_request_retrans_after_reply(self):
         conn = mock.Mock()
@@ -145,7 +151,7 @@ class TestRequesterStandardPath(test_utils.AgentBaseUnitTester):
         reply_rpc.reply(reply_payload)
         reply_rpc.incoming_message(request_retrans_doc)
 
-        self.assertEqual(conn.send.call_count, 2)
+        nose.tools.eq_(conn.send.call_count, 2)
 
         reply_doc = {"type": types.MessageTypes.ACK,
                      "request_id": request_id,
@@ -189,7 +195,7 @@ class TestRequesterStandardPath(test_utils.AgentBaseUnitTester):
         time.sleep(1.1)
         reply_rpc.incoming_message(reply_doc)
         reply_listener.message_done.assert_called_once_with(reply_rpc)
-        self.assertEqual(conn.send.call_count, 2)
+        nose.tools.eq_(conn.send.call_count, 2)
 
     def test_request_nack_lost_retrans_after_nack(self):
         conn = mock.Mock()
@@ -212,7 +218,7 @@ class TestRequesterStandardPath(test_utils.AgentBaseUnitTester):
         }
         reply_rpc.incoming_message(request_retrans_doc)
 
-        self.assertEqual(conn.send.call_count, 2)
+        nose.tools.eq_(conn.send.call_count, 2)
 
     def tests_just_for_coverage(self):
         request_id = "requestID"
@@ -224,16 +230,30 @@ class TestRequesterStandardPath(test_utils.AgentBaseUnitTester):
             "request_id": request_id,
             "message_id": message_id,
         }
-        self.assertRaises(exceptions.MissingMessageParameterException,
-                          reply_rpc.incoming_message, reply_doc)
+
+        passed = False
+        try:
+            reply_rpc.incoming_message(reply_doc)
+        except exceptions.MissingMessageParameterException:
+            passed = True
+        nose.tools.ok_(passed)
+
+        passed = False
         reply_doc['type'] = 'nothing'
-        self.assertRaises(exceptions.InvalidMessageParameterValueException,
-                          reply_rpc.incoming_message, reply_doc)
+        try:
+            reply_rpc.incoming_message(reply_doc)
+        except exceptions.InvalidMessageParameterValueException:
+            passed = True
+        nose.tools.ok_(passed)
 
         reply_rpc._sm.mapping_to_digraph()
 
 
-class TestRequestListener(test_utils.AgentBaseUnitTester):
+class TestRequestListener(object):
+
+    @classmethod
+    def setUpClass(cls):
+        test_utils.connect_to_debugger()
 
     def setUp(self):
         self.db = persistence.AgentDB(":memory:")
@@ -256,7 +276,7 @@ class TestRequestListener(test_utils.AgentBaseUnitTester):
 
         reply_listener = reply.RequestListener(conf, conn, disp, self.db)
         reply_listener.incoming_parent_q_message(request_doc)
-        self.assertTrue(disp.incoming_request.called)
+        nose.tools.ok_(disp.incoming_request.called)
 
     def test_read_request_retrans_request(self):
         disp = mock.Mock()
@@ -297,5 +317,5 @@ class TestRequestListener(test_utils.AgentBaseUnitTester):
 
         (param_list, keywords) = conn.send.call_args
         send_doc = param_list[0]
-        self.assertTrue('type' in send_doc)
-        self.assertEqual(send_doc['type'], types.MessageTypes.NACK)
+        nose.tools.ok_('type' in send_doc)
+        nose.tools.eq_(send_doc['type'], types.MessageTypes.NACK)

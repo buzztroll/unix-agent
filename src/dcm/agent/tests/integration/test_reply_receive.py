@@ -16,6 +16,7 @@ import uuid
 import logging
 import nose
 from nose.plugins import skip
+import time
 
 import dcm.agent
 import dcm.agent.utils as utils
@@ -28,21 +29,6 @@ import dcm.agent.config as config
 from dcm.agent.messaging import reply, request, persistence
 import dcm.agent.tests.utils as test_utils
 import dcm.agent.tests.utils.test_connection as test_conn
-
-
-_debugger_connected = False
-
-
-def connect_debugger():
-    global _debugger_connected
-
-    PYDEVD_CONTACT = "PYDEVD_CONTACT"
-    if PYDEVD_CONTACT in os.environ and not _debugger_connected:
-        pydev_contact = os.environ[PYDEVD_CONTACT]
-        print pydev_contact
-        host, port = pydev_contact.split(":", 1)
-        utils.setup_remote_pydev(host, int(port))
-        _debugger_connected = True
 
 
 # does not inherit from unittest because of the python generators for
@@ -133,7 +119,7 @@ class TestProtocolCommands(reply.ReplyObserverInterface):
 
     @classmethod
     def setUpClass(cls):
-        connect_debugger()
+        test_utils.connect_to_debugger()
         cls.run_as_user = getpass.getuser()
         cls.test_base_path = tempfile.mkdtemp()
         conf_args = ["-c", "Amazon",
@@ -152,6 +138,8 @@ class TestProtocolCommands(reply.ReplyObserverInterface):
             cls._setup_buckets()
         except Exception as ex:
             raise
+
+        print "end class"
 
     @classmethod
     def tearDownClass(cls):
@@ -177,8 +165,9 @@ class TestProtocolCommands(reply.ReplyObserverInterface):
                 pass
 
     def setUp(self):
-        test_conf_path = os.path.join(self.test_base_path, "etc", "agent.conf")
-        self.conf_obj = config.AgentConfig([test_conf_path])
+        self.test_conf_path = \
+            os.path.join(self.test_base_path, "etc", "agent.conf")
+        self.conf_obj = config.AgentConfig([self.test_conf_path])
         self.svc = service.DCMAgent(self.conf_obj)
 
         self._event = threading.Event()
@@ -325,6 +314,41 @@ class TestProtocolCommands(reply.ReplyObserverInterface):
             pass
 
     @test_utils.system_changing
+    def test_add_admin_user_remove_user(self):
+        user_name = "dcm" + str(random.randint(10, 99))
+
+        doc = {
+            "command": "add_user",
+            "arguments": {"customerId": self.customer_id,
+                          "userId": user_name,
+                          "firstName": "buzz",
+                          "lastName": "troll",
+                          "authentication": "public key data",
+                          "administrator": True}}
+        req_rpc = self._rpc_wait_reply(doc)
+        r = req_rpc.get_reply()
+        nose.tools.eq_(r["payload"]["return_code"], 0)
+
+        pw_ent = pwd.getpwnam(user_name)
+
+        # TODO figure out a safe way to verify that sudo was added
+
+        nose.tools.eq_(pw_ent.pw_name, user_name)
+
+        doc = {
+            "command": "remove_user",
+            "arguments": {"userId": user_name}}
+
+        req_rpc = self._rpc_wait_reply(doc)
+        r = req_rpc.get_reply()
+        nose.tools.eq_(r["payload"]["return_code"], 0)
+        try:
+            pwd.getpwnam(user_name)
+            nose.tools.ok_(False, "should have raised an exception")
+        except KeyError:
+            pass
+
+    @test_utils.system_changing
     def test_initialize(self):
         cust = 10l
         orig_hostname = socket.gethostname()
@@ -394,6 +418,20 @@ class TestProtocolCommands(reply.ReplyObserverInterface):
 
         nose.tools.eq_(socket.gethostname(), orig_hostname)
 
+    @test_utils.system_changing
+    def test_rename_bad_hostname(self):
+        orig_hostname = socket.gethostname()
+
+        new_hostname = "@pp1#"
+        doc = {
+            "command": "rename",
+            "arguments": {"serverName": new_hostname}
+        }
+        req_reply = self._rpc_wait_reply(doc)
+        r = req_reply.get_reply()
+        nose.tools.ok_(r["payload"]["return_code"] != 0)
+        nose.tools.eq_(socket.gethostname(), orig_hostname)
+
     def _get_job_description(self, job_id):
         arguments = {
             "jobId": job_id
@@ -408,6 +446,8 @@ class TestProtocolCommands(reply.ReplyObserverInterface):
         nose.tools.eq_(r["payload"]["reply_type"], "job_description")
 
         jd = r["payload"]["reply_object"]
+
+        time.sleep(0.1)
 
         return jd
 
@@ -1378,7 +1418,6 @@ class TestProtocolCommands(reply.ReplyObserverInterface):
             nose.tools.eq_(len(lines), 3)
             nose.tools.eq_("UNLOCKED", lines[2].strip())
 
-
     def test_upgrade(self):
         _, tmpfname = tempfile.mkstemp();
         _, exefname = tempfile.mkstemp();
@@ -1412,8 +1451,8 @@ class TestProtocolCommands(reply.ReplyObserverInterface):
         nose.tools.eq_(la[1], dcm.agent.g_version)
 
     def test_run_script(self):
-        _, tmpfname = tempfile.mkstemp();
-        _, exefname = tempfile.mkstemp();
+        _, tmpfname = tempfile.mkstemp()
+        _, exefname = tempfile.mkstemp()
         args = ["arg1", "hello", "args3"]
         exe_data = """#!/bin/bash
                       echo $@ > %s
@@ -1441,3 +1480,104 @@ class TestProtocolCommands(reply.ReplyObserverInterface):
         la = line.split()
 
         nose.tools.eq_(la, args)
+
+    @test_utils.system_changing
+    def test_configure_server_with_chef(self):
+        _, tmpfname = tempfile.mkstemp()
+        fake_chef_script = """#!/bin/bash
+        echo $@ > %s
+        """ % tmpfname
+
+        chef_script_path = os.path.join(
+            self.test_base_path, "bin", "runConfigurationManagement-CHEF")
+
+        with open(chef_script_path, "w") as fptr:
+            fptr.write(fake_chef_script)
+        os.chmod(chef_script_path, 0x755)
+
+        runListIds = ["recipe[git]", "recipe[2]"]
+        confClientName = "confname"
+
+        arguments = {
+            "configType": "CHEF",
+            "runListIds": runListIds,
+            "configClientName": confClientName
+        }
+        doc = {
+            "command": "configure_server_17",
+            "arguments": arguments
+        }
+        req_reply = self._rpc_wait_reply(doc)
+        r = req_reply.get_reply()
+        nose.tools.eq_(r["payload"]["return_code"], 0)
+        nose.tools.eq_(r["payload"]["reply_type"], "job_description")
+
+        jd = r["payload"]["reply_object"]
+        while jd["job_status"] in ["WAITING", "RUNNING"]:
+            jd = self._get_job_description(jd["job_id"])
+        nose.tools.eq_(jd["job_status"], "COMPLETE")
+
+        with open(tmpfname, "r") as fptr:
+            lines = fptr.readlines()
+        nose.tools.ok_(len(lines) >= 1)
+
+        line1_a = lines[0].split()
+        nose.tools.eq_(line1_a[1], confClientName)
+
+    @test_utils.system_changing
+    def test_configure_server_with_puppet(self):
+        _, tmpfname = tempfile.mkstemp()
+        fake_chef_script = """#!/bin/bash
+        echo $@ > %s
+        """ % tmpfname
+
+        chef_script_path = os.path.join(
+            self.test_base_path, "bin", "runConfigurationManagement-PUPPET")
+
+        with open(chef_script_path, "w") as fptr:
+            fptr.write(fake_chef_script)
+        os.chmod(chef_script_path, 0x755)
+
+        confClientName = "confname"
+        configCert = base64.b64encode(bytearray(str(uuid.uuid4())))
+        configKey = base64.b64encode(bytearray(str(uuid.uuid4())))
+
+        arguments = {
+            "configType": "PUPPET",
+            "configClientName": confClientName,
+            "configCert": configCert,
+            "configKey": configKey
+        }
+        doc = {
+            "command": "configure_server_17",
+            "arguments": arguments
+        }
+        req_reply = self._rpc_wait_reply(doc)
+        r = req_reply.get_reply()
+        nose.tools.eq_(r["payload"]["return_code"], 0)
+        nose.tools.eq_(r["payload"]["reply_type"], "job_description")
+
+        jd = r["payload"]["reply_object"]
+        while jd["job_status"] in ["WAITING", "RUNNING"]:
+            jd = self._get_job_description(jd["job_id"])
+        nose.tools.eq_(jd["job_status"], "COMPLETE")
+
+        with open(tmpfname, "r") as fptr:
+            lines = fptr.readlines()
+        nose.tools.ok_(len(lines) >= 1)
+
+        line1_a = lines[0].split()
+        nose.tools.eq_(line1_a[1], confClientName)
+
+    def test_bad_arguments(self):
+        orig_hostname = socket.gethostname()
+
+        new_hostname = "@pp1#"
+        doc = {
+            "command": "rename",
+            "arguments": {"NotAName": new_hostname}
+        }
+        req_reply = self._rpc_wait_reply(doc)
+        r = req_reply.get_reply()
+        nose.tools.ok_(r["payload"]["return_code"] != 0)
+        nose.tools.eq_(socket.gethostname(), orig_hostname)

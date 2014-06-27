@@ -1,16 +1,6 @@
 import dcm.agent.utils as agent_util
 
 
-class HandshakeReceiverInterface(object):
-    """
-    This is the interface that shows what methods will be called on the
-    connection receiving object
-    """
-    @agent_util.not_implemented_decorator
-    def incoming_handshake(self, connection, handshake_doc):
-        pass
-
-
 class ConnectionInterface(object):
 
     @agent_util.not_implemented_decorator

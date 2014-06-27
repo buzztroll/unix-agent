@@ -41,10 +41,11 @@ request_table = sqlalchemy.Table(
 
 def fail_started_state(db_record):
     db_record.state = messaging_states.ReplyStates.REPLY
-    db_record.reply_doc = {
+    r = {
         'Exception': "The job was executed but the state of the execution "
                      "was lost.",
         'return_code': 1}
+    db_record.reply_doc = json.dumps(r)
     db_record.last_update_time = datetime.datetime.now()
 
 
@@ -158,9 +159,10 @@ class AgentDB(object):
 
     @messaging_utils.class_method_sync
     def update_record(self, request_id, state, reply_doc=None):
-        record = self._session.query(RequestDBObject).filter(
-            RequestDBObject.request_id==request_id).one()
-        if not record:
+        try:
+            record = self._session.query(RequestDBObject).filter(
+                RequestDBObject.request_id==request_id).one()
+        except orm_exc.NoResultFound as ex:
             raise exceptions.PersistenceException(
                 "The record %s was not found" % request_id)
         record.state = state
