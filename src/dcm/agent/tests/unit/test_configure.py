@@ -3,7 +3,6 @@ import os
 import shutil
 import tempfile
 import unittest
-import yaml
 
 import dcm.agent.cmd.configure as configure
 import dcm.agent.tests.utils as test_utils
@@ -48,6 +47,31 @@ class TestConfigure(unittest.TestCase):
 
             cloud_from_file = parser.get("cloud", "type")
             self.assertEqual(cloud_from_file.lower(), cloud.lower())
+
+            try:
+                cloud_from_file = parser.get("cloud", "metadata_url")
+            except:
+                cloud_from_file = None
+            if cloud == "Amazon":
+                mu = "http://169.254.169.254/latest/meta-data/"
+                self.assertEqual(mu, cloud_from_file)
+            elif cloud == "Eucalyptus":
+                mu = "http://169.254.169.254/1.0/meta-data/"
+                self.assertEqual(mu, cloud_from_file)
+            elif cloud == "OpenStack":
+                mu = "http://169.254.169.254/openstack/2012-08-10/meta_data.json"
+                self.assertEqual(mu, cloud_from_file)
+            elif cloud == "Google":
+                mu = "http://metadata.google.internal/computeMetadata/v1"
+                self.assertEqual(mu, cloud_from_file)
+            elif cloud == "CloudStack":
+                mu = "lastest/instance-id"
+                self.assertEqual(mu, cloud_from_file)
+            elif cloud == "CloudStack3":
+                mu = "latest/local-hostname"
+                self.assertEqual(mu, cloud_from_file)
+            else:
+                self.assertIsNone(cloud_from_file)
 
     def test_all_cloud_reconfigure(self):
         url = 'http://someplace.com:2342/hello'

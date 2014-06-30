@@ -223,7 +223,7 @@ class ConfigureServer(jobs.Plugin):
                         "Script %s failed" % script_name)
                 t_stderr = t_stderr + stderr
                 t_stdout = t_stdout + stdout
-            return (0, t_stdout, t_stderr)
+            return (t_stdout, t_stderr, 0)
         finally:
             shutil.rmtree(temp_dir, ignore_errors=True)
 
@@ -251,7 +251,9 @@ class ConfigureServer(jobs.Plugin):
             elif self.args.configType.upper() == "PUPPET":
                 (stdout, stderr, rc) = self.configure_server_with_puppet()
             else:
-                (stdout, stderr, rc) = self.configure_server_legacy()
+                rc = 1
+                stderr = "The type %s is not supported." % self.args.configType
+                stdout = ""
 
         if rc != 0:
             reply_doc = {"return_code": rc,

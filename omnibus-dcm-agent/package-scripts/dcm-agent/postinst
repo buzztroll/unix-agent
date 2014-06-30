@@ -94,7 +94,7 @@ elif [ -x /sbin/chkconfig ] ; then
 
 	echo "# chkconfig: 2345 60 40" >> $startup_fname
 	echo "# description: Manages the enStratus agent." >> $startup_fname
-	echo "$BASEDIRNAME/bin/enstratiusinitd " '$@' >> $startup_fname
+	echo "$BASEDIRNAME/bin/enstratiusinitd-CENTOS " '$@' >> $startup_fname
 
     chmod 755 $startup_fname
 

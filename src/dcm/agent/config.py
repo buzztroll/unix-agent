@@ -166,6 +166,7 @@ class AgentConfig(object):
         self.server_id = None
         self.server_name = None
         self.storage_dbfile = None
+        self.dhcp_address = None
 
         self.imaging_event = threading.Event()
 
@@ -278,8 +279,7 @@ def _build_options_list():
         FilenameOpt("storage", "temppath", default="/tmp"),
         FilenameOpt("storage", "services_dir", default="/mnt/services"),
         FilenameOpt("storage", "base_dir", default="/dcm"),
-        FilenameOpt("storage", "ephemeral_mountpoint", default="/mnt"),
-        FilenameOpt("storage", "operations_path", default="/mnt"),
+        FilenameOpt("storage", "mountpoint", default="/mnt"),
         FilenameOpt("storage", "dbfile", default=None),
         FilenameOpt("storage", "script_dir", default=None),
 

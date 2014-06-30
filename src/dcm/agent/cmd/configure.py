@@ -83,6 +83,10 @@ def setup_command_line_parser():
                         dest="base_path",
                         help="The path to enstratius")
 
+    parser.add_argument("--mount-point", "-m",
+                        dest="mount_path",
+                        help="The path to mount point")
+
     parser.add_argument("--on-boot", "-B",
                         dest="on_boot",
                         action='store_true',
@@ -305,10 +309,8 @@ def make_dirs(conf_d):
         (os.path.join(base_path, "home"), 0750),
         (os.path.join(base_path, "cfg"), 0750),
         (conf_d["storage"]["services_dir"][1], 0755),
-        (conf_d["storage"]["operations_path"][1], 0750),
-        (conf_d["storage"]["ephemeral_mountpoint"][1], 0750),
-        ("/mnt", 0755),
-        (os.path.join("/mnt", "tmp"), 0755),
+        (conf_d["storage"]["mountpoint"][1], 0750),
+        (os.path.join(conf_d["storage"]["mountpoint"][1], "tmp"), 0750),
         (conf_d["storage"]["temppath"][1], 01777),
     ]
 
@@ -361,6 +363,7 @@ def merge_opts(conf_d, opts):
         "temp_path": ("storage", "temppath"),
         "platform": ("platform", "name"),
         "con_type": ("connection", "type"),
+        "mount_path": ("storage", "mountpoint")
     }
     for opts_name in map_opts_to_conf:
         (s, i) = map_opts_to_conf[opts_name]
@@ -394,8 +397,13 @@ def do_plugin_and_logging_conf(conf_d, opts):
     else:
         log_file = opts.logfile
 
-    os.system("sed -i 's^@LOGFILE_PATH@^%s^' %s" % (log_file,
-                                                    dest_logging_path))
+    with open(src_logging_path, "r") as fptr:
+        lines = fptr.readlines()
+
+    with open(dest_logging_path, "w") as fptr:
+        for line in lines:
+            line = line.replace("@LOGFILE_PATH@", log_file)
+            fptr.write(line)
 
 
 def copy_scripts(conf_d):

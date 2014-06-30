@@ -13,6 +13,7 @@
 #  ======================================================================
 import datetime
 import json
+import logging
 import threading
 
 import sqlalchemy
@@ -24,6 +25,7 @@ import dcm.agent.messaging.states as messaging_states
 
 
 g_metadata = sqlalchemy.MetaData()
+g_logger = logging.getLogger(__name__)
 
 
 request_table = sqlalchemy.Table(
@@ -73,9 +75,14 @@ class AgentDB(object):
             dburl = "sqlite:///%s" % db_file
         self._engine = sqlalchemy.create_engine(dburl)
         g_metadata.create_all(self._engine)
-        self._Session = sqlalchemy.orm.sessionmaker(bind=self._engine)
-        self._session = self._Session()
+
+        self._session_factory = sqlalchemy.orm.sessionmaker(bind=self._engine)
+        self._Session = sqlalchemy.orm.scoped_session(self._session_factory)
+        self._Session =   self._session_factory
         self._lock = threading.RLock()
+
+    def _get_session(self):
+        return self._Session()
 
     def lock(self):
         self._lock.acquire()
@@ -92,17 +99,19 @@ class AgentDB(object):
         # in this step we decide that we cannot recover an job that has not
         # been known to reply.  If in the future we feel we can re-run jobs
         # safe then changes will need to be made here
-        started_requests = self._session.query(RequestDBObject).filter(
+        session = self._get_session()
+        started_requests = session.query(RequestDBObject).filter(
             RequestDBObject.state==messaging_states.ReplyStates.ACKED).all()
         for req in started_requests:
             fail_started_state(req)
-            self._session.add(req)
-        self._session.commit()
+            session.add(req)
+        session.commit()
 
     @messaging_utils.class_method_sync
     def get_all_complete(self):
+        session = self._get_session()
         # load every object
-        complete_tasks = self._session.query(RequestDBObject).filter(
+        complete_tasks = session.query(RequestDBObject).filter(
             RequestDBObject.state==messaging_states.ReplyStates.REPLY_ACKED).\
             all()
         return complete_tasks
@@ -110,7 +119,8 @@ class AgentDB(object):
     @messaging_utils.class_method_sync
     def get_all_rejected(self):
         # load every object
-        complete_tasks = self._session.query(RequestDBObject).filter(
+        session = self._get_session()
+        complete_tasks = session.query(RequestDBObject).filter(
             RequestDBObject.state==messaging_states.ReplyStates.NACKED).\
             all()
         return complete_tasks
@@ -118,7 +128,8 @@ class AgentDB(object):
     @messaging_utils.class_method_sync
     def get_all_reply_nacked(self):
         # load every object
-        complete_tasks = self._session.query(RequestDBObject).filter(
+        session = self._get_session()
+        complete_tasks = session.query(RequestDBObject).filter(
             RequestDBObject.state==messaging_states.ReplyStates.REPLY_NACKED).\
             all()
         return complete_tasks
@@ -126,21 +137,24 @@ class AgentDB(object):
     @messaging_utils.class_method_sync
     def get_all_ack(self):
         # load every object
-        complete_tasks = self._session.query(RequestDBObject).filter(
+        session = self._get_session()
+        complete_tasks = session.query(RequestDBObject).filter(
             RequestDBObject.state==messaging_states.ReplyStates.ACKED).all()
         return complete_tasks
 
     @messaging_utils.class_method_sync
     def get_all_reply(self):
         # load every object
-        re_inflate_tasks = self._session.query(RequestDBObject).filter(
+        session = self._get_session()
+        re_inflate_tasks = session.query(RequestDBObject).filter(
             RequestDBObject.state==messaging_states.ReplyStates.REPLY).all()
         return re_inflate_tasks
 
     @messaging_utils.class_method_sync
     def lookup_req(self, request_id):
+        session = self._get_session()
         try:
-            record = self._session.query(RequestDBObject).filter(
+            record = session.query(RequestDBObject).filter(
                 RequestDBObject.request_id==request_id).one()
             return record
         except orm_exc.NoResultFound:
@@ -150,17 +164,19 @@ class AgentDB(object):
     def new_record(self, request_id, request_doc, reply_doc, state, agent_id):
         req_doc_str = json.dumps(request_doc)
 
+        session = self._get_session()
         db_obj = RequestDBObject(request_doc['request_id'],
                                  req_doc_str, agent_id, state)
         if reply_doc:
             db_obj.reply_doc = json.dumps(reply_doc)
-        self._session.add(db_obj)
-        self._session.commit()
+        session.add(db_obj)
+        session.commit()
 
     @messaging_utils.class_method_sync
     def update_record(self, request_id, state, reply_doc=None):
+        session = self._get_session()
         try:
-            record = self._session.query(RequestDBObject).filter(
+            record = session.query(RequestDBObject).filter(
                 RequestDBObject.request_id==request_id).one()
         except orm_exc.NoResultFound as ex:
             raise exceptions.PersistenceException(
@@ -169,22 +185,23 @@ class AgentDB(object):
         if reply_doc is not None:
             reply_doc_str = json.dumps(reply_doc)
             record.reply_doc = reply_doc_str
-        self._session.add(record)
-        self._session.commit()
+        session.add(record)
+        session.commit()
 
     @messaging_utils.class_method_sync
     def clean_all_expired(self, cut_off_time):
+        session = self._get_session()
         try:
-            recs = self._session.query(RequestDBObject).filter(
+            recs = session.query(RequestDBObject).filter(
                 RequestDBObject.last_update_time < cut_off_time).all()
         except orm_exc.NoResultFound:
             return
         try:
             for rec in recs:
-                self._session.delete(rec)
-            self._session.commit()
+                session.delete(rec)
+            session.commit()
         except:
-            self._session.rollback()
+            session.rollback()
 
 
 class DBCleaner(threading.Thread):
@@ -200,16 +217,20 @@ class DBCleaner(threading.Thread):
 
     def run(self):
         while not self._done.isSet():
-            self._cond.acquire
+            self._cond.acquire()
             try:
                 self._cond.wait(self._interval)
-                # nw = datetime.datetime()
-                # self._db.clean_all_expired(cut_off_time)
+                cut_off_time = datetime.datetime.now() - datetime.timedelta(
+                    microseconds=self._max_time)
+                self._db.clean_all_expired(cut_off_time)
+            except Exception as ex:
+                g_logger.exception("An exception occurred in the db sweeper "
+                                   "thread " + ex.message)
             finally:
                 self._cond.release()
 
     def done(self):
-        self._cond.acquire
+        self._cond.acquire()
         try:
             self._done.set()
             self._cond.notify()

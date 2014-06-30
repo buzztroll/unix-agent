@@ -1171,6 +1171,43 @@ class TestProtocolCommands(reply.ReplyObserverInterface):
                 nose.tools.eq_(line, u)
 
     @test_utils.system_changing
+    def test_configure_server_uknown_type_error(self):
+        if not self.storage_clouds:
+            raise skip.SkipTest("No storage clouds are configured")
+        # just use the first cloud.  install_service is well tested on
+        # all clouds elsewhere
+        primary = self.storage_clouds[0]
+
+        files_uuids = []
+
+        script_files = self._upload_enstratius_config_scripts(
+            primary, files_uuids)
+        arguments = {
+            "configType": "NOReal",
+            "providerRegionId": primary.region,
+            "storageDelegate": primary.id,
+            "scriptFiles": script_files,
+            "storagePublicKey": base64.b64encode(bytearray(primary.key)),
+            "storagePrivateKey": base64.b64encode(bytearray(primary.secret)),
+            "personalityFiles": [],
+        }
+        doc = {
+            "command": "configure_server_17",
+            "arguments": arguments
+        }
+        req_reply = self._rpc_wait_reply(doc)
+        r = req_reply.get_reply()
+
+        nose.tools.eq_(r["payload"]["return_code"], 0)
+        nose.tools.eq_(r["payload"]["reply_type"], "job_description")
+
+        jd = r["payload"]["reply_object"]
+        while jd["job_status"] in ["WAITING", "RUNNING"]:
+            jd = self._get_job_description(jd["job_id"])
+        nose.tools.eq_(jd["job_status"], "ERROR")
+        nose.tools.ok_(jd["message"])
+
+    @test_utils.system_changing
     def test_configure_server_17_with_enstratius(self):
         if not self.storage_clouds:
             raise skip.SkipTest("No storage clouds are configured")

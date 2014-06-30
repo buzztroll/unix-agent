@@ -213,7 +213,7 @@ def get_device_mappings(conf):
             device_type = DeviceTypes.ROOT
         elif mount_point == conf.storage_services_dir:
             device_type = DeviceTypes.SERVICE
-        elif mount_point == conf.storage_ephemeral_mountpoint:
+        elif mount_point == conf.storage_mountpoint:
             device_type = DeviceTypes.EPHEMERAL
         else:
             device_type = DeviceTypes.CUSTOM
