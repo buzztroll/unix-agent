@@ -15,7 +15,7 @@ start() {
     echo -n "Starting the dcm-agent..."
     if [ -f $PIDFILE ]; then
         PID=`cat $PIDFILE`
-        kill -0 $PID
+        kill -0 $PID &> /dev/null
         if [ $? -eq 0 ]; then
             echo dcm-agent already running: $PID
             return 1;
@@ -32,7 +32,7 @@ stop() {
     echo
     if [ -f $PIDFILE ]; then
         PID=`cat $PIDFILE`
-        kill $PID
+        kill $PID &> /dev/null
         if [ $? -ne 0 ]; then
             echo "dcm-agent is not running"
             return 1;
@@ -44,7 +44,6 @@ stop() {
     echo
     return 0
 }
-
 
 
 SELF=$(cd $(dirname $0); pwd -P)/$(basename $0)

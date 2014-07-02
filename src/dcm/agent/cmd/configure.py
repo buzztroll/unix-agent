@@ -190,6 +190,10 @@ def identify_platform(opts):
     raise Exception("The platform could not be determined")
 
 
+def _get_input(prompt):
+    return raw_input(prompt)
+
+
 def select_cloud(default="Amazon"):
     for c in sorted(cloud_choices.keys()):
         col = "%2d) %-13s" % (c, cloud_choices[c])
@@ -197,7 +201,7 @@ def select_cloud(default="Amazon"):
 
     cloud = None
     while cloud is None:
-        input = raw_input("Select your cloud (%s): " % default)
+        input = _get_input("Select your cloud (%s): " % default)
         input = input.strip()
         if not input:
             input = default
@@ -450,7 +454,7 @@ def get_url(default=None):
     if up.scheme not in allowed_schemes:
         raise Exception("The url %s does not consist of an allowed scheme. "
                         "Only the follow schemes are allows %s"
-                        % str(allowed_schemes))
+                        % (url, str(allowed_schemes)))
     return url
 
 

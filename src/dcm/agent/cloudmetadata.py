@@ -115,6 +115,13 @@ def get_cloud_metadata(conf, key):
             except:
                 _g_logger.exception("Failed to get the OpenStack metadata")
                 result = None
+        elif conf.cloud_type == CLOUD_TYPES.Joyent:
+            cmd_args = ["sudo", "/lib/smartdc/mdata-get", key]
+            (stdout, stderr, rc) = utils.run_command(conf, cmd_args)
+            if rc != 0:
+                result = None
+            else:
+                result = stdout.strip()
         else:
             # NOTE we may want to log this
             result = None
@@ -139,6 +146,8 @@ def get_instance_id(conf):
             instance_id = get_cloud_metadata(conf, "vm-id")
         elif conf.cloud_type == CLOUD_TYPES.OpenStack:
             instance_id = get_cloud_metadata(conf, "uuid")
+        elif conf.cloud_type == CLOUD_TYPES.Joyent:
+            instance_id = get_cloud_metadata(conf, "es:dmcm-launch-id")
         elif conf.cloud_type == CLOUD_TYPES.Google:
             instance_id = get_cloud_metadata(
                 conf, "instance/attributes/es-dmcm-launch-id")

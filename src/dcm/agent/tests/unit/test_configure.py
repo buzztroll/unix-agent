@@ -3,6 +3,9 @@ import os
 import shutil
 import tempfile
 import unittest
+import mock
+import sys
+import dcm
 
 import dcm.agent.cmd.configure as configure
 import dcm.agent.tests.utils as test_utils
@@ -91,3 +94,71 @@ class TestConfigure(unittest.TestCase):
 
         agentmanager_url = parser.get("connection", "agentmanager_url")
         self.assertEqual(agentmanager_url, url)
+
+    def test_configure_get_url(self):
+        url = "ws://someplace.com:5434/path"
+        with mock.patch('sys.stdin'):
+            sys.stdin.readline.return_value = url
+            x = configure.get_url()
+        self.assertEqual(x, url)
+
+    def test_configure_get_url_bad_scheme(self):
+        url = "notgood://someplace.com:5434/path"
+        with mock.patch('sys.stdin'):
+            sys.stdin.readline.return_value = url
+            self.assertRaises(Exception, configure.get_url)
+
+    def test_configure_get_url_bad_url(self):
+        url = "sdkfjlkjrewlkjrewl"
+        with mock.patch('sys.stdin'):
+            sys.stdin.readline.return_value = url
+            self.assertRaises(Exception, configure.get_url)
+
+    def test_configure_cloud_choice(self):
+        cloud_choice = "1"
+        with mock.patch('dcm.agent.cmd.configure._get_input'):
+            configure._get_input.return_value = cloud_choice
+            cloud = configure.select_cloud()
+        self.assertEqual(cloud.lower(), "amazon")
+
+    def test_configure_bad_cloud_choice(self):
+        aws = ["bad", "1"]
+        def _l_get_input(prompt):
+            return aws.pop()
+
+        func = dcm.agent.cmd.configure._get_input
+        try:
+            dcm.agent.cmd.configure._get_input = _l_get_input
+            cloud = configure.select_cloud()
+        finally:
+            dcm.agent.cmd.configure._get_input = func
+        self.assertEqual(cloud.lower(), "amazon")
+
+    def test_interactive_configure(self):
+        def _l_get_input(prompt):
+            return "12"
+
+        url = "ws://someplace.com:5434/path"
+        with mock.patch('sys.stdin'):
+            sys.stdin.readline.return_value = url
+
+            func = dcm.agent.cmd.configure._get_input
+            try:
+                dcm.agent.cmd.configure._get_input = _l_get_input
+                conf_args = ["-p", self.test_base_path,
+                             "-C", "ws",
+                             "-i"]
+                rc = configure.main(conf_args)
+            finally:
+                dcm.agent.cmd.configure._get_input = func
+
+        self.assertEqual(rc, 0)
+
+        parser = ConfigParser.SafeConfigParser()
+        parser.read(os.path.join(self.test_base_path, "etc", "agent.conf"))
+
+        agentmanager_url = parser.get("connection", "agentmanager_url")
+        self.assertEqual(agentmanager_url, url)
+        cloud_type = parser.get("cloud", "type")
+        self.assertEqual(cloud_type, "Google")
+

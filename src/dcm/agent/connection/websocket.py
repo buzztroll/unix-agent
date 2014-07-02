@@ -103,8 +103,8 @@ class WebSocketConnection(threading.Thread):
         self._server_url = server_url
         self._cond = threading.Condition()
         self._done_event = threading.Event()
-        self._backoff_time = 0.1
-        self._backoff_amount = 1.0
+        self._backoff_time = 1.0
+        self._backoff_amount = 5.0
         self._max_backoff = 120.0
         self._total_errors = 0
         self._errors_since_success = 0
@@ -134,6 +134,8 @@ class WebSocketConnection(threading.Thread):
         while not self._done_event.is_set():
             try:
                 self._sm.event_occurred(WsConnEvents.POLL)
+                _g_logger.debug("Waiting %f for the next connection." %
+                                self._backoff_time)
                 self._cond.wait(self._backoff_time)
             except Exception as ex:
                 _g_logger.exception("The ws connection poller loop had "

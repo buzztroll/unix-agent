@@ -1462,8 +1462,6 @@ class TestProtocolCommands(reply.ReplyObserverInterface):
                       echo $@ > %s
                    """ % tmpfname
 
-        print exe_data
-        print tmpfname
         url = "file:///%s" % exefname
         newVersion = "10.100.newversion"
         with open(exefname, "w") as fptr:
