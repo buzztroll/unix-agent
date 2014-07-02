@@ -14,6 +14,7 @@
 import json
 import logging
 import os
+import platform
 import socket
 import urllib2
 from dcm.agent import exceptions
@@ -116,7 +117,11 @@ def get_cloud_metadata(conf, key):
                 _g_logger.exception("Failed to get the OpenStack metadata")
                 result = None
         elif conf.cloud_type == CLOUD_TYPES.Joyent:
-            cmd_args = ["sudo", "/lib/smartdc/mdata-get", key]
+            if platform.version().startswith("Sun"):
+                cmd = "/usr/sbin/mdata-get"
+            else:
+                cmd = "/lib/smartdc/mdata-get"
+            cmd_args = ["sudo", cmd, key]
             (stdout, stderr, rc) = utils.run_command(conf, cmd_args)
             if rc != 0:
                 result = None

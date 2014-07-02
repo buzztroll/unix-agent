@@ -52,7 +52,10 @@ def get_connection_object(conf):
         if not conf.connection_agentmanager_url:
             raise exceptions.AgentOptionValueNotSetException(
                 "[connection]agentmanager_url")
-        con = websocket.WebSocketConnection(conf.connection_agentmanager_url)
+        con = websocket.WebSocketConnection(
+            conf.connection_agentmanager_url,
+            backoff_amount=conf.connection_backoff,
+            max_backoff=conf.connection_max_backoff)
     else:
         raise exceptions.AgentOptionValueException(
             "[connection]type", con_type, "ws,success_tester,dummy")
@@ -270,6 +273,12 @@ def _build_options_list():
         ConfigOpt("connection", "agentmanager_url", str, default=None,
                   help_msg="The url of the agent manager with which this "
                            "agent will communicate."),
+        ConfigOpt("connection", "backoff", int, default=1000,
+                  help_msg="The number of milliseconds to add to the wait "
+                           "time before retrying a failed connection."),
+        ConfigOpt("connection", "max_backoff", int, default=300000,
+                  help_msg="The maximum number of milliseconds to wait before "
+                           "retrying a failed connection."),
         FilenameOpt("logging", "configfile", default=None,
                     help_msg="The location of the log configuration file"),
 

@@ -18,6 +18,7 @@ import logging
 import Queue
 import socket
 import threading
+import datetime
 
 import ws4py.client.threadedclient as ws4py_client
 from dcm.agent import exceptions
@@ -32,6 +33,7 @@ _g_logger = logging.getLogger(__name__)
 
 class WsConnEvents:
     POLL = "POLL"
+    CONNECT_TIMEOUT = "CONNECT_TIMEOUT"
     GOT_HANDSHAKE = "GOT_HANDSHAKE"
     ERROR = "ERROR"
     CLOSE = "CLOSE"
@@ -95,7 +97,7 @@ class _WebSocketClient(ws4py_client.WebSocketClient):
 
 class WebSocketConnection(threading.Thread):
 
-    def __init__(self, server_url):
+    def __init__(self, server_url, backoff_amount=5000, max_backoff=300000):
         super(WebSocketConnection, self).__init__()
         self._send_queue = Queue.Queue()
         self._recv_queue = None
@@ -104,13 +106,14 @@ class WebSocketConnection(threading.Thread):
         self._cond = threading.Condition()
         self._done_event = threading.Event()
         self._backoff_time = 1.0
-        self._backoff_amount = 5.0
-        self._max_backoff = 120.0
+        self._backoff_amount = float(backoff_amount) / 1000.0
+        self._max_backoff = float(max_backoff) / 1000.0
         self._total_errors = 0
         self._errors_since_success = 0
         self._sm = states.StateMachine(WsConnStates.WAITING)
         self._setup_states()
         self.handshake_observer = None
+        self._next_connect_time = datetime.datetime.now()
 
     def connect(self, receive_object, handshake_observer, handshake_doc):
         self._receive_queue = parent_receive_q.get_master_receive_queue(
@@ -134,8 +137,8 @@ class WebSocketConnection(threading.Thread):
         while not self._done_event.is_set():
             try:
                 self._sm.event_occurred(WsConnEvents.POLL)
-                _g_logger.debug("Waiting %f for the next connection." %
-                                self._backoff_time)
+                _g_logger.debug("Waiting %s for the next connection." %
+                                str(self._backoff_time))
                 self._cond.wait(self._backoff_time)
             except Exception as ex:
                 _g_logger.exception("The ws connection poller loop had "
@@ -161,6 +164,10 @@ class WebSocketConnection(threading.Thread):
         _g_logger.error(
             "State machine received an exception %s" % str(exception))
 
+    @utils.class_method_sync
+    def _register_connect(self):
+        self._sm.event_occurred(WsConnEvents.CONNECT_TIMEOUT)
+
     def _increase_backoff(self):
         if self._backoff_time is None:
             self._backoff_time = 0.0
@@ -169,13 +176,15 @@ class WebSocketConnection(threading.Thread):
             self._backoff_time = self._max_backoff
         self._total_errors += 1
         self._errors_since_success += 1
-        self._cond.notify()
+        self._next_connect_time = datetime.datetime.now() +\
+            datetime.timedelta(microseconds=int(self._backoff_time*1000000))
 
-    def _throw_error(self, exception):
+    def _throw_error(self, exception, notify=True):
         _g_logger.debug("throwing error %s" % str(exception))
         parent_receive_q.register_user_callback(self.event_error,
                                                 {"exception": exception})
-        self._cond.notify()
+        if notify:
+            self._cond.notify()
 
     def throw_error(self, exception):
         self._throw_error(exception)
@@ -190,19 +199,29 @@ class WebSocketConnection(threading.Thread):
     # state transitions
     #########
 
-    def _sm_connect(self):
+    def _sm_connect_poll(self):
         """
         Attempting to connect and setup the handshake
         """
+        now = datetime.datetime.now()
+        if now < self._next_connect_time:
+            _g_logger.debug("Skipping reconnect until backoff time is "
+                            "exceeded")
+        else:
+            _g_logger.debug("registering the connect event")
+            parent_receive_q.register_user_callback(self._register_connect)
+
+
+    def _sm_connect(self):
         try:
             self._ws = _WebSocketClient(
                 self, self._server_url, self._receive_queue,
                 protocols=['http-only', 'chat'])
             self._ws.connect()
             self._ws.send_handshake(self._hs_string)
-            self._backoff_time = None
         except Exception as ex:
-            self._throw_error(ex)
+            self._throw_error(ex, notify=False)
+            self._increase_backoff()
 
     def _sm_received_hs(self, incoming_handshake=None):
         """
@@ -298,6 +317,11 @@ class WebSocketConnection(threading.Thread):
     def _setup_states(self):
         self._sm.add_transition(WsConnStates.WAITING,
                                 WsConnEvents.POLL,
+                                WsConnStates.WAITING,
+                                self._sm_connect_poll)
+
+        self._sm.add_transition(WsConnStates.WAITING,
+                                WsConnEvents.CONNECT_TIMEOUT,
                                 WsConnStates.HANDSHAKING,
                                 self._sm_connect)
 
@@ -340,3 +364,14 @@ class WebSocketConnection(threading.Thread):
                                 WsConnEvents.ERROR,
                                 WsConnStates.WAITING,
                                 self._sm_open_error)
+
+        self._sm.add_transition(WsConnStates.DONE,
+                                WsConnEvents.POLL,
+                                WsConnStates.DONE,
+                                None)
+
+        self._sm.add_transition(WsConnStates.DONE,
+                                WsConnEvents.CONNECT_TIMEOUT,
+                                WsConnStates.DONE,
+                                None)
+

@@ -21,7 +21,7 @@ cloud_choice = None
 platform_cloice = None
 
 
-platform_choices = ["ubuntu", "el", "debian", "suse"]
+platform_choices = ["ubuntu", "el", "debian", "suse", "centos"]
 g_user_env_str = "DCM_USER"
 g_basedir_env_str = "DCM_BASEDIR"
 
@@ -352,8 +352,10 @@ def do_set_owner_and_perms(conf_d):
 
     print "Changing ownership to %s:%s" % (user, user)
     os.system("chown -R %s:%s %s" % (user, user, base_path))
-    os.system("chown -R %s:%s /mnt/tmp" % (user, user))
-    os.system("chown -R root:root /tmp")
+    os.system("chown -R %s:%s %s" % (user, user,
+                                     conf_d["storage"]["mountpoint"][1]))
+    cmd = "chown -R root:root %s" % conf_d["storage"]["temppath"][1]
+    os.system(cmd)
 
 
 def merge_opts(conf_d, opts):
@@ -537,6 +539,7 @@ def main(argv=sys.argv[1:]):
         print >> sys.stderr, ex.message
         if opts.verbose:
             raise
+        return 1
     return 0
 
 
