@@ -95,11 +95,11 @@ class _MainQueue(ParentReceiveQObserver):
                 return
             self._q.put((msg_type, msg_obj))
 
-    def poll(self):
+    def poll(self, blocking=True, timeblock=5):
         try:
-            (msg_type, msg_obj) = self._q.get(True, 5)
+            (msg_type, msg_obj) = self._q.get(blocking, timeblock)
         except Queue.Empty:
-            return
+            return False
         with self._lock:
             try:
                 if msg_type not in self._targets:
@@ -110,6 +110,12 @@ class _MainQueue(ParentReceiveQObserver):
             finally:
                 self._q.task_done()
         handler.incoming_parent_q_message(msg_obj)
+        return True
+
+    def flush(self):
+        rc = True
+        while rc:
+            rc = self.poll(False, 0)
 
     def shutdown(self):
         with self._lock:
@@ -157,3 +163,7 @@ def unregister_put_queue(put_q):
 
 def wakeup():
     _g_main_q_maker.shutdown()
+
+
+def flush():
+    _g_main_q_maker.flush()

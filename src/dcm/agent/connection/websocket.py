@@ -375,3 +375,7 @@ class WebSocketConnection(threading.Thread):
                                 WsConnStates.DONE,
                                 None)
 
+        self._sm.add_transition(WsConnStates.DONE,
+                                WsConnEvents.ERROR,
+                                WsConnStates.DONE,
+                                None)

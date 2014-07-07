@@ -1,5 +1,8 @@
 import os
+import traceback
 import nose.plugins.skip as skip
+import sys
+import signal
 from dcm.agent import utils
 
 
@@ -11,8 +14,15 @@ S3_SECRET_KEY_ENV = "S3_SECRET_KEY"
 
 _debugger_connected = False
 
+
+def _signal_thread_dump(signum, frame):
+    print build_assertion_exception("SIGNAL DUMP")
+
+
 def connect_to_debugger():
     global _debugger_connected
+
+    signal.signal(signal.SIGUSR2, _signal_thread_dump)
 
     PYDEVD_CONTACT = "PYDEVD_CONTACT"
     if PYDEVD_CONTACT in os.environ and not _debugger_connected:
@@ -20,6 +30,31 @@ def connect_to_debugger():
         host, port = pydev_contact.split(":", 1)
         utils.setup_remote_pydev(host, int(port))
         _debugger_connected = True
+
+
+def build_assertion_exception(msg):
+    details_out = " === Stack trace Begin === " + os.linesep
+    for threadId, stack in sys._current_frames().items():
+        details_out = details_out + os.linesep + \
+            "##### Thread %s #####" % threadId + os.linesep
+        for filename, lineno, name, line in traceback.extract_stack(stack):
+            details_out = details_out + os.linesep + \
+                'File: "%s", line %d, in %s' % (filename, lineno, name)
+        if line:
+            details_out = details_out + os.linesep + line.strip()
+
+    details_out = details_out + os.linesep + " === Stack trace End === "
+    msg = msg + " | " + details_out
+    return msg
+
+
+def test_thread_shutdown():
+    # check no threads are running
+    cnt = len(sys._current_frames().items())
+    if cnt > 1:
+        msg = "THE THREAD COUNT IS %d" % cnt
+        print msg
+        print build_assertion_exception(msg)
 
 
 def get_conf_file(fname="agent.conf"):

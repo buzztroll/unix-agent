@@ -139,8 +139,6 @@ class TestProtocolCommands(reply.ReplyObserverInterface):
         except Exception as ex:
             raise
 
-        print "end class"
-
     @classmethod
     def tearDownClass(cls):
         logger.clear_dcm_logging()
@@ -245,9 +243,11 @@ class TestProtocolCommands(reply.ReplyObserverInterface):
         return reqRPC
 
     def tearDown(self):
+        print test_utils.build_assertion_exception("tester")
         self.request_listener.wait_for_all_nicely()
         self.svc.cleanup_agent()
         self.req_conn.close()
+        test_utils.test_thread_shutdown()
 
     def test_get_private_ip(self):
         doc = {
@@ -1456,34 +1456,42 @@ class TestProtocolCommands(reply.ReplyObserverInterface):
             nose.tools.eq_("UNLOCKED", lines[2].strip())
 
     def test_upgrade(self):
-        _, tmpfname = tempfile.mkstemp();
-        _, exefname = tempfile.mkstemp();
-        exe_data = """#!/bin/bash
-                      echo $@ > %s
-                   """ % tmpfname
+        try:
+            print "starting upgrade"
+            _, tmpfname = tempfile.mkstemp();
+            _, exefname = tempfile.mkstemp();
+            exe_data = """#!/bin/bash
+                          echo $@ > %s
+                       """ % tmpfname
 
-        url = "file:///%s" % exefname
-        newVersion = "10.100.newversion"
-        with open(exefname, "w") as fptr:
-            fptr.write(exe_data)
+            url = "file:///%s" % exefname
+            newVersion = "10.100.newversion"
+            with open(exefname, "w") as fptr:
+                fptr.write(exe_data)
 
-        doc = {
-            "command": "upgrade",
-            "arguments": {"url": url,
-                          "newVersion": newVersion,
-                          "args": ["arg1", "arg2"]}
-        }
-        req_reply = self._rpc_wait_reply(doc)
-        r = req_reply.get_reply()
-        nose.tools.eq_(r["payload"]["return_code"], 0)
+            doc = {
+                "command": "upgrade",
+                "arguments": {"url": url,
+                              "newVersion": newVersion,
+                              "args": ["arg1", "arg2"]}
+            }
+            print "sending upgrade"
+            req_reply = self._rpc_wait_reply(doc)
+            r = req_reply.get_reply()
+            nose.tools.eq_(r["payload"]["return_code"], 0)
 
-        with open(tmpfname, "r") as fptr:
-            line = fptr.readline()
-        nose.tools.ok_(line)
-        la = line.split()
+            print "verify upgrade"
+            with open(tmpfname, "r") as fptr:
+                line = fptr.readline()
+            nose.tools.ok_(line)
+            la = line.split()
 
-        nose.tools.eq_(la[0], newVersion)
-        nose.tools.eq_(la[1], dcm.agent.g_version)
+            nose.tools.eq_(la[0], newVersion)
+            nose.tools.eq_(la[1], dcm.agent.g_version)
+        except Exception as ex:
+            print ex
+            print test_utils.build_assertion_exception("tester")
+            raise
 
     def test_run_script(self):
         _, tmpfname = tempfile.mkstemp()

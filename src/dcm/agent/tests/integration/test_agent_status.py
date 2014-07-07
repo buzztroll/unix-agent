@@ -40,5 +40,5 @@ class TestAgentStatus(object):
 
     def test_agent_status(self):
         # we need a way to parse the output to verify tests
-        rc = service.main(args=["-c", self.test_conf_path, "status"])
+        rc = service.main(args=["dcm-agent", "-c", self.test_conf_path, "status"])
         nose.tools.eq_(rc, 1)

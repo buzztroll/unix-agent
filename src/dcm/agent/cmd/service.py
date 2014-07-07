@@ -139,6 +139,7 @@ class DCMAgent(object):
                 self.g_logger.exception("A top level exception occurred")
 
     def cleanup_agent(self):
+        parent_receive_q.flush()
         if self._intrusion_detection:
             self._intrusion_detection.stop()
         if self.conf.jr:
@@ -326,8 +327,8 @@ def get_status(cli_args):
 def main(args=sys.argv):
     cli_args, remaining_argv = parse_command_line(args)
 
-    if remaining_argv and len(remaining_argv) > 0 and \
-                    remaining_argv[0].lower() == "status":
+    if remaining_argv and len(remaining_argv) > 1 and \
+                    remaining_argv[1].lower() == "status":
         # do status reporting
         return get_status(cli_args)
     else:

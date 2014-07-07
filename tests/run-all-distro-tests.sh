@@ -26,7 +26,12 @@ do
     vagrant destroy -f $t
 done
 
-echo "SUCCEDED $success"
-echo "FAILED $fail"
-
+for s in $success; 
+do
+    echo "SUCCESS $s"
+done
+for f in $fail;
+do
+    echo "FAILED $f"
+done
 exit 0
