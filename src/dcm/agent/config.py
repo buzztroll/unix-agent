@@ -318,7 +318,8 @@ def _build_options_list():
         ConfigOpt("platform", "name", str, default=None,
                   help_msg="The platform/distribution on which this agent is"
                            "being installed.",
-                  options=["ubuntu", "el", "suse", "debian"]),
+                  options=["ubuntu", "el", "suse", "debian", "rhel",
+                           "centos", "fedora_core"]),
         ConfigOpt("jobs", "retain_job_time", int, default=3600),
         ConfigOpt("test", "skip_handshake", bool, default=False),
 

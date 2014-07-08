@@ -21,7 +21,8 @@ cloud_choice = None
 platform_cloice = None
 
 
-platform_choices = ["ubuntu", "el", "debian", "suse", "centos"]
+platform_choices = ["ubuntu", "el", "debian", "suse", "centos", "rhel",
+                    "fedora_core"]
 g_user_env_str = "DCM_USER"
 g_basedir_env_str = "DCM_BASEDIR"
 
@@ -160,9 +161,9 @@ def identify_platform(opts):
                 if cand == "Ubuntu":
                     return "ubuntu"
                 elif cand == "CentOS":
-                    return "el"
+                    return "centos"
                 elif cand == "RedHatEnterpriseServer":
-                    return "el"
+                    return "rhel"
                 elif cand == "SUSE LINUX":
                     return "suse"
                 elif cand == "n/a":
@@ -172,9 +173,9 @@ def identify_platform(opts):
         with open("/etc/redhat-release") as fptr:
             redhat_info = fptr.readline().split()[0]
             if redhat_info == "CentOS":
-                return "el"
+                return "centos"
             elif redhat_info == "Red":
-                return "el"
+                return "rhel"
     if os.path.exists("/etc/debian_version"):
         return "debian"
     if os.path.exists("/etc/SuSE-release"):
