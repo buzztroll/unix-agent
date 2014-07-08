@@ -21,7 +21,8 @@ cloud_choice = None
 platform_cloice = None
 
 
-platform_choices = ["ubuntu", "el", "debian", "suse"]
+platform_choices = ["ubuntu", "el", "debian", "suse", "centos", "rhel",
+                    "fedora_core"]
 g_user_env_str = "DCM_USER"
 g_basedir_env_str = "DCM_BASEDIR"
 
@@ -82,6 +83,10 @@ def setup_command_line_parser():
     parser.add_argument("--base-path", "-p",
                         dest="base_path",
                         help="The path to enstratius")
+
+    parser.add_argument("--mount-point", "-m",
+                        dest="mount_path",
+                        help="The path to mount point")
 
     parser.add_argument("--on-boot", "-B",
                         dest="on_boot",
@@ -156,9 +161,9 @@ def identify_platform(opts):
                 if cand == "Ubuntu":
                     return "ubuntu"
                 elif cand == "CentOS":
-                    return "el"
+                    return "centos"
                 elif cand == "RedHatEnterpriseServer":
-                    return "el"
+                    return "rhel"
                 elif cand == "SUSE LINUX":
                     return "suse"
                 elif cand == "n/a":
@@ -168,9 +173,9 @@ def identify_platform(opts):
         with open("/etc/redhat-release") as fptr:
             redhat_info = fptr.readline().split()[0]
             if redhat_info == "CentOS":
-                return "el"
+                return "centos"
             elif redhat_info == "Red":
-                return "el"
+                return "rhel"
     if os.path.exists("/etc/debian_version"):
         return "debian"
     if os.path.exists("/etc/SuSE-release"):
@@ -186,6 +191,10 @@ def identify_platform(opts):
     raise Exception("The platform could not be determined")
 
 
+def _get_input(prompt):
+    return raw_input(prompt)
+
+
 def select_cloud(default="Amazon"):
     for c in sorted(cloud_choices.keys()):
         col = "%2d) %-13s" % (c, cloud_choices[c])
@@ -193,7 +202,7 @@ def select_cloud(default="Amazon"):
 
     cloud = None
     while cloud is None:
-        input = raw_input("Select your cloud (%s): " % default)
+        input = _get_input("Select your cloud (%s): " % default)
         input = input.strip()
         if not input:
             input = default
@@ -305,10 +314,8 @@ def make_dirs(conf_d):
         (os.path.join(base_path, "home"), 0750),
         (os.path.join(base_path, "cfg"), 0750),
         (conf_d["storage"]["services_dir"][1], 0755),
-        (conf_d["storage"]["operations_path"][1], 0750),
-        (conf_d["storage"]["ephemeral_mountpoint"][1], 0750),
-        ("/mnt", 0755),
-        (os.path.join("/mnt", "tmp"), 0755),
+        (conf_d["storage"]["mountpoint"][1], 0750),
+        (os.path.join(conf_d["storage"]["mountpoint"][1], "tmp"), 0750),
         (conf_d["storage"]["temppath"][1], 01777),
     ]
 
@@ -346,8 +353,10 @@ def do_set_owner_and_perms(conf_d):
 
     print "Changing ownership to %s:%s" % (user, user)
     os.system("chown -R %s:%s %s" % (user, user, base_path))
-    os.system("chown -R %s:%s /mnt/tmp" % (user, user))
-    os.system("chown -R root:root /tmp")
+    os.system("chown -R %s:%s %s" % (user, user,
+                                     conf_d["storage"]["mountpoint"][1]))
+    cmd = "chown -R root:root %s" % conf_d["storage"]["temppath"][1]
+    os.system(cmd)
 
 
 def merge_opts(conf_d, opts):
@@ -361,6 +370,7 @@ def merge_opts(conf_d, opts):
         "temp_path": ("storage", "temppath"),
         "platform": ("platform", "name"),
         "con_type": ("connection", "type"),
+        "mount_path": ("storage", "mountpoint")
     }
     for opts_name in map_opts_to_conf:
         (s, i) = map_opts_to_conf[opts_name]
@@ -394,8 +404,13 @@ def do_plugin_and_logging_conf(conf_d, opts):
     else:
         log_file = opts.logfile
 
-    os.system("sed -i 's^@LOGFILE_PATH@^%s^' %s" % (log_file,
-                                                    dest_logging_path))
+    with open(src_logging_path, "r") as fptr:
+        lines = fptr.readlines()
+
+    with open(dest_logging_path, "w") as fptr:
+        for line in lines:
+            line = line.replace("@LOGFILE_PATH@", log_file)
+            fptr.write(line)
 
 
 def copy_scripts(conf_d):
@@ -442,7 +457,7 @@ def get_url(default=None):
     if up.scheme not in allowed_schemes:
         raise Exception("The url %s does not consist of an allowed scheme. "
                         "Only the follow schemes are allows %s"
-                        % str(allowed_schemes))
+                        % (url, str(allowed_schemes)))
     return url
 
 
@@ -525,6 +540,7 @@ def main(argv=sys.argv[1:]):
         print >> sys.stderr, ex.message
         if opts.verbose:
             raise
+        return 1
     return 0
 
 

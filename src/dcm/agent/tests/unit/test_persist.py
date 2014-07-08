@@ -1,4 +1,6 @@
 import json
+import os
+import tempfile
 import unittest
 import uuid
 import datetime
@@ -10,7 +12,7 @@ from dcm.agent.messaging import persistence
 import dcm.agent.messaging.states as messaging_states
 
 
-class TestPersist(unittest.TestCase):
+class TestPersistMemory(unittest.TestCase):
 
     def setUp(self):
         self.db = persistence.AgentDB(":memory:")
@@ -126,7 +128,7 @@ class TestPersist(unittest.TestCase):
         nose.tools.eq_(json.loads(res.reply_doc), reply_doc)
         nose.tools.eq_(res.state, state)
 
-    def test_clear_lost(self):
+    def test_clear_all_lost(self):
         request_id = str(uuid.uuid4())
         agent_id = str(uuid.uuid4())
         request_doc = {"request_id": request_id}
@@ -153,13 +155,14 @@ class TestPersist(unittest.TestCase):
         agent_id = str(uuid.uuid4())
         request_doc = {"request_id": request_id1}
         state = messaging_states.ReplyStates.ACKED
-        reply_doc = {"akey": "andstuff"}
+        reply_doc = {"request": "one"}
 
         self.db.new_record(request_id1, request_doc, reply_doc, state, agent_id)
 
         time.sleep(0.1)
         cut_off_time = datetime.datetime.now()
 
+        reply_doc = {"request": "two"}
         request_doc = {"request_id": request_id2}
         self.db.new_record(request_id2, request_doc, reply_doc, state, agent_id)
 
@@ -170,4 +173,34 @@ class TestPersist(unittest.TestCase):
         res = self.db.lookup_req(request_id2)
         nose.tools.ok_(res is not None)
 
+
+class TestPersistDisk(unittest.TestCase):
+
+    def setUp(self):
+        _, self.db_file = tempfile.mkstemp("test_db")
+        self.db = persistence.AgentDB(self.db_file)
+
+    def tearDown(self):
+        os.remove(self.db_file)
+
+    def test_record_sweeper(self):
+        request_id = str(uuid.uuid4())
+        agent_id = str(uuid.uuid4())
+        request_doc = {"request_id": request_id}
+        state = messaging_states.ReplyStates.REPLY_NACKED
+        self.db.new_record(request_id, request_doc, None, state, agent_id)
+
+        request_id2 = str(uuid.uuid4())
+        request_doc = {"request_id": request_id2}
+        self.db.new_record(request_id, request_doc, None, state, agent_id)
+
+        cleaner = persistence.DBCleaner(self.db, 10, 10, 0.05)
+        cleaner.start()
+
+        time.sleep(0.5)
+        cleaner.done()
+        res = self.db.lookup_req(request_id)
+        nose.tools.ok_(not res)
+        res = self.db.lookup_req(request_id2)
+        nose.tools.ok_(not res)
 

@@ -249,6 +249,7 @@ class ReplyRPC(object):
                     'message_id': utils.new_message_id(),
                     'request_id': self._request_id,
                     'entity': "user_rejects",
+                    'error_message': "The agent rejected the request.",
                     'agent_id': self._agent_id}
         self._conn.send(nack_doc)
 
@@ -399,6 +400,7 @@ class ReplyRPC(object):
                     'message_id': utils.new_message_id(),
                     'request_id': self._request_id,
                     'entity': "request_received",
+                    'error_message': "The agent already rejected this request",
                     'agent_id': self._agent_id}
         self._conn.send(nack_doc)
 
@@ -747,9 +749,9 @@ class RequestListener(object):
                         'message_id': utils.new_message_id(),
                         'request_id': request_id,
                         'agent_id': self._conf.agent_id,
-                        'exception': ("The agent can only handle %d "
-                                      "commands at once"
-                                      % self._conf.messaging_max_at_once)}
+                        'error_message': ("The agent can only handle %d "
+                                          "commands at once"
+                                          % self._conf.messaging_max_at_once)}
                     self._conn.send(nack_doc)
                     return
 
@@ -781,7 +783,9 @@ class RequestListener(object):
                 nack_doc = {'type': types.MessageTypes.NACK,
                             'message_id': utils.new_message_id(),
                             'request_id': request_id,
-                            'agent_id': self._conf.agent_id}
+                            'agent_id': self._conf.agent_id,
+                            'error_message':
+                                "%s is an unknown ID" % request_id}
                 self._conn.send(nack_doc)
 
     def _validate_doc(self, incoming_doc):

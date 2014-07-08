@@ -4,6 +4,9 @@ if [ "X$1" != "X" ]; then
     export DCM_AGENT_STORAGE_CREDS=$1
 fi
 
+uuidgen > /vagrant/enckey
+export ENCRYPTED_FILE_ENV=/vagrant/enckey
+
 DIR=`dirname $0`
 cd $DIR
 
@@ -33,6 +36,7 @@ fi
 . /opt/dcm-agent/embedded/agentve/bin/activate
 
 nosetests dcm.agent.tests 2>&1 | tee $output_dir/nosetests.output
+#nosetests -svx dcm.agent.tests
 if [ ${PIPESTATUS[0]} -ne 0 ]; then
     echo "Failed to test"
     exit 2

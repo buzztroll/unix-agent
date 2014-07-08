@@ -1,0 +1,84 @@
+#!/usr/bin/env bash
+
+. /etc/init.d/functions
+
+BASENAME=`basename $0`
+DIRNAME=`dirname $0`
+. $DIRNAME/variables.sh
+. "$DIRNAME/common_mod"
+
+PIDFILE=$DCM_BASEDIR/dcm-agent.pid
+EXE=/opt/dcm-agent/embedded/agentve/bin/dcm-agent
+CONF=$DCM_BASEDIR/etc/agent.conf
+
+start() {
+    echo -n "Starting the dcm-agent..."
+    if [ -f $PIDFILE ]; then
+        PID=`cat $PIDFILE`
+        kill -0 $PID &> /dev/null
+        if [ $? -eq 0 ]; then
+            echo dcm-agent already running: $PID
+            return 1;
+        fi
+    fi
+    daemon --user $DCM_USER --pidfile=$PIDFILE $DCM_BASEDIR/bin/startup-daemon.sh
+    RETVAL=$?
+    echo
+    return $RETVAL
+}
+
+stop() {
+    echo -n "Shutting down dcm-agent..."
+    echo
+    if [ -f $PIDFILE ]; then
+        PID=`cat $PIDFILE`
+        kill $PID &> /dev/null
+        if [ $? -ne 0 ]; then
+            echo "dcm-agent is not running"
+            return 1;
+        fi
+    else
+        echo "dcm-agent is not running"
+        return 1
+    fi
+    echo
+    return 0
+}
+
+
+SELF=$(cd $(dirname $0); pwd -P)/$(basename $0)
+
+case "${1:-''}" in
+  'start')
+    if [ -x $DCM_BASEDIR/bin/esboot ] ; then
+        su - $DCM_USER -s "/bin/bash" -c "$DCM_BASEDIR/bin/esboot start"
+    fi
+
+    start
+    exit $?
+    ;;
+
+  'stop')
+    if [ -x $DCM_BASEDIR/bin/esboot ] ; then
+        su - $DCM_USER -s "/bin/bash" -c "$DCM_BASEDIR/bin/esboot stop"
+    fi
+    stop
+    exit $?
+    ;;
+
+  'restart')
+    if [ -x $DCM_BASEDIR/bin/esboot ] ; then
+	    su - $DCM_USER -s "/bin/bash" -c "$DCM_BASEDIR/bin/esboot stop"
+        su - $DCM_USER -s "/bin/bash" -c "$DCM_BASEDIR/bin/esboot start"
+    fi
+    stop
+    start
+    exit $?
+    ;;
+
+  *)
+    echo "Usage: $SELF start|stop|restart"
+        exit 1
+        ;;
+
+esac

@@ -224,7 +224,7 @@ class MountVolume(direct_pass.DirectPass):
 
     def run(self):
         if self.args.mountPoint is None:
-            self.args.mountPoint = self.conf.storage_operations_path
+            self.args.mountPoint = self.conf.storage_mountpoint
 
         if self.args.fileSystem is None:
             self.args.fileSystem = self.conf.storage_default_file_system

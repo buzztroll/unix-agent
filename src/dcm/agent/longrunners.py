@@ -89,7 +89,13 @@ class JobRunner(threading.Thread):
                     job_reply.error = ex.message
                     job_reply.job_status = JobStatus.ERROR
                 else:
-                    job_reply.job_status = JobStatus.COMPLETE
+                    if job_reply.reply_doc is None:
+                        job_reply.job_status = JobStatus.COMPLETE
+                    elif job_reply.reply_doc["return_code"] == 0:
+                        job_reply.job_status = JobStatus.COMPLETE
+                    else:
+                        job_reply.job_status = JobStatus.ERROR
+                        job_reply.error = job_reply.reply_doc["message"]
                 finally:
                     job_reply.end_date = calendar.timegm(time.gmtime())
                     self._reply_queue.put(job_reply)
@@ -100,7 +106,7 @@ class JobRunner(threading.Thread):
             except Queue.Empty:
                 _g_logger.exception("The queue was empty.  This shouldn't "
                                     "happen often")
-            except:
+            except Exception as ex:
                 _g_logger.exception("Something went wrong processing the job")
             finally:
                 self._current_job = None
@@ -192,7 +198,10 @@ class LongRunner(parent_receive_q.ParentReceiveQObserver):
                                 "updating %s" % str(job_reply.job_id))
 
                 jd = self._job_table[job_reply.job_id]
-                jd.update(job_reply)
+                if job_reply.error:
+                    jd.update(job_reply, message=job_reply.error)
+                else:
+                    jd.update(job_reply)
                 if jd._job_status == JobStatus.ERROR or\
                         jd._job_status == JobStatus.COMPLETE:
                     self.job_complete(job_reply.job_id)
@@ -217,12 +226,14 @@ class DetachedJob(object):
         self._error = None
         self._reply_doc = None
 
-    def update(self, work_reply):
+    def update(self, work_reply, message=None):
         self._job_status = work_reply.job_status
         self._start_date = work_reply.start_date
         self._reply_doc = work_reply.reply_doc
         self._end_date = work_reply.end_date
         self._error = work_reply.error
+        if message:
+            self._message = message
 
     def get_job_id(self):
         return self._job_id

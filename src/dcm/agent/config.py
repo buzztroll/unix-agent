@@ -52,7 +52,10 @@ def get_connection_object(conf):
         if not conf.connection_agentmanager_url:
             raise exceptions.AgentOptionValueNotSetException(
                 "[connection]agentmanager_url")
-        con = websocket.WebSocketConnection(conf.connection_agentmanager_url)
+        con = websocket.WebSocketConnection(
+            conf.connection_agentmanager_url,
+            backoff_amount=conf.connection_backoff,
+            max_backoff=conf.connection_max_backoff)
     else:
         raise exceptions.AgentOptionValueException(
             "[connection]type", con_type, "ws,success_tester,dummy")
@@ -166,6 +169,7 @@ class AgentConfig(object):
         self.server_id = None
         self.server_name = None
         self.storage_dbfile = None
+        self.dhcp_address = None
 
         self.imaging_event = threading.Event()
 
@@ -269,6 +273,12 @@ def _build_options_list():
         ConfigOpt("connection", "agentmanager_url", str, default=None,
                   help_msg="The url of the agent manager with which this "
                            "agent will communicate."),
+        ConfigOpt("connection", "backoff", int, default=1000,
+                  help_msg="The number of milliseconds to add to the wait "
+                           "time before retrying a failed connection."),
+        ConfigOpt("connection", "max_backoff", int, default=300000,
+                  help_msg="The maximum number of milliseconds to wait before "
+                           "retrying a failed connection."),
         FilenameOpt("logging", "configfile", default=None,
                     help_msg="The location of the log configuration file"),
 
@@ -278,8 +288,7 @@ def _build_options_list():
         FilenameOpt("storage", "temppath", default="/tmp"),
         FilenameOpt("storage", "services_dir", default="/mnt/services"),
         FilenameOpt("storage", "base_dir", default="/dcm"),
-        FilenameOpt("storage", "ephemeral_mountpoint", default="/mnt"),
-        FilenameOpt("storage", "operations_path", default="/mnt"),
+        FilenameOpt("storage", "mountpoint", default="/mnt"),
         FilenameOpt("storage", "dbfile", default=None),
         FilenameOpt("storage", "script_dir", default=None),
 
@@ -309,7 +318,8 @@ def _build_options_list():
         ConfigOpt("platform", "name", str, default=None,
                   help_msg="The platform/distribution on which this agent is"
                            "being installed.",
-                  options=["ubuntu", "el", "suse", "debian"]),
+                  options=["ubuntu", "el", "suse", "debian", "rhel",
+                           "centos", "fedora_core"]),
         ConfigOpt("jobs", "retain_job_time", int, default=3600),
         ConfigOpt("test", "skip_handshake", bool, default=False),
 
