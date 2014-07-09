@@ -1,5 +1,8 @@
 import logging
+import os
 import threading
+import signal
+import sys
 from dcm.agent import parent_receive_q
 
 import dcm.agent.exceptions as exceptions
@@ -469,6 +472,17 @@ class ReplyRPC(object):
         """
         self._reinflate_done()
 
+    def _sm_ack_reply_nack_received(self):
+        _g_logger.warn("A NACK was received when in the ACK state")
+        try:
+            self._db.update_record(self._request_id,
+                                   states.ReplyStates.REPLY_NACKED)
+            if self._reply_message_timer:
+                self._reply_message_timer.cancel()
+            self._reply_listener.message_done(self)
+        except Exception as ex:
+            _g_logger.warn("Error shutting down the request", ex)
+
     def _setup_states(self):
         self._sm.add_transition(states.ReplyStates.NEW,
                                 states.ReplyEvents.REQUEST_RECEIVED,
@@ -541,6 +555,16 @@ class ReplyRPC(object):
                                 states.ReplyEvents.STATUS_RECEIVED,
                                 states.ReplyStates.ACKED,
                                 self._sm_send_status)
+
+        # if the AM receives and ACK but has never heard of the request ID
+        # it will send a nack.  this should not happen in a normal course
+        # of events.  At this point we should jsut kill the request and
+        # log a scary message.
+        # XXX TODO figure out why this happens
+        self._sm.add_transition(states.ReplyStates.ACKED,
+                                states.ReplyEvents.REPLY_NACK_RECEIVED,
+                                states.ReplyStates.REPLY_NACKED,
+                                self._sm_ack_reply_nack_received)
 
         # note, eventually we will want to reply retrans logic to just punt
         self._sm.add_transition(states.ReplyStates.REPLY,
@@ -701,18 +725,25 @@ class RequestListener(object):
             _g_logger.debug("New message type %s :: %s" %
                             (incoming_doc['type'], incoming_doc))
 
+            # if the agent is misbehaving the AM might tell it to kill itself.
+            # cold.
+            if incoming_doc["type"] == types.MessageTypes.HEMLOCK:
+                _g_logger.error("HEMLOCK: DCM told me to kill myself.")
+                os.killpg(0, signal.SIGKILL)
+                sys.exit(10)
+
+            if incoming_doc["type"] == types.MessageTypes.ALERT_ACK:
+                if self._id_system:
+                    self._id_system.incoming_message(incoming_doc)
+                return
+
             request_id = incoming_doc["request_id"]
             # is this request already in memory?
+            # if it is a alert message short circuit
             if request_id in self._requests:
                 # send it through, state machine will deal with it
                 req = self._requests[request_id]
                 req.incoming_message(incoming_doc)
-                return
-
-            # if it is a alert message short circuit
-            if incoming_doc["type"] == types.MessageTypes.ALERT_ACK:
-                if self._id_system:
-                    self._id_system.incoming_message(incoming_doc)
                 return
 
             # is this an old completed request that is in the DB

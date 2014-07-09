@@ -10,3 +10,4 @@ class MessageTypes(object):
     LOG = "LOG"
     ALERT = "ALERT"
     ALERT_ACK = "ALERT_ACK"
+    HEMLOCK = "HEMLOCK"
