@@ -75,44 +75,45 @@ class Worker(threading.Thread):
         self._exit.set()
 
     def run(self):
-        utils.log_to_dcm(
-            logging.INFO, "Worker %s thread starting." % self.getName())
+        try:
+            utils.log_to_dcm(
+                logging.INFO, "Worker %s thread starting." % self.getName())
 
-        done = False
-        while not done:
-            try:
-                workload = self.worker_queue.get()
-                if workload is None:
-                    continue
-                if workload.quit:
-                    done = True
-                    self.worker_queue.task_done()
-                    continue
+            done = False
+            while not done:
+                try:
+                    workload = self.worker_queue.get()
+                    if workload is None:
+                        continue
+                    if workload.quit:
+                        done = True
+                        self.worker_queue.task_done()
+                        continue
 
-                # setup message logging
-                with tracer.RequestTracer(workload.request_id):
+                    # setup message logging
+                    with tracer.RequestTracer(workload.request_id):
 
-                    reply_doc = _run_plugin(self._conf,
-                                            workload.items_map,
-                                            workload.request_id,
-                                            workload.payload["command"],
-                                            workload.payload["arguments"])
-                    self.worker_queue.task_done()
+                        reply_doc = _run_plugin(self._conf,
+                                                workload.items_map,
+                                                workload.request_id,
+                                                workload.payload["command"],
+                                                workload.payload["arguments"])
+                        self.worker_queue.task_done()
 
-                    _g_logger.debug("Adding the reply document to the reply "
-                                    "queue " + str(reply_doc))
+                        _g_logger.debug("Adding the reply document to the reply "
+                                        "queue " + str(reply_doc))
 
-                    work_reply = WorkReply(workload.request_id, reply_doc)
-                    self.reply_q.put(work_reply)
-                    utils.log_to_dcm(logging.INFO, "Reply message sent")
-            except Queue.Empty:
-                pass
-            except:
-                _g_logger.exception(
-                    "Something went wrong processing the queue")
-                raise
-
-        _g_logger.info("Worker %s thread ending." % self.getName())
+                        work_reply = WorkReply(workload.request_id, reply_doc)
+                        self.reply_q.put(work_reply)
+                        utils.log_to_dcm(logging.INFO, "Reply message sent")
+                except Queue.Empty:
+                    pass
+                except:
+                    _g_logger.exception(
+                        "Something went wrong processing the queue")
+                    raise
+        finally:
+            _g_logger.info("Worker %s thread ending." % self.getName())
 
 
 # TODO verify stopping behavior

@@ -12,11 +12,13 @@ import tempfile
 import threading
 import pwd
 import datetime
+import traceback
 import uuid
 import logging
 import nose
 from nose.plugins import skip
 import time
+import sys
 
 import dcm.agent
 import dcm.agent.utils as utils
@@ -179,7 +181,8 @@ class TestProtocolCommands(reply.ReplyObserverInterface):
         self.test_con = test_conn.ReqRepQHolder()
         self.req_conn = self.test_con.get_req_conn()
         self.reply_conn = self.test_con.get_reply_conn()
-        self.db = persistence.AgentDB(":memory:")
+        self.db = persistence.AgentDB(
+            os.path.join(self.test_base_path, "etc", "agentdb.sql"))
         self.request_listener = reply.RequestListener(
             self.conf_obj, self.reply_conn, self.disp, self.db)
         observers = self.request_listener.get_reply_observers()
@@ -1489,9 +1492,23 @@ class TestProtocolCommands(reply.ReplyObserverInterface):
             nose.tools.eq_(la[0], newVersion)
             nose.tools.eq_(la[1], dcm.agent.g_version)
         except Exception as ex:
+            with open("/tmp/SUP", "w") as fptr:
+                fptr.write("got here")
+                fptr.write(os.linesep)
+                try:
+                    exc_type, exc_value, exc_traceback = sys.exc_info()
+                    traceback.print_tb(exc_traceback, file=fptr)
+                except Exception as ex2:
+                    fptr.write(str(ex2.message))
+                    fptr.write(os.linesep)
+                fptr.write(str(ex))
+                fptr.write(os.linesep)
+                fptr.write(ex.message)
+                fptr.write(os.linesep)
+                fptr.write(test_utils.build_assertion_exception("tester"))
             print ex
             print test_utils.build_assertion_exception("tester")
-            raise
+            nose.tools.ok_(False, ex.message)
 
     def test_run_script(self):
         _, tmpfname = tempfile.mkstemp()

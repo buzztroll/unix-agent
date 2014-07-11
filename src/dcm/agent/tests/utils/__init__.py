@@ -3,6 +3,7 @@ import traceback
 import nose.plugins.skip as skip
 import sys
 import signal
+import time
 from dcm.agent import utils
 
 
@@ -16,14 +17,20 @@ _debugger_connected = False
 
 
 def _signal_thread_dump(signum, frame):
-    print build_assertion_exception("SIGNAL DUMP")
+    msg = build_assertion_exception("SIGNAL DUMP")
+    print msg
+    with open("/tmp/stack_dump", "w") as fptr:
+        fptr.write(msg)
+
+
+def setup_signal_dumper():
+    signal.signal(signal.SIGUSR2, _signal_thread_dump)
 
 
 def connect_to_debugger():
     global _debugger_connected
 
-    signal.signal(signal.SIGUSR2, _signal_thread_dump)
-
+    setup_signal_dumper()
     PYDEVD_CONTACT = "PYDEVD_CONTACT"
     if PYDEVD_CONTACT in os.environ and not _debugger_connected:
         pydev_contact = os.environ[PYDEVD_CONTACT]
@@ -50,11 +57,18 @@ def build_assertion_exception(msg):
 
 def test_thread_shutdown():
     # check no threads are running
-    cnt = len(sys._current_frames().items())
+    n = 0
+    while n < 10:
+        cnt = len(sys._current_frames().items())
+        time.sleep(0.01)
+        if cnt < 2:
+            return
+
     if cnt > 1:
         msg = "THE THREAD COUNT IS %d" % cnt
         print msg
         print build_assertion_exception(msg)
+        raise
 
 
 def get_conf_file(fname="agent.conf"):
