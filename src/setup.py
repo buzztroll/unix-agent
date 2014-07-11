@@ -3,7 +3,7 @@ import subprocess
 from setuptools import setup, find_packages
 import sys
 
-Version = 0.2
+Version = "1.0rc"
 
 def get_diff_tag():
     try:
@@ -36,7 +36,7 @@ def get_diff_tag():
 
 
 setup(name='dcm-agent',
-      version=str(Version)+get_diff_tag(),
+      version=Version+get_diff_tag(),
       description="Agent for DCM run VMs",
       author="Dell Software Group",
       author_email="support@enstratius.com",
