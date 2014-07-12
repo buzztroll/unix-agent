@@ -1,21 +1,23 @@
-git "/agent" do
-  repository https://github.com/enStratus/es-ex-pyagent
-  revision "master"
-  action :sync
+template "/tmp/distro.sh" do
+  source "distro.sh.erb"
+  variables(
+  )
+  owner node['omnibus']['build_user']
+  group node['omnibus']['build_user']
+  mode 0755
 end
 
 bash "build_agent" do
   action :run
   timeout 36000
-  if platform_family?("rhel")
-     user "root"
-  end
+  user node['omnibus']['build_user']
+  group node['omnibus']['build_user']
   code <<-EOH
     export PATH=/opt/chef/embedded/bin:$PATH
     cp -r /agent/omnibus-dcm-agent /tmp/dcm-agent
     cd /tmp/dcm-agent
-    rm -rf bin/*
-    rm -rf .bundle
+    rm -rf /tmp/dcm-agent/bin/*
+    rm -rf /tmp/dcm-agent/.bundle
     h=`hostname -s`
     mkdir -p /agent/pkg/$h
     outputdir=/agent/pkg/$h
@@ -24,5 +26,3 @@ bash "build_agent" do
     bin/omnibus build --override=package_dir:$outputdir dcm-agent
   EOH
 end
-
-
