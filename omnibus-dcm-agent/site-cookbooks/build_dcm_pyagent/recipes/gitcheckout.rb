@@ -1,5 +1,4 @@
 git "/agent" do
-  user node['omnibus']['build_user']
   repository "git@github.com:buzztroll/es-ex-pyagent.git"
   revision "buzztroll_master"
   action :sync
