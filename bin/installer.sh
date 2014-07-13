@@ -172,7 +172,7 @@ else
     exit 1
 fi
 
-distro_version=`echo $distro_version | awk -F '.' '{ print $1 $2 }'`
+distro_version=`echo $distro_version | awk -F '.' '{ print $1 "." $2 }'`
 
 echo "$distro_name $distro_version"
 

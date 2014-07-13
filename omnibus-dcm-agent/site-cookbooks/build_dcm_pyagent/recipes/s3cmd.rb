@@ -20,13 +20,7 @@ bash "install-s3cmd" do
   EOH
 end
 
-if node['s3cmd']['config_dir']
-  home_folder = node['s3cmd']['config_dir']
-else
-  home_folder = node['etc']['passwd'][node['s3cmd']['user']]['dir']
-end
-
-template "#{home_folder}/.s3cfg" do
+template "/root/.s3cfg" do
   source "s3cfg.erb"
   variables(
     :access_key =>  node['s3cmd']['access_key'],
@@ -36,7 +30,7 @@ template "#{home_folder}/.s3cfg" do
     :https =>  node['s3cmd']['https'],
     :encrypt =>  node['s3cmd']['encrypt']
   )
-  owner node['omnibus']['build_user']
-  group node['omnibus']['build_user']
+  owner "root"
+  group "root"
   mode 0600
 end

@@ -7,4 +7,4 @@ default['s3cmd']['encrypt'] = false
 default['s3cmd']['https'] = false
 default['s3cmd']['user'] = 'ubuntu'
 
-default['dcm']['release_bucket'] = 'buzzcmdpyagent'
+default['dcm']['release_bucket'] = 'buzzdcmpyagent'
