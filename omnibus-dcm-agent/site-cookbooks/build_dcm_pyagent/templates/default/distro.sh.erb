@@ -84,5 +84,12 @@ else
     exit 1
 fi
 
+tmp_bits=`uname -m`
+if [ "Xx86_64" == "X$tmp_bits" ]; then
+    arch=""
+else
+    arch="-i386"
+fi
+
 distro_version=`echo $distro_version | awk -F '.' '{ print $1 "." $2 }'`
-echo "dcm-agent-$distro_name-$distro_version" "$pkg_ext"
+echo "dcm-agent-$distro_name-$distro_version$arch" "$pkg_ext"
