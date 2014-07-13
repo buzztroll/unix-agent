@@ -187,7 +187,7 @@ echo $arch
 echo "done"
 
 if [ "X$AGENT_BASE_URL" == "X" ]; then
-    base_url="https://s3.amazonaws.com/buzzdcmpyagent"
+    base_url="https://s3.amazonaws.com/dcmagentunstable"
 else
     base_url=$AGENT_BASE_URL
 fi
