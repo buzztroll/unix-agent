@@ -12,20 +12,20 @@ provisioner:
   require_chef_omnibus: latest
 
 platforms:
-  - name: ubuntu-10.04
-    run_list: apt::default
-  - name: ubuntu-10.04-i386
-    run_list: apt::default
-  - name: ubuntu-12.04
-    run_list: apt::default
-  - name: ubuntu-12.04-i386
-    run_list: apt::default
-  - name: ubuntu-13.10
-    run_list: apt::default
-  - name: ubuntu-13.10-i386
-    run_list:
-    - apt::default
-    - recipe[git::source]
+#  - name: ubuntu-10.04
+#    run_list: apt::default
+#  - name: ubuntu-10.04-i386
+#    run_list: apt::default
+#  - name: ubuntu-12.04
+#    run_list: apt::default
+#  - name: ubuntu-12.04-i386
+#    run_list: apt::default
+#  - name: ubuntu-13.10
+#    run_list: apt::default
+#  - name: ubuntu-13.10-i386
+#    run_list:
+#    - apt::default
+#    - recipe[git::source]
   - name: centos-5.10-i386
     run_list:
       - yum-epel::default

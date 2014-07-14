@@ -14,4 +14,7 @@ do
 
 done
 
+s3cmd cp --acl-public s3://dcmagentunstable/dcm-agent-ubuntu-12.04-i386.deb s3://dcmagentunstable/dcm-agent-ubuntu-14.04-i386.deb
+s3cmd cp --acl-public s3://dcmagentunstable/dcm-agent-ubuntu-12.04.deb s3://dcmagentunstable/dcm-agent-ubuntu-14.04.deb
+
 exit 0

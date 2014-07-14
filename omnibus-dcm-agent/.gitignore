@@ -1,3 +1,4 @@
+omnibus.rb
 *.gem
 .bundle
 vendor/bundle

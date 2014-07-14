@@ -8,3 +8,4 @@ default['s3cmd']['https'] = false
 default['s3cmd']['user'] = 'ubuntu'
 
 default['dcm']['release_bucket'] = 'dcmagentunstable'
+default['dcm']['cache_bucket'] = 'testvms'

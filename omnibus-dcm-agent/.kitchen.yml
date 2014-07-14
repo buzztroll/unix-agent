@@ -57,13 +57,6 @@ platforms:
       flavor_id: c1.medium
     run_list: apt::default
 
-  - name: debian-6.0
-    driver:
-      image_id: ami-e00df089
-      username: root
-    run_list:
-      - "recipe[build_dcm_pyagent::debrun]"
-
   - name: debian-7.6
     driver:
       image_id: ami-2c886c44
@@ -78,8 +71,6 @@ platforms:
       flavor_id: c1.medium
     run_list:
       - "recipe[build_dcm_pyagent::debrun]"
-
-  - name: centos-6.4
 
 suites:
   - name: default
