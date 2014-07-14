@@ -1,6 +1,6 @@
 git "/agent" do
-  repository "git@github.com:buzztroll/es-ex-pyagent.git"
-  revision "buzztroll_master"
+  repository node['dcm']['git_repo']
+  revision node['dcm']['git_branch']
   action :sync
   destination "/tmp/agent"
 end

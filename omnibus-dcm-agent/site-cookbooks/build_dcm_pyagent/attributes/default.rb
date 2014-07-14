@@ -9,3 +9,6 @@ default['s3cmd']['user'] = 'ubuntu'
 
 default['dcm']['release_bucket'] = 'dcmagentunstable'
 default['dcm']['cache_bucket'] = 'testvms'
+
+default['dcm']['git_repo'] = 'git@github.com:enStratus/es-ex-pyagent.git'
+default['dcm']['git_branch'] = 'master'

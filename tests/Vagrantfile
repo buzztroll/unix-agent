@@ -8,6 +8,7 @@ Vagrant.configure("2") do |config|
   config.vm.synced_folder "../", vagrant_root
 
   $ES_STORAGE_CREDS = ENV['DCM_AGENT_STORAGE_CREDS']
+  $DCM_AGENT_VERSION = ENV['DCM_AGENT_VERSION']
 
   config.vm.define 'default-ubuntu-1004-i386' do |c|
     c.vm.hostname="ubuntu-1004-i386"
@@ -99,35 +100,35 @@ Vagrant.configure("2") do |config|
     $ES_DISK_PATH = "/tmp/default-debian-608-i386.disk"
   end
 
-  config.vm.define 'default-debian-720' do |c|
-    c.vm.hostname="default-debian-720"
-    c.vm.box = "default-debian-720"
-    c.vm.box_url = "http://opscode-vm-bento.s3.amazonaws.com/vagrant/virtualbox/opscode_debian-7.2.0_chef-provisionerless.box"
+  config.vm.define 'default-debian-75' do |c|
+    c.vm.hostname="default-debian-75"
+    c.vm.box = "default-debian-75"
+    c.vm.box_url = "https://vagrantcloud.com/ffuenf/debian-7.5.0-amd64/version/5/provider/virtualbox.box"
 
     $ES_SECOND_CONTROLLER = "IDE Controller"
-    $ES_DISK_PATH = "/tmp/default-debian-720.disk"
+    $ES_DISK_PATH = "/tmp/default-debian-75.disk"
   end
 
-  config.vm.define 'default-debian-720-i386' do |c|
-    c.vm.hostname="default-debian-720-i386"
-    c.vm.box = "default-debian-720-i386"
-    c.vm.box_url = "http://opscode-vm-bento.s3.amazonaws.com/vagrant/virtualbox/opscode_debian-7.2.0-i386_chef-provisionerless.box"
+  config.vm.define 'default-debian-75-i386' do |c|
+    c.vm.hostname="default-debian-75-i386"
+    c.vm.box = "default-debian-75-i386"
+    c.vm.box_url = "https://vagrantcloud.com/remram/debian-7.5-i386/version/1/provider/virtualbox.box"
 
     $ES_SECOND_CONTROLLER = "IDE Controller"
-    $ES_DISK_PATH = "/tmp/default-debian-720-i386.disk"
+    $ES_DISK_PATH = "/tmp/default-debian-75-i386.disk"
   end
 
-  config.vm.define 'default-centos-65-i386' do |c|
-    c.vm.box = "opscode-centos-6.5-i386"
-    c.vm.box_url = "http://opscode-vm-bento.s3.amazonaws.com/vagrant/virtualbox/opscode_centos-6.5-i386_chef-provisionerless.box"
+  config.vm.define 'default-centos-64-i386' do |c|
+    c.vm.box = "opscode-centos-6.4-i386"
+    c.vm.box_url = "http://opscode-vm-bento.s3.amazonaws.com/vagrant/virtualbox/opscode_centos-6.4-i386_chef-provisionerless.box"
  
     $ES_SECOND_CONTROLLER = "IDE Controller"
     $ES_DISK_PATH = "/tmp/centos-65-i386.disk"
   end
 
-  config.vm.define 'default-centos-65' do |c|
-    c.vm.box = "opscode-centos-6.5"
-    c.vm.box_url = "http://opscode-vm-bento.s3.amazonaws.com/vagrant/virtualbox/opscode_centos-6.5-i386_chef-provisionerless.box"
+  config.vm.define 'default-centos-64' do |c|
+    c.vm.box = "opscode-centos-6.4"
+    c.vm.box_url = "http://opscode-vm-bento.s3.amazonaws.com/vagrant/virtualbox/opscode_centos-6.4_chef-provisionerless.box"
  
     $ES_SECOND_CONTROLLER = "IDE Controller"
     $ES_DISK_PATH = "/tmp/centos-65.disk"
@@ -156,7 +157,7 @@ Vagrant.configure("2") do |config|
   end
 
   config.vm.provision :shell do |shell|
-    shell.inline = "sudo /vagrant/test-distro.sh $1"
-    shell.args = ["#$ES_STORAGE_CREDS"]
+    shell.inline = "sudo /vagrant/test-distro.sh $1 $2"
+    shell.args = ["#$ES_STORAGE_CREDS", "#$DCM_AGENT_VERSION"]
   end
 end

@@ -35,6 +35,14 @@ fi
 
 . /opt/dcm-agent/embedded/agentve/bin/activate
 
+if [ "X$2" != "X" ]; then
+    v=`dcm-agent --version`
+    if [ "X$v" != "X$2" ]; then
+        echo "The version was not what we expected"
+        exit 3
+    fi
+fi
+
 nosetests dcm.agent.tests 2>&1 | tee $output_dir/nosetests.output
 #nosetests -svx dcm.agent.tests
 if [ ${PIPESTATUS[0]} -ne 0 ]; then

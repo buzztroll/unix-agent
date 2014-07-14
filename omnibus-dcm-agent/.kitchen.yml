@@ -5,7 +5,7 @@ driver:
    region: us-east-1
    availability_zone: us-east-1b
    require_chef_omnibus: true
-   flavor_id: m3.large
+   flavor_id: m1.medium
 
    synced_folders:
      - ['../', '/agent']
@@ -20,64 +20,110 @@ provisioner:
 platforms:
   - name: ubuntu-10.04
     driver:
-      image_id: ami-1ab3ce73
+      # image_id: ami-eaa56882
+      image_id: ami-eaa56882
       username: ubuntu
     run_list: apt::default
 
   - name: ubuntu-10.04-i386
     driver:
-      image_id: ami-10e41778
+      # image_id: ami-10e41778
+      image_id: ami-e2a4698a
       username: ubuntu
-      flavor_id: c1.medium
+      flavor_id: m1.medium
     run_list: apt::default
 
   - name: ubuntu-12.04
     driver:
-      image_id: ami-fd20ad94
+      # image_id: ami-fa7dba92
+      image_id: ami-62bd700a
       username: ubuntu
     run_list: apt::default
 
   - name: ubuntu-12.04-i386
     driver:
-      image_id: ami-f87dba90
+      # image_id: ami-f87dba90
+      image_id: ami-78bd7010
       username: ubuntu
-      flavor_id: c1.medium
+      flavor_id: m1.medium
     run_list: apt::default
 
   - name: ubuntu-13.10
     driver:
-      image_id: ami-7461a11c
+      # image_id: ami-7461a11c
+      image_id: ami-f6bd709e
       username: ubuntu
     run_list: apt::default
 
   - name: ubuntu-13.10-i386
     driver:
-      image_id: ami-7261a11a
+      # image_id: ami-7261a11a
+      image_id: ami-c0bd70a8
       username: ubuntu
-      flavor_id: c1.medium
+      flavor_id: m1.medium
     run_list: apt::default
+
+#  - name: ubuntu-14.04
+#    driver:
+#      image_id: ami-408c7f28
+#      username: ubuntu
+#    run_list: apt::default
+
+#  - name: ubuntu-14.04-i386
+#    driver:
+#      image_id: ami-4e8c7f26
+#      username: ubuntu
+#      flavor_id: m1.medium
+#    run_list: apt::default
 
   - name: debian-7.6
     driver:
-      image_id: ami-2c886c44
+      # image_id: ami-2c886c44
+      image_id: ami-8eae63e6
       username: admin
     run_list:
       - "recipe[build_dcm_pyagent::debrun]"
 
   - name: debian-7.6-i386
     driver:
-      image_id: ami-90886cf8
+      # image_id: ami-90886cf8
+      image_id: ami-9eae63f6
       username: admin
-      flavor_id: c1.medium
+      flavor_id: m1.medium
     run_list:
       - "recipe[build_dcm_pyagent::debrun]"
 
   - name: debian-6.0
     driver:
-      image_id: ami-0740476e
+      # image_id: ami-0740476e
+      image_id: ami-42af622a
       username: admin
     run_list:
       - "recipe[build_dcm_pyagent::debrun]"
+
+  - name: debian-6.0-i386
+    driver:
+      # image_id: ami-574f483e
+      # the following ami was made from the above after installing
+      # curl
+      image_id: ami-a4ad60cc
+      username: root
+      flavor_id: m1.medium
+    run_list:
+      - "recipe[build_dcm_pyagent::debrun]"
+
+  - name: centos-6.4
+    driver:
+      # image_id: ami-bf5021d6
+      image_id: ami-fca46994
+      username: root
+
+  - name: centos-6.4-i386
+    driver:
+      # image_id: ami-c35021aa
+      image_id: ami-3abd7052
+      flavor_id: m1.medium
+      username: root
 
 suites:
   - name: default
@@ -101,3 +147,5 @@ suites:
       dcm:
         release_bucket: dcmagentunstable
         user: ubuntu
+        git_repo: <%= ENV['DCM_AGENT_REPO'] %>
+        git_branch: <%= ENV['DCM_AGENT_REPO_BRANCH'] %>

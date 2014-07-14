@@ -36,7 +36,7 @@ end
 
 bash "build_agent" do
   action :run
-  timeout 36000
+  timeout 360000
   cwd "/tmp/dcm-agent"
   user "root"
   group "root"
