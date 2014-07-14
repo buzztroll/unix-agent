@@ -72,6 +72,13 @@ platforms:
     run_list:
       - "recipe[build_dcm_pyagent::debrun]"
 
+  - name: debian-6.0
+    driver:
+      image_id: ami-0740476e
+      username: admin
+    run_list:
+      - "recipe[build_dcm_pyagent::debrun]"
+
 suites:
   - name: default
     run_list: 

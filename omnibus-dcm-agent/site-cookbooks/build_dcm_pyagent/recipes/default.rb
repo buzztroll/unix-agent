@@ -23,6 +23,7 @@ end
 
 template "/tmp/dcm-agent/omnibus.rb" do
   source "omnibus.rb.erb"
+  action :create
   variables(
     :access_key =>  node['s3cmd']['access_key'],
     :secret_key =>  node['s3cmd']['secret_key'],
