@@ -5,7 +5,7 @@ driver:
    region: us-east-1
    availability_zone: us-east-1b
    require_chef_omnibus: true
-   flavor_id: m1.medium
+   flavor_id: m3.large
 
    synced_folders:
      - ['../', '/agent']
@@ -50,15 +50,15 @@ platforms:
 
   - name: ubuntu-13.10
     driver:
-      # image_id: ami-7461a11c
-      image_id: ami-f6bd709e
+      image_id: ami-7461a11c
+      #image_id: ami-f6bd709e
       username: ubuntu
     run_list: apt::default
 
   - name: ubuntu-13.10-i386
     driver:
-      # image_id: ami-7261a11a
-      image_id: ami-c0bd70a8
+      image_id: ami-7261a11a
+      #image_id: ami-c0bd70a8
       username: ubuntu
       flavor_id: m1.medium
     run_list: apt::default

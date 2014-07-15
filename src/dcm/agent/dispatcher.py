@@ -100,8 +100,9 @@ class Worker(threading.Thread):
                                                 workload.payload["arguments"])
                         self.worker_queue.task_done()
 
-                        _g_logger.debug("Adding the reply document to the reply "
-                                        "queue " + str(reply_doc))
+                        _g_logger.debug(
+                            "Adding the reply document to the reply "
+                            "queue " + str(reply_doc))
 
                         work_reply = WorkReply(workload.request_id, reply_doc)
                         self.reply_q.put(work_reply)

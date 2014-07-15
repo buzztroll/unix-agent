@@ -123,6 +123,7 @@ class TestConfigure(unittest.TestCase):
 
     def test_configure_bad_cloud_choice(self):
         aws = ["bad", "1"]
+
         def _l_get_input(prompt):
             return aws.pop()
 
@@ -161,4 +162,3 @@ class TestConfigure(unittest.TestCase):
         self.assertEqual(agentmanager_url, url)
         cloud_type = parser.get("cloud", "type")
         self.assertEqual(cloud_type, "Google")
-

@@ -36,7 +36,7 @@ fi
 . /opt/dcm-agent/embedded/agentve/bin/activate
 
 if [ "X$2" != "X" ]; then
-    v=`dcm-agent --version`
+    v=`dcm-agent --version | awk '{ print $2 }'`
     if [ "X$v" != "X$2" ]; then
         echo "The version was not what we expected"
         exit 3

@@ -78,7 +78,7 @@ class AgentDB(object):
 
         self._session_factory = sqlalchemy.orm.sessionmaker(bind=self._engine)
         self._Session = sqlalchemy.orm.scoped_session(self._session_factory)
-        self._Session =   self._session_factory
+        self._Session = self._session_factory
         self._lock = threading.RLock()
 
     def _get_session(self):

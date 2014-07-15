@@ -10,7 +10,7 @@ end
 
 bash "copy_agent_code" do
   action :run
-  timeout 36000
+  timeout 600000
   cwd "/tmp"
   user "root"
   group "root"
@@ -36,7 +36,7 @@ end
 
 bash "build_agent" do
   action :run
-  timeout 360000
+  timeout 600000
   cwd "/tmp/dcm-agent"
   user "root"
   group "root"

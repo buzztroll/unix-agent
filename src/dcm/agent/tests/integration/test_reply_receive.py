@@ -55,6 +55,8 @@ class TestProtocolCommands(reply.ReplyObserverInterface):
             return
 
         path = os.environ[env_str]
+        if not os.path.exists(path):
+            return
         try:
             with open(path, "r") as fptr:
                 cloud_lines = fptr.readlines()
@@ -1387,7 +1389,7 @@ class TestProtocolCommands(reply.ReplyObserverInterface):
                           "fileSystem": "ext3",
                           "raidLevel": "NONE",
                           "encryptionKey":
-                              base64.b64encode(bytearray(enc_key)),
+                          base64.b64encode(bytearray(enc_key)),
                           "mountPoint": mount_point,
                           "devices": [device_id]}}
         req_rpc = self._rpc_wait_reply(doc)
@@ -1461,8 +1463,8 @@ class TestProtocolCommands(reply.ReplyObserverInterface):
     def test_upgrade(self):
         try:
             print "starting upgrade"
-            _, tmpfname = tempfile.mkstemp();
-            _, exefname = tempfile.mkstemp();
+            _, tmpfname = tempfile.mkstemp()
+            _, exefname = tempfile.mkstemp()
             exe_data = """#!/bin/bash
                           echo $@ > %s
                        """ % tmpfname
@@ -1524,7 +1526,7 @@ class TestProtocolCommands(reply.ReplyObserverInterface):
 
         doc = {
             "command": "run_script",
-            "arguments":{
+            "arguments": {
                 "b64script": base64.b64encode(exe_data),
                 "arguments": args,
                 "checksum": checksum

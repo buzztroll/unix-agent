@@ -1,6 +1,6 @@
 bash "build_agent" do
   action :run
-  timeout 360000
+  timeout 600000
   user "root"
   group "root"
 

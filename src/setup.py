@@ -3,7 +3,8 @@ import subprocess
 from setuptools import setup, find_packages
 import sys
 
-Version = "1.0rc"
+Version = "0.9.0"
+
 
 def get_diff_tag():
     try:
@@ -71,4 +72,4 @@ setup(name='dcm-agent',
           "Topic :: System :: Clustering",
           "Topic :: System :: Distributed Computing"
           ],
-     )
+      )

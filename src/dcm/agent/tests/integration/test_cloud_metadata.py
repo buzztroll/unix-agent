@@ -58,13 +58,16 @@ class TestCloudMetadata(unittest.TestCase):
         self._get_instance_data_cloud_none(cloudmetadata.CLOUD_TYPES.Amazon)
 
     def test_get_instance_data_eucalyptus_none(self):
-        self._get_instance_data_cloud_none(cloudmetadata.CLOUD_TYPES.Eucalyptus)
+        self._get_instance_data_cloud_none(
+            cloudmetadata.CLOUD_TYPES.Eucalyptus)
 
     def test_get_instance_data_cloudstack_none(self):
-        self._get_instance_data_cloud_none(cloudmetadata.CLOUD_TYPES.CloudStack)
+        self._get_instance_data_cloud_none(
+            cloudmetadata.CLOUD_TYPES.CloudStack)
 
     def test_get_instance_data_cloudstack3_none(self):
-        self._get_instance_data_cloud_none(cloudmetadata.CLOUD_TYPES.CloudStack3)
+        self._get_instance_data_cloud_none(
+            cloudmetadata.CLOUD_TYPES.CloudStack3)
 
     def test_get_instance_data_openstack_none(self):
         self._get_instance_data_cloud_none(cloudmetadata.CLOUD_TYPES.OpenStack)
@@ -80,5 +83,3 @@ class TestCloudMetadata(unittest.TestCase):
         ha = hostname.split(".")
         should_be = "%s:%s:%s" % (ha[0], ha[0], ha[0])
         self.assertEqual(should_be, inst_id)
-
-

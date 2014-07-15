@@ -158,14 +158,16 @@ class TestPersistMemory(unittest.TestCase):
         state = messaging_states.ReplyStates.ACKED
         reply_doc = {"request": "one"}
 
-        self.db.new_record(request_id1, request_doc, reply_doc, state, agent_id)
+        self.db.new_record(
+            request_id1, request_doc, reply_doc, state, agent_id)
 
         time.sleep(0.1)
         cut_off_time = datetime.datetime.now()
 
         reply_doc = {"request": "two"}
         request_doc = {"request_id": request_id2}
-        self.db.new_record(request_id2, request_doc, reply_doc, state, agent_id)
+        self.db.new_record(
+            request_id2, request_doc, reply_doc, state, agent_id)
 
         self.db.clean_all_expired(cut_off_time)
 
@@ -227,6 +229,7 @@ class TestPersistMultiThread(unittest.TestCase):
         self.db.new_record(request_id, request_doc, None, state, agent_id)
 
         failed = []
+
         def _thread_lookup():
             try:
                 res = self.db.lookup_req(request_id)
@@ -253,6 +256,7 @@ class TestPersistMultiThread(unittest.TestCase):
         self.db.new_record(request_id, request_doc, None, state, agent_id)
 
         failed = []
+
         def _thread_lookup():
             try:
                 res = self.db.update_record(
