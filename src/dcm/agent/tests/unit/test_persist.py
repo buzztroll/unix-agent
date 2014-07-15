@@ -1,6 +1,7 @@
 import json
 import os
 import tempfile
+import threading
 import unittest
 import uuid
 import datetime
@@ -157,14 +158,16 @@ class TestPersistMemory(unittest.TestCase):
         state = messaging_states.ReplyStates.ACKED
         reply_doc = {"request": "one"}
 
-        self.db.new_record(request_id1, request_doc, reply_doc, state, agent_id)
+        self.db.new_record(
+            request_id1, request_doc, reply_doc, state, agent_id)
 
         time.sleep(0.1)
         cut_off_time = datetime.datetime.now()
 
         reply_doc = {"request": "two"}
         request_doc = {"request_id": request_id2}
-        self.db.new_record(request_id2, request_doc, reply_doc, state, agent_id)
+        self.db.new_record(
+            request_id2, request_doc, reply_doc, state, agent_id)
 
         self.db.clean_all_expired(cut_off_time)
 
@@ -204,3 +207,67 @@ class TestPersistDisk(unittest.TestCase):
         res = self.db.lookup_req(request_id2)
         nose.tools.ok_(not res)
 
+
+class TestPersistMultiThread(unittest.TestCase):
+
+    def setUp(self):
+        _, self.db_file = tempfile.mkstemp("test_db")
+        self.db = persistence.AgentDB(self.db_file)
+
+    def tearDown(self):
+        os.remove(self.db_file)
+
+    def test_thread_lookup(self):
+        request_id = str(uuid.uuid4())
+        agent_id = str(uuid.uuid4())
+        request_doc = {"request_id": request_id}
+        state = messaging_states.ReplyStates.REPLY_NACKED
+        self.db.new_record(request_id, request_doc, None, state, agent_id)
+
+        request_id2 = str(uuid.uuid4())
+        request_doc = {"request_id": request_id2}
+        self.db.new_record(request_id, request_doc, None, state, agent_id)
+
+        failed = []
+
+        def _thread_lookup():
+            try:
+                res = self.db.lookup_req(request_id)
+                print res
+            except Exception as ex:
+                print ex.message
+                failed.append(True)
+
+        t = threading.Thread(target=_thread_lookup)
+
+        t.start()
+        t.join()
+        nose.tools.ok_(len(failed) == 0)
+
+    def test_thread_update(self):
+        request_id = str(uuid.uuid4())
+        agent_id = str(uuid.uuid4())
+        request_doc = {"request_id": request_id}
+        state = messaging_states.ReplyStates.REPLY_NACKED
+        self.db.new_record(request_id, request_doc, None, state, agent_id)
+
+        request_id2 = str(uuid.uuid4())
+        request_doc = {"request_id": request_id2}
+        self.db.new_record(request_id, request_doc, None, state, agent_id)
+
+        failed = []
+
+        def _thread_lookup():
+            try:
+                res = self.db.update_record(
+                    request_id, messaging_states.ReplyStates.REPLY)
+                print res
+            except Exception as ex:
+                print ex.message
+                failed.append(True)
+
+        t = threading.Thread(target=_thread_lookup)
+
+        t.start()
+        t.join()
+        nose.tools.ok_(len(failed) == 0)

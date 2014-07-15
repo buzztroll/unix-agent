@@ -816,7 +816,7 @@ class RequestListener(object):
                             'request_id': request_id,
                             'agent_id': self._conf.agent_id,
                             'error_message':
-                                "%s is an unknown ID" % request_id}
+                            "%s is an unknown ID" % request_id}
                 self._conn.send(nack_doc)
 
     def _validate_doc(self, incoming_doc):

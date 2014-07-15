@@ -86,4 +86,3 @@ class TestWsConnection(object):
             agent.shutdown_main_loop()
             t1.join()
         nose.tools.ok_(10 < connect_count < 50)
-

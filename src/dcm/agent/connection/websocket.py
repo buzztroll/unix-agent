@@ -211,7 +211,6 @@ class WebSocketConnection(threading.Thread):
             _g_logger.debug("registering the connect event")
             parent_receive_q.register_user_callback(self._register_connect)
 
-
     def _sm_connect(self):
         try:
             self._ws = _WebSocketClient(

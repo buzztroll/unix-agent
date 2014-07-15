@@ -51,7 +51,7 @@ class Upgrade(jobs.Plugin):
             with open(opts_file, "w") as f:
                 opts_to_file = [o for o in self.conf.__dict__
                                 if o.startswith("storage") or
-                                     o.startswith("platform")]
+                                o.startswith("platform")]
                 f.write(json.dumps(opts_to_file))
 
             command_list = [script_file,

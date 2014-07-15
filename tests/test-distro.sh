@@ -16,7 +16,7 @@ mkdir -p $output_dir
 pbase=`hostname`
 echo "selecting the package for $pbase"
 
-export AGENT_BASE_URL=file:////agent/pkgs/
+#export AGENT_BASE_URL=file:////agent/pkgs/
 
 export SYSTEM_CHANGING_TEST=1
 echo "running configure"
@@ -34,6 +34,14 @@ if [ $? -ne 0 ]; then
 fi
 
 . /opt/dcm-agent/embedded/agentve/bin/activate
+
+if [ "X$2" != "X" ]; then
+    v=`dcm-agent --version | awk '{ print $2 }'`
+    if [ "X$v" != "X$2" ]; then
+        echo "The version was not what we expected"
+        exit 3
+    fi
+fi
 
 nosetests dcm.agent.tests 2>&1 | tee $output_dir/nosetests.output
 #nosetests -svx dcm.agent.tests

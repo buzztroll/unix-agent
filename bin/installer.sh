@@ -172,7 +172,7 @@ else
     exit 1
 fi
 
-distro_version=`echo $distro_version | awk -F '.' '{ print $1 $2 }'`
+distro_version=`echo $distro_version | awk -F '.' '{ print $1 "." $2 }'`
 
 echo "$distro_name $distro_version"
 
@@ -187,7 +187,7 @@ echo $arch
 echo "done"
 
 if [ "X$AGENT_BASE_URL" == "X" ]; then
-    base_url="https://s3.amazonaws.com/buzzdcmpyagent"
+    base_url="https://s3.amazonaws.com/dcmagentunstable"
 else
     base_url=$AGENT_BASE_URL
 fi
