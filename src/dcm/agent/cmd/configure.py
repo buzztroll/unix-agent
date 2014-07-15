@@ -440,7 +440,7 @@ def update_relative_paths(conf_d):
 
 def get_url(default=None):
     if not default:
-        default = "wss://provisioning.enstratus.com:16433/ws"
+        default = "wss://dcm.enstratius.com:16433/ws"
     print "Please enter the contact string of the agent manager (%s)" % default
     url = sys.stdin.readline().strip()
     if not url:
