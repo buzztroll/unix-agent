@@ -107,7 +107,7 @@ platforms:
       # the following ami was made from the above after installing
       # curl
       image_id: ami-a4ad60cc
-      username: root
+      username: admin
       flavor_id: m1.medium
     run_list:
       - "recipe[build_dcm_pyagent::debrun]"
