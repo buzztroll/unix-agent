@@ -63,19 +63,6 @@ platforms:
       flavor_id: m1.medium
     run_list: apt::default
 
-#  - name: ubuntu-14.04
-#    driver:
-#      image_id: ami-408c7f28
-#      username: ubuntu
-#    run_list: apt::default
-
-#  - name: ubuntu-14.04-i386
-#    driver:
-#      image_id: ami-4e8c7f26
-#      username: ubuntu
-#      flavor_id: m1.medium
-#    run_list: apt::default
-
   - name: debian-7.6
     driver:
       # image_id: ami-2c886c44
@@ -112,23 +99,9 @@ platforms:
     run_list:
       - "recipe[build_dcm_pyagent::debrun]"
 
-  - name: centos-6.4
-    driver:
-      # image_id: ami-bf5021d6
-      image_id: ami-fca46994
-      username: root
-
-  - name: centos-6.4-i386
-    driver:
-      # image_id: ami-c35021aa
-      image_id: ami-3abd7052
-      flavor_id: m1.medium
-      username: root
-
 suites:
   - name: default
     run_list: 
-      - recipe[build-essential]
       - omnibus::default
       - "recipe[build_dcm_pyagent::s3cmd]"
       - "recipe[build_dcm_pyagent::gitcheckout]"
@@ -136,10 +109,6 @@ suites:
       - "recipe[build_dcm_pyagent::s3upload]"
 
     attributes:
-      #omnibus:
-      #  build_user:  ubuntu
-      #  build_dir:   /home/ubuntu/dcm-agent
-      #  install_dir: /opt/dcm-agent
       s3cmd:
         access_key: <%= ENV['AWS_ACCESS_KEY'] %>
         secret_key: <%= ENV['AWS_SECRET_KEY'] %>

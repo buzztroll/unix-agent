@@ -1,7 +1,10 @@
 
 package "python"
 package "python-setuptools"
-#package "python-distutils-extra"
+
+if !platform_family?("rhel")
+  package "python-distutils-extra"
+end
 package "python-dateutil"
 
 
