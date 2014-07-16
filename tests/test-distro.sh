@@ -4,6 +4,10 @@ if [ "X$1" != "X" ]; then
     export DCM_AGENT_STORAGE_CREDS=$1
 fi
 
+if [ "X$2" != "X" ]; then
+    export AGENT_BASE_URL=$2
+fi
+
 uuidgen > /vagrant/enckey
 export ENCRYPTED_FILE_ENV=/vagrant/enckey
 
@@ -15,10 +19,6 @@ mkdir -p $output_dir
 
 pbase=`hostname`
 echo "selecting the package for $pbase"
-
-if [ "X$3" != "X" ]; then
-    export AGENT_BASE_URL=$3
-fi
 
 export SYSTEM_CHANGING_TEST=1
 echo "running configure"
@@ -37,9 +37,9 @@ fi
 
 . /opt/dcm-agent/embedded/agentve/bin/activate
 
-if [ "X$2" != "X" ]; then
+if [ "X$3" != "X" ]; then
     v=`dcm-agent --version | awk '{ print $2 }'`
-    if [ "X$v" != "X$2" ]; then
+    if [ "X$v" != "X$3" ]; then
         echo "The version was not what we expected"
         exit 3
     fi
