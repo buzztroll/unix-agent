@@ -143,6 +143,6 @@ Vagrant.configure("2") do |config|
 
   config.vm.provision :shell do |shell|
     shell.inline = "sudo /vagrant/test-distro.sh $1 $2 $3"
-    shell.args = ["#$ES_STORAGE_CREDS", "#$DCM_AGENT_VERSION", "#$DCM_AGENT_PKG"]
+    shell.args = ["#$ES_STORAGE_CREDS", "#$DCM_AGENT_PKG", "#$DCM_AGENT_VERSION"]
   end
 end
