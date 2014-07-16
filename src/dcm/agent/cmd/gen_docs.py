@@ -5,7 +5,6 @@ import dcm.agent.jobs.builtin as jobs
 filelist = [f for f in os.listdir(os.path.dirname(jobs.__file__))
             if not f.startswith("__init")
             and not f.endswith("py")
-            and not f.startswith("gen_doc")
 ]
 
 def dynamic_import(f):
