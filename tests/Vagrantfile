@@ -9,6 +9,7 @@ Vagrant.configure("2") do |config|
 
   $ES_STORAGE_CREDS = ENV['DCM_AGENT_STORAGE_CREDS']
   $DCM_AGENT_VERSION = ENV['DCM_AGENT_VERSION']
+  $DCM_AGENT_PKG = ENV['AGENT_BASE_URL']
 
   config.vm.define 'default-ubuntu-1004-i386' do |c|
     c.vm.hostname="ubuntu-1004-i386"
@@ -141,7 +142,7 @@ Vagrant.configure("2") do |config|
   end
 
   config.vm.provision :shell do |shell|
-    shell.inline = "sudo /vagrant/test-distro.sh $1 $2"
-    shell.args = ["#$ES_STORAGE_CREDS", "#$DCM_AGENT_VERSION"]
+    shell.inline = "sudo /vagrant/test-distro.sh $1 $2 $3"
+    shell.args = ["#$ES_STORAGE_CREDS", "#$DCM_AGENT_VERSION", "#$DCM_AGENT_PKG"]
   end
 end

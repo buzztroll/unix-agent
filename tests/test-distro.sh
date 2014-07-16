@@ -16,7 +16,9 @@ mkdir -p $output_dir
 pbase=`hostname`
 echo "selecting the package for $pbase"
 
-#export AGENT_BASE_URL=file:////agent/pkgs/
+if [ "X$3" != "X" ]; then
+    export AGENT_BASE_URL=$3
+fi
 
 export SYSTEM_CHANGING_TEST=1
 echo "running configure"
