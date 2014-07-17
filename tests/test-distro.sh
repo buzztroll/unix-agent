@@ -1,10 +1,10 @@
 #!/bin/bash
 
-if [ "X$1" != "X" ]; then
+if [ "X$1" != "Xnull" ]; then
     export DCM_AGENT_STORAGE_CREDS=$1
 fi
 
-if [ "X$2" != "X" ]; then
+if [ "X$2" != "Xnull" ]; then
     export AGENT_BASE_URL=$2
 fi
 
@@ -37,10 +37,12 @@ fi
 
 . /opt/dcm-agent/embedded/agentve/bin/activate
 
-if [ "X$3" != "X" ]; then
+if [ "X$3" != "Xnull" ]; then
     v=`dcm-agent --version | awk '{ print $2 }'`
     if [ "X$v" != "X$3" ]; then
         echo "The version was not what we expected"
+        echo $v
+        echo $3
         exit 3
     fi
 fi
