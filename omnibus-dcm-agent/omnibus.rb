@@ -28,10 +28,10 @@
 
 # Enable S3 asset caching
 # ------------------------------
-use_s3_caching true
-s3_access_key  'XXXXX'
-s3_secret_key  'XXXXXX'
-s3_bucket      'testvms'
+#use_s3_caching false
+#s3_access_key  'XXXXX'
+#s3_secret_key  'XXXXXX'
+#s3_bucket      'testvms'
 
 # Customize compiler bits
 # ------------------------------
