@@ -32,6 +32,7 @@ function install_agent(){
     echo "This may take a few minutes."
 
     if [ "X$AGENT_LOCAL_PACKAGE" == "X" ]; then
+        echo "Downloading $url ..."
         curl -L $url > /tmp/$filename
     else
         cp $AGENT_LOCAL_PACKAGE /tmp/$filename
@@ -87,6 +88,12 @@ function install_chef_client {
         echo "Done."
     fi
 }
+
+which curl > /dev/null
+if [ $? -ne 0 ]; then
+    echo "curl must be installed on your system to use this installer."
+    exit 1
+fi
 
 # Identify platform.
 if [ -x "/usr/bin/lsb_release" ]; then
