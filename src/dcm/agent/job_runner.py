@@ -43,8 +43,8 @@ class JobRunnerWorker(multiprocessing.Process):
             rc = process.returncode
 
             _g_logger.info("command %s:  STDOUT: %s" %
-                           (cmd, stdout))
-            _g_logger.info("STDERR: %s " % stderr)
+                           (cmd, unicode(stdout, errors='ignore')))
+            _g_logger.info("STDERR: %s " % unicode(stderr, errors='ignore'))
             _g_logger.info("Return code: " + str(rc))
         except Exception as ex:
             _g_logger.exception("Failed to run the script %s : %s"
