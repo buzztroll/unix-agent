@@ -1,5 +1,7 @@
 import os
 import importlib
+import argparse
+
 import dcm.agent.jobs.builtin as jobs
 
 filelist = [f for f in os.listdir(os.path.dirname(jobs.__file__))
@@ -41,12 +43,14 @@ def output_markdown(f, pa_dict):
               protocol_arguments dict in markdown format
     """
     flatstring = '## ' + f + ' parameters:\n'
+
     for key, value in pa_dict.iteritems():
         flatstring += '- ' + key + ': ' + value[0] + '\n'
         flatstring += '    - optional: ' + '%s' % value[1] + '\n'
         flatstring += '    - type: ' + '%s' % value[2] + '\n'
         flatstring += ''
 
+    print flatstring
     return flatstring
 
 
@@ -54,11 +58,17 @@ def main():
     """
     :return: handler for the module
     """
+    parser = argparse.ArgumentParser(prog='dcm-agent-gen-docs',
+                                     description='A utility to output the agent protocol arguments in an easy to read format.',
+                                     usage='dcm-agent-gen-docs [> output file]')
+    parser.parse_args()
+
     for f in filelist:
         x = dynamic_import(f)
         pa_dict = get_protocol_argument_dict(x)
         output_markdown(f, pa_dict)
 
 
-if __name__ == main():
+if __name__ == "__main__":
+
     main()
