@@ -4,6 +4,40 @@
 SHELL_PID=$$
 installer_cmd=""
 
+function print_help() {
+    echo "
+This script will fetch and install the dcm-agent on the virtual machine where
+it is run.  When run with no options it will detect the VM's Linux
+distribution and download the appropriate stable package.  The following
+environment variables will alter the behavior as described:
+
+AGENT_LOCAL_PACKAGE=<path>
+  - When set the script will look for the distribution package at the
+    given path on the local file system.
+
+AGENT_BASE_URL=<url>
+  - This is the base path to an HTTP repository where the packages are kept.
+    For example: https://s3.amazonaws.com/dcmagentunstable.  Packages will
+    be found under that url with a name that matches:
+    dcm-agent-<distribution>-<distribution version>-<architecture>.<pkg type>
+    For example: dcm-agent-centos-6.5-amd64.deb
+
+AGENT_UNSTABLE
+  - When set the script will download and install the latest unstable version
+    of the dcm-agent.
+"
+
+    echo "options:"
+    echo "--unstable: download the latest unreleased packages."
+}
+
+if [ $# -gt 0 ]; then
+    if [[ "X$1" == "X--help" || "X$1" == "X-h" ]]; then
+        print_help
+        exit 1
+    fi;
+fi
+
 # Read input from terminal even if stdin is pipe.
 # This function is to be used for interactive dialogue.
 function read_terminal() {
@@ -186,7 +220,11 @@ echo "$distro_name $distro_version"
 echo "determining architecture..."
 tmp_bits=`uname -m`
 if [ "Xx86_64" == "X$tmp_bits" ]; then
-    arch=""
+    if [ "X$distro_name" == "Xcentos" ]; then
+         arch="-x86_64"
+    else
+         arch="-amd64"
+    fi
 else
     arch="-i386"
 fi
@@ -194,7 +232,11 @@ echo $arch
 echo "done"
 
 if [ "X$AGENT_BASE_URL" == "X" ]; then
-    base_url="https://s3.amazonaws.com/dcmagentunstable"
+    if [ "X$AGENT_UNSTABLE" != "X" ]; then
+        base_url="https://s3.amazonaws.com/dcmagentunstable"
+    else
+        base_url="https://es-pyagent.s3.amazonaws.com"
+    fi
 else
     base_url=$AGENT_BASE_URL
 fi
