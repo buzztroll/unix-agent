@@ -1,7 +1,6 @@
 Vagrant.configure("2") do |config|
 
   config.vm.synced_folder "../bin/", "/agent/bin"
-  config.vm.synced_folder "../pkg/", "/agent/pkgs"
   config.vm.synced_folder "../src/", "/agent/src"
   vagrant_root = File.dirname(__FILE__)
   vagrant_root = File.dirname(vagrant_root)
