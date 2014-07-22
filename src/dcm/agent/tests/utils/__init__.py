@@ -61,6 +61,7 @@ def test_thread_shutdown():
     while n < 10:
         cnt = len(sys._current_frames().items())
         time.sleep(0.01)
+        n += 1
         if cnt < 2:
             return
 
