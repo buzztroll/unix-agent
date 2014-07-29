@@ -316,3 +316,14 @@ def generate_token():
 
 def base64type_convertor(b64str):
     return base64.b64decode(b64str).decode("utf-8")
+
+
+def user_name(proposed_name):
+    spec_chars = ['*', '&', '!', '?', '/', '\\', '.', '^', '$', '(', ')', '{', '}', '[', ']']
+    string_name = str(proposed_name)
+
+    for char in string_name:
+        if char in spec_chars:
+            raise Exception
+
+    return proposed_name

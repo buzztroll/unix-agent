@@ -299,6 +299,7 @@ class TestProtocolCommands(reply.ReplyObserverInterface):
                           "administrator": False}}
         req_rpc = self._rpc_wait_reply(doc)
         r = req_rpc.get_reply()
+        print r["payload"]["return_code"]
         nose.tools.eq_(r["payload"]["return_code"], 0)
 
         pw_ent = pwd.getpwnam(user_name)
@@ -317,6 +318,45 @@ class TestProtocolCommands(reply.ReplyObserverInterface):
             nose.tools.ok_(False, "should have raised an exception")
         except KeyError:
             pass
+
+
+    def _build_fake_names(self, sc):
+        user_name = 'Bob' + sc
+
+        doc = {
+            "command": "add_user",
+            "arguments": {"customerId": self.customer_id,
+                          "userId": user_name,
+                          "firstName": "buzz",
+                          "lastName": "troll",
+                          "authentication": "public key data",
+                          "administrator": False}}
+
+        req_rpc = self._rpc_wait_reply(doc)
+        r = req_rpc.get_reply()
+        msg = 'special char is ' + sc
+
+        try:
+            nose.tools.ok_(r["payload"]["return_code"] != 0, msg)
+
+        finally:
+            try:  #delete and clean up user
+                os.system('userdel -r %s' % user_name)
+            except Exception, e:  #show exception
+                print e
+
+    def test_add_special_char_username_fails(self):
+        """
+        :return: tests to show that names created
+                 with things in spec_chars fail
+        """
+        if "SYSTEM_CHANGING_TEST" not in os.environ:
+            raise skip.SkipTest('skipping')
+
+        spec_chars = ['*', '&', '!', '?', '/', '\\', '.', '^', '$', '(', ')', '{', '}', '[', ']']
+
+        for sc in spec_chars:
+            yield self._build_fake_names, sc
 
     @test_utils.system_changing
     def test_add_admin_user_remove_user(self):

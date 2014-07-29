@@ -53,26 +53,14 @@ class TestGenDocs(unittest.TestCase):
     def test_gen_md_output(self):
         """
         :return: assertion that expected_output is the
-                 same as z when add_user.py is ran through
+                 same as z when remove_user.py is ran through
                  gen_docs.py
         """
 
-        file = 'add_user.py'
+        file = 'remove_user.py'
 
-        expected_output = """## add_user.py parameters:
-- lastName: The user's last name
-    - optional: True
-    - type: <type 'str'>
-- authentication: The user's ssh public key
-    - optional: True
-    - type: <type 'str'>
-- userId: The new unix account name to be created
-    - optional: True
-    - type: <type 'str'>
-- administrator: A string that is either 'true' or 'false' which indicates if the new user should havessh access
-    - optional: True
-    - type: <type 'str'>
-- firstName: The user's first name
+        expected_output = """## remove_user.py parameters:
+- userId: The unix account name of the user to remove
     - optional: True
     - type: <type 'str'>
 """
