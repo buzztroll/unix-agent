@@ -1,5 +1,6 @@
 import os
 import traceback
+import warnings
 import nose.plugins.skip as skip
 import sys
 import signal
@@ -69,7 +70,8 @@ def test_thread_shutdown():
         msg = "THE THREAD COUNT IS %d" % cnt
         print msg
         print build_assertion_exception(msg)
-        #raise
+        warnings.warn("The thread count was expected to be 1 but it is "
+                      "%d" % cnt)
 
 
 def get_conf_file(fname="agent.conf"):
