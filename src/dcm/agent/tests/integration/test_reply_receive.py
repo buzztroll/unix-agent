@@ -795,7 +795,7 @@ class TestProtocolCommands(reply.ReplyObserverInterface):
         if not self.storage_clouds:
             raise skip.SkipTest("No storage clouds configured")
 
-        primary_cloud = self.storage_clouds[1]
+        primary_cloud = self.storage_clouds[0]
         service_id1 = "aone_service" + str(uuid.uuid4()).split("-")[0]
         self._install_service(service_id1,
                               self.bucket,
