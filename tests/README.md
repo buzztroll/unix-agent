@@ -41,7 +41,7 @@ and you have cloned [the es-ex-pyagent repo](https://www.github.com/enStratus/es
   * Install unzip then cp and unzip pycharm-debug.egg into virtualenv site-packages
   *  ``` apt-get install unzip ```
   *  ``` cp /<projectdirectory>/es-ex-pyagent/tests/pycharm-debug.egg /opt/dcm-agent/embedded/agentve.101/lib/python2.7/site-packages/ ```
-  *  ``` unzip  /opt/dcm-agent/embedded/agentve.101/lib/python2.7/site-packages/ ```
+  *  ``` unzip  /opt/dcm-agent/embedded/agentve.101/lib/python2.7/site-packages/pycharm-debug.egg ```
 
 4. Setup PyCharm:
   * Remote debug configuration with localhost and port 5678
