@@ -10,13 +10,11 @@ ip_addr+=":5678"
 ## see es-ex-pyagent/src/dcm/agent/storagecloud.py for
 ## all current providers
 
-creds_file=$(
-python - <<EOF
-import os
-path_to_creds = os.path.split(os.path.abspath('testenv.sh'))[0] + '/creds'
-print path_to_creds
-EOF
-)
+ABSOLUTE_PATH=$(cd `dirname "${BASH_SOURCE[0]}"` && pwd)
+ABSOLUTE_PATH+="/creds"
+
+
+creds_file=$ABSOLUTE_PATH
 
 if [ $1 = '-h' ] || [ $1 = '--help' ]
  then
