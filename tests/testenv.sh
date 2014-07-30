@@ -1,18 +1,15 @@
 #!/bin/bash
 
-## private ip address
-ip_addr=$(
-python - <<EOF
-import socket
-print socket.gethostbyname(socket.gethostname())
-EOF
-)
-
-## set up with port to attach remote debugger
+## private ip address with port for remote debugger
+ip_addr=$2
 ip_addr+=":5678"
 
 ## path to creds file which is a text file with entries like
 ## 1 <aws key> <aws secret> us_west_oregon
+## where 1 signifies AWS as the provider.
+## see es-ex-pyagent/src/dcm/agent/storagecloud.py for
+## all current providers
+
 creds_file=$(
 python - <<EOF
 import os
@@ -25,7 +22,7 @@ if [ $1 = '-h' ] || [ $1 = '--help' ]
  then
      echo "
      ************************************************************************************
-     usage:  source testenv.sh [option]
+     usage:  source testenv.sh [option] [host private ip address]
 
      The options below let you determine which environment variables to
      set for testing the agent.  Note that to set DCM_AGENT_STORAGE_CREDS
