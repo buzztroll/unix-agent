@@ -1,6 +1,7 @@
 import os
 import importlib
 import argparse
+import types
 
 import dcm.agent.jobs.builtin as jobs
 
@@ -47,12 +48,25 @@ def output_markdown(f, pa_dict):
     for key, value in pa_dict.iteritems():
         flatstring += '- ' + key + ': ' + value[0] + '\n'
         flatstring += '    - optional: ' + '%s' % value[1] + '\n'
-        flatstring += '    - type: ' + '%s' % value[2] + '\n'
+        flatstring += '    - type: ' + '%s' % get_type_string(value[2]) + '\n'
         flatstring += ''
 
     print flatstring
     return flatstring
 
+def get_type_string(x):
+    """
+    :param x: this is object of type in
+              the protocol_arguments dict
+              in the builtins
+    :return:  if type is FunctionType then
+              we'll return a descriptive docstring __doc__
+              otherwise just return __name__
+    """
+    if isinstance(x, types.FunctionType):
+        return x.__doc__
+    else:
+        return x.__name__
 
 def main():
     """

@@ -315,10 +315,13 @@ def generate_token():
 
 
 def base64type_convertor(b64str):
+    """base 64 decoded string"""
     return base64.b64decode(b64str).decode("utf-8")
 
 
 def user_name(proposed_name):
+    """Safe user name"""
+
     spec_chars = ['*', '&', '!', '?', '/', '\\', '.', '^', '$', '(', ')', '{', '}', '[', ']']
     string_name = str(proposed_name)
 
