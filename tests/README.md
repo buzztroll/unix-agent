@@ -42,5 +42,20 @@ and you have cloned [the es-ex-pyagent repo](https://www.github.com/enStratus/es
   *  ``` apt-get install unzip ```
   *  ``` cp /<projectdirectory>/es-ex-pyagent/tests/pycharm-debug.egg /opt/dcm-agent/embedded/agentve.101/lib/python2.7/site-packages/ ```
   *  ``` unzip  /opt/dcm-agent/embedded/agentve.101/lib/python2.7/site-packages/ ```
-    
-    ![alt text][remote_debug]
+
+4. Setup PyCharm:
+  * Remote debug configuration with localhost and port 5678
+  * Set up virtualenv on host machine and set PyCharm project interpreter to it
+  * ``` virtualenv --no-site-packages <whereever>/AgentVE ```
+  * ``` source <whereever>/AgentVE/bin/activate ```
+  *  ``` pip install -r /<projectdirectory>/es-ex-pyagent/src/requirements.txt ```
+  *  ``` pip install -r /<projectdirectory>/es-ex-pyagent/src/test-requirements.txt ```
+  *  ``` python setup.py develop  ```
+
+5. Now back in the shell of your vagrant machine you can run:
+  * ``` cd /<projectdirectory>/es-ex-pyagent/tests/ ```
+  * ``` source testenv.sh --help ```
+  * source testenv.sh again with your options and host machine private ip address
+  * ``` nosetests dcm.agent.tests ```
+  * You should see it connect to your PyCharm debugger where you can do the usual set breakpoints and step through
+  
