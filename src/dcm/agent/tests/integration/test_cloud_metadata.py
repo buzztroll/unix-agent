@@ -63,6 +63,8 @@ class TestCloudMetadata(unittest.TestCase):
         self._get_instance_data_cloud_none(cloudmetadata.CLOUD_TYPES.Amazon)
 
     def test_get_instance_data_eucalyptus_none(self):
+        if 'DCM_AGENT_ON_AMAZON' in os.environ:
+            raise skip.SkipTest("We are actually on amazon")
         self._get_instance_data_cloud_none(
             cloudmetadata.CLOUD_TYPES.Eucalyptus)
 
