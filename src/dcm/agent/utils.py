@@ -22,6 +22,7 @@ import exceptions
 import logging
 import random
 import string
+import re
 
 
 _g_logger = logging.getLogger(__name__)
@@ -322,11 +323,11 @@ def base64type_convertor(b64str):
 def user_name(proposed_name):
     """Safe user name"""
 
-    spec_chars = ['*', '&', '!', '?', '/', '\\', '.', '^', '$', '(', ')', '{', '}', '[', ']']
     string_name = str(proposed_name)
 
-    for char in string_name:
-        if char in spec_chars:
-            raise Exception
-
-    return proposed_name
+    # this regex ONLY allows a-z, A-Z, 0-9, _,  -
+    # but disallows _ or - at the beginning or end of username
+    if re.match("^(?![_-])[a-zA-Z0-9_-]+(?<![_-])$", string_name):
+        return proposed_name
+    else:
+        return None
