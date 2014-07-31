@@ -5,6 +5,9 @@ import shutil
 import socket
 import tempfile
 import unittest
+
+import nose.plugins.skip as skip
+
 from dcm.agent import cloudmetadata, config
 from dcm.agent.cmd import configure
 import dcm.agent.tests.utils as test_utils
@@ -51,13 +54,17 @@ class TestCloudMetadata(unittest.TestCase):
 
     def _get_instance_data_cloud_none(self, cloud):
         self.conf.cloud_type = cloud
-        inst_id = cloudmetadata.get_instance_id(self.conf)
+        inst_id = cloudmetadata.get_instance_id(self.conf, caching=False)
         self.assertIsNone(inst_id)
 
     def test_get_instance_data_amazon_none(self):
+        if 'DCM_AGENT_ON_AMAZON' in os.environ:
+            raise skip.SkipTest("We are actually on amazon")
         self._get_instance_data_cloud_none(cloudmetadata.CLOUD_TYPES.Amazon)
 
     def test_get_instance_data_eucalyptus_none(self):
+        if 'DCM_AGENT_ON_AMAZON' in os.environ:
+            raise skip.SkipTest("We are actually on amazon")
         self._get_instance_data_cloud_none(
             cloudmetadata.CLOUD_TYPES.Eucalyptus)
 
@@ -77,7 +84,7 @@ class TestCloudMetadata(unittest.TestCase):
 
     def test_get_instance_data_azure_none(self):
         self.conf.cloud_type = cloudmetadata.CLOUD_TYPES.Azure
-        inst_id = cloudmetadata.get_instance_id(self.conf)
+        inst_id = cloudmetadata.get_instance_id(self.conf, caching=False)
         # this will likely change in the future
         hostname = socket.gethostname()
         ha = hostname.split(".")

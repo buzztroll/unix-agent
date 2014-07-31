@@ -7,6 +7,7 @@ import uuid
 import datetime
 import nose
 import time
+import warnings
 
 from dcm.agent import exceptions
 from dcm.agent.messaging import persistence

@@ -178,6 +178,7 @@ class WebSocketConnection(threading.Thread):
         self._errors_since_success += 1
         self._next_connect_time = datetime.datetime.now() +\
             datetime.timedelta(microseconds=int(self._backoff_time*1000000))
+        self._cond.notify()
 
     def _throw_error(self, exception, notify=True):
         _g_logger.debug("throwing error %s" % str(exception))

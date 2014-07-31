@@ -231,7 +231,7 @@ fi
 echo $arch
 echo "done"
 
-if [ "X$AGENT_BASE_URL" == "X" ]; then
+if [[ "X$AGENT_BASE_URL" == "X" && "X$AGENT_BASE_URL" != "XNONE" ]]; then
     if [ "X$AGENT_UNSTABLE" != "X" ]; then
         base_url="https://s3.amazonaws.com/dcmagentunstable"
     else

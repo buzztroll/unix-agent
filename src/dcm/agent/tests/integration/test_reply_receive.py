@@ -19,6 +19,7 @@ import nose
 from nose.plugins import skip
 import time
 import sys
+import string
 
 import dcm.agent
 import dcm.agent.utils as utils
@@ -477,6 +478,24 @@ class TestProtocolCommands(reply.ReplyObserverInterface):
         nose.tools.ok_(r["payload"]["return_code"] != 0)
         nose.tools.eq_(socket.gethostname(), orig_hostname)
 
+
+    @test_utils.system_changing
+    def test_rename_long_hostname(self):
+        orig_hostname = socket.gethostname()
+
+        new_hostname = ''.join(random.choice(string.ascii_letters) for n in range(256))
+
+        doc = {
+            "command": "rename",
+            "arguments": {"serverName": new_hostname}
+        }
+        req_reply = self._rpc_wait_reply(doc)
+        r = req_reply.get_reply()
+        print socket.gethostname()
+        nose.tools.ok_(r["payload"]["return_code"] != 0)
+        nose.tools.eq_(socket.gethostname(), orig_hostname)
+
+
     def _get_job_description(self, job_id):
         arguments = {
             "jobId": job_id
@@ -816,7 +835,7 @@ class TestProtocolCommands(reply.ReplyObserverInterface):
         if not self.storage_clouds:
             raise skip.SkipTest("No storage clouds configured")
 
-        primary_cloud = self.storage_clouds[1]
+        primary_cloud = self.storage_clouds[0]
         service_id1 = "aone_service" + str(uuid.uuid4()).split("-")[0]
         self._install_service(service_id1,
                               self.bucket,

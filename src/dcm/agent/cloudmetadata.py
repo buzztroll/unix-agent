@@ -135,11 +135,11 @@ def get_cloud_metadata(conf, key):
         _g_logger.debug("Metadata value of %s is %s" % (key, result))
 
 
-def get_instance_id(conf):
+def get_instance_id(conf, caching=True):
     _g_logger.debug("Get instance ID called")
 
     try:
-        if conf.instance_id is not None:
+        if conf.instance_id is not None and caching:
             return conf.instance_id
 
         if conf.cloud_type == CLOUD_TYPES.Amazon or\
