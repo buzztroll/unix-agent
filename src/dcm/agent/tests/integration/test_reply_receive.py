@@ -37,7 +37,6 @@ import dcm.agent.tests.utils.test_connection as test_conn
 # does not inherit from unittest because of the python generators for
 # testing storage clouds
 class TestProtocolCommands(reply.ReplyObserverInterface):
-
     def new_message(self, reply):
         pass
 
@@ -300,6 +299,7 @@ class TestProtocolCommands(reply.ReplyObserverInterface):
                           "administrator": False}}
         req_rpc = self._rpc_wait_reply(doc)
         r = req_rpc.get_reply()
+        print r["payload"]["return_code"]
         nose.tools.eq_(r["payload"]["return_code"], 0)
 
         pw_ent = pwd.getpwnam(user_name)
@@ -318,6 +318,82 @@ class TestProtocolCommands(reply.ReplyObserverInterface):
             nose.tools.ok_(False, "should have raised an exception")
         except KeyError:
             pass
+
+    def _build_underscore_dash_names(self, user_name):
+
+        doc = {
+            "command": "add_user",
+            "arguments": {"customerId": self.customer_id,
+                          "userId": user_name,
+                          "firstName": "buzz",
+                          "lastName": "troll",
+                          "authentication": "public key data",
+                          "administrator": False}}
+
+        req_rpc = self._rpc_wait_reply(doc)
+        r = req_rpc.get_reply()
+        msg = 'this following name failed:  ' + user_name
+
+        try:
+            nose.tools.ok_(r["payload"]["return_code"] != 0, msg)
+
+        finally:
+            try:  # delete and clean up user
+                os.system('userdel -r %s' % user_name)
+            except Exception, e:  # show exception
+                print e
+
+    def test_add_underscore_dash_username_fails(self):
+        """
+        :return: tests to show that names created
+                 with -,_ at beginning or end of username fail
+        """
+        if "SYSTEM_CHANGING_TEST" not in os.environ:
+            raise skip.SkipTest('skipping')
+
+        usernames = ['-bob', '_bob', 'bob_', 'bob-',
+                     '-bob-', '_bob_', '_bob-', '-bob_']
+
+        for user_name in usernames:
+            yield self._build_underscore_dash_names, user_name
+
+    def _build_fake_names(self, sc):
+        user_name = 'Bob' + sc
+
+        doc = {
+            "command": "add_user",
+            "arguments": {"customerId": self.customer_id,
+                          "userId": user_name,
+                          "firstName": "buzz",
+                          "lastName": "troll",
+                          "authentication": "public key data",
+                          "administrator": False}}
+
+        req_rpc = self._rpc_wait_reply(doc)
+        r = req_rpc.get_reply()
+        msg = 'special char is ' + sc
+
+        try:
+            nose.tools.ok_(r["payload"]["return_code"] != 0, msg)
+
+        finally:
+            try:  # delete and clean up user
+                os.system('userdel -r %s' % user_name)
+            except Exception, e:  # show exception
+                print e
+
+    def test_add_special_char_username_fails(self):
+        """
+        :return: tests to show that names created
+                 with things in spec_chars fail
+        """
+        if "SYSTEM_CHANGING_TEST" not in os.environ:
+            raise skip.SkipTest('skipping')
+
+        spec_chars = ['*', '&', '!', '?', '/', '\\', '.', '^', '$', '(', ')', '{', '}', '[', ']']
+
+        for sc in spec_chars:
+            yield self._build_fake_names, sc
 
     @test_utils.system_changing
     def test_add_admin_user_remove_user(self):
@@ -595,7 +671,7 @@ class TestProtocolCommands(reply.ReplyObserverInterface):
                 secondary = self.storage_clouds[i + 1]
                 if primary == secondary:
                     secondary = None
-                yield self._install_start_stop_configure_service,\
+                yield self._install_start_stop_configure_service, \
                     primary, secondary, b
 
     def _install_start_stop_configure_service(self, primary, secondary, b):
@@ -974,7 +1050,7 @@ class TestProtocolCommands(reply.ReplyObserverInterface):
         nose.tools.ok_(os.path.exists(
             os.path.join(service_dir, "bin/enstratus-dbgrant")))
 
-        cfg_data =\
+        cfg_data = \
             """
             This is some sample configuration data that will be passed to the
             dbgrant file.
@@ -1157,9 +1233,9 @@ class TestProtocolCommands(reply.ReplyObserverInterface):
         primary = self.storage_clouds[0]
 
         files_uuids = [
-            ("script_run"+str(uuid.uuid4()), str(uuid.uuid4())),
-            ("script_run"+str(uuid.uuid4()), str(uuid.uuid4())),
-            ("script_run"+str(uuid.uuid4()), str(uuid.uuid4()))]
+            ("script_run" + str(uuid.uuid4()), str(uuid.uuid4())),
+            ("script_run" + str(uuid.uuid4()), str(uuid.uuid4())),
+            ("script_run" + str(uuid.uuid4()), str(uuid.uuid4()))]
 
         script_files = self._upload_enstratius_config_scripts(
             primary, files_uuids)
@@ -1240,9 +1316,9 @@ class TestProtocolCommands(reply.ReplyObserverInterface):
         primary = self.storage_clouds[0]
 
         files_uuids = [
-            ("script_run"+str(uuid.uuid4()), str(uuid.uuid4())),
-            ("script_run"+str(uuid.uuid4()), str(uuid.uuid4())),
-            ("script_run"+str(uuid.uuid4()), str(uuid.uuid4()))]
+            ("script_run" + str(uuid.uuid4()), str(uuid.uuid4())),
+            ("script_run" + str(uuid.uuid4()), str(uuid.uuid4())),
+            ("script_run" + str(uuid.uuid4()), str(uuid.uuid4()))]
 
         script_files = self._upload_enstratius_config_scripts(
             primary, files_uuids)
@@ -1408,7 +1484,7 @@ class TestProtocolCommands(reply.ReplyObserverInterface):
                           "fileSystem": "ext3",
                           "raidLevel": "NONE",
                           "encryptionKey":
-                          base64.b64encode(bytearray(enc_key)),
+                              base64.b64encode(bytearray(enc_key)),
                           "mountPoint": mount_point,
                           "devices": [device_id]}}
         req_rpc = self._rpc_wait_reply(doc)
@@ -1419,7 +1495,7 @@ class TestProtocolCommands(reply.ReplyObserverInterface):
         nose.tools.eq_(jd["job_status"], "COMPLETE")
 
         arguments = {
-            "deviceId": "es"+device_id,
+            "deviceId": "es" + device_id,
             "encrypted": True
         }
         doc = {

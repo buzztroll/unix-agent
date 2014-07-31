@@ -22,6 +22,7 @@ import exceptions
 import logging
 import random
 import string
+import re
 
 
 _g_logger = logging.getLogger(__name__)
@@ -315,4 +316,18 @@ def generate_token():
 
 
 def base64type_convertor(b64str):
+    """base 64 decoded string"""
     return base64.b64decode(b64str).decode("utf-8")
+
+
+def user_name(proposed_name):
+    """Safe user name"""
+
+    string_name = str(proposed_name)
+
+    # this regex ONLY allows a-z, A-Z, 0-9, _,  -
+    # but disallows _ or - at the beginning or end of username
+    if re.match("^(?![_-])[a-zA-Z0-9_-]+(?<![_-])$", string_name):
+        return proposed_name
+    else:
+        return None

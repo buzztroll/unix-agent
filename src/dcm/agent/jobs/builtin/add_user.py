@@ -20,12 +20,12 @@ import dcm.agent.jobs.direct_pass as direct_pass
 class AddUser(direct_pass.DirectPass):
 
     protocol_arguments = {
-        "userId": ("The new unix account name to be created", True, str),
+        "userId": ("The new unix account name to be created", True, utils.user_name),
         "firstName": ("The user's first name", True, str),
         "lastName": ("The user's last name", True, str),
         "authentication": ("The user's ssh public key", True, str),
         "administrator": ("A string that is either 'true' or 'false' "
-                          "which indicates if the new user should have"
+                          "which indicates if the new user should have "
                           "ssh access", True, str)
     }
 

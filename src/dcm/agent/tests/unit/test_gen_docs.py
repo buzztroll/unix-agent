@@ -4,8 +4,6 @@ from types import DictType, ModuleType
 
 
 class TestGenDocs(unittest.TestCase):
-
-
     def setUp(self):
         """
         :return: a list of the files in src/dcm/agent/jobs/builtin
@@ -22,10 +20,10 @@ class TestGenDocs(unittest.TestCase):
         :return: assert that list does not contain .pyc files
                  and that it does contain add_user.py
         """
-        assert("__init__.py" not in self.files)
-        assert("__init__.pyc" not in self.files)
-        assert("add_user.py" in self.files)
-        assert("add_user.pyc" not in self.files)
+        assert ("__init__.py" not in self.files)
+        assert ("__init__.pyc" not in self.files)
+        assert ("add_user.py" in self.files)
+        assert ("add_user.pyc" not in self.files)
 
 
     def test_dynamic_import(self):
@@ -35,7 +33,7 @@ class TestGenDocs(unittest.TestCase):
         for file in self.files:
             x = gen_docs.dynamic_import(file)
             # it is a module
-            assert(isinstance(x, ModuleType))
+            assert (isinstance(x, ModuleType))
 
 
     def test_get_protocol_argument_dict(self):
@@ -47,39 +45,53 @@ class TestGenDocs(unittest.TestCase):
             x = gen_docs.dynamic_import(file)
             y = gen_docs.get_protocol_argument_dict(x)
             # it is a dict
-            assert(isinstance(y, DictType))
+            assert (isinstance(y, DictType))
 
 
     def test_gen_md_output(self):
         """
-        :return: assertion that expected_output is the
-                 same as z when add_user.py is ran through
-                 gen_docs.py
+        :return: assertion that expected_output is legit
+                 when remove_user.py and add_user.py are
+                 run through gen_docs.py
         """
 
-        file = 'add_user.py'
-
-        expected_output = """## add_user.py parameters:
-- lastName: The user's last name
+        fileone = 'remove_user.py'
+        expected_output_fileone = """## remove_user.py parameters:
+- userId: The unix account name of the user to remove
     - optional: True
-    - type: <type 'str'>
-- authentication: The user's ssh public key
-    - optional: True
-    - type: <type 'str'>
-- userId: The new unix account name to be created
-    - optional: True
-    - type: <type 'str'>
-- administrator: A string that is either 'true' or 'false' which indicates if the new user should havessh access
-    - optional: True
-    - type: <type 'str'>
-- firstName: The user's first name
-    - optional: True
-    - type: <type 'str'>
+    - type: str
 """
 
-        x = gen_docs.dynamic_import(file)
-        y = gen_docs.get_protocol_argument_dict(x)
-        z = gen_docs.output_markdown(file,y)
+        filetwo = 'add_user.py'
+        expected_output_filetwo = """## add_user.py parameters:
+- lastName: The user's last name
+    - optional: True
+    - type: str
+- authentication: The user's ssh public key
+    - optional: True
+    - type: str
+- userId: The new unix account name to be created
+    - optional: True
+    - type: Safe user name
+- administrator: A string that is either 'true' or 'false' which indicates if the new user should have ssh access
+    - optional: True
+    - type: str
+- firstName: The user's first name
+    - optional: True
+    - type: str
+"""
 
-        assert(z == expected_output)
+        # check remove_user.py
+        x = gen_docs.dynamic_import(fileone)
+        y = gen_docs.get_protocol_argument_dict(x)
+        z = gen_docs.output_markdown(fileone, y)
+
+        assert (z == expected_output_fileone)
+
+        # check add_user.py
+        a = gen_docs.dynamic_import(filetwo)
+        b = gen_docs.get_protocol_argument_dict(a)
+        c = gen_docs.output_markdown(filetwo, b)
+
+        assert (c == expected_output_filetwo)
 
