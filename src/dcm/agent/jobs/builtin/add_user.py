@@ -25,7 +25,7 @@ class AddUser(direct_pass.DirectPass):
         "lastName": ("The user's last name", True, str),
         "authentication": ("The user's ssh public key", True, str),
         "administrator": ("A string that is either 'true' or 'false' "
-                          "which indicates if the new user should have"
+                          "which indicates if the new user should have "
                           "ssh access", True, str)
     }
 

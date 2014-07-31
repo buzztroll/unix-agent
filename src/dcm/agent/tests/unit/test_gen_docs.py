@@ -73,7 +73,7 @@ class TestGenDocs(unittest.TestCase):
 - userId: The new unix account name to be created
     - optional: True
     - type: Safe user name
-- administrator: A string that is either 'true' or 'false' which indicates if the new user should havessh access
+- administrator: A string that is either 'true' or 'false' which indicates if the new user should have ssh access
     - optional: True
     - type: str
 - firstName: The user's first name
