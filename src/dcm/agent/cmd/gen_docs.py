@@ -54,6 +54,7 @@ def output_markdown(f, pa_dict):
     print flatstring
     return flatstring
 
+
 def get_type_string(x):
     """
     :param x: this is object of type in
@@ -67,6 +68,7 @@ def get_type_string(x):
         return x.__doc__
     else:
         return x.__name__
+
 
 def main():
     """
