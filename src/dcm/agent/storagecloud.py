@@ -1,4 +1,4 @@
-#  ========= CONFIDENTIAL =========
+# ========= CONFIDENTIAL =========
 #
 #  Copyright (C) 2010-2014 Dell, Inc. - ALL RIGHTS RESERVED
 #
@@ -21,7 +21,6 @@ from dcm.agent import exceptions
 
 
 _g_logger = logging.getLogger(__name__)
-
 
 _map_cloud_id_to_type = {
     1: CLOUD_TYPES.Amazon,
@@ -50,15 +49,13 @@ _map_cloud_id_to_type = {
 }
 
 
-def _no_driver_function(cloud_type,
-                        storage_access_key,
+def _no_driver_function(storage_access_key,
                         storage_secret_key,
                         region_id=None,
                         endpoint=None,
                         account=None,
                         **kwargs):
-
-    return exceptions.AgentUnsupportedCloudFeature()
+    raise exceptions.AgentUnsupportedCloudFeature()
 
 
 def _aws_driver_function(storage_access_key,
@@ -67,14 +64,13 @@ def _aws_driver_function(storage_access_key,
                          endpoint=None,
                          account=None,
                          **kwargs):
-
     region_map = {
-            "default": Provider.S3,
-            "us_west": Provider.S3_US_WEST,
-            "us_west_oregon": Provider.S3_US_WEST_OREGON,
-            "eu_west": Provider.S3_EU_WEST,
-            "ap_southeast": Provider.S3_AP_SOUTHEAST,
-            "ap_northeast": Provider.S3_AP_NORTHEAST,
+        "default": Provider.S3,
+        "us_west": Provider.S3_US_WEST,
+        "us_west_oregon": Provider.S3_US_WEST_OREGON,
+        "eu_west": Provider.S3_EU_WEST,
+        "ap_southeast": Provider.S3_AP_SOUTHEAST,
+        "ap_northeast": Provider.S3_AP_NORTHEAST,
     }
 
     try:
@@ -93,7 +89,6 @@ def _gce_driver_function(storage_access_key,
                          endpoint=None,
                          account=None,
                          **kwargs):
-
     provider = Provider.GOOGLE_STORAGE
     driver_cls = libcloud_providers.get_driver(provider)
     driver = driver_cls(storage_access_key, storage_secret_key)
@@ -106,7 +101,6 @@ def _azure_driver_function(storage_access_key,
                            endpoint=None,
                            account=None,
                            **kwargs):
-
     provider = Provider.AZURE_BLOBS
     driver_cls = libcloud_providers.get_driver(provider)
     driver = driver_cls(storage_access_key, storage_secret_key)
@@ -119,7 +113,6 @@ def _openstack_driver_function(storage_access_key,
                                endpoint=None,
                                account=None,
                                **kwargs):
-
     provider = Provider.OPENSTACK_SWIFT
     driver_cls = libcloud_providers.get_driver(provider)
     driver = driver_cls(storage_access_key, storage_secret_key)
@@ -138,12 +131,13 @@ def _map_cloud_name_to_provider(cloud_type,
         CLOUD_TYPES.Azure: _azure_driver_function,
         CLOUD_TYPES.Google: _gce_driver_function,
         CLOUD_TYPES.OpenStack: _openstack_driver_function
-        }
+    }
 
     if cloud_type not in cloud_map:
-        raise exceptions.AgentUnsupportedCloudFeature()
+        func = _no_driver_function
 
-    func = cloud_map[cloud_type]
+    else:
+        func = cloud_map[cloud_type]
 
     driver = func(storage_access_key,
                   storage_secret_key,
@@ -165,7 +159,6 @@ def download(cloud_id,
              endpoint=None,
              account=None,
              **kwargs):
-
     # for now just cast to an int.  in the future we need to turn
     # delegate strings into a libcloud driver TODO
     cloud_id = int(cloud_id)
@@ -203,7 +196,6 @@ def upload(cloud_id,
            endpoint=None,
            account=None,
            **kwargs):
-
     # for now just cast to an int.  in the future we need to turn
     # delegate strings into a libcloud driver TODO
     try:
@@ -239,8 +231,11 @@ def get_cloud_driver(cloud_id,
                      endpoint=None,
                      account=None,
                      **kwargs):
+    if cloud_id in _map_cloud_id_to_type:
+        cloud_type = _map_cloud_id_to_type[cloud_id]
+    else:
+        raise exceptions.AgentUnsupportedCloudFeature()
 
-    cloud_type = _map_cloud_id_to_type[cloud_id]
     driver_cls = _map_cloud_name_to_provider(cloud_type,
                                              access_key,
                                              secret_access_key,
