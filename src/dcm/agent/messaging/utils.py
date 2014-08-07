@@ -1,14 +1,12 @@
 import logging
-import os
-import sys
 import threading
-import traceback
 import uuid
 
 
 _g_logger = logging.getLogger(__name__)
 _g_message_uuid = str(uuid.uuid4()).split("-")[0]
 _g_message_id_count = 0
+_g_guid_lock = threading.RLock()
 
 
 def class_method_sync(func):
@@ -25,8 +23,11 @@ def new_message_id():
     # note: using uuid here caused deadlock in tests
     global _g_message_id_count
     global _g_message_uuid
-    # TODO lock this... maybe.  it doesnt really matter that much
-    _g_message_id_count = _g_message_id_count + 1
+    _g_guid_lock.acquire()
+    try:
+        _g_message_id_count = _g_message_id_count + 1
+    finally:
+        _g_guid_lock.release()
     return _g_message_uuid + str(_g_message_id_count)
 
 

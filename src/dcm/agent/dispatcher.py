@@ -117,7 +117,6 @@ class Worker(threading.Thread):
             _g_logger.info("Worker %s thread ending." % self.getName())
 
 
-# TODO verify stopping behavior
 class Dispatcher(object):
 
     def __init__(self, conf):
@@ -142,7 +141,7 @@ class Dispatcher(object):
     def stop(self):
         utils.log_to_dcm(logging.INFO, "Stopping workers.")
 
-        for w in self.workers:
+        for _ in self.workers:
             workload = WorkLoad(None, None, None)
             workload.quit = True
             self.worker_q.put(workload)
@@ -156,8 +155,7 @@ class Dispatcher(object):
         self._long_runner.shutdown()
         _g_logger.info("Flushing the work queue.")
         while not self.worker_q.empty():
-            workload = self.worker_q.get()
-            #req_reply.shutdown()
+            self.worker_q.get()
         _g_logger.info("The dispatcher is closed.")
 
     def incoming_request(self, reply_obj):

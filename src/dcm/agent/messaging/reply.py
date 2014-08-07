@@ -261,7 +261,6 @@ class ReplyRPC(object):
         In this case a retransmission of the request comes in after the user
         acknowledged the message.  Here we resend the ack.
         """
-        # TODO verify the retransmission matches
         message = kwargs['message']
 
         # reply using the latest message id
@@ -682,6 +681,7 @@ class RequestListener(object):
         self._conf = conf
         self._db = db
         self._id_system = id_system
+        self._lock = threading.RLock()
 
         self._db.starting_agent()
 
@@ -842,13 +842,13 @@ class RequestListener(object):
         self._conn.send(nack_doc)
 
     def message_done(self, reply_message):
-        # we cannot drop this message too soon or retransmissions will cause
-        # the command to be run again
-        #
-        #  TODO note thread safety
-        request_id = reply_message.get_request_id()
-        del self._requests[request_id]
-        self._messages_processed += 1
+        self._lock.acquire()
+        try:
+            request_id = reply_message.get_request_id()
+            del self._requests[request_id]
+            self._messages_processed += 1
+        finally:
+            self._lock.release()
         self._call_reply_observers("message_done", reply_message)
 
     def register_user_callback(self, user_callback):

@@ -79,8 +79,6 @@ class InitializeJob(jobs.Plugin):
         # verify that the parameters in initialize match what came in on the
         # connection
         try:
-            # TODO WALK THE INIT STEPS
-            # rename
             utils.log_to_dcm(logging.INFO,
                              "Renaming the host to %s" % self.args.serverName)
             res_doc = self.rename.run()

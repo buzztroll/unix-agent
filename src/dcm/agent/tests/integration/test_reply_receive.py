@@ -272,7 +272,6 @@ class TestProtocolCommands(reply.ReplyObserverInterface):
         r = req_reply.get_reply()
         nose.tools.eq_(r["payload"]["reply_type"], "string")
         nose.tools.eq_(r["payload"]["return_code"], 0)
-
         # TODO verify that this matches the output of the command
 
     def test_get_agent_data(self):
@@ -339,7 +338,9 @@ class TestProtocolCommands(reply.ReplyObserverInterface):
 
         finally:
             try:  # delete and clean up user
-                os.system('userdel -r %s' % user_name)
+                pw_ent = pwd.getpwnam(user_name)
+                if pw_ent is not None:
+                    os.system('userdel -r %s' % user_name)
             except Exception, e:  # show exception
                 print e
 
@@ -375,11 +376,12 @@ class TestProtocolCommands(reply.ReplyObserverInterface):
 
         try:
             nose.tools.ok_(r["payload"]["return_code"] != 0, msg)
-
         finally:
             try:  # delete and clean up user
-                os.system('userdel -r %s' % user_name)
-            except Exception, e:  # show exception
+                pw_ent = pwd.getpwnam(user_name)
+                if pw_ent is not None:
+                    os.system('userdel -r %s' % user_name)
+            except Exception as e:  # show exception
                 print e
 
     def test_add_special_char_username_fails(self):
@@ -472,7 +474,6 @@ class TestProtocolCommands(reply.ReplyObserverInterface):
         req_reply = self._rpc_wait_reply(doc)
         r = req_reply.get_reply()
         nose.tools.eq_(r["payload"]["return_code"], 0)
-
         # TODO verify that this matches the output of the command
 
     @test_utils.system_changing
@@ -514,12 +515,12 @@ class TestProtocolCommands(reply.ReplyObserverInterface):
         nose.tools.ok_(r["payload"]["return_code"] != 0)
         nose.tools.eq_(socket.gethostname(), orig_hostname)
 
-
     @test_utils.system_changing
     def test_rename_long_hostname(self):
         orig_hostname = socket.gethostname()
 
-        new_hostname = ''.join(random.choice(string.ascii_letters) for n in range(256))
+        new_hostname = ''.join(random.choice(
+            string.ascii_letters) for n in range(256))
 
         doc = {
             "command": "rename",
@@ -530,7 +531,6 @@ class TestProtocolCommands(reply.ReplyObserverInterface):
         print socket.gethostname()
         nose.tools.ok_(r["payload"]["return_code"] != 0)
         nose.tools.eq_(socket.gethostname(), orig_hostname)
-
 
     def _get_job_description(self, job_id):
         arguments = {

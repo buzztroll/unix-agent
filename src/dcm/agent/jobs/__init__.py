@@ -122,7 +122,7 @@ class ExePlugin(Plugin):
                                    stderr=subprocess.STDOUT,
                                    cwd=self.cwd)
 
-        # TODO interate over the output so that it does not all come just at
+        # TODO iterate over the output so that it does not all come just at
         # the end
         stdout, stderr = process.communicate()
 
@@ -180,12 +180,12 @@ g_type_to_obj_map = {
 
 def load_plugin(conf, items_map, request_id, name, arguments):
     _g_logger.debug("ENTER load_plugin")
-    type = items_map["type"]
-    if type not in g_type_to_obj_map:
+    type_name = items_map["type"]
+    if type_name not in g_type_to_obj_map:
         raise exceptions.AgentPluginConfigException(
-            "The module type %s is not valid." % type)
+            "The module type %s is not valid." % type_name)
 
-    func = g_type_to_obj_map[type]
+    func = g_type_to_obj_map[type_name]
     _g_logger.debug("calling load function")
     return func(conf, request_id, items_map, name, arguments)
 

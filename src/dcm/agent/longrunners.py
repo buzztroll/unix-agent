@@ -8,8 +8,6 @@ from dcm.agent import parent_receive_q
 import dcm.agent.jobs as jobs
 
 
-# TODO handle thread safety
-
 _g_logger = logging.getLogger(__name__)
 
 
@@ -160,7 +158,7 @@ class LongRunner(parent_receive_q.ParentReceiveQObserver):
             module_name, conf, request_id, items_map, name, arguments)
 
         with self._lock:
-            self._job_id = self._job_id + 1
+            self._job_id += 1
             new_job = NewLongJob(
                 items_map, name, arguments, self._job_id, request_id)
             detached_job = DetachedJob(self._conf, self._job_id,
