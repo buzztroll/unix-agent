@@ -3,7 +3,7 @@ import subprocess
 from setuptools import setup, find_packages
 import sys
 
-Version = "0.9.0"
+Version = "0.9.1"
 
 
 def get_diff_tag():
