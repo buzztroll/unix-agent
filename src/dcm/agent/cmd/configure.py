@@ -143,7 +143,7 @@ def run_command(cmd):
         rc = 1
         stdout = None
         stderr = ex.message
-    return (rc, stdout, stderr)
+    return rc, stdout, stderr
 
 
 def identify_platform(opts):
@@ -196,23 +196,28 @@ def _get_input(prompt):
 
 
 def select_cloud(default="Amazon"):
+    """
+
+    :param default:
+    :return:
+    """
     for c in sorted(cloud_choices.keys()):
         col = "%2d) %-13s" % (c, cloud_choices[c])
         print col
 
     cloud = None
     while cloud is None:
-        input = _get_input("Select your cloud (%s): " % default)
-        input = input.strip()
-        if not input:
-            input = default
-        if input in [i.lower() for i in cloud_choices.values()]:
-            return input
+        input_str = _get_input("Select your cloud (%s): " % default)
+        input_str = input_str.strip()
+        if not input_str:
+            input_str = default
+        if input_str in [i.lower() for i in cloud_choices.values()]:
+            return input_str
         try:
-            ndx = int(input)
+            ndx = int(input_str)
             cloud = cloud_choices[ndx]
         except:
-            print "%s is not a valid choice." % input
+            print "%s is not a valid choice." % input_str
     return cloud
 
 
@@ -267,10 +272,10 @@ def update_from_config_file(conf_file, conf_dict):
 
         items_list = parser.items(s)
         for (key, value) in items_list:
-            help = None
+            help_str = None
             if key in conf_dict:
-                (help, _) = sd[key]
-            sd[key] = (help, value)
+                (help_str, _) = sd[key]
+            sd[key] = (help_str, value)
 
 
 def write_conf_file(dest_filename, conf_dict):
@@ -281,9 +286,9 @@ def write_conf_file(dest_filename, conf_dict):
             fptr.write("[%s]%s" % (section_name, os.linesep))
 
             for item_name in sd:
-                (help, value) = sd[item_name]
-                if help:
-                    help_lines = textwrap.wrap(help, 79)
+                (help_str, value) = sd[item_name]
+                if help_str:
+                    help_lines = textwrap.wrap(help_str, 79)
                     for h in help_lines:
                         fptr.write("# %s%s" % (h, os.linesep))
                 if value is None:
@@ -319,14 +324,14 @@ def make_dirs(conf_d):
         (conf_d["storage"]["temppath"][1], 01777),
     ]
 
-    for (dir, mod) in dirs_to_make:
+    for (directory, mod) in dirs_to_make:
         try:
-            print "    %s" % dir
-            os.mkdir(dir)
+            print "    %s" % directory
+            os.mkdir(directory)
         except OSError as ex:
             if ex.errno != 17:
                 raise
-        os.chmod(dir, mod)
+        os.chmod(directory, mod)
 
     print "...Done."
 
@@ -355,8 +360,6 @@ def do_set_owner_and_perms(conf_d):
     os.system("chown -R %s:%s %s" % (user, user, base_path))
     os.system("chown -R %s:%s %s" % (user, user,
                                      conf_d["storage"]["mountpoint"][1]))
-    cmd = "chown -R root:root %s" % conf_d["storage"]["temppath"][1]
-    os.system(cmd)
 
 
 def merge_opts(conf_d, opts):
@@ -450,7 +453,7 @@ def get_url(default=None):
     try:
         up = urlparse.urlparse(url)
         int(up.port)
-    except Exception as ex:
+    except Exception:
         raise Exception("The agent manager contact %s is not a valid url"
                         % url)
     allowed_schemes = ["ws", "wss"]

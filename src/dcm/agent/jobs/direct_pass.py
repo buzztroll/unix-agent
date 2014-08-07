@@ -62,7 +62,6 @@ class DirectPass(jobs.Plugin):
         reply = {"return_code": rc, "message": stdout,
                  "error_message": stderr, "return_type": "void"}
         return reply
-        # TODO XXX should stdout go on payload?
 
 
 def load_plugin(conf, job_id, items_map, name, arguments):

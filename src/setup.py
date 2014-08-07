@@ -32,7 +32,7 @@ def get_diff_tag():
         if rc == 0 and stdoutdata:
             version = version + "-diff"
         return version
-    except Exception as ex:
+    except Exception:
         return ""
 
 
@@ -72,5 +72,5 @@ setup(name='dcm-agent',
           "Programming Language :: Python",
           "Topic :: System :: Clustering",
           "Topic :: System :: Distributed Computing"
-          ],
+      ]
       )

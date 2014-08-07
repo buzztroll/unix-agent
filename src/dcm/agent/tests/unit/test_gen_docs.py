@@ -4,16 +4,15 @@ from types import DictType, ModuleType
 
 
 class TestGenDocs(unittest.TestCase):
+
     def setUp(self):
         """
         :return: a list of the files in src/dcm/agent/jobs/builtin
         """
         self.files = gen_docs.filelist
 
-
     def tearDown(self):
         self.files = None
-
 
     def test_files(self):
         """
@@ -25,7 +24,6 @@ class TestGenDocs(unittest.TestCase):
         assert ("add_user.py" in self.files)
         assert ("add_user.pyc" not in self.files)
 
-
     def test_dynamic_import(self):
         """
         :return: call dynamic_import and assert that it returns a module
@@ -34,7 +32,6 @@ class TestGenDocs(unittest.TestCase):
             x = gen_docs.dynamic_import(file)
             # it is a module
             assert (isinstance(x, ModuleType))
-
 
     def test_get_protocol_argument_dict(self):
         """
@@ -46,7 +43,6 @@ class TestGenDocs(unittest.TestCase):
             y = gen_docs.get_protocol_argument_dict(x)
             # it is a dict
             assert (isinstance(y, DictType))
-
 
     def test_gen_md_output(self):
         """
@@ -94,4 +90,3 @@ class TestGenDocs(unittest.TestCase):
         c = gen_docs.output_markdown(filetwo, b)
 
         assert (c == expected_output_filetwo)
-
