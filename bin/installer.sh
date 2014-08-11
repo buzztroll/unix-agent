@@ -25,6 +25,9 @@ AGENT_BASE_URL=<url>
 AGENT_UNSTABLE
   - When set the script will download and install the latest unstable version
     of the dcm-agent.
+
+AGENT_VERSION
+  - To download a specific version of the agent set this to the version.
 "
 
     echo "options:"
@@ -67,9 +70,13 @@ function install_agent(){
 
     if [ "X$AGENT_LOCAL_PACKAGE" == "X" ]; then
         echo "Downloading $url ..."
-        curl -L $url > /tmp/$filename
+        curl -s -L $url > /tmp/$filename
     else
-        cp $AGENT_LOCAL_PACKAGE /tmp/$filename
+        if [[ $1 == *://* ]] ; then
+            curl -s -L $AGENT_LOCAL_PACKAGE > /tmp/$filename
+        else
+            cp $AGENT_LOCAL_PACKAGE /tmp/$filename
+        fi
     fi
 
     if [ $? -ne 0 ]; then
@@ -118,7 +125,7 @@ function install_chef_client {
 
     if [[ $chef_install == "yes" ]]; then
         echo "Installing chef-client."
-        curl -L https://www.opscode.com/chef/install.sh | bash
+        curl -s -L https://www.opscode.com/chef/install.sh | bash
         echo "Done."
     fi
 }
@@ -241,7 +248,12 @@ else
     base_url=$AGENT_BASE_URL
 fi
 
-fname="dcm-agent-$distro_name"-$distro_version"$arch.$pkg_ext"
+agent_version_ext=""
+if [ "X$AGENT_VERSION" != "X" ]; then
+    agent_version_ext="-$X$AGENT_VERSION"
+fi
+
+fname="dcm-agent-$distro_name"-$distro_version"$arch$agent_version_ext.$pkg_ext"
 
 echo "Starting the installation process..."
 

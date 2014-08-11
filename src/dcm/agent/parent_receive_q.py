@@ -141,8 +141,8 @@ def register_user_callback(func, args=None, kwargs=None):
     return _g_main_q_maker.register_user_callback(func, args, kwargs)
 
 
-def poll():
-    _g_main_q_maker.poll()
+def poll(blocking=True, timeblock=5):
+    _g_main_q_maker.poll(blocking=blocking, timeblock=timeblock)
 
 
 def create_put_q(name):

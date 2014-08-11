@@ -47,6 +47,15 @@ if [ "X$3" != "Xnull" ]; then
     fi
 fi
 
+# if 4 is not null test the local install
+if [ "X$4" != "Xnull" ]; then
+    cd /agent/src
+    pip install -r requirements.txt
+    pip install -r test-requirements.txt
+    python setup.py install
+    cd -
+fi
+
 nosetests dcm.agent.tests 2>&1 | tee $output_dir/nosetests.output
 #nosetests -svx dcm.agent.tests
 if [ ${PIPESTATUS[0]} -ne 0 ]; then

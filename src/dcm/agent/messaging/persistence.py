@@ -136,6 +136,12 @@ class AgentDB(object):
 
     @messaging_utils.class_method_sync
     @class_method_session
+    def check_agent_id(self, agent_id, session=None):
+        session.query(RequestDBObject).filter(
+            RequestDBObject.agent_id != agent_id).delete()
+
+    @messaging_utils.class_method_sync
+    @class_method_session
     def get_all_complete(self, session=None):
         # load every object
         complete_tasks = session.query(RequestDBObject).filter(
