@@ -1,12 +1,12 @@
 name "dcm-agent"
-default_version "3.10"
+default_version "0.9.1"
 
 dependency "python"
 dependency "pip"
 
 build do
   source_path = "/agent"
-  ve_version = "101"
+  ve_version = #{build_version}
   ve_path = "#{install_dir}/embedded/agentve.#{ve_version}"
   build_env = {
     "PATH" => "/#{install_dir}/embedded/bin:#{ENV['PATH']}",

@@ -1,5 +1,7 @@
 import json
 import os
+import shutil
+import tempfile
 import unittest
 import StringIO
 from dcm.agent import dispatcher, parent_receive_q, logger
@@ -18,10 +20,13 @@ class TestSingleCommands(unittest.TestCase):
         test_conf_path = test_utils.get_conf_file()
         self.conf_obj = config.AgentConfig([test_conf_path])
         self.disp = dispatcher.Dispatcher(self.conf_obj)
-        self.db = persistence.AgentDB(":memory:")
+        self.test_base_path = tempfile.mkdtemp()
+        self.db_path = os.path.join(self.test_base_path, "agentdb.sql")
+        self.db = persistence.AgentDB(self.db_path)
 
     def tearDown(self):
         self.disp.stop()
+        shutil.rmtree(self.test_base_path)
 
     def _get_conn(self, incoming_lines, outfile, drop_count):
         self._incoming_io = StringIO.StringIO(incoming_lines)
@@ -34,17 +39,19 @@ class TestSingleCommands(unittest.TestCase):
         conn = self._get_conn(inlines, outfile, drop_count)
         request_listener = reply.RequestListener(
             self.conf_obj, conn, self.disp, self.db)
-        conn.set_receiver(request_listener)
-        self.disp.start_workers(request_listener)
+        try:
+            conn.set_receiver(request_listener)
+            self.disp.start_workers(request_listener)
 
-        # wait until the request is done
-        while request_listener.get_messages_processed() != 1:
-            parent_receive_q.poll()
-        output = json.loads(outfile.buflist[0])
-        self.assertEquals(stdout, output['stdout'].strip())
-        self.assertEquals(stderr, output['stderr'])
-        self.assertEquals(0, output['return_code'])
-        request_listener.shutdown()
+            # wait until the request is done
+            while request_listener.get_messages_processed() != 1:
+                parent_receive_q.poll()
+            output = json.loads(outfile.buflist[0])
+            self.assertEquals(stdout, output['stdout'].strip())
+            self.assertEquals(stderr, output['stderr'])
+            self.assertEquals(0, output['return_code'])
+        finally:
+            request_listener.shutdown()
 
     def test_message_no_fail(self):
         self._simple_message(0, "echo Hello1", "Hello1", None)
@@ -81,10 +88,13 @@ class TestSerialCommands(unittest.TestCase):
         test_conf_path = test_utils.get_conf_file()
         self.conf_obj = config.AgentConfig([test_conf_path])
         self.disp = dispatcher.Dispatcher(self.conf_obj)
-        self.db = persistence.AgentDB(":memory:")
+        self.test_base_path = tempfile.mkdtemp()
+        self.db_path = os.path.join(self.test_base_path, "agentdb.sql")
+        self.db = persistence.AgentDB(self.db_path)
 
     def tearDown(self):
         self.disp.stop()
+        shutil.rmtree(self.test_base_path)
 
     def _get_conn(self, incoming_lines, outfile, drop_count):
         self._incoming_io = StringIO.StringIO(incoming_lines)
@@ -140,7 +150,12 @@ class TestRetransmission(unittest.TestCase):
         logger.clear_dcm_logging()
         test_conf_path = test_utils.get_conf_file()
         self.conf_obj = config.AgentConfig([test_conf_path])
-        self.db = persistence.AgentDB(":memory:")
+        self.test_base_path = tempfile.mkdtemp()
+        self.db_path = os.path.join(self.test_base_path, "agentdb.sql")
+        self.db = persistence.AgentDB(self.db_path)
+
+    def tearDown(self):
+        shutil.rmtree(self.test_base_path)
 
     def _get_conn(self, incoming_lines, outfile, drop_count, retrans_list):
         self._incoming_io = StringIO.StringIO(incoming_lines)
@@ -160,32 +175,36 @@ class TestRetransmission(unittest.TestCase):
             def incoming_message(self, incoming_doc):
                 pass
 
+        request_listener = None
         disp = dispatcher.Dispatcher(self.conf_obj)
 
-        in_command = os.linesep.join(command)
-        count = len(command)
-        inlines = StringIO.StringIO(in_command)
-        outfile = StringIO.StringIO()
-        conn = self._get_conn(inlines, outfile, drop_count, retrans_list)
+        try:
+            in_command = os.linesep.join(command)
+            count = len(command)
+            inlines = StringIO.StringIO(in_command)
+            outfile = StringIO.StringIO()
+            conn = self._get_conn(inlines, outfile, drop_count, retrans_list)
 
-        request_listener = reply.RequestListener(
-            self.conf_obj, conn, disp, self.db)
-        conn.set_receiver(request_listener)
-        to = TestStateObserver()
-        rol = request_listener.get_reply_observers()
-        rol.insert(0, to)
-        disp.start_workers(request_listener)
+            request_listener = reply.RequestListener(
+                self.conf_obj, conn, disp, self.db)
+            conn.set_receiver(request_listener)
+            to = TestStateObserver()
+            rol = request_listener.get_reply_observers()
+            rol.insert(0, to)
+            disp.start_workers(request_listener)
 
-        # wait until the request is done
-        while request_listener.get_messages_processed() != count:
-            parent_receive_q.poll()
+            # wait until the request is done
+            while request_listener.get_messages_processed() != count:
+                parent_receive_q.poll()
 
-        for i in range(count):
-            output = json.loads(outfile.buflist[i])
-            self.assertEquals(0, output['return_code'])
-
-        request_listener.shutdown()
-        disp.stop()
+            for i in range(count):
+                output = json.loads(outfile.buflist[i])
+                self.assertEquals(0, output['return_code'])
+        finally:
+            if request_listener:
+                request_listener.shutdown()
+            if disp:
+                disp.stop()
 
         return to.state_change_list
 
