@@ -1,8 +1,8 @@
-#  ========= CONFIDENTIAL =========
+# ========= CONFIDENTIAL =========
 #
-#  Copyright (C) 2010-2014 Dell, Inc. - ALL RIGHTS RESERVED
+# Copyright (C) 2010-2014 Dell, Inc. - ALL RIGHTS RESERVED
 #
-#  ======================================================================
+# ======================================================================
 #   NOTICE: All information contained herein is, and remains the property
 #   of Dell, Inc. The intellectual and technical concepts contained herein
 #   are proprietary to Dell, Inc. and may be covered by U.S. and Foreign
@@ -49,6 +49,152 @@ class CLOUD_TYPES:
     VMware = "VMware"
 
 
+
+class CloudMetaData:
+    def get_cloud_metadata(self, key):
+        return None
+
+    def get_instance_id(self):
+        return None
+
+
+class AWSMetaData(CloudMetaData):
+    def __init__(self, conf):
+        self.conf = conf
+
+    def get_cloud_metadata(self, key):
+        _g_logger.debug("Get metadata %s" % key)
+
+        if self.conf.cloud_metadata_url is None:
+            _g_logger.warn("The metadata server is None")
+            return None
+
+        url = self.conf.cloud_metadata_url + "/" + key
+        result = _get_metadata_server_url_data(url)
+        _g_logger.debug("Metadata value of %s is %s" % (key, result))
+        return result
+
+    def get_instance_id(self):
+        _g_logger.debug("Get instance ID called")
+        try:
+            instance_id = self.get_cloud_metadata("instance-id")
+        finally:
+             _g_logger.debug("Instance ID is %s" % str(self.conf.instance_id))
+        return instance_id
+
+
+class JoyentMetaData(CloudMetaData):
+    def __init__(self, conf):
+        self.conf = conf
+
+    def get_cloud_metadata(self, key):
+        _g_logger.debug("Get metadata %s" % key)
+        if platform.version().startswith("Sun"):
+            cmd = "/usr/sbin/mdata-get"
+        else:
+            cmd = "/lib/smartdc/mdata-get"
+
+        cmd_args = ["sudo", cmd, key]
+        (stdout, stderr, rc) = utils.run_command(self.conf, cmd_args)
+        if rc != 0:
+            result = None
+        else:
+            result = stdout.strip()
+        _g_logger.debug("Metadata value of %s is %s" % (key, result))
+        return result
+
+    def get_instance_id(self):
+        _g_logger.debug("Get instance ID called")
+        try:
+            instance_id = self.get_cloud_metadata("es:dmcm-launch-id")
+        finally:
+            _g_logger.debug("Instance ID is %s" % str(self.conf.instance_id))
+        return instance_id
+
+
+class GCEMetaData(CloudMetaData):
+    def __init__(self, conf):
+        self.conf = conf
+
+    def get_cloud_metadata(self, key):
+        _g_logger.debug("Get metadata %s" % key)
+
+        if self.conf.cloud_metadata_url is None:
+            _g_logger.warn("The metadata server is None")
+            return None
+
+        url = self.conf.cloud_metadata_url + "/" + key
+        result = _get_metadata_server_url_data(url)
+        _g_logger.debug("Metadata value of %s is %s" % (key, result))
+        return result
+
+    def get_instance_id(self):
+        _g_logger.debug("Get instance ID called")
+        try:
+            instance_id = self.get_cloud_metadata("instance/attributes/es-dmcm-launch-id")
+        finally:
+            _g_logger.debug("Instance ID is %s" % str(self.conf.instance_id))
+        return instance_id
+
+
+class AzureMetaData(CloudMetaData):
+    def get_instance_id(self):
+        hostname = socket.gethostname()
+        if not hostname:
+            return None
+        ha = hostname.split(".")
+        return "%s:%s:%s" % (ha[0], ha[0], ha[0])
+
+
+def set_metadata_object(conf):
+    if conf.cloud_type == CLOUD_TYPES.Amazon:
+        meta_data_obj = AWSMetaData(conf)
+
+    elif conf.cloud_type == CLOUD_TYPES.Joyent:
+        meta_data_obj = JoyentMetaData(conf)
+
+    elif conf.cloud_type == CLOUD_TYPES.Google:
+        meta_data_obj = GCEMetaData(conf)
+
+    elif conf.cloud_type == CLOUD_TYPES.Azure:
+        meta_data_obj = AzureMetaData()
+
+    else:
+        meta_data_obj = CloudMetaData()
+
+    conf.meta_data_object = meta_data_obj
+
+
+def get_dhcp_ip_address(conf):
+    if conf.dhcp_address is not None:
+        return conf.dhcp_address
+
+    (stdout, stderr, rc) = utils.run_script(conf, "getDhcpAddress", [])
+    if rc != 0:
+        raise exceptions.AgentExecutableException(
+            "getDhcpAddress", rc, stdout, stderr)
+
+    conf.dhcp_address = stdout.strip()
+    return conf.dhcp_address
+
+
+def get_ipv4_addresses(conf):
+    # do caching
+    ip_list = []
+    if conf.cloud_type == CLOUD_TYPES.Amazon or \
+                    conf.cloud_type == CLOUD_TYPES.Eucalyptus:
+        private_ip = conf.meta_data_object.get_cloud_metadata("local-ipv4")
+        if private_ip:
+            ip_list.append(private_ip)
+
+    (stdout, stderr, rc) = utils.run_script(conf, "getIpAddresses", [])
+    for line in stdout.split(os.linesep):
+        line = line.strip()
+        if line and line not in ip_list:
+            ip_list.append(line)
+    return ip_list
+
+
 def _get_metadata_server_url_data(url, timeout=1):
     _g_logger.debug("Attempting to get metadata at %s" % url)
     u_req = urllib2.Request(url)
@@ -65,123 +211,3 @@ def _get_metadata_server_url_data(url, timeout=1):
     data = response.read().strip()
     return data
 
-
-def get_dhcp_ip_address(conf):
-    if conf.dhcp_address is not None:
-        return conf.dhcp_address
-
-    (stdout, stderr, rc) = utils.run_script(conf, "getDhcpAddress", [])
-    if rc != 0:
-        raise exceptions.AgentExecutableException(
-            "getDhcpAddress", rc, stdout, stderr)
-
-    conf.dhcp_address = stdout.strip()
-    return conf.dhcp_address
-
-
-def get_cloud_metadata(conf, key):
-    _g_logger.debug("Get metadata %s" % key)
-
-    try:
-        result = None
-        if conf.cloud_type == CLOUD_TYPES.Amazon or\
-                conf.cloud_type == CLOUD_TYPES.Eucalyptus or\
-                conf.cloud_type == CLOUD_TYPES.Google:
-            if conf.cloud_metadata_url is None:
-                _g_logger.warn("The metadata server is None")
-                return None
-            url = conf.cloud_metadata_url + "/" + key
-            data = _get_metadata_server_url_data(url)
-            result = data
-        elif conf.cloud_type == CLOUD_TYPES.CloudStack or\
-                conf.cloud_type == CLOUD_TYPES.CloudStack3:
-            addr = get_dhcp_ip_address(conf)
-            url = "http://%s/" % addr
-            result = _get_metadata_server_url_data(url)
-            if result is not None and\
-                    conf.cloud_type == CLOUD_TYPES.CloudStack:
-                # split the name out for anything before CloudStack 3
-                split_name = result.strip().split("-")
-                if len(split_name) > 2:
-                    result = split_name[2]
-        elif conf.cloud_type == CLOUD_TYPES.OpenStack:
-            try:
-                if conf.cloud_metadata_url is None:
-                    _g_logger.warn("The metadata server is None")
-                    return None
-                url = conf.cloud_metadata_url
-                json_data = _get_metadata_server_url_data(url)
-                jdict = json.loads(json_data)
-                result = jdict[key]
-            except:
-                _g_logger.exception("Failed to get the OpenStack metadata")
-                result = None
-        elif conf.cloud_type == CLOUD_TYPES.Joyent:
-            if platform.version().startswith("Sun"):
-                cmd = "/usr/sbin/mdata-get"
-            else:
-                cmd = "/lib/smartdc/mdata-get"
-            cmd_args = ["sudo", cmd, key]
-            (stdout, stderr, rc) = utils.run_command(conf, cmd_args)
-            if rc != 0:
-                result = None
-            else:
-                result = stdout.strip()
-        else:
-            # NOTE we may want to log this
-            result = None
-        return result
-    finally:
-        _g_logger.debug("Metadata value of %s is %s" % (key, result))
-
-
-def get_instance_id(conf, caching=True):
-    _g_logger.debug("Get instance ID called")
-
-    try:
-        if conf.instance_id is not None and caching:
-            return conf.instance_id
-
-        if conf.cloud_type == CLOUD_TYPES.Amazon or\
-                conf.cloud_type == CLOUD_TYPES.Eucalyptus:
-            instance_id = get_cloud_metadata(conf, "instance-id")
-        elif conf.cloud_type == CLOUD_TYPES.CloudStack:
-            instance_id = get_cloud_metadata(conf, "instance-id")
-        elif conf.cloud_type == CLOUD_TYPES.CloudStack3:
-            instance_id = get_cloud_metadata(conf, "vm-id")
-        elif conf.cloud_type == CLOUD_TYPES.OpenStack:
-            instance_id = get_cloud_metadata(conf, "uuid")
-        elif conf.cloud_type == CLOUD_TYPES.Joyent:
-            instance_id = get_cloud_metadata(conf, "es:dmcm-launch-id")
-        elif conf.cloud_type == CLOUD_TYPES.Google:
-            instance_id = get_cloud_metadata(
-                conf, "instance/attributes/es-dmcm-launch-id")
-        elif conf.cloud_type == CLOUD_TYPES.Azure:
-            hostname = socket.gethostname()
-            if not hostname:
-                return None
-            ha = hostname.split(".")
-            return "%s:%s:%s" % (ha[0], ha[0], ha[0])
-        else:
-            instance_id = None
-        conf.instance_id = instance_id
-    finally:
-        _g_logger.debug("Instance ID is %s" % str(conf.instance_id))
-    return instance_id
-
-
-def get_ipv4_addresses(conf):
-    # do caching
-    ip_list = []
-    if conf.cloud_type == CLOUD_TYPES.Amazon or\
-            conf.cloud_type == CLOUD_TYPES.Eucalyptus:
-        private_ip = get_cloud_metadata(conf, "local-ipv4")
-        if private_ip:
-            ip_list.append(private_ip)
-
-    (stdout, stderr, rc) = utils.run_script(conf, "getIpAddresses", [])
-    for line in stdout.split(os.linesep):
-        line = line.strip()
-        if line and line not in ip_list:
-            ip_list.append(line)
-    return ip_list
