@@ -46,6 +46,9 @@ class TestCloudMetadata(unittest.TestCase):
     def setUp(self):
         pass
 
+    def tearDown(self):
+        pass
+
     def test_dhcp(self):
         ipaddr = cloudmetadata.get_dhcp_ip_address(self.conf)
         if platform.system().lower() == "linux":
@@ -54,7 +57,7 @@ class TestCloudMetadata(unittest.TestCase):
 
     def _get_instance_data_cloud_none(self, cloud):
         self.conf.cloud_type = cloud
-        inst_id = cloudmetadata.get_instance_id(self.conf, caching=False)
+        inst_id = self.conf.meta_data_object.get_instance_id()
         self.assertIsNone(inst_id)
 
     def test_get_instance_data_amazon_none(self):
@@ -62,29 +65,14 @@ class TestCloudMetadata(unittest.TestCase):
             raise skip.SkipTest("We are actually on amazon")
         self._get_instance_data_cloud_none(cloudmetadata.CLOUD_TYPES.Amazon)
 
-    def test_get_instance_data_eucalyptus_none(self):
-        if 'DCM_AGENT_ON_AMAZON' in os.environ:
-            raise skip.SkipTest("We are actually on amazon")
-        self._get_instance_data_cloud_none(
-            cloudmetadata.CLOUD_TYPES.Eucalyptus)
-
-    def test_get_instance_data_cloudstack_none(self):
-        self._get_instance_data_cloud_none(
-            cloudmetadata.CLOUD_TYPES.CloudStack)
-
-    def test_get_instance_data_cloudstack3_none(self):
-        self._get_instance_data_cloud_none(
-            cloudmetadata.CLOUD_TYPES.CloudStack3)
-
-    def test_get_instance_data_openstack_none(self):
-        self._get_instance_data_cloud_none(cloudmetadata.CLOUD_TYPES.OpenStack)
-
     def test_get_instance_data_google_none(self):
+        self.conf.meta_data_object = cloudmetadata.GCEMetaData(self.conf)
         self._get_instance_data_cloud_none(cloudmetadata.CLOUD_TYPES.Google)
 
     def test_get_instance_data_azure_none(self):
         self.conf.cloud_type = cloudmetadata.CLOUD_TYPES.Azure
-        inst_id = cloudmetadata.get_instance_id(self.conf, caching=False)
+        self.conf.meta_data_object = cloudmetadata.AzureMetaData()
+        inst_id = self.conf.meta_data_object.get_instance_id()
         # this will likely change in the future
         hostname = socket.gethostname()
         ha = hostname.split(".")
