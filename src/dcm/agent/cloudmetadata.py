@@ -49,37 +49,33 @@ class CLOUD_TYPES:
     VMware = "VMware"
 
 
-
-class CloudMetaData:
+class CloudMetaData(object):
     def get_cloud_metadata(self, key):
         return None
 
-    def get_instance_id(self):
+    def get_instance_id(self, instance_id):
+        _g_logger.debug("Get instance ID called")
+        _g_logger.debug("Instance ID is %s" % str(instance_id))
         return None
 
 
 class AWSMetaData(CloudMetaData):
     def __init__(self, conf):
-        self.conf = conf
+        if conf.cloud_metadata_url:
+            self.base_url = conf.cloud_metadata_url
+        else:
+            self.base_url = "http://169.254.169.254/latest/meta-data"
 
     def get_cloud_metadata(self, key):
         _g_logger.debug("Get metadata %s" % key)
-
-        if self.conf.cloud_metadata_url is None:
-            _g_logger.warn("The metadata server is None")
-            return None
-
-        url = self.conf.cloud_metadata_url + "/" + key
+        url = self.base_url + "/" + key
         result = _get_metadata_server_url_data(url)
         _g_logger.debug("Metadata value of %s is %s" % (key, result))
         return result
 
     def get_instance_id(self):
-        _g_logger.debug("Get instance ID called")
-        try:
-            instance_id = self.get_cloud_metadata("instance-id")
-        finally:
-             _g_logger.debug("Instance ID is %s" % str(self.conf.instance_id))
+        instance_id = self.get_cloud_metadata("instance-id")
+        super(AWSMetaData, self).get_instance_id(instance_id)
         return instance_id
 
 
@@ -104,36 +100,28 @@ class JoyentMetaData(CloudMetaData):
         return result
 
     def get_instance_id(self):
-        _g_logger.debug("Get instance ID called")
-        try:
-            instance_id = self.get_cloud_metadata("es:dmcm-launch-id")
-        finally:
-            _g_logger.debug("Instance ID is %s" % str(self.conf.instance_id))
+        instance_id = self.get_cloud_metadata("es:dmcm-launch-id")
+        super(JoyentMetaData, self).get_instance_id(instance_id)
         return instance_id
 
 
 class GCEMetaData(CloudMetaData):
     def __init__(self, conf):
-        self.conf = conf
+        if conf.cloud_metadata_url:
+            self.base_url = conf.cloud_metadata_url
+        else:
+            self.base_url = "http://169.254.169.254/latest/meta-data"
 
     def get_cloud_metadata(self, key):
         _g_logger.debug("Get metadata %s" % key)
-
-        if self.conf.cloud_metadata_url is None:
-            _g_logger.warn("The metadata server is None")
-            return None
-
-        url = self.conf.cloud_metadata_url + "/" + key
+        url = self.base_url + "/" + key
         result = _get_metadata_server_url_data(url)
         _g_logger.debug("Metadata value of %s is %s" % (key, result))
         return result
 
     def get_instance_id(self):
-        _g_logger.debug("Get instance ID called")
-        try:
-            instance_id = self.get_cloud_metadata("instance/attributes/es-dmcm-launch-id")
-        finally:
-            _g_logger.debug("Instance ID is %s" % str(self.conf.instance_id))
+        instance_id = self.get_cloud_metadata("instance/attributes/es-dmcm-launch-id")
+        super(GCEMetaData, self).get_instance_id(instance_id)
         return instance_id
 
 
@@ -196,6 +184,9 @@ def get_ipv4_addresses(conf):
 
 
 def _get_metadata_server_url_data(url, timeout=1):
+    if not url:
+        return None
+
     _g_logger.debug("Attempting to get metadata at %s" % url)
     u_req = urllib2.Request(url)
     u_req.add_header("Content-Type", "application/x-www-form-urlencoded")

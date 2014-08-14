@@ -69,6 +69,10 @@ class TestCloudMetadata(unittest.TestCase):
         self.conf.meta_data_object = cloudmetadata.GCEMetaData(self.conf)
         self._get_instance_data_cloud_none(cloudmetadata.CLOUD_TYPES.Google)
 
+    def test_get_instance_data_joyent_none(self):
+        self.conf.meta_data_object = cloudmetadata.JoyentMetaData(self.conf)
+        self._get_instance_data_cloud_none(cloudmetadata.CLOUD_TYPES.Joyent)
+
     def test_get_instance_data_azure_none(self):
         self.conf.cloud_type = cloudmetadata.CLOUD_TYPES.Azure
         self.conf.meta_data_object = cloudmetadata.AzureMetaData()
