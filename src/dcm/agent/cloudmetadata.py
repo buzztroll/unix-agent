@@ -58,9 +58,19 @@ class CloudMetaData(object):
         _g_logger.debug("Instance ID is %s" % str(instance_id))
         return None
 
+    def get_ipv4_addresses(self, conf):
+        ip_list = []
+        (stdout, stderr, rc) = utils.run_script(conf, "getIpAddresses", [])
+        for line in stdout.split(os.linesep):
+            line = line.strip()
+            if line and line not in ip_list:
+                ip_list.append(line)
+        return ip_list
+
 
 class AWSMetaData(CloudMetaData):
     def __init__(self, conf):
+        self.conf = conf
         if conf.cloud_metadata_url:
             self.base_url = conf.cloud_metadata_url
         else:
@@ -77,6 +87,20 @@ class AWSMetaData(CloudMetaData):
         instance_id = self.get_cloud_metadata("instance-id")
         super(AWSMetaData, self).get_instance_id(instance_id)
         return instance_id
+
+    def get_ipv4_addresses(self, conf):
+        # do caching
+        ip_list = []
+        private_ip = conf.meta_data_object.get_cloud_metadata("local-ipv4")
+
+        if private_ip:
+            ip_list.append(private_ip)
+
+        ip_list_from_base = super(AWSMetaData, self).get_ipv4_addresses(self.conf)
+        for ip in ip_list_from_base:
+            ip_list.append(ip)
+
+        return ip_list
 
 
 class JoyentMetaData(CloudMetaData):
@@ -164,23 +188,6 @@ def get_dhcp_ip_address(conf):
 
     conf.dhcp_address = stdout.strip()
     return conf.dhcp_address
-
-
-def get_ipv4_addresses(conf):
-    # do caching
-    ip_list = []
-    if conf.cloud_type == CLOUD_TYPES.Amazon or \
-                    conf.cloud_type == CLOUD_TYPES.Eucalyptus:
-        private_ip = conf.meta_data_object.get_cloud_metadata("local-ipv4")
-        if private_ip:
-            ip_list.append(private_ip)
-
-    (stdout, stderr, rc) = utils.run_script(conf, "getIpAddresses", [])
-    for line in stdout.split(os.linesep):
-        line = line.strip()
-        if line and line not in ip_list:
-            ip_list.append(line)
-    return ip_list
 
 
 def _get_metadata_server_url_data(url, timeout=1):

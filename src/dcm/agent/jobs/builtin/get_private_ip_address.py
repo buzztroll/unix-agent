@@ -31,7 +31,7 @@ class GetPrivateIpAddress(direct_pass.DirectPass):
     def run(self):
         _g_logger.debug("Running the handler %s" % __name__)
 
-        private_ips = cloudmetadata.get_ipv4_addresses(self.conf)
+        private_ips = self.conf.meta_data_object.get_ipv4_addresses(self.conf)
         if not private_ips:
             reply_doc = {
                 "return_code": 1,
