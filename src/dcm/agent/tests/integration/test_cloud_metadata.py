@@ -45,10 +45,10 @@ class TestCloudMetadata(unittest.TestCase):
 
     def setUp(self):
         self.clouds = {
-            1: 'AWSMetaData',
-            2: 'JoyentMetaData',
-            3: 'GCEMetaData',
-            4: 'AzureMetaData'
+            1: cloudmetadata.AWSMetaData,
+            2: cloudmetadata.JoyentMetaData,
+            3: cloudmetadata.GCEMetaData,
+            4: cloudmetadata.AzureMetaData
         }
 
         self.cloud_types = {
@@ -132,5 +132,5 @@ class TestCloudMetadata(unittest.TestCase):
             self.conf.cloud_type = self.cloud_types[cloud]
             self.conf.meta_data_object = None
             cloudmetadata.set_metadata_object(self.conf)
-            assert (self.conf.meta_data_object.__class__.__name__ == self.clouds[cloud])
+            self.assertIsInstance(self.conf.meta_data_object, self.clouds[cloud])
 
