@@ -324,6 +324,15 @@ class RequestRPC(object):
         """
         pass
 
+    def _sm_usercb_ack(self, **kwargs):
+        """
+        This happens when a ack is received while in the user callbacl state.
+        This can only happen after an ACK was received so the sender must
+        be in a strange state for this to happen.   The sender would have to
+        send an ack after a reply
+        """
+        pass
+
     ### XXX TODO FIGURE OUT THIS CASE
     def _sm_acksent_reply_received(self, **kwargs):
         """

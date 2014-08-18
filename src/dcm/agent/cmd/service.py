@@ -59,6 +59,7 @@ class DCMAgent(object):
         self.g_logger.info("Using DB %s" % conf.storage_dbfile)
         self._db = persistence.AgentDB(conf.storage_dbfile)
         self._intrusion_detection = None
+        self.db_cleaner = None
 
     def kill_handler(self, signum, frame):
         self.shutdown_main_loop()
@@ -86,6 +87,10 @@ class DCMAgent(object):
 
     def run_agent(self):
         try:
+            self.db_cleaner = persistence.DBCleaner(
+                self._db, self.conf.storage_db_timeout, 100000, 3600)
+            self.db_cleaner.start()
+
             # def get a connection object
             self.conn = config.get_connection_object(self.conf)
             self.disp = dispatcher.Dispatcher(self.conf)
@@ -122,6 +127,10 @@ class DCMAgent(object):
             return False
 
         self.conf.set_handshake(incoming_handshake_doc["handshake"])
+        # clean the db if the agent_id doesnt match it
+        utils.log_to_dcm(
+            logging.INFO, "Clean up any bad residue in the db")
+        self._db.check_agent_id(self.conf.agent_id)
         utils.log_to_dcm(
             logging.INFO, "A handshake was successful, starting the workers")
         self.disp.start_workers(self.request_listener)
@@ -140,6 +149,10 @@ class DCMAgent(object):
 
     def cleanup_agent(self):
         parent_receive_q.flush()
+        if self.db_cleaner:
+            self.g_logger.debug("Shutting down the db cleaner runner")
+            self.db_cleaner.done()
+            self.db_cleaner.join()
         if self._intrusion_detection:
             self._intrusion_detection.stop()
         if self.conf.jr:

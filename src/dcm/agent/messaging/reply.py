@@ -571,6 +571,10 @@ class ReplyRPC(object):
                                 states.ReplyStates.REPLY,
                                 self._sm_reply_request_retrans)
         self._sm.add_transition(states.ReplyStates.REPLY,
+                                states.ReplyEvents.USER_REPLIES,
+                                states.ReplyStates.REPLY,
+                                self._sm_acked_reply)
+        self._sm.add_transition(states.ReplyStates.REPLY,
                                 states.ReplyEvents.CANCEL_RECEIVED,
                                 states.ReplyStates.REPLY,
                                 self._sm_reply_cancel_received)
@@ -684,20 +688,6 @@ class RequestListener(object):
         self._lock = threading.RLock()
 
         self._db.starting_agent()
-
-        # create live entries for all that may need to resend their replies
-        old_replies = self._db.get_all_reply()
-        for db_rec in old_replies:
-            req = ReplyRPC(
-                self,
-                self._conf.agent_id,
-                self._conn,
-                db_rec.request_id,
-                db_rec.request_doc,
-                self._db,
-                timeout=self._timeout,
-                reply_doc=db_rec.reply_doc)
-            self._requests[db_rec.request_id] = req
 
     def get_reply_observers(self):
         # get the whole list so that the user can add and remove themselves.

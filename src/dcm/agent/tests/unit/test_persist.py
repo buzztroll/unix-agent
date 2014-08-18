@@ -271,3 +271,59 @@ class TestPersistMultiThread(unittest.TestCase):
         t.start()
         t.join()
         nose.tools.ok_(len(failed) == 0)
+
+    def test_agent_mismatch(self):
+        request_id1 = str(uuid.uuid4())
+        request_id2 = str(uuid.uuid4())
+        agent_id1 = str(uuid.uuid4())
+        request_doc = {"request_id": request_id1}
+        state = messaging_states.ReplyStates.REPLY_NACKED
+        reply_doc = {"akey": "andstuff"}
+        self.db.new_record(
+            request_id1, request_doc, reply_doc, state, agent_id1)
+        request_doc["request_id"] = request_id2
+        self.db.new_record(
+            request_id2, request_doc, reply_doc, state, agent_id1)
+
+        res = self.db.lookup_req(request_id1)
+        nose.tools.ok_(res is not None)
+
+        res = self.db.lookup_req(request_id2)
+        nose.tools.ok_(res is not None)
+
+        self.db.check_agent_id("differentid")
+
+        res = self.db.lookup_req(request_id1)
+        nose.tools.ok_(res is None)
+
+        res = self.db.lookup_req(request_id2)
+        nose.tools.ok_(res is None)
+
+    def test_agent_id_cleanup_empty(self):
+        self.db.check_agent_id("differentid")
+
+    def test_agent_id_match(self):
+        request_id1 = str(uuid.uuid4())
+        request_id2 = str(uuid.uuid4())
+        agent_id = str(uuid.uuid4())
+        request_doc = {"request_id": request_id1}
+        state = messaging_states.ReplyStates.REPLY_NACKED
+        reply_doc = {"akey": "andstuff"}
+        self.db.new_record(
+            request_id1, request_doc, reply_doc, state, agent_id)
+        request_doc["request_id"] = request_id2
+        self.db.new_record(
+            request_id2, request_doc, reply_doc, state, agent_id)
+
+        res = self.db.lookup_req(request_id1)
+        nose.tools.ok_(res is not None)
+        res = self.db.lookup_req(request_id2)
+        nose.tools.ok_(res is not None)
+
+        self.db.check_agent_id(agent_id)
+
+        res = self.db.lookup_req(request_id1)
+        nose.tools.ok_(res is not None)
+        res = self.db.lookup_req(request_id2)
+        nose.tools.ok_(res is not None)
+

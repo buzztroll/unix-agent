@@ -252,7 +252,7 @@ class AgentConfig(object):
         return os.path.join(new_dir, filename)
 
 
-def _build_options_list():
+def build_options_list():
     option_list = [
         ConfigOpt("pydev", "host", str, default=None, options=None,
                   help_msg="The hostname of the pydev debugger"),
@@ -299,6 +299,9 @@ def _build_options_list():
         FilenameOpt("storagecloud", "ca_cert_dir", default=None),
         FilenameOpt("storagecloud", "secure", default=True),
 
+        ConfigOpt("storage", "db_timeout", int, default=60*60*4,
+                  help_msg="The amount of time in seconds for a request id to "
+                           "stay in the database."),
         ConfigOpt("storage", "mount_enabled", bool, default=True),
         ConfigOpt("storage", "default_filesystem", str, default="ext3"),
 
@@ -312,7 +315,7 @@ def _build_options_list():
                            "to all clouds."),
 
         ConfigOpt("messaging", "retransmission_timeout", float,
-                  default=5),
+                  default=5.0),
         ConfigOpt("messaging", "max_at_once", int, default=-1,
                   help_msg="The maximum number of commands that can be "
                            "outstanding at once.  -1 means infinity."),
@@ -337,7 +340,7 @@ def _build_options_list():
 
 def parse_config_files(agent_conf, config_files):
 
-    option_list = _build_options_list()
+    option_list = build_options_list()
 
     # set all the default values on the agent conf object
     for o in option_list:

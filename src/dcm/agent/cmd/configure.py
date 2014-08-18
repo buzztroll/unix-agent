@@ -211,7 +211,7 @@ def select_cloud(default="Amazon"):
         input_str = input_str.strip()
         if not input_str:
             input_str = default
-        if input_str in [i.lower() for i in cloud_choices.values()]:
+        if input_str.lower() in [i.lower() for i in cloud_choices.values()]:
             return input_str
         try:
             ndx = int(input_str)
@@ -244,7 +244,7 @@ def pick_meta_data(conf_d):
 
 def get_default_conf_dict():
     conf_dict = {}
-    option_list = config._build_options_list()
+    option_list = config.build_options_list()
 
     for c in option_list:
 
@@ -477,6 +477,8 @@ def enable_start_agent(opts):
     if on_boot:
         if os.path.exists("/usr/sbin/update-rc.d"):
             os.system("update-rc.d dcm-agent defaults")
+        elif os.path.exists("/sbin/chkconfig"):
+            os.system("/sbin/chkconfig --add dcm-agent")
         # TODO other platforms
 
 

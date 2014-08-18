@@ -25,6 +25,7 @@ from dcm.agent import exceptions
 from dcm.agent.messaging import states
 
 import dcm.agent.messaging.utils as utils
+import dcm.agent.utils as agent_utils
 import dcm.agent.parent_receive_q as parent_receive_q
 
 
@@ -46,6 +47,54 @@ class WsConnStates:
     DONE = "DONE"
 
 
+class RepeatQueue(object):
+
+    def __init__(self):
+        self._q = Queue.Queue()
+        self._lock = threading.RLock()
+        self._message_id_set = set()
+
+    def put(self, item, block=True, timeout=None):
+        self._lock.acquire()
+        try:
+            try:
+                if 'message_id' in item:
+                    message_id = item['message_id']
+                    if message_id in self._message_id_set:
+                        _g_logger.info("Skipping sending a retransmission "
+                                       "of message id %s" % message_id)
+                        return
+                    else:
+                        _g_logger.debug("Adding the message with id %s " %
+                                        message_id)
+
+                    self._message_id_set.add(message_id)
+            except Exception as ex:
+                _g_logger.info("Exception checking if message is a retrans "
+                               "%s" % ex.message)
+            return self._q.put(item, block=block, timeout=timeout)
+        finally:
+            self._lock.release()
+
+    def get(self, block=True, timeout=None):
+        self._lock.acquire()
+        try:
+            item = self._q.get(block=block, timeout=timeout)
+            try:
+                if 'message_id' in item:
+                    if item['message_id'] in self._message_id_set:
+                        self._message_id_set.remove(item['message_id'])
+            except Exception as ex:
+                _g_logger.info("Exception checking if message has an id "
+                               "%s" % ex.message)
+            return item
+        finally:
+            self._lock.release()
+
+    def task_done(self):
+        return self._q.task_done()
+
+
 class _WebSocketClient(ws4py_client.WebSocketClient):
 
     def __init__(self, manager, url, receive_queue, protocols=None,
@@ -55,6 +104,8 @@ class _WebSocketClient(ws4py_client.WebSocketClient):
             self, url, protocols=protocols, extensions=extensions,
             heartbeat_freq=heartbeat_freq, ssl_options=ssl_options,
             headers=headers)
+        _g_logger.info("Attempting to connect to %s" % url)
+
         self.receive_queue = receive_queue
         self.manager = manager
         self._url = url
@@ -99,7 +150,7 @@ class WebSocketConnection(threading.Thread):
 
     def __init__(self, server_url, backoff_amount=5000, max_backoff=300000):
         super(WebSocketConnection, self).__init__()
-        self._send_queue = Queue.Queue()
+        self._send_queue = RepeatQueue()
         self._recv_queue = None
         self._ws_manager = None
         self._server_url = server_url
@@ -121,6 +172,7 @@ class WebSocketConnection(threading.Thread):
         self._hs_string = json.dumps(handshake_doc)
         self.handshake_observer = handshake_observer
         self.start()
+        self._backoff_time = None
 
     @utils.class_method_sync
     def send(self, doc):
@@ -137,7 +189,7 @@ class WebSocketConnection(threading.Thread):
         while not self._done_event.is_set():
             try:
                 self._sm.event_occurred(WsConnEvents.POLL)
-                _g_logger.debug("Waiting %s for the next connection." %
+                _g_logger.debug("Waiting %s for the next poll event." %
                                 str(self._backoff_time))
                 self._cond.wait(self._backoff_time)
             except Exception as ex:
@@ -181,7 +233,7 @@ class WebSocketConnection(threading.Thread):
         self._cond.notify()
 
     def _throw_error(self, exception, notify=True):
-        _g_logger.debug("throwing error %s" % str(exception))
+        _g_logger.warning("throwing error %s" % str(exception))
         parent_receive_q.register_user_callback(self.event_error,
                                                 {"exception": exception})
         if notify:
@@ -214,6 +266,7 @@ class WebSocketConnection(threading.Thread):
 
     def _sm_connect(self):
         try:
+            agent_utils.build_assertion_exception(_g_logger, "DOING_CONNECTION")
             self._ws = _WebSocketClient(
                 self, self._server_url, self._receive_queue,
                 protocols=['http-only', 'chat'])
@@ -314,6 +367,13 @@ class WebSocketConnection(threading.Thread):
         """
         pass
 
+    def _sm_handshake_connect(self):
+        """
+        This could happen if the POLL event happened twice in the waiting
+        state before the first one could try to connect.  Just ignore
+        """
+        pass
+
     def _setup_states(self):
         self._sm.add_transition(WsConnStates.WAITING,
                                 WsConnEvents.POLL,
@@ -344,6 +404,11 @@ class WebSocketConnection(threading.Thread):
                                 WsConnEvents.POLL,
                                 WsConnStates.HANDSHAKING,
                                 self._sm_handshake_poll)
+
+        self._sm.add_transition(WsConnStates.HANDSHAKING,
+                                WsConnEvents.CONNECT_TIMEOUT,
+                                WsConnStates.HANDSHAKING,
+                                self._sm_handshake_connect)
 
         self._sm.add_transition(WsConnStates.HANDSHAKING,
                                 WsConnEvents.CLOSE,

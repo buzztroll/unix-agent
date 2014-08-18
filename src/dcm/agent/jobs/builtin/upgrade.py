@@ -17,6 +17,7 @@ import os
 import urllib2
 
 import dcm.agent
+from dcm.agent import config
 import dcm.agent.jobs as jobs
 import dcm.agent.utils as utils
 
@@ -48,11 +49,24 @@ class Upgrade(jobs.Plugin):
             with open(script_file, "w") as f:
                 f.write(data)
             os.chmod(script_file, 0x755)
+
+            # write the configuration to a file.  We may not be safe assuming
+            # that the default configuration location is correct
+            opts_list = config.build_options_list()
+            opts_dict = {}
+            for opt in opts_list:
+                if opt.section not in opts_dict:
+                    opts_dict[opt.section] = {}
+                opts_dict[opt.section][opt.name] = getattr(
+                    self.conf, opt.get_option_name())
+
             with open(opts_file, "w") as f:
-                opts_to_file = [o for o in self.conf.__dict__
-                                if o.startswith("storage") or
-                                o.startswith("platform")]
-                f.write(json.dumps(opts_to_file))
+                for section_name in opts_dict:
+                    f.write("[" + section_name + "]" + os.linesep)
+                    section = opts_dict[section_name]
+                    for key in section:
+                        f.write("%s=%s" % (key, section[key]))
+                        f.write(os.linesep)
 
             command_list = [script_file,
                             self.args.newVersion,
