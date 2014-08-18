@@ -36,14 +36,14 @@ def get_handshake(conf):
             'platform': conf.platform_name
         }
 
-    ipv4s = cloudmetadata.get_ipv4_addresses(conf)
+    ipv4s = conf.meta_data_object.get_ipv4_addresses(conf)
     ipv6s = []
     injected_id = None
     agent_id = None
     if FOR_TEST_AGENT_ID_ENV in os.environ:
         agent_id = os.environ[FOR_TEST_AGENT_ID_ENV]
 
-    vm_instance = cloud_instance.get_instance_id(conf)
+    vm_instance = conf.meta_data_object.get_instance_id()
 
     handshake_doc = {
         'ipv4': ipv4s,

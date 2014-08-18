@@ -9,7 +9,7 @@ import dcm
 import libcloud.security
 from dcm.agent import utils
 
-from dcm.agent.cloudmetadata import CLOUD_TYPES
+from dcm.agent.cloudmetadata import CLOUD_TYPES, set_metadata_object
 import dcm.agent.connection.websocket as websocket
 import dcm.agent.exceptions as exceptions
 import dcm.agent.job_runner as job_runner
@@ -170,10 +170,14 @@ class AgentConfig(object):
         self.server_name = None
         self.storage_dbfile = None
         self.dhcp_address = None
+        self.meta_data_object = None  # until we call set_metadata_object
 
         self.imaging_event = threading.Event()
 
         parse_config_files(self, conf_files)
+
+        #  here is where we set which Meta object to use from cloudmetadata.py
+        set_metadata_object(self)
 
         if self.storage_dbfile is None:
             self.storage_dbfile = \

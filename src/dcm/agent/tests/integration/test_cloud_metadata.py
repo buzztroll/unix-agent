@@ -5,7 +5,7 @@ import shutil
 import socket
 import tempfile
 import unittest
-
+from mock import patch
 import nose.plugins.skip as skip
 
 from dcm.agent import cloudmetadata, config
@@ -44,17 +44,36 @@ class TestCloudMetadata(unittest.TestCase):
         shutil.rmtree(cls.test_base_path)
 
     def setUp(self):
-        pass
+        self.clouds = {
+            1: cloudmetadata.AWSMetaData,
+            2: cloudmetadata.JoyentMetaData,
+            3: cloudmetadata.GCEMetaData,
+            4: cloudmetadata.AzureMetaData
+        }
+
+        self.cloud_types = {
+            1: 'Amazon',
+            2: 'Joyent',
+            3: 'Google',
+            4: 'Azure'
+        }
+
+    def tearDown(self):
+        self.clouds = None
+        self.cloud_types = None
 
     def test_dhcp(self):
         ipaddr = cloudmetadata.get_dhcp_ip_address(self.conf)
         if platform.system().lower() == "linux":
-            # just verify that it is an ip addr
-            pass
+            try:
+                socket.inet_aton(ipaddr)
+                self.assertTrue(True)
+            except socket.error:
+                self.fail('You passed an invalid ip address')
 
     def _get_instance_data_cloud_none(self, cloud):
         self.conf.cloud_type = cloud
-        inst_id = cloudmetadata.get_instance_id(self.conf, caching=False)
+        inst_id = self.conf.meta_data_object.get_instance_id()
         self.assertIsNone(inst_id)
 
     def test_get_instance_data_amazon_none(self):
@@ -62,31 +81,56 @@ class TestCloudMetadata(unittest.TestCase):
             raise skip.SkipTest("We are actually on amazon")
         self._get_instance_data_cloud_none(cloudmetadata.CLOUD_TYPES.Amazon)
 
-    def test_get_instance_data_eucalyptus_none(self):
-        if 'DCM_AGENT_ON_AMAZON' in os.environ:
-            raise skip.SkipTest("We are actually on amazon")
-        self._get_instance_data_cloud_none(
-            cloudmetadata.CLOUD_TYPES.Eucalyptus)
-
-    def test_get_instance_data_cloudstack_none(self):
-        self._get_instance_data_cloud_none(
-            cloudmetadata.CLOUD_TYPES.CloudStack)
-
-    def test_get_instance_data_cloudstack3_none(self):
-        self._get_instance_data_cloud_none(
-            cloudmetadata.CLOUD_TYPES.CloudStack3)
-
-    def test_get_instance_data_openstack_none(self):
-        self._get_instance_data_cloud_none(cloudmetadata.CLOUD_TYPES.OpenStack)
-
     def test_get_instance_data_google_none(self):
+        self.conf.meta_data_object = cloudmetadata.GCEMetaData(self.conf)
         self._get_instance_data_cloud_none(cloudmetadata.CLOUD_TYPES.Google)
+
+    def test_get_instance_data_joyent_none(self):
+        self.conf.meta_data_object = cloudmetadata.JoyentMetaData(self.conf)
+        self._get_instance_data_cloud_none(cloudmetadata.CLOUD_TYPES.Joyent)
 
     def test_get_instance_data_azure_none(self):
         self.conf.cloud_type = cloudmetadata.CLOUD_TYPES.Azure
-        inst_id = cloudmetadata.get_instance_id(self.conf, caching=False)
+        self.conf.meta_data_object = cloudmetadata.AzureMetaData()
+        inst_id = self.conf.meta_data_object.get_instance_id()
         # this will likely change in the future
         hostname = socket.gethostname()
         ha = hostname.split(".")
         should_be = "%s:%s:%s" % (ha[0], ha[0], ha[0])
         self.assertEqual(should_be, inst_id)
+
+    @patch('dcm.agent.cloudmetadata._get_metadata_server_url_data')
+    def test_get_aws_instance_id(self, mock_server):
+        self.conf.meta_data_object = cloudmetadata.AWSMetaData(self.conf)
+        mock_server.return_value = 'fake_instance_id'
+        instance_id = self.conf.meta_data_object.get_instance_id()
+        self.assertEqual(instance_id, 'fake_instance_id')
+
+    @patch('dcm.agent.cloudmetadata._get_metadata_server_url_data')
+    def test_get_gce_instance_id(self, mock_server):
+        self.conf.meta_data_object = cloudmetadata.GCEMetaData(self.conf)
+        mock_server.return_value = 'fake_instance_id'
+        instance_id = self.conf.meta_data_object.get_instance_id()
+        self.assertEqual(instance_id, 'fake_instance_id')
+
+    @patch('dcm.agent.cloudmetadata.JoyentMetaData.get_cloud_metadata')
+    def test_get_joyent_instance_id(self, mock_joyent_meta):
+        self.conf.meta_data_object = cloudmetadata.JoyentMetaData(self.conf)
+        mock_joyent_meta.return_value = 'fake_instance_id'
+        instance_id = self.conf.meta_data_object.get_instance_id()
+        self.assertEqual(instance_id, 'fake_instance_id')
+
+    @patch('dcm.agent.cloudmetadata.AzureMetaData.get_instance_id')
+    def test_get_azure_instance_id(self, mock_instance_id):
+        self.conf.meta_data_object = cloudmetadata.AzureMetaData()
+        mock_instance_id.return_value = 'fake_instance_id:fake_instance_id:fake_instance_id'
+        instance_id = self.conf.meta_data_object.get_instance_id()
+        self.assertEqual(instance_id, 'fake_instance_id:fake_instance_id:fake_instance_id')
+
+    def test_set_metadata_object(self):
+        for cloud in self.clouds:
+            self.conf.cloud_type = self.cloud_types[cloud]
+            self.conf.meta_data_object = None
+            cloudmetadata.set_metadata_object(self.conf)
+            self.assertIsInstance(self.conf.meta_data_object, self.clouds[cloud])
+
