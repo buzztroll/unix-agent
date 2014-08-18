@@ -53,9 +53,8 @@ class CloudMetaData(object):
     def get_cloud_metadata(self, key):
         return None
 
-    def get_instance_id(self, instance_id):
+    def get_instance_id(self):
         _g_logger.debug("Get instance ID called")
-        _g_logger.debug("Instance ID is %s" % str(instance_id))
         return None
 
     def get_ipv4_addresses(self, conf):
@@ -85,7 +84,8 @@ class AWSMetaData(CloudMetaData):
 
     def get_instance_id(self):
         instance_id = self.get_cloud_metadata("instance-id")
-        super(AWSMetaData, self).get_instance_id(instance_id)
+        super(AWSMetaData, self).get_instance_id()
+        _g_logger.debug("Instance ID is %s" % str(instance_id))
         return instance_id
 
     def get_ipv4_addresses(self, conf):
@@ -125,7 +125,8 @@ class JoyentMetaData(CloudMetaData):
 
     def get_instance_id(self):
         instance_id = self.get_cloud_metadata("es:dmcm-launch-id")
-        super(JoyentMetaData, self).get_instance_id(instance_id)
+        super(JoyentMetaData, self).get_instance_id()
+        _g_logger.debug("Instance ID is %s" % str(instance_id))
         return instance_id
 
 
@@ -145,7 +146,8 @@ class GCEMetaData(CloudMetaData):
 
     def get_instance_id(self):
         instance_id = self.get_cloud_metadata("instance/attributes/es-dmcm-launch-id")
-        super(GCEMetaData, self).get_instance_id(instance_id)
+        super(GCEMetaData, self).get_instance_id()
+        _g_logger.debug("Instance ID is %s" % str(instance_id))
         return instance_id
 
 
