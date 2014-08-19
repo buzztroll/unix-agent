@@ -15,8 +15,7 @@ import time
 import psutil
 
 
-_g_log_file = '/tmp/dcm_agent_upgrade.log'
-logging.basicConfig(filename=_g_log_file, level=logging.DEBUG)
+logging.basicConfig(stream=sys.stderr, level=logging.DEBUG)
 _g_logger = logging
 
 
@@ -95,7 +94,7 @@ def restart_dcm_agent():
                 time.sleep(10)
                 _g_logger.info("Starting dcm-agent")
                 fin = open(os.devnull, "r")
-                fout = open(_g_log_file, "a")
+                fout = sys.stdout
                 subprocess.call("sudo /etc/init.d/dcm-agent start",
                                 shell=True,
                                 stdin=fin, stdout=fout, stderr=fout)
