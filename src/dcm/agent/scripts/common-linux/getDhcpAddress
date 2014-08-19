@@ -6,17 +6,22 @@ elif [ -d /var/lib/dhcp3 ]; then
 	DHCP_DIR="/var/lib/dhcp3"
 elif [ -d /var/lib/dhclient ]; then
 	DHCP_DIR="/var/lib/dhclient"
+elif [ -d /var/lib/dhcpcd ]; then
+	DHCP_DIR="/var/lib/dhcpcd"
 fi
 
 for n in $(seq 0 9); do
 	dhclient_file=${DHCP_DIR}/dhclient-eth${n}.leases
 	dhclient_file_alt=${DHCP_DIR}/dhclient.eth${n}.leases
+	dhclient_file_alt_2=${DHCP_DIR}/dhcpcd-eth${n}.info
 	if [ -s ${dhclient_file} ]; then
 		DHCP_IP=$(awk '/dhcp-server-identifier/ {print substr($3, 1, length($3) - 1 ) }' ${dhclient_file} | tail -1)
 		break
 	elif [ -s ${dhclient_file_alt} ]; then
 		DHCP_IP=$(awk '/dhcp-server-identifier/ {print substr($3, 1, length($3) - 1 ) }' ${dhclient_file_alt} | tail -1)
 		break
+	elif [ -s ${dhclient_file_alt_2} ]; then
+		DHCP_IP=`cat /var/lib/dhcpcd/dhcpcd-eth${n}.info | grep IPADDR | sed -e  "s/IPADDR='//"  -e "s/'//"`
 	fi
 done
 echo $DHCP_IP
