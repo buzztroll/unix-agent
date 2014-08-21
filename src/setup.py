@@ -3,14 +3,25 @@ import subprocess
 from setuptools import setup, find_packages
 import sys
 
-Version = "0.9.1"
 
-
-def get_diff_tag():
+def get_git_version():
     try:
         basedir = os.path.dirname(os.path.expanduser(sys.argv[0]))
         if not basedir.strip():
             basedir = None
+        p = subprocess.Popen("git describe --abbrev=0 --tags",
+                             cwd=basedir,
+                             shell=True,
+                             stdout=subprocess.PIPE,
+                             stderr=subprocess.PIPE)
+        (stdoutdata, stderrdata) = p.communicate()
+        rc = p.wait()
+        if rc != 0:
+            semversion = "unknown"
+        else:
+            semversion = stdoutdata.strip()
+
+
         p = subprocess.Popen("git rev-parse HEAD",
                              cwd=basedir,
                              shell=True,
@@ -31,13 +42,13 @@ def get_diff_tag():
         rc = p.wait()
         if rc == 0 and stdoutdata:
             version = version + "-diff"
-        return version
+        return semversion + "-" + version
     except Exception:
         return ""
 
 
 setup(name='dcm-agent',
-      version=Version+get_diff_tag(),
+      version=get_git_version(),
       description="Agent for DCM run VMs",
       author="Dell Software Group",
       author_email="support@enstratius.com",

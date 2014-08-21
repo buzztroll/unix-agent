@@ -13,9 +13,11 @@ import urllib2
 from dcm.agent import config
 import time
 import psutil
+import uuid
 
 
-logging.basicConfig(stream=sys.stderr, level=logging.DEBUG)
+_g_log_file = "/tmp/myuplog" + str(uuid.uuid4()).split("-")[0]
+logging.basicConfig(filename=_g_log_file, level=logging.DEBUG)
 _g_logger = logging
 
 
@@ -93,11 +95,16 @@ def restart_dcm_agent():
 
                 time.sleep(10)
                 _g_logger.info("Starting dcm-agent")
-                fin = open(os.devnull, "r")
-                fout = sys.stdout
-                subprocess.call("sudo /etc/init.d/dcm-agent start",
-                                shell=True,
-                                stdin=fin, stdout=fout, stderr=fout)
+                p = subprocess.Popen("sudo /etc/init.d/dcm-agent start",
+                                     shell=True,
+                                     stdout=subprocess.PIPE,
+                                     stderr=subprocess.PIPE)
+                (stdoutdata, stderrdata) = p.communicate()
+                rc = p.wait()
+                _g_logger.info("Restart rc=%d | stderr=%s | stdout=%s" %
+                               (rc, str(stderrdata), str(stdoutdata)))
+        except Exception as ex:
+            _g_logger.exception("Failed to restart the daemon")
         finally:
             sys.exit(0)
 
