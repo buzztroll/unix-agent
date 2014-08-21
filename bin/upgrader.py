@@ -15,8 +15,7 @@ import time
 import psutil
 
 
-_g_log_file = '/tmp/dcm_agent_upgrade.log'
-logging.basicConfig(filename=_g_log_file, level=logging.DEBUG)
+logging.basicConfig(stream=sys.stderr, level=logging.DEBUG)
 _g_logger = logging
 
 
@@ -32,11 +31,11 @@ def get_installer(url):
     return fname
 
 
-def run_installer(local_exe, pkg_url, new_version, backup_dir):
+def run_installer(local_exe, pkg_base_url, new_version, backup_dir):
 
     old_conf = os.path.join(backup_dir, "agent.conf")
     env = os.environ.copy()
-    env["AGENT_LOCAL_PACKAGE"] = pkg_url
+    env["AGENT_BASE_URL"] = pkg_base_url
     #env["AGENT_VERSION"] = new_version
 
     cmd = "sudo -E %s -r %s" % (local_exe, old_conf)
@@ -95,7 +94,7 @@ def restart_dcm_agent():
                 time.sleep(10)
                 _g_logger.info("Starting dcm-agent")
                 fin = open(os.devnull, "r")
-                fout = open(_g_log_file, "a")
+                fout = sys.stdout
                 subprocess.call("sudo /etc/init.d/dcm-agent start",
                                 shell=True,
                                 stdin=fin, stdout=fout, stderr=fout)
@@ -108,7 +107,7 @@ def main(args=sys.argv):
     old_version = args[2]
     opts_file = args[3]
     url = args[4]
-    pkg_url = args[5]
+    pkg_base_url = args[5]
 
     backup_dir = None
     local_exe = None
@@ -117,7 +116,7 @@ def main(args=sys.argv):
         backup_dir = backup_conf()
         local_exe = get_installer(url)
         rc = run_installer(
-            local_exe, pkg_url, new_version, backup_dir)
+            local_exe, pkg_base_url, new_version, backup_dir)
         restart_dcm_agent()
         return rc
     finally:
