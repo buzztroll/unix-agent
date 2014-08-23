@@ -1,3 +1,17 @@
+# 0.9.2 (2014-08-22)
+
+Features:
+* Improved package management.
+* Get DHCP address on distros that user dhcpcd.  This will allow such distros
+  to work on Joyent.
+* Refactored cloud meta data handling.
+* Additional unit tests.
+* Added auto upgrade script and confirmed upgrade behavior.
+
+Bug Fixes:
+* No longer setting the ownership of all temp files to root.
+* Fixed occasional thread handler exceptions from SQLAlchemy.
+
 # 0.9.1 (2014-08-05)
 
 Features:
