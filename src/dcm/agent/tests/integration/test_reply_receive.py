@@ -1410,7 +1410,7 @@ class TestProtocolCommands(reply.ReplyObserverInterface):
         for dm in mappings:
             if dm['device_id'] == device_id:
                 if dm['mount_point'] != mount_point:
-                    raise Exception("The device is already mounted")
+                    raise skip.SkipTest("The device is already mounted")
 
         doc = {
             "command": "mount_volume",
