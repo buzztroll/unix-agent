@@ -170,9 +170,6 @@ class AzureMetaData(CloudMetaData):
         ha = hostname.split(".")
         return "%s:%s:%s" % (ha[0], ha[0], ha[0])
 
-    def get_handshake_ip_address(self, conf):
-        return []
-
 
 def set_metadata_object(conf):
     if conf.cloud_type == CLOUD_TYPES.Amazon:
