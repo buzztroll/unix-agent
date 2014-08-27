@@ -266,7 +266,6 @@ class WebSocketConnection(threading.Thread):
 
     def _sm_connect(self):
         try:
-            agent_utils.build_assertion_exception(_g_logger, "DOING_CONNECTION")
             self._ws = _WebSocketClient(
                 self, self._server_url, self._receive_queue,
                 protocols=['http-only', 'chat'])
