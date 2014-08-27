@@ -66,6 +66,9 @@ class CloudMetaData(object):
                 ip_list.append(line)
         return ip_list
 
+    def get_handshake_ip_address(self, conf):
+        return self.get_ipv4_addresses(conf)
+
 
 class AWSMetaData(CloudMetaData):
     def __init__(self, conf):
@@ -101,6 +104,9 @@ class AWSMetaData(CloudMetaData):
             ip_list.append(ip)
 
         return ip_list
+
+    def get_handshake_ip_address(self, conf):
+        return [conf.meta_data_object.get_cloud_metadata("local-ipv4")]
 
 
 class JoyentMetaData(CloudMetaData):
@@ -145,10 +151,15 @@ class GCEMetaData(CloudMetaData):
         return result
 
     def get_instance_id(self):
-        instance_id = self.get_cloud_metadata("instance/attributes/es-dmcm-launch-id")
+        instance_id = self.get_cloud_metadata(
+            "instance/attributes/es-dmcm-launch-id")
         super(GCEMetaData, self).get_instance_id()
         _g_logger.debug("Instance ID is %s" % str(instance_id))
         return instance_id
+
+    def get_handshake_ip_address(self, conf):
+        return [self.get_cloud_metadata(
+            "instance/attributes/es-dmcm-launch-id")]
 
 
 class AzureMetaData(CloudMetaData):
@@ -158,6 +169,9 @@ class AzureMetaData(CloudMetaData):
             return None
         ha = hostname.split(".")
         return "%s:%s:%s" % (ha[0], ha[0], ha[0])
+
+    def get_handshake_ip_address(self, conf):
+        return []
 
 
 def set_metadata_object(conf):
