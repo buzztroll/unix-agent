@@ -25,7 +25,7 @@ class MountVolume(direct_pass.DirectPass):
         ("A boolean indicating if the volume should be formated.", True, bool),
         "fileSystem": ("", True, str),
         "raidLevel": ("", True, str),
-        "encryptionKey": ("", True, utils.base64type_convertor),
+        "encryptionKey": ("", False, utils.base64type_convertor),
         "mountPoint": ("", True, str),
         "devices": ("", True, list)
     }
