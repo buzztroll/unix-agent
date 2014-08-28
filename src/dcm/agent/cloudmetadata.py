@@ -141,12 +141,13 @@ class GCEMetaData(CloudMetaData):
         if conf.cloud_metadata_url:
             self.base_url = conf.cloud_metadata_url
         else:
-            self.base_url = "http://169.254.169.254/latest/meta-data"
+            self.base_url = "http://metadata.google.internal/computeMetadata/v1"
 
     def get_cloud_metadata(self, key):
         _g_logger.debug("Get metadata %s" % key)
         url = self.base_url + "/" + key
-        result = _get_metadata_server_url_data(url)
+        result = _get_metadata_server_url_data(
+            url, headers=[("Metadata-Flavor", "Google")])
         _g_logger.debug("Metadata value of %s is %s" % (key, result))
         return result
 
@@ -203,7 +204,7 @@ def get_dhcp_ip_address(conf):
     return conf.dhcp_address
 
 
-def _get_metadata_server_url_data(url, timeout=1):
+def _get_metadata_server_url_data(url, timeout=1, headers=None):
     if not url:
         return None
 
@@ -212,6 +213,9 @@ def _get_metadata_server_url_data(url, timeout=1):
     u_req.add_header("Content-Type", "application/x-www-form-urlencoded")
     u_req.add_header("Connection", "Keep-Alive")
     u_req.add_header("Cache-Control", "no-cache")
+    if headers:
+        for (h, v) in headers:
+            u_req.add_header(h, v)
 
     try:
         response = urllib2.urlopen(u_req, timeout=timeout)
