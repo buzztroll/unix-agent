@@ -69,8 +69,6 @@ function readCode(){
   exit $CODE
 }
 
-SUDO=`which sudo`
-
 for i in ${FILE_TYPES}
   do count=$( echo ${RESTORE_FILE} | grep -c $i ) > /dev/null 2>&1
   if [ $count = 1 ]; then
@@ -79,19 +77,19 @@ for i in ${FILE_TYPES}
     $LOGGER -t "$logTag" "Extracting ${RESTORE_FILE}"
     case "$i" in
       .tar.gz)
-        $SUDO -u ${USER_ID} tar -C ${SERVICE_DIR}/${SERVICE_ID} -zxf ${RESTORE_FILE} 2>&1
+        $REAL_SUDO -u ${USER_ID} tar -C ${SERVICE_DIR}/${SERVICE_ID} -zxf ${RESTORE_FILE} 2>&1
         readCode $?
         ;;
       .tar.bz2)
-        $SUDO -u "${USER_ID}" tar -C ${SERVICE_DIR}/${SERVICE_ID} -jxf ${RESTORE_FILE} > /dev/null 2>&1
+        $REAL_SUDO -u "${USER_ID}" tar -C ${SERVICE_DIR}/${SERVICE_ID} -jxf ${RESTORE_FILE} > /dev/null 2>&1
         readCode $?
         ;;
       .tgz)
-        $SUDO -u "${USER_ID}" tar -C ${SERVICE_DIR}/${SERVICE_ID} -zxf ${RESTORE_FILE} > /dev/null 2>&1
+        $REAL_SUDO -u "${USER_ID}" tar -C ${SERVICE_DIR}/${SERVICE_ID} -zxf ${RESTORE_FILE} > /dev/null 2>&1
         readCode $?
         ;;
       .zip)
-        $SUDO -u "$USER_ID" unzip -oqq -d ${SERVICE_DIR}/${SERVICE_ID} $RESTORE_FILE > /dev/null 2>&1
+        $REAL_SUDO -u "$USER_ID" unzip -oqq -d ${SERVICE_DIR}/${SERVICE_ID} $RESTORE_FILE > /dev/null 2>&1
         readCode $?
         ;;
     esac
