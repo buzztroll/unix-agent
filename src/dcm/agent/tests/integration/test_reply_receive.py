@@ -1,5 +1,4 @@
 import base64
-from collections import namedtuple
 import getpass
 import hashlib
 import os
@@ -32,6 +31,20 @@ import dcm.agent.config as config
 from dcm.agent.messaging import reply, request, persistence
 import dcm.agent.tests.utils as test_utils
 import dcm.agent.tests.utils.test_connection as test_conn
+
+
+class CloudT(object):
+
+    def __init__(self, id, key, secret, endpoint, account, region):
+        self.id = id
+        self.key = key
+        self.secret = secret
+        self.endpoint = endpoint
+        self.account = account
+        self.region = region
+
+    def __str__(self):
+        return "cloud_%d" % self.id
 
 
 # does not inherit from unittest because of the python generators for
@@ -80,8 +93,6 @@ class TestProtocolCommands(reply.ReplyObserverInterface):
             if c_a:
                 cloud_account = c_a.pop(0).strip()
 
-            CloudT = namedtuple('Cloud',
-                                'id key secret endpoint account region')
             cloud = CloudT(cloud_id,
                            cloud_key,
                            cloud_secret,
