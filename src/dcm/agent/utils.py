@@ -329,5 +329,4 @@ def user_name(proposed_name):
     # but disallows _ or - at the beginning or end of username
     if re.match("^(?![_-])[a-zA-Z0-9_-]+(?<![_-])$", string_name):
         return proposed_name
-    else:
-        return None
+    raise ValueError("bad user name")
