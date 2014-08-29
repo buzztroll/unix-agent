@@ -210,12 +210,15 @@ Vagrant.configure(VAGRANTFILE_API_VERSION) do |config|
 
   if prov_switch == "aws"
     config.vm.synced_folder ".", "/vagrant", disabled: true
-  else
+  elsif prov_switch == "vb"
     config.vm.synced_folder "../bin/", "/agent/bin"
     config.vm.synced_folder "../src/", "/agent/src"
     vagrant_root = File.dirname(__FILE__)
     vagrant_root = File.dirname(vagrant_root)
     config.vm.synced_folder "../", vagrant_root
+  else
+     puts 'You have to set DCM_AGENT_TEST_PROVISIONER to vb or aws'
+     exit
   end
 
   machine_map = machine_config[prov_switch]
