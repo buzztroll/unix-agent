@@ -1,6 +1,12 @@
 # -*- mode: ruby -*-
 # vi: set ft=ruby :
 
+# env vars for vb provider
+$ES_STORAGE_CREDS = ENV['DCM_AGENT_STORAGE_CREDS'] || "null"
+$DCM_AGENT_VERSION = ENV['DCM_AGENT_VERSION'] || "null"
+$DCM_AGENT_PKG = ENV['AGENT_BASE_URL'] || "null"
+$DCM_AGENT_TEST_LOCAL = ENV['DCM_AGENT_TEST_LOCAL'] || "null"
+
 machine_config = {
   "aws" => {
     "default-ubuntu-1004-i386" => {
@@ -75,6 +81,76 @@ machine_config = {
       :box_url => "https://opscode-vm-bento.s3.amazonaws.com/vagrant/virtualbox/opscode_ubuntu-10.04_chef-provisionerless.box",
       :second_controller => "IDE Controller",
       :disk_path => "/tmp/ubuntu-1004.disk"
+      },
+    'default-ubuntu-1204' => {
+      :hostname => "ubuntu-1204",
+      :box => "opscode-ubuntu-12.04",
+      :box_url => "https://opscode-vm-bento.s3.amazonaws.com/vagrant/virtualbox/opscode_ubuntu-12.04_chef-provisionerless.box",
+      :second_controller => "IDE Controller",
+      :disk_path => "/tmp/ubuntu-1204.disk"
+      },
+    'default-ubuntu-1204-i386' => {
+      :hostname => "ubuntu-1204-i386",
+      :box => "opscode-ubuntu-12.04-i386",
+      :box_url => "http://opscode-vm-bento.s3.amazonaws.com/vagrant/virtualbox/opscode_ubuntu-12.10-i386_chef-provisionerless.box",
+      :second_controller => "IDE Controller",
+      :disk_path => "/tmp/ubuntu-1204-i386.disk"
+      },
+    'default-ubuntu-1404' => {
+      :hostname => "ubuntu-1404",
+      :box => "opscode-ubuntu-14.04",
+      :box_url => "http://opscode-vm-bento.s3.amazonaws.com/vagrant/virtualbox/opscode_ubuntu-14.04_chef-provisionerless.box",
+      :second_controller => "IDE Controller",
+      :disk_path => "/tmp/ubuntu-1404.disk"
+      },
+    'default-ubuntu-1404-i386' => {
+      :hostname => "ubuntu-1404-i386",
+      :box => "default-ubuntu-14.04-i386",
+      :box_url => "https://s3.amazonaws.com/dcmagentboxes/default-ubuntu-1404-i386.agent.box",
+      :second_controller => "IDE Controller",
+      :disk_path => "/tmp/ubuntu-1404-i386.disk"
+      },
+    'default-debian-608' => {
+      :hostname => "default-debian-608",
+      :box => "default-debian-608",
+      :box_url => "http://opscode-vm-bento.s3.amazonaws.com/vagrant/virtualbox/opscode_debian-6.0.8_chef-provisionerless.box",
+      :second_controller => "IDE Controller",
+      :disk_path => "/tmp/default-debian-608.disk"
+      },
+    'default-debian-608-i386' => {
+      :hostname => "default-debian-608-i386",
+      :box => "default-debian-608-i386",
+      :box_url => "http://opscode-vm-bento.s3.amazonaws.com/vagrant/virtualbox/opscode_debian-6.0.8-i386_chef-provisionerless.box",
+      :second_controller => "IDE Controller",
+      :disk_path => "/tmp/default-debian-608-i386.disk"
+      },
+    'default-debian-75' => {
+      :hostname => "default-debian-75",
+      :box => "default-debian-75",
+      :box_url => "https://vagrantcloud.com/ffuenf/debian-7.5.0-amd64/version/5/provider/virtualbox.box",
+      :second_controller => "IDE Controller",
+      :disk_path => "/tmp/default-debian-75.disk"
+      },
+    'default-debian-75-i386' => {
+      :hostname => "default-debian-75-i386",
+      :box => "default-debian-75-i386",
+      :box_url => "https://vagrantcloud.com/remram/debian-7.5-i386/version/1/provider/virtualbox.box",
+      :second_controller => "IDE Controller",
+      :disk_path => "/tmp/default-debian-75-i386.disk"
+      },
+    'default-centos-65-i386' => {
+      :hostname => "default-centos-65-i386",
+      :box => "opscode-centos-6.5-i386",
+      :box_url => "http://opscode-vm-bento.s3.amazonaws.com/vagrant/virtualbox/opscode_centos-6.5-i386_chef-provisionerless.box",
+      :second_controller => "IDE Controller",
+      :disk_path => "/tmp/centos-64-i386.disk"
+      },
+    'default-centos-64' => {
+      :hostname => "default-centos-64",
+      :box => "opscode-centos-6.4",
+      :box_url => "http://opscode-vm-bento.s3.amazonaws.com/vagrant/virtualbox/opscode_centos-6.4_chef-provisionerless.box",
+      :second_controller => "IDE Controller",
+      :disk_path => "/tmp/centos-64.disk"
       }
   }
 }
