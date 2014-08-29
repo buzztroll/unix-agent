@@ -65,6 +65,14 @@ machine_config = {
       :ami => "ami-e00df089",
       :ssh_username => "root"
       },
+    "default-debian-6.0-i386" => {
+      :hostname => "default-debian-6.0-i386",
+      :box => "default-debian-6.0-i386",
+      :box_url => "https://github.com/mitchellh/vagrant-aws/raw/master/dummy.box",
+      :instance_type => "m1.medium",
+      :ami => "ami-386ed551",
+      :ssh_username => "root"
+      },
     "default-debian-7.6" => {
       :hostname => "default-debian-7.6",
       :box => "default-debian-7.6",
@@ -79,6 +87,22 @@ machine_config = {
       :box_url => "https://github.com/mitchellh/vagrant-aws/raw/master/dummy.box",
       :instance_type => "m1.medium",
       :ami => "ami-90886cf8",
+      :ssh_username => "admin"
+      },
+    "default-centos-65-i386" => {
+      :hostname => "default-centos-65-i386",
+      :box => "default-centos-65-i386",
+      :box_url => "https://github.com/mitchellh/vagrant-aws/raw/master/dummy.box",
+      :instance_type => "m1.medium",
+      :ami => "ami-3e6d8856",
+      :ssh_username => "admin"
+      },
+    "default-centos-64" => {
+      :hostname => "default-centos-64",
+      :box => "default-centos-64",
+      :box_url => "https://github.com/mitchellh/vagrant-aws/raw/master/dummy.box",
+      :instance_type => "m1.medium",
+      :ami => "ami-3f3e4856",
       :ssh_username => "admin"
       }
   },
