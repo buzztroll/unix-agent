@@ -10,7 +10,7 @@ $DCM_AGENT_TEST_LOCAL = ENV['DCM_AGENT_TEST_LOCAL'] || "null"
 machine_config = {
   "aws" => {
     "default-ubuntu-1004-i386" => {
-      :hostname => "default-ubuntu-1004-i386",
+      :hostname => "ubuntu-1004-i386",
       :box => "default-ubuntu-1004-i386",
       :box_url => "https://github.com/mitchellh/vagrant-aws/raw/master/dummy.box",
       :instance_type => "m1.medium",
@@ -18,7 +18,7 @@ machine_config = {
       :ssh_username => "ubuntu"
       },
     "default-ubuntu-1004" => {
-      :hostname => "default-ubuntu-1004",
+      :hostname => "ubuntu-1004",
       :box => "default-ubuntu-1004",
       :box_url => "https://github.com/mitchellh/vagrant-aws/raw/master/dummy.box",
       :instance_type => "m1.medium",
@@ -26,7 +26,7 @@ machine_config = {
       :ssh_username => "ubuntu"
       },
     "default-ubuntu-1204" => {
-      :hostname => "default-ubuntu-1204",
+      :hostname => "ubuntu-1204",
       :box => "default-ubuntu-1204",
       :box_url => "https://github.com/mitchellh/vagrant-aws/raw/master/dummy.box",
       :instance_type => "m1.medium",
@@ -34,7 +34,7 @@ machine_config = {
       :ssh_username => "ubuntu"
       },
     "default-ubuntu-1204-i386" => {
-      :hostname => "default-ubuntu-1204-i386",
+      :hostname => "ubuntu-1204-i386",
       :box => "default-ubuntu-1204-i386",
       :box_url => "https://github.com/mitchellh/vagrant-aws/raw/master/dummy.box",
       :instance_type => "m1.medium",
@@ -42,7 +42,7 @@ machine_config = {
       :ssh_username => "ubuntu"
       },
     "default-ubuntu-1404" => {
-      :hostname => "default-ubuntu-1404",
+      :hostname => "ubuntu-1404",
       :box => "default-ubuntu-1404",
       :box_url => "https://github.com/mitchellh/vagrant-aws/raw/master/dummy.box",
       :instance_type => "m1.medium",
@@ -50,7 +50,7 @@ machine_config = {
       :ssh_username => "ubuntu"
       },
     "default-ubuntu-1404-i386" => {
-      :hostname => "default-ubuntu-1404-i386",
+      :hostname => "ubuntu-1404-i386",
       :box => "default-ubuntu-1404-i386",
       :box_url => "https://github.com/mitchellh/vagrant-aws/raw/master/dummy.box",
       :instance_type => "m1.medium",
@@ -58,7 +58,7 @@ machine_config = {
       :ssh_username => "ubuntu"
       },
     "default-debian-6.0" => {
-      :hostname => "default-debian-6.0",
+      :hostname => "debian-6.0",
       :box => "default-debian-6.0",
       :box_url => "https://github.com/mitchellh/vagrant-aws/raw/master/dummy.box",
       :instance_type => "m1.medium",
@@ -66,7 +66,7 @@ machine_config = {
       :ssh_username => "root"
       },
     "default-debian-6.0-i386" => {
-      :hostname => "default-debian-6.0-i386",
+      :hostname => "debian-6.0-i386",
       :box => "default-debian-6.0-i386",
       :box_url => "https://github.com/mitchellh/vagrant-aws/raw/master/dummy.box",
       :instance_type => "m1.medium",
@@ -74,7 +74,7 @@ machine_config = {
       :ssh_username => "root"
       },
     "default-debian-7.6" => {
-      :hostname => "default-debian-7.6",
+      :hostname => "debian-7.6",
       :box => "default-debian-7.6",
       :box_url => "https://github.com/mitchellh/vagrant-aws/raw/master/dummy.box",
       :instance_type => "m1.medium",
@@ -82,7 +82,7 @@ machine_config = {
       :ssh_username => "admin"
       },
     "default-debian-7.6-i386" => {
-      :hostname => "default-debian-7.6-i386",
+      :hostname => "debian-7.6-i386",
       :box => "default-debian-7.6-i386",
       :box_url => "https://github.com/mitchellh/vagrant-aws/raw/master/dummy.box",
       :instance_type => "m1.medium",
@@ -90,7 +90,7 @@ machine_config = {
       :ssh_username => "admin"
       },
     "default-centos-65-i386" => {
-      :hostname => "default-centos-65-i386",
+      :hostname => "centos-65-i386",
       :box => "default-centos-65-i386",
       :box_url => "https://github.com/mitchellh/vagrant-aws/raw/master/dummy.box",
       :instance_type => "m1.medium",
@@ -98,7 +98,7 @@ machine_config = {
       :ssh_username => "admin"
       },
     "default-centos-64" => {
-      :hostname => "default-centos-64",
+      :hostname => "centos-64",
       :box => "default-centos-64",
       :box_url => "https://github.com/mitchellh/vagrant-aws/raw/master/dummy.box",
       :instance_type => "m1.medium",
@@ -151,42 +151,42 @@ machine_config = {
       :disk_path => "/tmp/ubuntu-1404-i386.disk"
       },
     'default-debian-608' => {
-      :hostname => "default-debian-608",
+      :hostname => "debian-608",
       :box => "default-debian-608",
       :box_url => "http://opscode-vm-bento.s3.amazonaws.com/vagrant/virtualbox/opscode_debian-6.0.8_chef-provisionerless.box",
       :second_controller => "IDE Controller",
       :disk_path => "/tmp/default-debian-608.disk"
       },
     'default-debian-608-i386' => {
-      :hostname => "default-debian-608-i386",
+      :hostname => "debian-608-i386",
       :box => "default-debian-608-i386",
       :box_url => "http://opscode-vm-bento.s3.amazonaws.com/vagrant/virtualbox/opscode_debian-6.0.8-i386_chef-provisionerless.box",
       :second_controller => "IDE Controller",
       :disk_path => "/tmp/default-debian-608-i386.disk"
       },
     'default-debian-75' => {
-      :hostname => "default-debian-75",
+      :hostname => "debian-75",
       :box => "default-debian-75",
       :box_url => "https://vagrantcloud.com/ffuenf/debian-7.5.0-amd64/version/5/provider/virtualbox.box",
       :second_controller => "IDE Controller",
       :disk_path => "/tmp/default-debian-75.disk"
       },
     'default-debian-75-i386' => {
-      :hostname => "default-debian-75-i386",
+      :hostname => "debian-75-i386",
       :box => "default-debian-75-i386",
       :box_url => "https://vagrantcloud.com/remram/debian-7.5-i386/version/1/provider/virtualbox.box",
       :second_controller => "IDE Controller",
       :disk_path => "/tmp/default-debian-75-i386.disk"
       },
     'default-centos-65-i386' => {
-      :hostname => "default-centos-65-i386",
+      :hostname => "centos-65-i386",
       :box => "opscode-centos-6.5-i386",
       :box_url => "http://opscode-vm-bento.s3.amazonaws.com/vagrant/virtualbox/opscode_centos-6.5-i386_chef-provisionerless.box",
       :second_controller => "IDE Controller",
       :disk_path => "/tmp/centos-64-i386.disk"
       },
     'default-centos-64' => {
-      :hostname => "default-centos-64",
+      :hostname => "centos-64",
       :box => "opscode-centos-6.4",
       :box_url => "http://opscode-vm-bento.s3.amazonaws.com/vagrant/virtualbox/opscode_centos-6.4_chef-provisionerless.box",
       :second_controller => "IDE Controller",
