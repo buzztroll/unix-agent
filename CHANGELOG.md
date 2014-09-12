@@ -1,3 +1,17 @@
+# 0.9.3 (2014-09-12)
+
+Features:
+* Added coverage reports for tests.
+* Added vagrant tests in virtualbox to match ec2 tests.
+
+Bug Fixes:
+* Fixed a bug in type checker resulting in false successes.
+* Error in installServer script fix by setting the absolute sudo path.
+* Advanced to the new cacert.
+* Allow the encryption key in mount to be optional.
+* Fixed Azure handshake.
+* Fixed GCE meta-data handshake.
+
 # 0.9.2 (2014-08-22)
 
 Features:
