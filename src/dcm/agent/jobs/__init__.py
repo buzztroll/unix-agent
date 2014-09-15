@@ -48,10 +48,10 @@ class Plugin(object):
     def _validate_arguments(self):
         # validate that all of the required arguments were sent
         for arg in self.protocol_arguments:
-            h, mandatory, t = self.protocol_arguments[arg]
+            h, mandatory, t, default = self.protocol_arguments[arg]
             if mandatory and arg not in self.arguments:
                 raise exceptions.AgentPluginParameterException(self.name, arg)
-            setattr(self.args, arg, None)
+            setattr(self.args, arg, default)
 
         # validate that nothing extra was sent
         for arg in self.arguments:
@@ -61,7 +61,7 @@ class Plugin(object):
                                  "manager but is not understood by this "
                                  "command." % arg)
             else:
-                h, mandatory, t = self.protocol_arguments[arg]
+                h, mandatory, t, default = self.protocol_arguments[arg]
                 a = self.arguments[arg]
                 if a is not None:
                     try:

@@ -28,82 +28,82 @@ class BackupService(direct_pass.DirectPass):
         "serviceId":
         ("The ID of the service to be backed up.  The service script "
          "enstratus-backupService will be called.",
-         True, str),
+         True, str, None),
         "toBackupDirectory":
         ("The remote backup directory or bucket in the storage cloud where "
          "this backup will be uploaded.",
-         True, str),
+         True, str, None),
         "primaryCloudId":
         ("The cloud ID or delegate string of the primary storage cloud.",
-         True, str),
+         True, str, None),
         "primaryRegionId":
         ("The region ID for the primary storage cloud.",
-         False, str),
+         False, str, None),
         "primaryApiKey":
         ("The API key for the primary storage cloud.",
-         True, utils.base64type_convertor),
+         True, utils.base64type_convertor, None),
         "primarySecretKey":
         ("The API secret key for the primary storage cloud.",
-         True, utils.base64type_convertor),
+         True, utils.base64type_convertor, None),
         "secondaryCloudId":
         ("The cloud ID or delegate string for the secondary storage cloud. "
          "Often this is an off site cloud.",
-         False, str),
+         False, str, None),
         "secondaryRegionId":
         ("The region ID of the secondary cloud.",
-         False, str),
+         False, str, None),
         "secondaryApiKey":
         ("The API key of the secondary cloud.",
-         False, utils.base64type_convertor),
+         False, utils.base64type_convertor, None),
         "secondarySecretKey":
         ("The API secret key of the secondary cloud.",
-         False, utils.base64type_convertor),
+         False, utils.base64type_convertor, None),
         "apiEndpoint":
         ("The endpoint contact string of the primary cloud.",
-         False, str),
+         False, str, None),
         "apiAccount":
         ("The account string of the primary backup cloud.",
-         False, str),
+         False, str, None),
         "storageDelegate":
         ("When this value is set it overides the primary API information. "
          "When the primary cloud does not have a storage cloud this value "
          "is set to make user of an alternative cloud.",
-         False, str),
+         False, str, None),
         "storageEndpoint":
         ("The endpoint contact string of the separate primary cloud.",
-         False, str),
+         False, str, None),
         "storageAccount":
         ("The account string of the separate primary cloud.",
-         False, str),
+         False, str, None),
         "storagePublicKey":
         ("The API key for the separate primary storage cloud.",
-         False, utils.base64type_convertor),
+         False, utils.base64type_convertor, None),
         "storagePrivateKey":
         ("The API secret key for the separate primary storage cloud.",
-         False, utils.base64type_convertor),
+         False, utils.base64type_convertor, None),
         "secondaryApiEndpoint":
         ("The endpoint contact string of the secondary backup cloud.",
-         False, str),
+         False, str, None),
         "secondaryApiAccount":
         ("The account string of the secondary backup cloud.",
-         False, str),
+         False, str, None),
         "secondaryStorageDelegate":
         ("If a separate storage cloud is used for the secondary cloud this "
          "value will be set to the cloud ID or the storage delegate.",
-         False, str),
+         False, str, None),
         "secondaryStorageEndpoint":
         ("The endpoint contact string of the separate secondary storage "
          "clouds.",
-         False, str),
+         False, str, None),
         "secondaryStorageAccount":
         ("The account string of the separate secondary storage cloud.",
-         False, str),
+         False, str, None),
         "secondaryStoragePublicKey":
         ("The API key of the separate secondary storage cloud.",
-         False, utils.base64type_convertor),
+         False, utils.base64type_convertor, None),
         "secondaryStoragePrivateKey":
         ("The API secret key for the separate secondary storage cloud.",
-         False, utils.base64type_convertor)
+         False, utils.base64type_convertor, None)
     }
 
     def __init__(self, conf, job_id, items_map, name, arguments):

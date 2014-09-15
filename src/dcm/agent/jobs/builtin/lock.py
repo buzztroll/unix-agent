@@ -18,7 +18,7 @@ class Lock(jobs.Plugin):
 
     protocol_arguments = {
         "timeout": ("The number of milliseconds to wait to get the lock",
-                    True, long)
+                    True, long, None)
     }
 
     def __init__(self, conf, job_id, items_map, name, arguments):

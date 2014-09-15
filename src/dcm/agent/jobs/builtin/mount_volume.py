@@ -22,12 +22,13 @@ class MountVolume(direct_pass.DirectPass):
 
     protocol_arguments = {
         "formatVolume":
-        ("A boolean indicating if the volume should be formated.", True, bool),
-        "fileSystem": ("", True, str),
-        "raidLevel": ("", True, str),
-        "encryptionKey": ("", False, utils.base64type_convertor),
-        "mountPoint": ("", True, str),
-        "devices": ("", True, list)
+        ("A boolean indicating if the volume should be formated.",
+         True, bool, None),
+        "fileSystem": ("", True, str, None),
+        "raidLevel": ("", True, str, None),
+        "encryptionKey": ("", False, utils.base64type_convertor, None),
+        "mountPoint": ("", True, str, None),
+        "devices": ("", True, list, None)
     }
 
     def __init__(self, conf, job_id, items_map, name, arguments):

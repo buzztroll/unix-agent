@@ -21,13 +21,13 @@ class AddUser(direct_pass.DirectPass):
 
     protocol_arguments = {
         "userId": ("The new unix account name to be created", True,
-                   utils.user_name),
-        "firstName": ("The user's first name", True, str),
-        "lastName": ("The user's last name", True, str),
-        "authentication": ("The user's ssh public key", True, str),
+                   utils.user_name, None),
+        "firstName": ("The user's first name", True, str, None),
+        "lastName": ("The user's last name", True, str, None),
+        "authentication": ("The user's ssh public key", True, str, None),
         "administrator": ("A string that is either 'true' or 'false' "
                           "which indicates if the new user should have "
-                          "ssh access", True, str)
+                          "ssh access", True, str, None)
     }
 
     def __init__(self, conf, job_id, items_map, name, arguments):

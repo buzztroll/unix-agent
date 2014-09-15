@@ -25,47 +25,47 @@ class InstallService(direct_pass.DirectPass):
 
     protocol_arguments = {
         "customerId":
-        ("The ID of the customer invoking the command.", True, long),
+        ("The ID of the customer invoking the command.", True, long, None),
         "serviceId":
-        ("The ID of the service to be installed.", True, str),
+        ("The ID of the service to be installed.", True, str, None),
         "runAsUser":
         ("The unix account name of the user that will run the install.",
-         True, str),
+         True, str, None),
         "cloudId":
         ("The ID of the cloud from which to download the service image.",
-         True, str),
+         True, str, None),
         "apiAccessKey":
         ("The access key for the cloud storing the service image.",
-         True, utils.base64type_convertor),
+         True, utils.base64type_convertor, None),
         "apiSecretKey":
         ("The secret key for the cloud storing the service image.",
-         True, utils.base64type_convertor),
+         True, utils.base64type_convertor, None),
         "serviceImageDirectory":
         ("The directory or bucket in the storage cloud that is holding"
-         "the service image file.", True, str),
+         "the service image file.", True, str, None),
         "serviceImageFile":
-        ("The name of the service image.", True, str),
+        ("The name of the service image.", True, str, None),
         "providerRegionId":
         ("The region ID of the storage cloud holding the image.",
-         False, str),
+         False, str, None),
         "apiEndpoint":
-        ("The endpoint contact string of the storage cloud.", False, str),
+        ("The endpoint contact string of the storage cloud.", False, str, None),
         "apiAccount":
-        ("The storage cloud account.", False, str),
+        ("The storage cloud account.", False, str, None),
         "storageEndpoint":
         ("The separate storage cloud endpoint contact string.",
-         False, str),
+         False, str, None),
         "storageAccount":
-        ("The separate storage cloud account information.", False, str),
+        ("The separate storage cloud account information.", False, str, None),
         "storageAccessKey":
         ("The separate storage cloud API key.",
-         False, utils.base64type_convertor),
+         False, utils.base64type_convertor, None),
         "storageSecretKey":
         ("The separate storage cloud secret key.",
-         False, utils.base64type_convertor),
+         False, utils.base64type_convertor, None),
         "storageDelegate":
         ("For clouds that have separate contact information for their "
-         "storage clouds this servers as the cloud ID.", False, str)
+         "storage clouds this servers as the cloud ID.", False, str, None)
     }
 
     def __init__(self, conf, job_id, items_map, name, arguments):

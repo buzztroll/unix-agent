@@ -21,7 +21,7 @@ class StartServices(jobs.Plugin):
     protocol_arguments = {
         "serviceIds":
         ("The list of service IDs to start.",
-         True, list)
+         True, list, None)
     }
 
     def __init__(self, conf, job_id, items_map, name, arguments):

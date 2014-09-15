@@ -19,9 +19,9 @@ class StartService(jobs.Plugin):
 
     protocol_arguments = {
         "customerId":
-        ("The ID of the customer envoking the command.", True, str),
+        ("The ID of the customer envoking the command.", True, str, None),
         "serviceId":
-        ("The ID of the service to start.", True, str)
+        ("The ID of the service to start.", True, str, None)
     }
 
     def __init__(self, conf, job_id, items_map, name, arguments):

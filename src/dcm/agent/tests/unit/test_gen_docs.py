@@ -56,6 +56,7 @@ class TestGenDocs(unittest.TestCase):
 - userId: The unix account name of the user to remove
     - optional: True
     - type: str
+    - default: None
 """
 
         filetwo = 'add_user.py'
@@ -63,18 +64,23 @@ class TestGenDocs(unittest.TestCase):
 - lastName: The user's last name
     - optional: True
     - type: str
+    - default: None
 - authentication: The user's ssh public key
     - optional: True
     - type: str
+    - default: None
 - userId: The new unix account name to be created
     - optional: True
     - type: Safe user name
+    - default: None
 - administrator: A string that is either 'true' or 'false' which indicates if the new user should have ssh access
     - optional: True
     - type: str
+    - default: None
 - firstName: The user's first name
     - optional: True
     - type: str
+    - default: None
 """
 
         # check remove_user.py

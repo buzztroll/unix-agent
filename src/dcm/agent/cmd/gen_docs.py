@@ -48,6 +48,7 @@ def output_markdown(f, pa_dict):
         flatstring += '- ' + key + ': ' + value[0] + '\n'
         flatstring += '    - optional: ' + '%s' % value[1] + '\n'
         flatstring += '    - type: ' + '%s' % get_type_string(value[2]) + '\n'
+        flatstring += '    - default: ' + '%s' % str(value[3]) + '\n'
         flatstring += ''
 
     print flatstring

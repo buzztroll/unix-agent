@@ -27,10 +27,10 @@ class RunScript(jobs.Plugin):
 
     protocol_arguments = {
         "b64script": ("A base64 encoded executable.", True,
-                      utils.base64type_convertor),
-        "checksum": ("The checksum of the script.", True, str),
+                      utils.base64type_convertor, None),
+        "checksum": ("The checksum of the script.", True, str, None),
         "arguments": ("The list of arguments to be passed to the script",
-                      True, list)
+                      True, list, None)
     }
 
     def __init__(self, conf, job_id, items_map, name, arguments):

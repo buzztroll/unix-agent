@@ -28,11 +28,12 @@ _g_logger = logging.getLogger(__name__)
 class Upgrade(jobs.Plugin):
 
     protocol_arguments = {
-        "newVersion": ("The version of the agent to upgrade to.", True, str),
+        "newVersion": ("The version of the agent to upgrade to.",
+                       True, str, None),
         "url": ("The location of the script to be run to handle the upgrade",
-                True, str),
+                True, str, None),
         "args": ("The list of arguments to be passed to the upgrade script",
-                 True, list)
+                 True, list, None)
     }
 
     def __init__(self, conf, job_id, items_map, name, arguments):
