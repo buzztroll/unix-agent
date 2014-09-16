@@ -19,7 +19,7 @@ class RemoveUser(direct_pass.DirectPass):
     protocol_arguments = {
         "userId":
         ("The unix account name of the user to remove",
-         True, str)
+         True, str, None)
     }
 
     def __init__(self, conf, job_id, items_map, name, arguments):

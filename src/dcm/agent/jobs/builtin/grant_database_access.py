@@ -23,15 +23,15 @@ class GrantDBAccess(direct_pass.DirectPass):
     protocol_arguments = {
         "customerId":
         ("Not currently used.",
-         True, str),
+         True, str, None),
         "serviceId":
         ("The installed service whose enstratus-dbgrant program will be "
          "called.",
-         True, str),
+         True, str, None),
         "configuration":
         ("The configuration information to be passed to the services "
          "enstratus-dbgrant program",
-         True, utils.base64type_convertor)
+         True, utils.base64type_convertor, None)
     }
 
     def __init__(self, conf, job_id, items_map, name, arguments):

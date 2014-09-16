@@ -26,47 +26,47 @@ class ConfigureServer(jobs.Plugin):
 
     protocol_arguments = {
         "configType":
-        ("", True, str),
+        ("", True, str, None),
         "authId":
-        ("", False, str),
+        ("", False, str, None),
         "configurationData":
-        ("", False, utils.base64type_convertor),
+        ("", False, utils.base64type_convertor, None),
         "encryptedConfigToken":
-        ("", False, utils.base64type_convertor),
+        ("", False, utils.base64type_convertor, None),
         "encryptedAuthSecret":
-        ("", False, utils.base64type_convertor),
+        ("", False, utils.base64type_convertor, None),
         "endpoint":
-        ("", False, str),
+        ("", False, str, None),
         "providerRegionId":
-        ("", False, str),
+        ("", False, str, None),
         "runAsUser":
-        ("", False, str),
+        ("", False, str, None),
         "storageDelegate":
-        ("", False, str),
+        ("", False, str, None),
         "storageEndpoint":
-        ("", False, str),
+        ("", False, str, None),
         "storageAccount":
-        ("", False, str),
+        ("", False, str, None),
         "scriptFiles":
-        ("", False, list),
+        ("", False, list, None),
         "storagePublicKey":
-        ("", False, utils.base64type_convertor),
+        ("", False, utils.base64type_convertor, None),
         "storagePrivateKey":
-        ("", False, utils.base64type_convertor),
+        ("", False, utils.base64type_convertor, None),
         "environmentId":
-        ("", False, str),
+        ("", False, str, None),
         "personalityFiles":
-        ("", False, list),
+        ("", False, list, None),
         "configClientName":
-        ("", False, str),
+        ("", False, str, None),
         "configCert":
-        ("", False, utils.base64type_convertor),
+        ("", False, utils.base64type_convertor, None),
         "configKey":
-        ("", False, utils.base64type_convertor),
+        ("", False, utils.base64type_convertor, None),
         "runListIds":
-        ("", False, list),
+        ("", False, list, None),
         "parameterList":
-        ("", False, utils.base64type_convertor),
+        ("", False, utils.base64type_convertor, None),
     }
 
     def __init__(self, conf, job_id, items_map, name, arguments):

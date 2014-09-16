@@ -25,7 +25,7 @@ class GetJobDescription(jobs.Plugin):
     protocol_arguments = {
         "jobId":
         ("The ID of job that is being queried.",
-         True, str),
+         True, str, None),
     }
 
     def __init__(self, conf, job_id, items_map, name, arguments):

@@ -8,8 +8,8 @@ if [ "X$2" != "Xnull" ]; then
     export AGENT_BASE_URL=$2
 fi
 
-uuidgen > /vagrant/enckey
-export ENCRYPTED_FILE_ENV=/vagrant/enckey
+#uuidgen > /vagrant/enckey
+#export ENCRYPTED_FILE_ENV=/vagrant/enckey
 
 DIR=`dirname $0`
 cd $DIR

@@ -25,21 +25,21 @@ class StartProxy(jobs.Plugin):
 
     protocol_arguments = {
         "customerId":
-        ("The ID of the customer invoking the command.", True, str),
+        ("The ID of the customer invoking the command.", True, str, None),
         "serviceId":
-        ("The ID of the service.", True, str),
+        ("The ID of the service.", True, str, None),
         "onServiceIp":
-        ("The ID of the service.", True, str),
+        ("The ID of the service.", True, str, None),
         "atServicePort":
-        ("The ID of the service.", True, int),
+        ("The ID of the service.", True, int, None),
         "sslCert":
-        ("The ID of the service.", True, utils.base64type_convertor),
+        ("The ID of the service.", True, utils.base64type_convertor, None),
         "sslKey":
-        ("The ID of the service.", True, utils.base64type_convertor),
+        ("The ID of the service.", True, utils.base64type_convertor, None),
         "sslChain":
-        ("The ID of the service.", True, str),
+        ("The ID of the service.", True, str, None),
         "dnsNames":
-        ("The ID of the service.", True, list)
+        ("The ID of the service.", True, list, None)
     }
 
     def __init__(self, conf, job_id, items_map, name, arguments):

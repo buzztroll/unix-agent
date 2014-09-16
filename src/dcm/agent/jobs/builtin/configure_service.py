@@ -28,26 +28,26 @@ class ConfigureService(jobs.Plugin):
     protocol_arguments = {
         "forCustomerId":
         ("The ID of the customer running the configuration.",
-         True, str),
+         True, str, None),
         "serviceId":
         ("The ID of the service on which enstratus-configure will be run.",
-         True, str),
+         True, str, None),
         "runAsUser":
         ("The unix account name that will run the configuration.",
-         True, str),
+         True, str, None),
         "configurationData":
         ("Data that will be written to a file and passed to the script "
          "enstratus-configure as configuration data",
-         True, utils.base64type_convertor),
+         True, utils.base64type_convertor, None),
         "sslAddress":
         ("The ssl address.",
-         False, str),
+         False, str, None),
         "sslPublic":
-        ("The SSL public key.", False, utils.base64type_convertor),
+        ("The SSL public key.", False, utils.base64type_convertor, None),
         "sslPrivate":
-        ("The SSL private key.", False, utils.base64type_convertor),
+        ("The SSL private key.", False, utils.base64type_convertor, None),
         "sslChain":
-        ("The SSL CA chain.", False, str),
+        ("The SSL CA chain.", False, str, None),
     }
 
     def __init__(self, conf, job_id, items_map, name, arguments):

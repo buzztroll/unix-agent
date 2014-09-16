@@ -22,30 +22,30 @@ class ImageServer(direct_pass.DirectPass):
     protocol_arguments = {
         "customerId":
         ("The ID of the customer running this command.",
-         True, long),
+         True, long, None),
         "serverId":
         ("This value is passed to the imageServer script but is never "
          "used",
-         True, str),
+         True, str, None),
         "accountNumber":
-        ("The account number.  Used with EC2", True, str),
+        ("The account number.  Used with EC2", True, str, None),
         "imageDirectory":
         ("This is passed to the imageServer script but is not used.",
-         True, str),
+         True, str, None),
         "imageName":
-        ("The name of the image.", True, str),
+        ("The name of the image.", True, str, None),
         "type":
-        ("The architecture of the image.", True, str),
+        ("The architecture of the image.", True, str, None),
         "cloudAccessKey":
         ("The access key for the cloud where the server is being imaged.",
-         True, utils.base64type_convertor),
+         True, utils.base64type_convertor, None),
         "cloudSecretKey":
         ("The secret key for the cloud where the server is being imaged.",
-         True, utils.base64type_convertor),
+         True, utils.base64type_convertor, None),
         "storageCertificate":
-        ("The storage certificate.", True, utils.base64type_convertor),
+        ("The storage certificate.", True, utils.base64type_convertor, None),
         "storagePrivateKey":
-        ("The storage private key.", True, utils.base64type_convertor)
+        ("The storage private key.", True, utils.base64type_convertor, None)
     }
 
     def __init__(self, conf, job_id, items_map, name, arguments):

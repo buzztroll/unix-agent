@@ -19,7 +19,7 @@ class StopProxy(direct_pass.DirectPass):
 
     protocol_arguments = {
         "toAddress":
-        ("The address of the proxy to stop.", True, str)
+        ("The address of the proxy to stop.", True, str, None)
     }
 
     def __init__(self, conf, job_id, items_map, name, arguments):

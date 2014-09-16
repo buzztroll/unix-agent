@@ -184,13 +184,6 @@ machine_config = {
       :box_url => "http://opscode-vm-bento.s3.amazonaws.com/vagrant/virtualbox/opscode_centos-6.5-i386_chef-provisionerless.box",
       :second_controller => "IDE Controller",
       :disk_path => "/tmp/centos-64-i386.disk"
-      },
-    'default-centos-64' => {
-      :hostname => "centos-64",
-      :box => "opscode-centos-6.4",
-      :box_url => "http://opscode-vm-bento.s3.amazonaws.com/vagrant/virtualbox/opscode_centos-6.4_chef-provisionerless.box",
-      :second_controller => "IDE Controller",
-      :disk_path => "/tmp/centos-64.disk"
       }
   }
 }
