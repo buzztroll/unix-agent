@@ -10,7 +10,7 @@ import sys
 import platform
 import textwrap
 import urlparse
-from dcm.agent import config
+from dcm.agent import config, cloudmetadata
 import ConfigParser
 
 import dcm.agent
@@ -27,26 +27,26 @@ g_user_env_str = "DCM_USER"
 g_basedir_env_str = "DCM_BASEDIR"
 
 cloud_choices = {
-    1: "Amazon",
-    2: "Atmos",
-    3: "ATT",
-    4: "Azure",
-    5: "Bluelock",
-    6: "CloudCentral",
-    7: "CloudSigma",
-    8: "CloudStack",
-    9: "CloudStack3",
-    10: "Eucalyptus",
-    11: "GoGrid",
-    12: "Google",
-    13: "IBM",
-    14: "Joyent",
-    15: "OpenStack",
-    16: "Rackspace",
-    17: "ServerExpress",
-    18: "Terremark",
-    19: "VMware",
-    20: "Other",
+    1: cloudmetadata.CLOUD_TYPES.Amazon,
+    2: cloudmetadata.CLOUD_TYPES.Atmos,
+    3: cloudmetadata.CLOUD_TYPES.ATT,
+    4: cloudmetadata.CLOUD_TYPES.Azure,
+    5: cloudmetadata.CLOUD_TYPES.Bluelock,
+    6: cloudmetadata.CLOUD_TYPES.CloudCentral,
+    7: cloudmetadata.CLOUD_TYPES.CloudSigma,
+    8: cloudmetadata.CLOUD_TYPES.CloudStack,
+    9: cloudmetadata.CLOUD_TYPES.CloudStack3,
+    10: cloudmetadata.CLOUD_TYPES.Eucalyptus,
+    11: cloudmetadata.CLOUD_TYPES.GoGrid,
+    12: cloudmetadata.CLOUD_TYPES.Google,
+    13: cloudmetadata.CLOUD_TYPES.IBM,
+    14: cloudmetadata.CLOUD_TYPES.Joyent,
+    15: cloudmetadata.CLOUD_TYPES.OpenStack,
+    16: cloudmetadata.CLOUD_TYPES.Rackspace,
+    17: cloudmetadata.CLOUD_TYPES.ServerExpress,
+    18: cloudmetadata.CLOUD_TYPES.Terremark,
+    19: cloudmetadata.CLOUD_TYPES.VMware,
+    20: cloudmetadata.CLOUD_TYPES.Other
 }
 
 
@@ -195,9 +195,8 @@ def _get_input(prompt):
     return raw_input(prompt)
 
 
-def select_cloud(default="Amazon"):
+def select_cloud(default=cloudmetadata.CLOUD_TYPES.Amazon):
     """
-
     :param default:
     :return:
     """
@@ -221,19 +220,27 @@ def select_cloud(default="Amazon"):
     return cloud
 
 
+def normalize_cloud_name(conf_d):
+    (h, cloud) = conf_d["cloud"]["type"]
+    name = cloudmetadata.normalize_cloud_name(cloud)
+    if name is None:
+        raise Exception("Cloud %s is not a known type." % cloud)
+    conf_d["cloud"]["type"] = (h, name)
+
+
 def pick_meta_data(conf_d):
     (_, cloud) = conf_d["cloud"]["type"]
-    if cloud == "Amazon":
+    if cloud == cloudmetadata.CLOUD_TYPES.Amazon:
         mu = "http://169.254.169.254/latest/meta-data/"
-    elif cloud == "Eucalyptus":
+    elif cloud == cloudmetadata.CLOUD_TYPES.Eucalyptus:
         mu = "http://169.254.169.254/1.0/meta-data/"
-    elif cloud == "OpenStack":
+    elif cloud == cloudmetadata.CLOUD_TYPES.OpenStack:
         mu = "http://169.254.169.254/openstack/2012-08-10/meta_data.json"
-    elif cloud == "Google":
+    elif cloud == cloudmetadata.CLOUD_TYPES.Google:
         mu = "http://metadata.google.internal/computeMetadata/v1"
-    elif cloud == "CloudStack":
+    elif cloud == cloudmetadata.CLOUD_TYPES.CloudStack:
         mu = "lastest/instance-id"
-    elif cloud == "CloudStack3":
+    elif cloud == cloudmetadata.CLOUD_TYPES.CloudStack3:
         mu = "latest/local-hostname"
     else:
         return None
@@ -518,6 +525,7 @@ def main(argv=sys.argv[1:]):
 
     conf_d = gather_values(opts)
     do_interactive(opts, conf_d)
+    normalize_cloud_name(conf_d)
     pick_meta_data(conf_d)
 
     # before writing anything make sure that all the needed values are
