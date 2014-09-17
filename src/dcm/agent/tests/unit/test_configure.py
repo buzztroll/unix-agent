@@ -3,6 +3,7 @@ import os
 import shutil
 import tempfile
 import unittest
+from dcm.agent import cloudmetadata
 import mock
 import sys
 import dcm
@@ -22,6 +23,26 @@ class TestConfigure(unittest.TestCase):
 
     def tearDown(self):
         shutil.rmtree(self.test_base_path)
+
+    def test_cloud_name_case(self):
+        conf_args = ["-c", "aMazOn",
+                     "-u", "http://doesntmatter.org/ws",
+                     "-p", self.test_base_path,
+                     "-C", "ws"]
+        rc = configure.main(conf_args)
+        self.assertEqual(rc, 0)
+
+        parser = ConfigParser.SafeConfigParser()
+        parser.read(os.path.join(self.test_base_path, "etc", "agent.conf"))
+        cloud_from_file = parser.get("cloud", "type")
+        self.assertEqual(cloudmetadata.CLOUD_TYPES.Amazon, cloud_from_file)
+
+    def test_cloud_name_bad(self):
+        conf_args = ["-c", "NoGood",
+                     "-u", "http://doesntmatter.org/ws",
+                     "-p", self.test_base_path,
+                     "-C", "ws"]
+        self.assertRaises(Exception, configure.main, conf_args)
 
     def test_dir_configure(self):
         conf_args = ["-c", "Amazon",

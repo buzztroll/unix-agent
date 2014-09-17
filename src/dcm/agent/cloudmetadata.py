@@ -49,6 +49,15 @@ class CLOUD_TYPES:
     VMware = "VMware"
 
 
+def normalize_cloud_name(cloud_name):
+    for key in [i for i in dir(CLOUD_TYPES)
+                if not i.startswith("_")]:
+        name = getattr(CLOUD_TYPES, key)
+        if name.lower() == cloud_name.lower():
+            return name
+    return None
+
+
 class CloudMetaData(object):
     def get_cloud_metadata(self, key):
         return None
@@ -173,18 +182,16 @@ class AzureMetaData(CloudMetaData):
 
 
 def set_metadata_object(conf):
-    if conf.cloud_type == CLOUD_TYPES.Amazon:
+    cloud_name = normalize_cloud_name(conf.cloud_type)
+
+    if cloud_name == CLOUD_TYPES.Amazon:
         meta_data_obj = AWSMetaData(conf)
-
-    elif conf.cloud_type == CLOUD_TYPES.Joyent:
+    elif cloud_name == CLOUD_TYPES.Joyent:
         meta_data_obj = JoyentMetaData(conf)
-
-    elif conf.cloud_type == CLOUD_TYPES.Google:
+    elif cloud_name == CLOUD_TYPES.Google:
         meta_data_obj = GCEMetaData(conf)
-
-    elif conf.cloud_type == CLOUD_TYPES.Azure:
+    elif cloud_name == CLOUD_TYPES.Azure:
         meta_data_obj = AzureMetaData()
-
     else:
         meta_data_obj = CloudMetaData()
 
