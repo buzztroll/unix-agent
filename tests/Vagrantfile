@@ -8,6 +8,86 @@ $DCM_AGENT_PKG = ENV['AGENT_BASE_URL'] || "null"
 $DCM_AGENT_TEST_LOCAL = ENV['DCM_AGENT_TEST_LOCAL'] || "null"
 
 machine_config = {
+
+  "vb" => {
+    "default-ubuntu-1004-i386" => {
+      :hostname => "ubuntu-1004-i386",
+      :box => "opscode-ubuntu-10.04-i386",
+      :box_url => "http://opscode-vm-bento.s3.amazonaws.com/vagrant/virtualbox/opscode_ubuntu-10.04-i386_chef-provisionerless.box",
+      :second_controller => "IDE Controller",
+      :disk_path => "/tmp/ubuntu-1004-i386.disk"
+      },
+    "default-ubuntu-1004" => {
+      :hostname => "ubuntu-1004",
+      :box => "opscode-ubuntu-10.04",
+      :box_url => "https://opscode-vm-bento.s3.amazonaws.com/vagrant/virtualbox/opscode_ubuntu-10.04_chef-provisionerless.box",
+      :second_controller => "IDE Controller",
+      :disk_path => "/tmp/ubuntu-1004.disk"
+      },
+    'default-ubuntu-1204' => {
+      :hostname => "ubuntu-1204",
+      :box => "opscode-ubuntu-12.04",
+      :box_url => "https://opscode-vm-bento.s3.amazonaws.com/vagrant/virtualbox/opscode_ubuntu-12.04_chef-provisionerless.box",
+      :second_controller => "IDE Controller",
+      :disk_path => "/tmp/ubuntu-1204.disk"
+      },
+    'default-ubuntu-1204-i386' => {
+      :hostname => "ubuntu-1204-i386",
+      :box => "opscode-ubuntu-12.04-i386",
+      :box_url => "http://opscode-vm-bento.s3.amazonaws.com/vagrant/virtualbox/opscode_ubuntu-12.10-i386_chef-provisionerless.box",
+      :second_controller => "IDE Controller",
+      :disk_path => "/tmp/ubuntu-1204-i386.disk"
+      },
+    'default-ubuntu-1404' => {
+      :hostname => "ubuntu-1404",
+      :box => "opscode-ubuntu-14.04",
+      :box_url => "http://opscode-vm-bento.s3.amazonaws.com/vagrant/virtualbox/opscode_ubuntu-14.04_chef-provisionerless.box",
+      :second_controller => "IDE Controller",
+      :disk_path => "/tmp/ubuntu-1404.disk"
+      },
+    'default-ubuntu-1404-i386' => {
+      :hostname => "ubuntu-1404-i386",
+      :box => "default-ubuntu-14.04-i386",
+      :box_url => "https://s3.amazonaws.com/dcmagentboxes/default-ubuntu-1404-i386.agent.box",
+      :second_controller => "IDE Controller",
+      :disk_path => "/tmp/ubuntu-1404-i386.disk"
+      },
+    'default-debian-608' => {
+      :hostname => "debian-608",
+      :box => "default-debian-608",
+      :box_url => "http://opscode-vm-bento.s3.amazonaws.com/vagrant/virtualbox/opscode_debian-6.0.8_chef-provisionerless.box",
+      :second_controller => "IDE Controller",
+      :disk_path => "/tmp/default-debian-608.disk"
+      },
+    'default-debian-608-i386' => {
+      :hostname => "debian-608-i386",
+      :box => "default-debian-608-i386",
+      :box_url => "http://opscode-vm-bento.s3.amazonaws.com/vagrant/virtualbox/opscode_debian-6.0.8-i386_chef-provisionerless.box",
+      :second_controller => "IDE Controller",
+      :disk_path => "/tmp/default-debian-608-i386.disk"
+      },
+    'default-debian-75' => {
+      :hostname => "debian-75",
+      :box => "default-debian-75",
+      :box_url => "https://vagrantcloud.com/ffuenf/debian-7.5.0-amd64/version/5/provider/virtualbox.box",
+      :second_controller => "IDE Controller",
+      :disk_path => "/tmp/default-debian-75.disk"
+      },
+    'default-debian-75-i386' => {
+      :hostname => "debian-75-i386",
+      :box => "default-debian-75-i386",
+      :box_url => "https://vagrantcloud.com/remram/debian-7.5-i386/version/1/provider/virtualbox.box",
+      :second_controller => "IDE Controller",
+      :disk_path => "/tmp/default-debian-75-i386.disk"
+      },
+    'default-centos-65-i386' => {
+      :hostname => "centos-65-i386",
+      :box => "opscode-centos-6.5-i386",
+      :box_url => "http://opscode-vm-bento.s3.amazonaws.com/vagrant/virtualbox/opscode_centos-6.5-i386_chef-provisionerless.box",
+      :second_controller => "IDE Controller",
+      :disk_path => "/tmp/centos-64-i386.disk"
+      }
+  },
   "aws" => {
     "default-ubuntu-1004-i386" => {
       :hostname => "ubuntu-1004-i386",
@@ -105,86 +185,6 @@ machine_config = {
       :ami => "ami-3f3e4856",
       :ssh_username => "admin"
       }
-  },
-
-  "vb" => {
-    "default-ubuntu-1004-i386" => {
-      :hostname => "ubuntu-1004-i386",
-      :box => "opscode-ubuntu-10.04-i386",
-      :box_url => "http://opscode-vm-bento.s3.amazonaws.com/vagrant/virtualbox/opscode_ubuntu-10.04-i386_chef-provisionerless.box",
-      :second_controller => "IDE Controller",
-      :disk_path => "/tmp/ubuntu-1004-i386.disk"
-      },
-    "default-ubuntu-1004" => {
-      :hostname => "ubuntu-1004",
-      :box => "opscode-ubuntu-10.04",
-      :box_url => "https://opscode-vm-bento.s3.amazonaws.com/vagrant/virtualbox/opscode_ubuntu-10.04_chef-provisionerless.box",
-      :second_controller => "IDE Controller",
-      :disk_path => "/tmp/ubuntu-1004.disk"
-      },
-    'default-ubuntu-1204' => {
-      :hostname => "ubuntu-1204",
-      :box => "opscode-ubuntu-12.04",
-      :box_url => "https://opscode-vm-bento.s3.amazonaws.com/vagrant/virtualbox/opscode_ubuntu-12.04_chef-provisionerless.box",
-      :second_controller => "IDE Controller",
-      :disk_path => "/tmp/ubuntu-1204.disk"
-      },
-    'default-ubuntu-1204-i386' => {
-      :hostname => "ubuntu-1204-i386",
-      :box => "opscode-ubuntu-12.04-i386",
-      :box_url => "http://opscode-vm-bento.s3.amazonaws.com/vagrant/virtualbox/opscode_ubuntu-12.10-i386_chef-provisionerless.box",
-      :second_controller => "IDE Controller",
-      :disk_path => "/tmp/ubuntu-1204-i386.disk"
-      },
-    'default-ubuntu-1404' => {
-      :hostname => "ubuntu-1404",
-      :box => "opscode-ubuntu-14.04",
-      :box_url => "http://opscode-vm-bento.s3.amazonaws.com/vagrant/virtualbox/opscode_ubuntu-14.04_chef-provisionerless.box",
-      :second_controller => "IDE Controller",
-      :disk_path => "/tmp/ubuntu-1404.disk"
-      },
-    'default-ubuntu-1404-i386' => {
-      :hostname => "ubuntu-1404-i386",
-      :box => "default-ubuntu-14.04-i386",
-      :box_url => "https://s3.amazonaws.com/dcmagentboxes/default-ubuntu-1404-i386.agent.box",
-      :second_controller => "IDE Controller",
-      :disk_path => "/tmp/ubuntu-1404-i386.disk"
-      },
-    'default-debian-608' => {
-      :hostname => "debian-608",
-      :box => "default-debian-608",
-      :box_url => "http://opscode-vm-bento.s3.amazonaws.com/vagrant/virtualbox/opscode_debian-6.0.8_chef-provisionerless.box",
-      :second_controller => "IDE Controller",
-      :disk_path => "/tmp/default-debian-608.disk"
-      },
-    'default-debian-608-i386' => {
-      :hostname => "debian-608-i386",
-      :box => "default-debian-608-i386",
-      :box_url => "http://opscode-vm-bento.s3.amazonaws.com/vagrant/virtualbox/opscode_debian-6.0.8-i386_chef-provisionerless.box",
-      :second_controller => "IDE Controller",
-      :disk_path => "/tmp/default-debian-608-i386.disk"
-      },
-    'default-debian-75' => {
-      :hostname => "debian-75",
-      :box => "default-debian-75",
-      :box_url => "https://vagrantcloud.com/ffuenf/debian-7.5.0-amd64/version/5/provider/virtualbox.box",
-      :second_controller => "IDE Controller",
-      :disk_path => "/tmp/default-debian-75.disk"
-      },
-    'default-debian-75-i386' => {
-      :hostname => "debian-75-i386",
-      :box => "default-debian-75-i386",
-      :box_url => "https://vagrantcloud.com/remram/debian-7.5-i386/version/1/provider/virtualbox.box",
-      :second_controller => "IDE Controller",
-      :disk_path => "/tmp/default-debian-75-i386.disk"
-      },
-    'default-centos-65-i386' => {
-      :hostname => "centos-65-i386",
-      :box => "opscode-centos-6.5-i386",
-      :box_url => "http://opscode-vm-bento.s3.amazonaws.com/vagrant/virtualbox/opscode_centos-6.5-i386_chef-provisionerless.box",
-      :second_controller => "IDE Controller",
-      :disk_path => "/tmp/centos-64-i386.disk"
-      }
   }
 }
 
@@ -197,33 +197,66 @@ def need_privilege(machine_name)
 end
 
 VAGRANTFILE_API_VERSION = "2"
+PROV_SWITCH = ENV['DCM_AGENT_TEST_PROVISIONER']
 
-Vagrant.configure(VAGRANTFILE_API_VERSION) do |config|
-  prov_switch = ENV['DCM_AGENT_TEST_PROVISIONER']
-
-  if prov_switch == "aws"
-    config.vm.synced_folder ".", "/vagrant", disabled: true
-  elsif prov_switch == "vb"
+if PROV_SWITCH == "vb"
+  Vagrant.configure(VAGRANTFILE_API_VERSION) do |config|
     config.vm.synced_folder "../bin/", "/agent/bin"
     config.vm.synced_folder "../src/", "/agent/src"
     vagrant_root = File.dirname(__FILE__)
     vagrant_root = File.dirname(vagrant_root)
     config.vm.synced_folder "../", vagrant_root
-  else
-     puts 'You have to set DCM_AGENT_TEST_PROVISIONER to vb or aws'
-     exit
+    machine_map = machine_config[PROV_SWITCH]
+
+    
+    machine_map.each do |key, value|
+      machine_name = key
+      machine_values = value
+      config.vm.box_url = machine_values[:box_url]
+      config.vm.hostname = machine_values[:hostname]
+      config.vm.box = machine_values[:box]
+
+
+      config.vm.define machine_name do |vm_config|
+
+        vm_config.vm.provider :virtualbox do |v, override|
+          
+          override.vm.box_url = machine_values[:box_url]
+          override.vm.hostname = machine_values[:hostname]
+          override.vm.box = machine_values[:box]
+          v.customize [ "createhd", "--filename", machine_values[:disk_path], "--size", 1000 ] 
+          v.customize ['storageattach', :id,
+                       '--storagectl', machine_values[:second_controller],
+                       '--port', 1,
+                       '--device', 0,
+                       '--type', 'hdd',
+                       '--medium', machine_values[:disk_path]]
+          v.memory = 2048
+
+        end
+
+        vm_config.vm.provision :shell do |shell|
+          shell.inline = "sudo /vagrant/test-distro.sh $1 $2 $3"
+          shell.args = ["#$ES_STORAGE_CREDS", "#$DCM_AGENT_PKG", "#$DCM_AGENT_VERSION", "#$DCM_AGENT_TEST_LOCAL"]
+        end
+      end
+    end   
   end
 
-  machine_map = machine_config[prov_switch]
 
-  machine_map.each do |key, value|
-    machine_name = key
-    machine_values = value
-    config.vm.box_url = machine_values[:box_url]
-    config.vm.hostname = machine_values[:hostname]
-    config.vm.box = machine_values[:box]
+elsif PROV_SWITCH == "aws"
+  Vagrant.configure(VAGRANTFILE_API_VERSION) do |config|
+    config.vm.synced_folder ".", "/vagrant", disabled: true
 
-    if prov_switch == "aws"
+    machine_map = machine_config[PROV_SWITCH]
+
+    machine_map.each do |key, value|
+      machine_name = key
+      machine_values = value
+      config.vm.box_url = machine_values[:box_url]
+      config.vm.hostname = machine_values[:hostname]
+      config.vm.box = machine_values[:box]
+
       config.vm.define machine_name do |vm_config|
 
         vm_config.vm.provider :aws do |aws, override|
@@ -255,21 +288,14 @@ Vagrant.configure(VAGRANTFILE_API_VERSION) do |config|
           mc.privileged = need_privilege(machine_name)
           mc.path = "install_agent_test.sh"
         end
-
-      end
-    else
-      config.vm.define machine_name do |vm_config|
-        vm_config.vm.provider :virtualbox do |v|
-          v.customize [ "createhd", "--filename", machine_values[:disk_path], "--size", 1000 ]
-          v.customize ['storageattach', :id, '--storagectl', machine_values[:second_controller], '--port', 1, '--device', 0, '--type', 'hdd', '--medium',machine_values[:disk_path]]
-          v.memory = 2048
-        end
-
-        vm_config.vm.provision :shell do |shell|
-          shell.inline = "sudo /vagrant/test-distro.sh $1 $2 $3"
-          shell.args = ["#$ES_STORAGE_CREDS", "#$DCM_AGENT_PKG", "#$DCM_AGENT_VERSION" "#$DCM_AGENT_TEST_LOCAL"]
-        end
       end
     end
   end
+
+
+
+else
+  puts 'You have to set DCM_AGENT_TEST_PROVISIONER to vb or aws'
+  exit
 end
+ 
