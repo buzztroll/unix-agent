@@ -34,7 +34,7 @@ machine_config = {
     'default-ubuntu-1204-i386' => {
       :hostname => "ubuntu-1204-i386",
       :box => "opscode-ubuntu-12.04-i386",
-      :box_url => "http://opscode-vm-bento.s3.amazonaws.com/vagrant/virtualbox/opscode_ubuntu-12.10-i386_chef-provisionerless.box",
+      :box_url => "http://opscode-vm-bento.s3.amazonaws.com/vagrant/virtualbox/opscode_ubuntu-12.04-i386_chef-provisionerless.box",
       :second_controller => "IDE Controller",
       :disk_path => "/tmp/ubuntu-1204-i386.disk"
       },
@@ -69,14 +69,14 @@ machine_config = {
     'default-debian-75' => {
       :hostname => "debian-75",
       :box => "default-debian-75",
-      :box_url => "https://vagrantcloud.com/ffuenf/debian-7.5.0-amd64/version/5/provider/virtualbox.box",
+      :box_url => "https://vagrantcloud.com/puphpet/boxes/debian75-x64/versions/2/providers/virtualbox.box",
       :second_controller => "IDE Controller",
       :disk_path => "/tmp/default-debian-75.disk"
       },
     'default-debian-75-i386' => {
       :hostname => "debian-75-i386",
       :box => "default-debian-75-i386",
-      :box_url => "https://vagrantcloud.com/remram/debian-7.5-i386/version/1/provider/virtualbox.box",
+      :box_url => "https://vagrantcloud.com/puphpet/boxes/debian75-x32/versions/2/providers/virtualbox.box",
       :second_controller => "IDE Controller",
       :disk_path => "/tmp/default-debian-75-i386.disk"
       },
@@ -126,7 +126,7 @@ machine_config = {
       :box => "default-ubuntu-1404",
       :box_url => "https://github.com/mitchellh/vagrant-aws/raw/master/dummy.box",
       :instance_type => "m1.medium",
-      :ami => "ami-864d84ee",
+      :ami => "ami-018c9568",
       :ssh_username => "ubuntu"
       },
     "default-ubuntu-1404-i386" => {
@@ -142,54 +142,66 @@ machine_config = {
       :box => "default-debian-6.0",
       :box_url => "https://github.com/mitchellh/vagrant-aws/raw/master/dummy.box",
       :instance_type => "m1.medium",
-      :ami => "ami-e00df089",
-      :ssh_username => "root"
+      :ami => "ami-5e12dc36",
+      :ssh_username => "admin"
       },
     "default-debian-6.0-i386" => {
       :hostname => "debian-6.0-i386",
       :box => "default-debian-6.0-i386",
       :box_url => "https://github.com/mitchellh/vagrant-aws/raw/master/dummy.box",
       :instance_type => "m1.medium",
-      :ami => "ami-386ed551",
-      :ssh_username => "root"
+      :ami => "ami-5614da3e",
+      :ssh_username => "admin"
+      },
+    "default-debian-7.5" => {
+      :hostname => "debian-7.5",
+      :box => "default-debian-7.5",
+      :box_url => "https://github.com/mitchellh/vagrant-aws/raw/master/dummy.box",
+      :instance_type => "m1.medium",
+      :ami => "ami-78b45610", # you must subscribe to and manually
+      # launch this image once in AWS Marketplace at https://aws.amazon.com/marketplace/pp/B00AA27RK4/ref=srh_res_product_title?ie=UTF8&sr=0-2&qid=1411417674042
+      :ssh_username => "admin"
+      },
+    "default-debian-7.5-i386" => {
+      :hostname => "debian-7.5-i386",
+      :box => "default-debian-7.5-i386",
+      :box_url => "https://github.com/mitchellh/vagrant-aws/raw/master/dummy.box",
+      :instance_type => "m1.medium",
+      :ami => "ami-7ab45612", # you must subscribe to this image in AWS Marketplace
+      # launch this image once in AWS Marketplace at https://aws.amazon.com/marketplace/pp/B00AA289LU/ref=srh_res_product_title?ie=UTF8&sr=0-3&qid=1411417696908
+      :ssh_username => "admin"
       },
     "default-debian-7.6" => {
       :hostname => "debian-7.6",
       :box => "default-debian-7.6",
       :box_url => "https://github.com/mitchellh/vagrant-aws/raw/master/dummy.box",
       :instance_type => "m1.medium",
-      :ami => "ami-2c886c44",
-      :ssh_username => "admin"
-      },
-    "default-debian-7.6-i386" => {
-      :hostname => "debian-7.6-i386",
-      :box => "default-debian-7.6-i386",
-      :box_url => "https://github.com/mitchellh/vagrant-aws/raw/master/dummy.box",
-      :instance_type => "m1.medium",
-      :ami => "ami-90886cf8",
-      :ssh_username => "admin"
-      },
-    "default-centos-65-i386" => {
-      :hostname => "centos-65-i386",
-      :box => "default-centos-65-i386",
-      :box_url => "https://github.com/mitchellh/vagrant-aws/raw/master/dummy.box",
-      :instance_type => "m1.medium",
-      :ami => "ami-3e6d8856",
-      :ssh_username => "admin"
-      },
-    "default-centos-64" => {
-      :hostname => "centos-64",
-      :box => "default-centos-64",
-      :box_url => "https://github.com/mitchellh/vagrant-aws/raw/master/dummy.box",
-      :instance_type => "m1.medium",
-      :ami => "ami-3f3e4856",
+      :ami => "ami-00a15868",
       :ssh_username => "admin"
       }
+#    "default-centos-65-i386" => {
+#      :hostname => "centos-65-i386",
+#      :box => "default-centos-65-i386",
+#      :box_url => "https://github.com/mitchellh/vagrant-aws/raw/master/dummy.box",
+#      :instance_type => "m1.medium",
+#      :ami => "",# you must subscribe to and manually
+      # launch this image once in AWS Marketplace at https://aws.amazon.com/marketplace/pp/B00K1LOEXC/ref=srh_res_product_title?ie=UTF8&sr=0-2&qid=1411417477743
+#      :ssh_username => "admin"
+#      },
+#    "default-centos-65" => {
+#      :hostname => "centos-65",
+#      :box => "default-centos-65",
+#      :box_url => "https://github.com/mitchellh/vagrant-aws/raw/master/dummy.box",
+#      :instance_type => "m1.medium",
+#      :ami => "",# you must subscribe to and manually
+      # launch this image once in AWS Marketplace at https://aws.amazon.com/marketplace/pp/B00IOYDTV6/ref=srh_res_product_title?ie=UTF8&sr=0-2&qid=1411417630958
+#      :ssh_username => "admin"
+#      }
   }
 }
 
 def need_privilege(machine_name)
-  if machine_name == 'default-debian-6.0'
+  if machine_name == 'default-centos-65' || machine_name == 'default-centos-65-i386'
     return false
   else
     return true
@@ -208,7 +220,6 @@ if PROV_SWITCH == "vb"
     config.vm.synced_folder "../", vagrant_root
     machine_map = machine_config[PROV_SWITCH]
 
-    
     machine_map.each do |key, value|
       machine_name = key
       machine_values = value
@@ -216,11 +227,9 @@ if PROV_SWITCH == "vb"
       config.vm.hostname = machine_values[:hostname]
       config.vm.box = machine_values[:box]
 
-
       config.vm.define machine_name do |vm_config|
 
         vm_config.vm.provider :virtualbox do |v, override|
-          
           override.vm.box_url = machine_values[:box_url]
           override.vm.hostname = machine_values[:hostname]
           override.vm.box = machine_values[:box]
@@ -232,7 +241,6 @@ if PROV_SWITCH == "vb"
                        '--type', 'hdd',
                        '--medium', machine_values[:disk_path]]
           v.memory = 2048
-
         end
 
         vm_config.vm.provision :shell do |shell|
@@ -247,7 +255,6 @@ if PROV_SWITCH == "vb"
 elsif PROV_SWITCH == "aws"
   Vagrant.configure(VAGRANTFILE_API_VERSION) do |config|
     config.vm.synced_folder ".", "/vagrant", disabled: true
-
     machine_map = machine_config[PROV_SWITCH]
 
     machine_map.each do |key, value|
