@@ -74,6 +74,7 @@ class ConfigOpt(object):
         self.minv = minv
         self.maxv = maxv
         self.help_msg = help_msg
+        self.features = {}
 
     def get_option_name(self):
         option_name = "%s_%s" % (self.section, self.name)
@@ -160,6 +161,7 @@ class AgentConfig(object):
         self.instance_id = None
         self.jr = None
         self.state = "STARTING"
+        self.features = {}
 
         self.agent_id = None
         self.cloud_id = None
@@ -354,6 +356,13 @@ def parse_config_files(agent_conf, config_files):
 
         parser = ConfigParser.SafeConfigParser()
         parser.read(config_file)
+
+        try:
+            features = parser.items("features")
+            for k, v in features:
+                agent_conf.features[k] = v
+        except ConfigParser.NoSectionError:
+            pass
 
         for opt in option_list:
             try:
