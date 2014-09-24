@@ -210,6 +210,8 @@ end
 
 VAGRANTFILE_API_VERSION = "2"
 PROV_SWITCH = ENV['DCM_AGENT_TEST_PROVISIONER']
+AGENT_DOCKER_INSTALL = ENV['AGENT_DOCKER_INSTALL'] || 'null'
+
 
 if PROV_SWITCH == "vb"
   Vagrant.configure(VAGRANTFILE_API_VERSION) do |config|
@@ -243,9 +245,15 @@ if PROV_SWITCH == "vb"
           v.memory = 2048
         end
 
+
         vm_config.vm.provision :shell do |shell|
-          shell.inline = "sudo /vagrant/test-distro.sh $1 $2 $3"
-          shell.args = ["#$ES_STORAGE_CREDS", "#$DCM_AGENT_PKG", "#$DCM_AGENT_VERSION", "#$DCM_AGENT_TEST_LOCAL"]
+          if AGENT_DOCKER_INSTALL != "null"
+            shell.inline = "sudo bash  /vagrant/agent_docker.sh"
+          else
+            shell.inline = "sudo /vagrant/test-distro.sh $1 $2 $3"
+            shell.args = ["#$ES_STORAGE_CREDS", "#$DCM_AGENT_PKG", "#$DCM_AGENT_VERSION", "#$DCM_AGENT_TEST_LOCAL"]
+          end
+
         end
       end
     end   
@@ -293,7 +301,12 @@ elsif PROV_SWITCH == "aws"
 
         vm_config.vm.provision :shell do |mc|
           mc.privileged = need_privilege(machine_name)
-          mc.path = "install_agent_test.sh"
+          if AGENT_DOCKER_INSTALL != "null"
+            mc.path = "agent_docker.sh"
+          else
+            mc.path = "install_agent_test.sh"
+          end
+
         end
       end
     end
