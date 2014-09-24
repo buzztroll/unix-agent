@@ -1,10 +1,6 @@
-from dcm.agent import jobs
+from dcm.agent import jobs, config
 from docker import errors
-from docker.unixconn import unixconn
-
-import requests
 import docker
-import dcm.agent.exceptions as exceptions
 
 
 class DCMDockerException(Exception):
@@ -29,6 +25,7 @@ class DockerJob(jobs.Plugin):
     def __init__(self, conf, job_id, items_map, name, arguments):
         super(DockerJob, self).__init__(
             conf, job_id, items_map, name, arguments)
+        parse_docker_options(conf)
         try:
             self.docker_conn = get_docker_connection(self.conf)
         except errors.DockerException as docker_ex:
@@ -36,4 +33,20 @@ class DockerJob(jobs.Plugin):
 #DCMDockerConnectionException(conf.docker_base_url,
  #                                              conf.docker_version,
   #                                             docker_ex.message)
+
+
+def parse_docker_options(conf):
+    if getattr(conf, "docker_host", None) is None:
+        option_list = [
+            config.ConfigOpt("docker", "host", str,
+                             default="http+unix://var/run/docker.sock",
+                             options=None,
+                             help_msg="The docker hostname."),
+            config.ConfigOpt("docker", "version", str, default='1.12',
+                             options=None,
+                             help_msg="The docker API version."),
+            config.ConfigOpt("docker", "timeout", int, default=30, options=None,
+                             help_msg="The docker timeout."),
+        ]
+        conf.parse_config_files(option_list)
 

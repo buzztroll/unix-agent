@@ -19,9 +19,14 @@ class TestDockerImageCommands(unittest.TestCase):
         if 'DOCKER_HOST' in os.environ:
             docker_url = os.environ['DOCKER_HOST']
 
+        def parse_fake(opt_list):
+            pass
         FakeConf = collections.namedtuple(
-            "FakeConf", ["docker_base_url", "docker_version", "docker_timeout"])
-        self.conf = FakeConf(docker_url, "1.0.1", 60)
+            "FakeConf", ["docker_base_url",
+                         "docker_version",
+                         "docker_timeout",
+                         "parse_config_files"])
+        self.conf = FakeConf(docker_url, "1.12", 60, parse_fake)
 
     def tearDown(self):
         pass

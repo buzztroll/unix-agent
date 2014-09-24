@@ -25,9 +25,14 @@ class TestDockerContainer(unittest.TestCase):
         if 'DOCKER_HOST' in os.environ:
             docker_url = os.environ['DOCKER_HOST']
 
+        def parse_fake(opt_list):
+            pass
         FakeConf = collections.namedtuple(
-            "FakeConf", ["docker_base_url", "docker_version", "docker_timeout"])
-        cls.conf = FakeConf(docker_url, "1.12", 60)
+            "FakeConf", ["docker_base_url",
+                         "docker_version",
+                         "docker_timeout",
+                         "parse_config_files"])
+        cls.conf = FakeConf(docker_url, "1.12", 60, parse_fake)
 
         if 'DCM_DOCKER_IMAGE_LOCATION' not in os.environ:
             raise skip.SkipTest('skipping')

@@ -176,7 +176,9 @@ class AgentConfig(object):
 
         self.imaging_event = threading.Event()
 
-        parse_config_files(self, conf_files)
+        self.config_files = conf_files
+
+        self.parse_config_files(build_options_list(), add_features="features")
 
         #  here is where we set which Meta object to use from cloudmetadata.py
         set_metadata_object(self)
@@ -252,6 +254,39 @@ class AgentConfig(object):
         if isdir:
             return new_dir
         return os.path.join(new_dir, filename)
+
+    def parse_config_files(self, option_list, add_features=None):
+
+        # set all the default values on the agent conf object
+        for o in option_list:
+            k = o.get_option_name()
+            v = o.get_default()
+            setattr(self, k, v)
+
+        for config_file in self.config_files:
+
+            relative_path = os.path.dirname(config_file)
+
+            parser = ConfigParser.SafeConfigParser()
+            parser.read(config_file)
+
+            if add_features is not None:
+                try:
+                    features = parser.items(add_features)
+                    for k, v in features:
+                        self.features[k] = v
+                except ConfigParser.NoSectionError:
+                    pass
+
+            for opt in option_list:
+                try:
+                    oname = opt.get_option_name()
+                    v = opt.get_value(parser, relative_path=relative_path,
+                                      default=getattr(self, oname))
+                    setattr(self, oname, v)
+                except ConfigParser.NoSectionError as nse:
+                    raise exceptions.AgentOptionSectionNotFoundException(
+                        opt.name)
 
 
 def build_options_list():
@@ -338,41 +373,6 @@ def build_options_list():
     ]
 
     return option_list
-
-
-def parse_config_files(agent_conf, config_files):
-
-    option_list = build_options_list()
-
-    # set all the default values on the agent conf object
-    for o in option_list:
-        k = o.get_option_name()
-        v = o.get_default()
-        setattr(agent_conf, k, v)
-
-    for config_file in config_files:
-
-        relative_path = os.path.dirname(config_file)
-
-        parser = ConfigParser.SafeConfigParser()
-        parser.read(config_file)
-
-        try:
-            features = parser.items("features")
-            for k, v in features:
-                agent_conf.features[k] = v
-        except ConfigParser.NoSectionError:
-            pass
-
-        for opt in option_list:
-            try:
-                oname = opt.get_option_name()
-                v = opt.get_value(parser, relative_path=relative_path,
-                                  default=getattr(agent_conf, oname))
-                setattr(agent_conf, oname, v)
-            except ConfigParser.NoSectionError as nse:
-                raise exceptions.AgentOptionSectionNotFoundException(
-                    opt.name)
 
 
 def setup_logging(logging_configfile):
