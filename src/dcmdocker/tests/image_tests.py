@@ -15,9 +15,13 @@ class TestDockerImageCommands(unittest.TestCase):
         """
         :return: a list of the files in src/dcm/agent/jobs/builtin
         """
+        docker_url = 'http+unix://var/run/docker.sock'
+        if 'DOCKER_HOST' in os.environ:
+            docker_url = os.environ['DOCKER_HOST']
+
         FakeConf = collections.namedtuple(
             "FakeConf", ["docker_base_url", "docker_version", "docker_timeout"])
-        self.conf = FakeConf('unix://var/run/docker.sock', "1.0.1", 60)
+        self.conf = FakeConf(docker_url, "1.0.1", 60)
 
     def tearDown(self):
         pass

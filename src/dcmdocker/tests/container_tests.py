@@ -21,9 +21,13 @@ class TestDockerContainer(unittest.TestCase):
 
     @classmethod
     def setUpClass(cls):
+        docker_url = 'http+unix://var/run/docker.sock'
+        if 'DOCKER_HOST' in os.environ:
+            docker_url = os.environ['DOCKER_HOST']
+
         FakeConf = collections.namedtuple(
             "FakeConf", ["docker_base_url", "docker_version", "docker_timeout"])
-        cls.conf = FakeConf('http+unix://var/run/docker.sock', "1.12", 60)
+        cls.conf = FakeConf(docker_url, "1.12", 60)
 
         if 'DCM_DOCKER_IMAGE_LOCATION' not in os.environ:
             raise skip.SkipTest('skipping')
