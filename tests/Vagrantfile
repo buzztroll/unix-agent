@@ -312,10 +312,29 @@ elsif PROV_SWITCH == "aws"
     end
   end
 
+elsif PROV_SWITCH == "gce"
+  Vagrant.configure(VAGRANTFILE_API_VERSION) do |config|
+    config.vm.box_url ="https://github.com/mitchellh/vagrant-google/raw/master/google.box"
+    config.vm.box = "gce"
+    
+    config.vm.provider :google do |google, override|
+      google.google_project_id = ENV["GCE_PROJECT_ID"]
+      google.google_client_email = ENV["GCE_CLIENT_EMAIL"]
+      google.google_key_location = ENV["GCE_KEY_LOCATION"]
+
+      override.ssh.username = ENV["USER"]
+      override.ssh.private_key_path = ENV["GCE_PRIVATE_KEY_PATH"]
+    end
+
+    config.vm.provision :shell do |shell|
+      shell.privileged = true
+      shell.path = "agent_docker.sh"
+    end
+  end
 
 
 else
-  puts 'You have to set DCM_AGENT_TEST_PROVISIONER to vb or aws'
+  puts 'You have to set DCM_AGENT_TEST_PROVISIONER to vb,gce, or aws'
   exit
 end
  

@@ -210,6 +210,9 @@ function install_docker() {
 }
 
 
+
+install_docker
+
 if [ "$user" != 'root' ]; then
     echo
     echo 'Adding' $user 'to docker group'
@@ -218,4 +221,3 @@ if [ "$user" != 'root' ]; then
     echo 'Remember that you will have to log out and back in for this to take effect!'
     echo 'Install is complete'
 fi
-install_docker
