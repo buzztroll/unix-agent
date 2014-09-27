@@ -11,8 +11,12 @@
 #   this material is strictly forbidden unless prior written permission
 #   is obtained from Dell, Inc.
 #  ======================================================================
+import logging
 
 import dcmdocker.utils as docker_utils
+
+
+_g_logger = logging.getLogger(__name__)
 
 
 class StopContainer(docker_utils.DockerJob):
@@ -27,8 +31,8 @@ class StopContainer(docker_utils.DockerJob):
             conf, job_id, items_map, name, arguments)
 
     def run(self):
-        out = self.docker_conn.stop(self.args.container,
-                                    timeout=self.args.timeout)
+        self.docker_conn.stop(self.args.container,
+                              timeout=self.args.timeout)
         reply_doc = {
             "return_code": 0,
             "reply_type": "void",

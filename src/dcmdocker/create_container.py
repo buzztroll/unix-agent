@@ -11,8 +11,12 @@
 #   this material is strictly forbidden unless prior written permission
 #   is obtained from Dell, Inc.
 #  ======================================================================
+import logging
 
 import dcmdocker.utils as docker_utils
+
+
+_g_logger = logging.getLogger(__name__)
 
 
 class DockerCreateContainer(docker_utils.DockerJob):
@@ -60,7 +64,6 @@ class DockerCreateContainer(docker_utils.DockerJob):
             "reply_object": out
         }
         return reply_doc
-
 
 
 def load_plugin(conf, job_id, items_map, name, arguments):

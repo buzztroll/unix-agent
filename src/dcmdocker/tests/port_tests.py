@@ -94,6 +94,11 @@ class TestDockerContainer(unittest.TestCase):
             self.conf, "400", {}, "test", arguments)
         reply = plugin.run()
 
+        arguments = {}
+        plugin = list_containers.DockerListContainer(
+            self.conf, "400", {}, "test", arguments)
+        reply = plugin.run()
+
         try:
             sock = socket.create_connection((self.host, 5050))
             received_data = sock.recv(1024).strip()

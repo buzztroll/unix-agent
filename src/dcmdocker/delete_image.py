@@ -11,15 +11,19 @@
 #   this material is strictly forbidden unless prior written permission
 #   is obtained from Dell, Inc.
 #  ======================================================================
-import json
+import logging
 
 import dcmdocker.utils as docker_utils
+
+
+_g_logger = logging.getLogger(__name__)
 
 
 class DeleteImages(docker_utils.DockerJob):
 
     protocol_arguments = {
-        "name": ("", True, str, None)
+        "name": ("", True, str, None),
+        "force": ("", False, bool, None)
     }
 
     def __init__(self, conf, job_id, items_map, name, arguments):

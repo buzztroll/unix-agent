@@ -11,9 +11,12 @@
 #   this material is strictly forbidden unless prior written permission
 #   is obtained from Dell, Inc.
 #  ======================================================================
-import json
+import logging
 
 import dcmdocker.utils as docker_utils
+
+
+_g_logger = logging.getLogger(__name__)
 
 
 class ListImages(docker_utils.DockerJob):

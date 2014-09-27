@@ -11,8 +11,12 @@
 #   this material is strictly forbidden unless prior written permission
 #   is obtained from Dell, Inc.
 #  ======================================================================
+import logging
 
 import dcmdocker.utils as docker_utils
+
+
+_g_logger = logging.getLogger(__name__)
 
 
 class StartContainer(docker_utils.DockerJob):
@@ -20,7 +24,7 @@ class StartContainer(docker_utils.DockerJob):
     protocol_arguments = {
         "container": ("", True, str, None),
         "port_bindings": ("", False, dict, None),
-        "lxc_conf": ("", False, dict, None),
+        "lxc_conf": ("", False, list, None),
         "links": ("", False, dict, None),
         "privileged": ("", False, bool, False),
         "publish_all_ports": ("", False, bool, False),
@@ -48,7 +52,6 @@ class StartContainer(docker_utils.DockerJob):
             "reply_object": None
         }
         return reply_doc
-
 
 
 def load_plugin(conf, job_id, items_map, name, arguments):

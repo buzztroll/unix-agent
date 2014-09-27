@@ -245,5 +245,6 @@ class DetachedJob(object):
             "message": self._message,
             "start_date": self._start_date,
             "end_date": self._end_date,
+            "command_reply": self._reply_doc
         }
         return reply_object

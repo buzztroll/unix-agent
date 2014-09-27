@@ -11,8 +11,12 @@
 #   this material is strictly forbidden unless prior written permission
 #   is obtained from Dell, Inc.
 #  ======================================================================
+import logging
 
 import dcmdocker.utils as docker_utils
+
+
+_g_logger = logging.getLogger(__name__)
 
 
 class DeleteContainer(docker_utils.DockerJob):
@@ -29,7 +33,7 @@ class DeleteContainer(docker_utils.DockerJob):
             conf, job_id, items_map, name, arguments)
 
     def run(self):
-        out = self.docker_conn.remove_container(
+        self.docker_conn.remove_container(
             self.args.container, v=self.args.v,
             link=self.args.link, force=self.args.force)
         reply_doc = {
