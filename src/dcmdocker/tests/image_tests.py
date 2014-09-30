@@ -8,6 +8,7 @@ import dcmdocker.list_images as list_images
 import dcmdocker.import_image as import_image
 import dcmdocker.delete_image as delete_image
 import dcmdocker.list_containers as list_containers
+import dcmdocker.pull_repo as pull_repo
 
 class TestDockerImageCommands(unittest.TestCase):
 
@@ -30,6 +31,12 @@ class TestDockerImageCommands(unittest.TestCase):
 
     def tearDown(self):
         pass
+
+    def test_pull_repo(self):
+        arguments = {'repository': 'ubuntu'}
+        plugin = pull_repo.PullRepo(
+            self.conf, "400", {}, "test", arguments)
+        reply = plugin.run()
 
     def test_empty_image_list(self):
         arguments = {}

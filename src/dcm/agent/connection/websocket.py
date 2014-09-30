@@ -25,7 +25,6 @@ from dcm.agent import exceptions
 from dcm.agent.messaging import states
 
 import dcm.agent.messaging.utils as utils
-import dcm.agent.utils as agent_utils
 import dcm.agent.parent_receive_q as parent_receive_q
 
 
@@ -268,7 +267,7 @@ class WebSocketConnection(threading.Thread):
         try:
             self._ws = _WebSocketClient(
                 self, self._server_url, self._receive_queue,
-                protocols=['http-only', 'chat'])
+                protocols=['dcm'])
             self._ws.connect()
             self._ws.send_handshake(self._hs_string)
         except Exception as ex:
@@ -360,6 +359,14 @@ class WebSocketConnection(threading.Thread):
         """
         self._increase_backoff()
 
+    def _sm_waiting_error(self):
+        """
+        An error occurred while waiting on the connection.  This is an odd
+        case
+        """
+        _g_logger.warn("An error occurred while waiting to try a new "
+                       "connection.")
+
     def _sm_handshake_poll(self):
         """
         While waiting for the handshake a poll event occurred
@@ -378,6 +385,11 @@ class WebSocketConnection(threading.Thread):
                                 WsConnEvents.POLL,
                                 WsConnStates.WAITING,
                                 self._sm_connect_poll)
+
+        self._sm.add_transition(WsConnStates.WAITING,
+                                WsConnEvents.ERROR,
+                                WsConnStates.WAITING,
+                                self._sm_waiting_error)
 
         self._sm.add_transition(WsConnStates.WAITING,
                                 WsConnEvents.CONNECT_TIMEOUT,
