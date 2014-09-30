@@ -14,6 +14,7 @@ import dcm.agent.connection.websocket as websocket
 import dcm.agent.exceptions as exceptions
 import dcm.agent.job_runner as job_runner
 import dcm.agent.tests.utils.test_connection as test_connection
+from dcm.agent.jobs import pages
 
 
 _g_logger = logging.getLogger(__name__)
@@ -200,6 +201,7 @@ class AgentConfig(object):
 
         setup_logging(self.logging_configfile)
         self.token = utils.generate_token()
+        self.page_monitor = pages.PageMonitor()
 
     def set_handshake(self, handshake_doc):
         self.state = "WAITING"

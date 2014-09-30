@@ -9,6 +9,8 @@ import dcmdocker.import_image as import_image
 import dcmdocker.delete_image as delete_image
 import dcmdocker.list_containers as list_containers
 import dcmdocker.pull_repo as pull_repo
+from src.dcm.agent.jobs import pages
+
 
 class TestDockerImageCommands(unittest.TestCase):
 
@@ -26,8 +28,10 @@ class TestDockerImageCommands(unittest.TestCase):
             "FakeConf", ["docker_base_url",
                          "docker_version",
                          "docker_timeout",
-                         "parse_config_files"])
-        self.conf = FakeConf(docker_url, "1.12", 60, parse_fake)
+                         "parse_config_files",
+                         "page_monitor"])
+        self.conf = FakeConf(docker_url, "1.12", 60, parse_fake,
+                             pages.PageMonitor())
 
     def tearDown(self):
         pass
@@ -42,7 +46,7 @@ class TestDockerImageCommands(unittest.TestCase):
         arguments = {}
         plugin = list_images.ListImages(
             self.conf, "400", {}, "test", arguments)
-        reply = plugin.run()
+        plugin.run()
 
     def test_empty_container_list(self):
         arguments = {}
@@ -75,7 +79,7 @@ class TestDockerImageCommands(unittest.TestCase):
         reply_obj = reply['reply_object']
 
         found_image = None
-        for image in reply_obj:
+        for image in reply_obj['images']:
             if image['Id'] == image_id:
                 found_image = image
         self.assertIsNotNone(found_image)
@@ -92,7 +96,7 @@ class TestDockerImageCommands(unittest.TestCase):
         reply = plugin.run()
         reply_obj = reply['reply_object']
         found_image = None
-        for image in reply_obj:
+        for image in reply_obj['images']:
             if image['Id'] == image_id:
                 found_image = image
         self.assertIsNone(found_image)

@@ -6,17 +6,14 @@ import urlparse
 from nose.plugins import skip
 import uuid
 
-import dcmdocker.utils as docker_utils
 import dcmdocker.import_image as import_image
 import dcmdocker.delete_image as delete_image
 import dcmdocker.list_containers as list_containers
 import dcmdocker.create_container as create_container
 import dcmdocker.start_container as start_container
 import dcmdocker.stop_container as stop_container
-import dcmdocker.top_container as top_container
-import dcmdocker.restart_container as restart_container
 import dcmdocker.delete_container as delete_container
-import dcmdocker.get_container_details as get_container_details
+from src.dcm.agent.jobs import pages
 
 
 class TestDockerContainer(unittest.TestCase):
@@ -36,8 +33,10 @@ class TestDockerContainer(unittest.TestCase):
             "FakeConf", ["docker_base_url",
                          "docker_version",
                          "docker_timeout",
-                         "parse_config_files"])
-        cls.conf = FakeConf(docker_url, "1.12", 60, parse_fake)
+                         "parse_config_files",
+                         "page_monitor"])
+        cls.conf = FakeConf(docker_url, "1.12", 60, parse_fake,
+                             pages.PageMonitor())
 
         if 'DCM_DOCKER_IMAGE_LOCATION' not in os.environ:
             raise skip.SkipTest('skipping')
@@ -104,6 +103,9 @@ class TestDockerContainer(unittest.TestCase):
             received_data = sock.recv(1024).strip()
             self.assertEqual(received_data, msg_str)
         finally:
+            arguments = {
+                "container": container_id}
+
             plugin = stop_container.StopContainer(
                 self.conf, "400", {}, "test", arguments)
             reply = plugin.run()

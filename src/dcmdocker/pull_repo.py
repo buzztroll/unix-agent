@@ -12,6 +12,7 @@
 #   is obtained from Dell, Inc.
 #  ======================================================================
 import logging
+from dcm.agent import utils
 
 import dcmdocker.utils as docker_utils
 
@@ -31,17 +32,17 @@ class PullRepo(docker_utils.DockerJob):
             conf, job_id, items_map, name, arguments)
 
     def run(self):
-        try:
-            out = self.docker_conn.pull(
-                self.args.repository, tag=self.args.tag, stream=False)
-            reply_doc = {
-                "return_code": 0,
-                "reply_type": "docker_pull",
-                "reply_object": None
-            }
-            return reply_doc
-        except Exception as ex:
-            pass
+        out = self.docker_conn.pull(
+            self.args.repository, tag=self.args.tag, stream=True)
+        for line in out:
+            utils.log_to_dcm(logging.INFO, line)
+        reply_doc = {
+            "return_code": 0,
+            "reply_type": "docker_pull",
+            "reply_object": None
+        }
+        return reply_doc
+
 
 def load_plugin(conf, job_id, items_map, name, arguments):
     return PullRepo(conf, job_id, items_map, name, arguments)

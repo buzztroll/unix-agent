@@ -102,6 +102,7 @@ class DCMAgent(object):
                     self.conf, self.conn)
             if self._intrusion_detection:
                 self._intrusion_detection.start()
+            self.conf.page_monitor.start()
 
             handshake_doc = handshake.get_handshake(self.conf)
             self.g_logger.debug("Using outgoing handshake document %s"
@@ -167,6 +168,9 @@ class DCMAgent(object):
         if self.conn:
             self.g_logger.debug("Closing the connection")
             self.conn.close()
+
+        self.g_logger.debug("Stopping the pager service")
+        self.conf.page_monitor.stop()
         self.g_logger.debug("Service closed")
 
 

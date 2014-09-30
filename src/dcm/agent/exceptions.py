@@ -9,6 +9,13 @@ class AgentOptionException(Exception):
     pass
 
 
+class AgentPageNotFoundException(Exception):
+    def __init__(self, page_token):
+        message = ("The page set with token %(page_token)s was not found."
+                   % locals())
+        super(AgentPageNotFoundException, self).__init__(message)
+
+
 class AgentOptionTypeException(AgentOptionException):
     def __init__(self, name, expected_type, given_value):
         message = ("The config option %(name)s had the value "
