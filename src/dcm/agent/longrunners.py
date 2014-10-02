@@ -3,6 +3,7 @@ import logging
 import Queue
 import threading
 import time
+import urllib
 from dcm.agent import parent_receive_q
 
 import dcm.agent.jobs as jobs
@@ -197,7 +198,7 @@ class LongRunner(parent_receive_q.ParentReceiveQObserver):
 
                 jd = self._job_table[job_reply.job_id]
                 if job_reply.error:
-                    jd.update(job_reply, message=job_reply.error)
+                    jd.update(job_reply, message=str(job_reply.error))
                 else:
                     jd.update(job_reply)
                 if jd._job_status == JobStatus.ERROR or\
@@ -231,7 +232,9 @@ class DetachedJob(object):
         self._end_date = work_reply.end_date
         self._error = work_reply.error
         if message:
-            self._message = message
+            self._message = urllib.quote(message)
+        if self._message is None and self._error is not None:
+            self._message = urllib.quote(str(self._error))
 
     def get_job_id(self):
         return self._job_id

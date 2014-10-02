@@ -11,6 +11,7 @@
 #   this material is strictly forbidden unless prior written permission
 #   is obtained from Dell, Inc.
 #  ======================================================================
+import json
 import logging
 from dcm.agent import utils
 
@@ -34,8 +35,15 @@ class PullRepo(docker_utils.DockerJob):
     def run(self):
         out = self.docker_conn.pull(
             self.args.repository, tag=self.args.tag, stream=True)
+
+        # only log the last line at info level
+        id_map = {}
         for line in out:
-            utils.log_to_dcm(logging.INFO, line)
+            j_obj = json.loads(line)
+            id_map[j_obj['id']] = line
+            _g_logger.debug(line)
+        for k in id_map:
+            utils.log_to_dcm(logging.INFO, id_map[k])
         reply_doc = {
             "return_code": 0,
             "reply_type": "docker_pull",

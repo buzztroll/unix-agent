@@ -220,7 +220,11 @@ class AgentDB(object):
                 "The record %s was not found" % request_id)
         record.state = state
         if reply_doc is not None:
-            reply_doc_str = json.dumps(reply_doc)
+            try:
+                reply_doc_str = json.dumps(reply_doc)
+            except Exception as ex:
+                g_logger.exception("cannot encode reply " + str(reply_doc))
+                raise
             record.reply_doc = reply_doc_str
         session.add(record)
 
