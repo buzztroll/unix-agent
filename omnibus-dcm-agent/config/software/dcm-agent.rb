@@ -1,5 +1,5 @@
 name "dcm-agent"
-default_version "0.9.3"
+default_version "0.9.4"
 
 dependency "python"
 dependency "pip"

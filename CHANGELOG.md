@@ -1,3 +1,25 @@
+# 0.9.4 (2014-10-03)
+
+Features
+* Added docker plugins to allow the agent to control containers running
+  via a local docker daemon.
+* Enabled heartbeat from the agent to the agent manager to avoid timeouts
+  from routers/firewalls/etc.
+* Passed a list of available commands to the agent manager on handshake
+  and thus bumped the protocol versions to 102.
+* Added support module for commands that require paging.
+* Improved testing code.
+* Removed responses to stale lookups from the database.  This will be revisited
+  in the future as the agent matures.
+* Added paging support for commands with response greater than 16KB.
+* Added support for CloudStack handshakes.
+* Avoid the expensive "initialize" call when re-handshaking after the
+  connection is dropped.
+
+Bug Fixes:
+* When installing if a user existed whose name contained the string "dcm"
+  the install would fail.  This is now fixed.
+
 # 0.9.3 (2014-09-12)
 
 Features:
