@@ -11,17 +11,21 @@
 #   this material is strictly forbidden unless prior written permission
 #   is obtained from Dell, Inc.
 #  ======================================================================
+import importlib
 import os
-from dcm.agent import cloudmetadata
 
+from dcm.agent import cloudmetadata, jobs
 import dcm.agent
-import dcm.agent.cloudmetadata as cloud_instance
 
 
 FOR_TEST_AGENT_ID_ENV = "FOR_TEST_AGENT_ID_ENV"
 
 
 def get_handshake(conf):
+    plugin_dict = get_plugin_handshake_descriptor(conf)
+    features = conf.features
+    features['plugins'] = plugin_dict
+
     if conf.test_skip_handshake:
         # TODO make this configurable from the test conf files
         return {
@@ -33,7 +37,8 @@ def get_handshake(conf):
             'token': 'tdeadbeef',
             'version': dcm.agent.g_version,
             'protocol_version': dcm.agent.g_protocol_version,
-            'platform': conf.platform_name
+            'platform': conf.platform_name,
+            'features': features
         }
 
     ipv4s = conf.meta_data_object.get_handshake_ip_address(conf)
@@ -54,7 +59,13 @@ def get_handshake(conf):
         'injected_id': injected_id,
         'version': dcm.agent.g_version,
         'protocol_version': dcm.agent.g_protocol_version,
-        'platform': conf.platform_name
+        'platform': conf.platform_name,
+        'features': features
     }
-
     return handshake_doc
+
+
+def get_plugin_handshake_descriptor(conf):
+    items = jobs.get_all_plugins(conf)
+    command_name_list = [i for i in items]
+    return command_name_list

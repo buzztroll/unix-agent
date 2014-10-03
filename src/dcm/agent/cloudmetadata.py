@@ -108,7 +108,8 @@ class AWSMetaData(CloudMetaData):
         if private_ip:
             ip_list.append(private_ip)
 
-        ip_list_from_base = super(AWSMetaData, self).get_ipv4_addresses(self.conf)
+        ip_list_from_base =
+            super(AWSMetaData, self).get_ipv4_addresses(self.conf)
         for ip in ip_list_from_base:
             ip_list.append(ip)
 
@@ -232,4 +233,3 @@ def _get_metadata_server_url_data(url, timeout=1, headers=None):
         return None
     data = response.read().strip()
     return data
-

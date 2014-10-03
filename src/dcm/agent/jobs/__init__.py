@@ -190,6 +190,38 @@ def load_plugin(conf, items_map, request_id, name, arguments):
     return func(conf, request_id, items_map, name, arguments)
 
 
+def get_all_plugins(conf):
+    conffile = conf.plugin_configfile
+    if conffile is None or not os.path.exists(conffile):
+        raise exceptions.AgentPluginConfigException(
+            "The plugin configuration file %s could not be found" % conffile)
+
+    parser = ConfigParser.SafeConfigParser()
+    parser.read([conffile])
+    section = parser.sections()
+
+    all_plugins = {}
+    for s in section:
+        if s.startswith("plugin:"):
+            try:
+                items = parser.items(s)
+                items_map = {}
+                for i in items:
+                    items_map[i[0]] = i[1]
+
+                if "type" not in items_map:
+                    _g_logger.warn("The section %s does not have an entry "
+                                   "for type." % s)
+                atype = items_map["type"]
+                if atype not in g_type_to_obj_map:
+                    _g_logger.warn(
+                        "The module type %s is not valid." % atype)
+                all_plugins[s[7:]] = items_map
+            except ConfigParser.NoOptionError as conf_ex:
+                raise exceptions.AgentPluginConfigException(conf_ex.message)
+    return all_plugins
+
+
 def parse_plugin_doc(conf, name):
     _g_logger.debug("ENTER load_plugin")
 
@@ -230,3 +262,4 @@ def parse_plugin_doc(conf, name):
 
     raise exceptions.AgentPluginConfigException(
         "Plugin %s was not found." % name)
+
