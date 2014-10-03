@@ -108,7 +108,7 @@ class AWSMetaData(CloudMetaData):
         if private_ip:
             ip_list.append(private_ip)
 
-        ip_list_from_base =
+        ip_list_from_base =\
             super(AWSMetaData, self).get_ipv4_addresses(self.conf)
         for ip in ip_list_from_base:
             ip_list.append(ip)
