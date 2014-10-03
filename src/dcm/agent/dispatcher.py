@@ -107,7 +107,9 @@ class Worker(threading.Thread):
 
                         work_reply = WorkReply(workload.request_id, reply_doc)
                         self.reply_q.put(work_reply)
-                        utils.log_to_dcm(logging.INFO, "Reply message sent")
+                        utils.log_to_dcm(
+                            logging.INFO, "Reply message sent for command " +
+                                          workload.payload["command"])
                 except Queue.Empty:
                     pass
                 except:

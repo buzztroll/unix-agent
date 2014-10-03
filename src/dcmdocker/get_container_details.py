@@ -33,7 +33,7 @@ class GetContainerDetails(docker_utils.DockerJob):
         out = self.docker_conn.inspect_container(self.args.container)
         reply_doc = {
             "return_code": 0,
-            "reply_type": "docker_restart_container",
+            "reply_type": "docker_inspect_container",
             "reply_object": out
         }
         return reply_doc

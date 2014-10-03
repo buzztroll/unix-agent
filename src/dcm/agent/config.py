@@ -56,7 +56,8 @@ def get_connection_object(conf):
         con = websocket.WebSocketConnection(
             conf.connection_agentmanager_url,
             backoff_amount=conf.connection_backoff,
-            max_backoff=conf.connection_max_backoff)
+            max_backoff=conf.connection_max_backoff,
+            heartbeat=conf.connection_heartbeat_frequency)
     else:
         raise exceptions.AgentOptionValueException(
             "[connection]type", con_type, "ws,success_tester,dummy")
@@ -320,6 +321,9 @@ def build_options_list():
                   help_msg="The number of milliseconds to add to the wait "
                            "time before retrying a failed connection."),
         ConfigOpt("connection", "max_backoff", int, default=300000,
+                  help_msg="The maximum number of milliseconds to wait before "
+                           "retrying a failed connection."),
+        ConfigOpt("connection", "heartbeat_frequency", int, default=30,
                   help_msg="The maximum number of milliseconds to wait before "
                            "retrying a failed connection."),
         FilenameOpt("logging", "configfile", default=None,

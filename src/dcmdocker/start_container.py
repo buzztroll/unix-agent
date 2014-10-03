@@ -37,6 +37,16 @@ class StartContainer(docker_utils.DockerJob):
             conf, job_id, items_map, name, arguments)
 
     def run(self):
+        # make a list a tuple
+        if self.args.port_bindings:
+            for internal_port in self.args.port_bindings:
+                binding_list = self.args.port_bindings[internal_port]
+                new_binding_list = []
+                for bind in binding_list:
+                    host, port = bind
+                    new_binding_list.append((host, port,))
+                self.args.port_bindings[internal_port] = new_binding_list
+
         self.docker_conn.start(self.args.container,
                                port_bindings=self.args.port_bindings,
                                lxc_conf=self.args.lxc_conf,
