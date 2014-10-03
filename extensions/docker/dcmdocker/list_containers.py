@@ -36,12 +36,12 @@ class DockerListContainer(docker_utils.DockerJob):
     def run(self):
         if self.args.page_token is None:
             out = self.docker_conn.containers(quiet=self.args.quiet,
-                                          all=self.args.all,
-                                          trunc=self.args.trunc,
-                                          latest=self.args.latest,
-                                          since=self.args.since,
-                                          before=self.args.before,
-                                          limit=self.args.limit)
+                                              all=self.args.all,
+                                              trunc=self.args.trunc,
+                                              latest=self.args.latest,
+                                              since=self.args.since,
+                                              before=self.args.before,
+                                              limit=self.args.limit)
             token = str(uuid.uuid4()).replace("-", "")
             self.conf.page_monitor.new_json_page(out, token)
         else:
@@ -56,7 +56,6 @@ class DockerListContainer(docker_utils.DockerJob):
             "reply_object": out
         }
         return reply_doc
-
 
 
 def load_plugin(conf, job_id, items_map, name, arguments):

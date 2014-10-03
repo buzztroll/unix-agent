@@ -46,7 +46,8 @@ class TestHandshake(unittest.TestCase):
         j_size = len(json.dumps(json_entry))
         per_page = 3
         page_size = per_page * j_size
-        page_monitor = pages.PageMonitor(page_size=page_size, life_span=2, sweep_time=1)
+        page_monitor = pages.PageMonitor(
+            page_size=page_size, life_span=2, sweep_time=1)
         page_monitor.start()
         try:
             json_list = [json_entry, json_entry]

@@ -34,7 +34,7 @@ class TestDockerContainer(unittest.TestCase):
                          "parse_config_files",
                          "page_monitor"])
         cls.conf = FakeConf(docker_url, "1.12", 60, parse_fake,
-                             pages.PageMonitor())
+                            pages.PageMonitor())
 
         if 'DCM_DOCKER_IMAGE_LOCATION' not in os.environ:
             raise skip.SkipTest('skipping')
@@ -284,4 +284,3 @@ class TestDockerContainer(unittest.TestCase):
         plugin = delete_container.DeleteContainer(
             self.conf, "400", {}, "test", arguments)
         reply = plugin.run()
-

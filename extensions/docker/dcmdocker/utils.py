@@ -31,9 +31,6 @@ class DockerJob(jobs.Plugin):
             self.docker_conn = get_docker_connection(self.conf)
         except errors.DockerException as docker_ex:
             raise 
-#DCMDockerConnectionException(conf.docker_base_url,
- #                                              conf.docker_version,
-  #                                             docker_ex.message)
 
 
 def parse_docker_options(conf):
@@ -50,4 +47,3 @@ def parse_docker_options(conf):
                              help_msg="The docker timeout."),
         ]
         conf.parse_config_files(option_list)
-

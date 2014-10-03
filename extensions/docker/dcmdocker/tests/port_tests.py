@@ -87,7 +87,7 @@ class TestDockerContainer(unittest.TestCase):
         print "Container ID " + container_id
         arguments = {
             "container": container_id,
-            "port_bindings": {5050: ("0.0.0.0", 5050)}
+            "port_bindings": {5050: [("0.0.0.0", 5050)]}
         }
         plugin = start_container.StartContainer(
             self.conf, "400", {}, "test", arguments)

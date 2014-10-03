@@ -36,7 +36,7 @@ class ImportImage(docker_utils.DockerJob):
     def run(self):
         out = self.docker_conn.import_image(
             src=self.args.src, repository=self.args.repository,
-            tag=self.args.tag, image=self.args.image) 
+            tag=self.args.tag, image=self.args.image)
         out = json.loads(out)
         reply_doc = {
             "return_code": 0,

@@ -200,7 +200,8 @@ class AgentDB(object):
 
     @messaging_utils.class_method_sync
     @class_method_session
-    def new_record(self, request_id, request_doc, reply_doc, state, agent_id, session=None):
+    def new_record(self, request_id, request_doc, reply_doc, state,
+                   agent_id, session=None):
         req_doc_str = json.dumps(request_doc)
 
         db_obj = RequestDBObject(request_doc['request_id'],
