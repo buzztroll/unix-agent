@@ -1,6 +1,7 @@
-from dcm.agent import jobs, config
-from docker import errors
 import docker
+import docker.errors as errors
+import dcm.agent.config as config
+import dcm.agent.jobs as jobs
 
 
 class DCMDockerException(Exception):

@@ -6,14 +6,14 @@ import urlparse
 from nose.plugins import skip
 import uuid
 
+import dcmdocker.stop_container as stop_container
 import dcmdocker.import_image as import_image
 import dcmdocker.delete_image as delete_image
 import dcmdocker.list_containers as list_containers
 import dcmdocker.create_container as create_container
 import dcmdocker.start_container as start_container
-import dcmdocker.stop_container as stop_container
 import dcmdocker.delete_container as delete_container
-from src.dcm.agent.jobs import pages
+import dcm.agent.jobs.pages as pages
 
 
 class TestDockerContainer(unittest.TestCase):

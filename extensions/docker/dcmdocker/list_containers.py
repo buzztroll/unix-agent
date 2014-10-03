@@ -11,7 +11,6 @@
 #   this material is strictly forbidden unless prior written permission
 #   is obtained from Dell, Inc.
 #  ======================================================================
-import json
 import uuid
 
 import dcmdocker.utils as docker_utils

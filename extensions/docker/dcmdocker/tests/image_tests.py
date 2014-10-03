@@ -4,12 +4,12 @@ import unittest
 from nose.plugins import skip
 import uuid
 
+import dcmdocker.pull_repo as pull_repo
 import dcmdocker.list_images as list_images
 import dcmdocker.import_image as import_image
 import dcmdocker.delete_image as delete_image
 import dcmdocker.list_containers as list_containers
-import dcmdocker.pull_repo as pull_repo
-from src.dcm.agent.jobs import pages
+import dcm.agent.jobs.pages as pages
 
 
 class TestDockerImageCommands(unittest.TestCase):

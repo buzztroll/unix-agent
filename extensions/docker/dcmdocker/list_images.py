@@ -12,7 +12,6 @@
 #   is obtained from Dell, Inc.
 #  ======================================================================
 import logging
-from dcm.agent import utils
 import uuid
 
 import dcmdocker.utils as docker_utils
