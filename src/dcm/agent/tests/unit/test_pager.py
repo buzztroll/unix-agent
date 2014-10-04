@@ -3,7 +3,7 @@ import unittest
 import time
 from dcm.agent import exceptions
 
-from src.dcm.agent.jobs import pages
+from dcm.agent.jobs import pages
 
 
 class TestHandshake(unittest.TestCase):
