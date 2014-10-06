@@ -200,7 +200,8 @@ class AgentDB(object):
 
     @messaging_utils.class_method_sync
     @class_method_session
-    def new_record(self, request_id, request_doc, reply_doc, state, agent_id, session=None):
+    def new_record(self, request_id, request_doc, reply_doc, state,
+                   agent_id, session=None):
         req_doc_str = json.dumps(request_doc)
 
         db_obj = RequestDBObject(request_doc['request_id'],
@@ -220,7 +221,11 @@ class AgentDB(object):
                 "The record %s was not found" % request_id)
         record.state = state
         if reply_doc is not None:
-            reply_doc_str = json.dumps(reply_doc)
+            try:
+                reply_doc_str = json.dumps(reply_doc)
+            except Exception as ex:
+                g_logger.exception("cannot encode reply " + str(reply_doc))
+                raise
             record.reply_doc = reply_doc_str
         session.add(record)
 

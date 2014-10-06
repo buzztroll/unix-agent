@@ -63,6 +63,7 @@ class RemoteTester(jobs.Plugin):
             _g_logger.info("Tester plugin Received " + msg)
             self.sock.close()
             rc = json.loads(msg)
+            _g_logger.info("Tester plugin sending back " + str(rc))
             return rc
         except Exception as ex:
             _g_logger.exception("Something went wrong here")

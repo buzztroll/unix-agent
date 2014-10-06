@@ -14,6 +14,7 @@ import dcm.agent.connection.websocket as websocket
 import dcm.agent.exceptions as exceptions
 import dcm.agent.job_runner as job_runner
 import dcm.agent.tests.utils.test_connection as test_connection
+from dcm.agent.jobs import pages
 
 
 _g_logger = logging.getLogger(__name__)
@@ -55,7 +56,8 @@ def get_connection_object(conf):
         con = websocket.WebSocketConnection(
             conf.connection_agentmanager_url,
             backoff_amount=conf.connection_backoff,
-            max_backoff=conf.connection_max_backoff)
+            max_backoff=conf.connection_max_backoff,
+            heartbeat=conf.connection_heartbeat_frequency)
     else:
         raise exceptions.AgentOptionValueException(
             "[connection]type", con_type, "ws,success_tester,dummy")
@@ -74,6 +76,7 @@ class ConfigOpt(object):
         self.minv = minv
         self.maxv = maxv
         self.help_msg = help_msg
+        self.features = {}
 
     def get_option_name(self):
         option_name = "%s_%s" % (self.section, self.name)
@@ -160,6 +163,7 @@ class AgentConfig(object):
         self.instance_id = None
         self.jr = None
         self.state = "STARTING"
+        self.features = {}
 
         self.agent_id = None
         self.cloud_id = None
@@ -174,7 +178,9 @@ class AgentConfig(object):
 
         self.imaging_event = threading.Event()
 
-        parse_config_files(self, conf_files)
+        self.config_files = conf_files
+
+        self.parse_config_files(build_options_list(), add_features="features")
 
         #  here is where we set which Meta object to use from cloudmetadata.py
         set_metadata_object(self)
@@ -196,6 +202,7 @@ class AgentConfig(object):
 
         setup_logging(self.logging_configfile)
         self.token = utils.generate_token()
+        self.page_monitor = pages.PageMonitor()
 
     def set_handshake(self, handshake_doc):
         self.state = "WAITING"
@@ -251,6 +258,39 @@ class AgentConfig(object):
             return new_dir
         return os.path.join(new_dir, filename)
 
+    def parse_config_files(self, option_list, add_features=None):
+
+        # set all the default values on the agent conf object
+        for o in option_list:
+            k = o.get_option_name()
+            v = o.get_default()
+            setattr(self, k, v)
+
+        for config_file in self.config_files:
+
+            relative_path = os.path.dirname(config_file)
+
+            parser = ConfigParser.SafeConfigParser()
+            parser.read(config_file)
+
+            if add_features is not None:
+                try:
+                    features = parser.items(add_features)
+                    for k, v in features:
+                        self.features[k] = v
+                except ConfigParser.NoSectionError:
+                    pass
+
+            for opt in option_list:
+                try:
+                    oname = opt.get_option_name()
+                    v = opt.get_value(parser, relative_path=relative_path,
+                                      default=getattr(self, oname))
+                    setattr(self, oname, v)
+                except ConfigParser.NoSectionError as nse:
+                    raise exceptions.AgentOptionSectionNotFoundException(
+                        opt.name)
+
 
 def build_options_list():
     option_list = [
@@ -281,6 +321,9 @@ def build_options_list():
                   help_msg="The number of milliseconds to add to the wait "
                            "time before retrying a failed connection."),
         ConfigOpt("connection", "max_backoff", int, default=300000,
+                  help_msg="The maximum number of milliseconds to wait before "
+                           "retrying a failed connection."),
+        ConfigOpt("connection", "heartbeat_frequency", int, default=30,
                   help_msg="The maximum number of milliseconds to wait before "
                            "retrying a failed connection."),
         FilenameOpt("logging", "configfile", default=None,
@@ -336,34 +379,6 @@ def build_options_list():
     ]
 
     return option_list
-
-
-def parse_config_files(agent_conf, config_files):
-
-    option_list = build_options_list()
-
-    # set all the default values on the agent conf object
-    for o in option_list:
-        k = o.get_option_name()
-        v = o.get_default()
-        setattr(agent_conf, k, v)
-
-    for config_file in config_files:
-
-        relative_path = os.path.dirname(config_file)
-
-        parser = ConfigParser.SafeConfigParser()
-        parser.read(config_file)
-
-        for opt in option_list:
-            try:
-                oname = opt.get_option_name()
-                v = opt.get_value(parser, relative_path=relative_path,
-                                  default=getattr(agent_conf, oname))
-                setattr(agent_conf, oname, v)
-            except ConfigParser.NoSectionError as nse:
-                raise exceptions.AgentOptionSectionNotFoundException(
-                    opt.name)
 
 
 def setup_logging(logging_configfile):

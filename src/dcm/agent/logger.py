@@ -1,8 +1,13 @@
 import logging
+import urllib
 from dcm.agent import parent_receive_q
 
 
 def send_log_to_dcm_callback(conn=None, token=None, message=None):
+    max_size = 10*1024
+    if len(message) > max_size:
+        message = message[:max_size]
+    message = urllib.quote(message)
     msg = {
         "type": "LOG",
         "token": token,

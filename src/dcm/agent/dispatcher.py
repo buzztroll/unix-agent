@@ -1,4 +1,5 @@
 import logging
+import urllib
 from dcm.agent import longrunners, utils
 import Queue
 import threading
@@ -51,7 +52,7 @@ def _run_plugin(conf, items_map, request_id, command, arguments):
             "A top level error occurred handling %s %s" % (command,
                                                            request_id))
         reply_doc = {
-            'Exception': ex.message,
+            'Exception': urllib.quote(str(ex.message).encode('utf-8')),
             'return_code': 1}
     finally:
         _g_logger.info("Task done job " + request_id)
@@ -106,7 +107,9 @@ class Worker(threading.Thread):
 
                         work_reply = WorkReply(workload.request_id, reply_doc)
                         self.reply_q.put(work_reply)
-                        utils.log_to_dcm(logging.INFO, "Reply message sent")
+                        utils.log_to_dcm(
+                            logging.INFO, "Reply message sent for command " +
+                                          workload.payload["command"])
                 except Queue.Empty:
                     pass
                 except:
