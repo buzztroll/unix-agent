@@ -302,7 +302,7 @@ elsif PROV_SWITCH == "aws"
         vm_config.vm.provision :shell do |mc|
           mc.privileged = need_privilege(machine_name)
           if AGENT_DOCKER_INSTALL != "null"
-            mc.path = "agent_docker.sh"
+            mc.path = "../bin/agent_docker.sh"
           else
             mc.path = "install_agent_test.sh"
           end
