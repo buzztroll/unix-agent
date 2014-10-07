@@ -30,6 +30,22 @@ def _is_valid_hostname(hostname):
     return all(allowed.match(x) for x in hostname.split("."))
 
 
+def legalize(hostname):
+    new_hostname = []
+    for c in hostname:
+        if (c >= 'a' and c <= 'z') or\
+            (c >= 'A' and c <= 'Z') or\
+            (c >= '0' and c <= '9') or\
+            c == '-' or c =='.':
+            new_hostname.append(c)
+        elif c == ' ' or c == '_':
+            new_hostname.append('-')
+    if len(new_hostname) < 1:
+        return 'unknown'
+
+    return ''.join(new_hostname)
+
+
 class Rename(direct_pass.DirectPass):
 
     protocol_arguments = {
@@ -42,12 +58,12 @@ class Rename(direct_pass.DirectPass):
         super(Rename, self).__init__(
             conf, job_id, items_map, name, arguments)
 
-        hname = arguments["serverName"]
+        hname = legalize(arguments["serverName"])
         if not _is_valid_hostname(hname):
             raise exceptions.AgentPluginMessageException(
                 "%s is an invalid hostname" % hname)
 
-        self.ordered_param_list = [self.args.serverName]
+        self.ordered_param_list = [hname]
 
     def run(self):
         private_ips = self.conf.meta_data_object.get_ipv4_addresses(self.conf)

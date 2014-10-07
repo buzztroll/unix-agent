@@ -523,7 +523,17 @@ class TestProtocolCommands(reply.ReplyObserverInterface):
         }
         req_reply = self._rpc_wait_reply(doc)
         r = req_reply.get_reply()
-        nose.tools.ok_(r["payload"]["return_code"] != 0)
+        nose.tools.ok_(r["payload"]["return_code"] == 0)
+        nose.tools.eq_(socket.gethostname(), "pp1")
+
+        doc = {
+            "command": "rename",
+            "arguments": {"serverName": orig_hostname}
+        }
+        req_reply = self._rpc_wait_reply(doc)
+        r = req_reply.get_reply()
+        nose.tools.eq_(r["payload"]["return_code"], 0)
+
         nose.tools.eq_(socket.gethostname(), orig_hostname)
 
     @test_utils.system_changing
@@ -1378,6 +1388,8 @@ class TestProtocolCommands(reply.ReplyObserverInterface):
 
     @test_utils.system_changing
     def test_rename_bad_name(self):
+        orig_hostname = socket.gethostname()
+
         new_hostname = "@#@#$"
         doc = {
             "command": "rename",
@@ -1385,13 +1397,25 @@ class TestProtocolCommands(reply.ReplyObserverInterface):
         }
         req_reply = self._rpc_wait_reply(doc)
         r = req_reply.get_reply()
-        nose.tools.ok_(r["payload"]["return_code"] != 0)
+        nose.tools.ok_(r["payload"]["return_code"] == 0)
+        nose.tools.eq_(socket.gethostname(), "unknown")
+
+        doc = {
+            "command": "rename",
+            "arguments": {"serverName": orig_hostname}
+        }
+        req_reply = self._rpc_wait_reply(doc)
+        r = req_reply.get_reply()
+        nose.tools.eq_(r["payload"]["return_code"], 0)
+
+        nose.tools.eq_(socket.gethostname(), orig_hostname)
+
 
     @test_utils.system_changing
     def test_initialize_rename_error(self):
         cust = 10l
         orig_hostname = socket.gethostname()
-        new_hostname = "#@#*&%$"
+        new_hostname = "....."
         doc = {
             "command": "initialize",
             "arguments": {"cloudId": "3",
