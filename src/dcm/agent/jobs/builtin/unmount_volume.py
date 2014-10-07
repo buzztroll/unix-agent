@@ -45,10 +45,10 @@ class UnmountVolume(jobs.Plugin):
                 utils.close_encrypted_device(
                     self.conf, self.args.deviceId)
             return {"return_code": 0, "message": "",
-                    "error_message": "", "return_type": "void"}
+                    "error_message": "", "reply_type": "void"}
         except exceptions.AgentExecutableException as aex:
             return {"return_code": 1, "message": "",
-                    "error_message": aex.message, "return_type": "void"}
+                    "error_message": aex.message, "reply_type": "void"}
 
 
 def load_plugin(conf, job_id, items_map, name, arguments):

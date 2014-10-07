@@ -80,7 +80,7 @@ class Upgrade(jobs.Plugin):
             _g_logger.debug("Command %s: stdout %s.  stderr: %s" %
                             (str(command_list), stdout, stderr))
             reply = {"return_code": rc, "message": stdout,
-                     "error_message": stderr, "return_type": "void"}
+                     "error_message": stderr, "reply_type": "void"}
             return reply
         finally:
             if os.path.exists(script_file):

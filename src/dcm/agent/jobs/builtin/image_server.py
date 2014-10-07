@@ -89,7 +89,7 @@ class ImageServer(direct_pass.DirectPass):
                 self.conf.set_imaging(False)
             reply_str = self.upload_image(build_dir)
             reply = {"return_code": 0, "message": None,
-                     "error_message": None, "return_type": "string",
+                     "error_message": None, "reply_type": "string",
                      "return_object": reply_str}
             return reply
         finally:

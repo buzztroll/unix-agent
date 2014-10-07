@@ -188,7 +188,7 @@ class BackupService(direct_pass.DirectPass):
                 account=self.secondary_account)
 
         reply = {"return_code": 0, "message": "",
-                 "error_message": "", "return_type": "void"}
+                 "error_message": "", "reply_type": "void"}
         return reply
 
 

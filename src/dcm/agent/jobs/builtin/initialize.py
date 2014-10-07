@@ -108,7 +108,7 @@ class InitializeJob(jobs.Plugin):
 
             self.conf.state = "RUNNING"
             return {"return_code": 0, "message": "",
-                    "error_message": "", "return_type": "void"}
+                    "error_message": "", "reply_type": "void"}
         except Exception as ex:
             _g_logger.exception("initialize faild: " + str(ex))
             return {'return_code': 1, "message": ex.message}

@@ -111,7 +111,7 @@ class ReplyRPC(object):
     @utils.class_method_sync
     def nak(self, response_document):
         """
-        This function is called to out tight reject the message.  The user
+        This function is called to out right reject the message.  The user
         is signifying that this message will not be processed at all.
         A call to this function signifies that this object will no longer be
         referenced by the user.
@@ -471,8 +471,9 @@ class ReplyRPC(object):
         """
         self._reinflate_done()
 
-    def _sm_ack_reply_nack_received(self):
-        _g_logger.warn("A NACK was received when in the ACK state")
+    def _sm_ack_reply_nack_received(self, message=None):
+        _g_logger.warn("A NACK was received when in the ACK state "
+                       + str(message))
         try:
             self._db.update_record(self._request_id,
                                    states.ReplyStates.REPLY_NACKED)
@@ -481,6 +482,17 @@ class ReplyRPC(object):
             self._reply_listener.message_done(self)
         except Exception as ex:
             _g_logger.warn("Error shutting down the request", ex)
+
+    def _sm_replied_nacked_reply(self, message=None):
+        """
+        This is called when a request was received but the ACK for that
+        request received a NACK.  However the command finished running
+        and a reply was sent back.  Here we cancel the message and log the
+        event
+        """
+        _g_logger.warn("A command that was already finished ended "
+                       + str(message))
+        self.shutdown()
 
     def _setup_states(self):
         self._sm.add_transition(states.ReplyStates.NEW,
@@ -557,9 +569,12 @@ class ReplyRPC(object):
 
         # if the AM receives and ACK but has never heard of the request ID
         # it will send a nack.  this should not happen in a normal course
-        # of events.  At this point we should jsut kill the request and
-        # log a scary message.
-        # XXX TODO figure out why this happens
+        # of events.  At this point we should just kill the request and
+        # log a scary message.  We also need to kill anything running for that
+        # that request
+        # This will happen when the agent manager quits on a request before
+        # the agent sends the ack.  when the AM receives the ack it has already
+        # canceled the request and thus NACKs the ACK
         self._sm.add_transition(states.ReplyStates.ACKED,
                                 states.ReplyEvents.REPLY_NACK_RECEIVED,
                                 states.ReplyStates.REPLY_NACKED,
@@ -657,10 +672,14 @@ class ReplyRPC(object):
                                 states.ReplyEvents.CANCEL_RECEIVED,
                                 states.ReplyStates.REPLY_NACKED,
                                 None)
+
+        # this will happen when the plugin finishes and thus replies
+        # to a request that had its ACK NACKed.  In this case we
+        # just cancel the messaging and log a message
         self._sm.add_transition(states.ReplyStates.REPLY_NACKED,
-                                states.ReplyEvents.STATUS_RECEIVED,
+                                states.ReplyEvents.USER_REPLIES,
                                 states.ReplyStates.REPLY_NACKED,
-                                self._sm_send_status)
+                                self._sm_replied_nacked_reply)
 
         # this next state should only occur when a message is out
         # of order or the agent manager made a mistake
