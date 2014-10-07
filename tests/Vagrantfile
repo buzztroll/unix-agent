@@ -277,11 +277,11 @@ elsif PROV_SWITCH == "aws"
         vm_config.vm.provider :aws do |aws, override|
           aws.access_key_id = ENV['AWS_ACCESS_KEY']
           aws.secret_access_key = ENV['AWS_SECRET_ACCESS_KEY']
-          aws.keypair_name = ENV['AWS_KEYPAIR_NAME']
+          aws.keypair_name = ENV['AWS_SSH_KEY_ID']
           aws.instance_type = machine_values[:instance_type]
           aws.ami = machine_values[:ami]
           override.ssh.username = machine_values[:ssh_username]
-          override.ssh.private_key_path = ENV['AWS_PRIVATE_KEYPAIR_PATH']
+          override.ssh.private_key_path = ENV['AWS_SSH_KEY_PATH']
         end
         vm_config.vm.provision :shell do |mk|
           mk.privileged = need_privilege(machine_name)
