@@ -210,6 +210,8 @@ end
 
 VAGRANTFILE_API_VERSION = "2"
 PROV_SWITCH = ENV['DCM_AGENT_TEST_PROVISIONER']
+AGENT_DOCKER_INSTALL = ENV['AGENT_DOCKER_INSTALL'] || 'null'
+
 
 if PROV_SWITCH == "vb"
   Vagrant.configure(VAGRANTFILE_API_VERSION) do |config|
@@ -243,9 +245,15 @@ if PROV_SWITCH == "vb"
           v.memory = 2048
         end
 
+
         vm_config.vm.provision :shell do |shell|
-          shell.inline = "sudo /vagrant/test-distro.sh $1 $2 $3"
-          shell.args = ["#$ES_STORAGE_CREDS", "#$DCM_AGENT_PKG", "#$DCM_AGENT_VERSION", "#$DCM_AGENT_TEST_LOCAL"]
+          if AGENT_DOCKER_INSTALL != "null"
+            shell.inline = "sudo bash  /vagrant/agent_docker.sh"
+          else
+            shell.inline = "sudo /vagrant/test-distro.sh $1 $2 $3"
+            shell.args = ["#$ES_STORAGE_CREDS", "#$DCM_AGENT_PKG", "#$DCM_AGENT_VERSION", "#$DCM_AGENT_TEST_LOCAL"]
+          end
+
         end
       end
     end   
@@ -269,11 +277,11 @@ elsif PROV_SWITCH == "aws"
         vm_config.vm.provider :aws do |aws, override|
           aws.access_key_id = ENV['AWS_ACCESS_KEY']
           aws.secret_access_key = ENV['AWS_SECRET_ACCESS_KEY']
-          aws.keypair_name = ENV['AWS_KEYPAIR_NAME']
+          aws.keypair_name = ENV['AWS_SSH_KEY_ID']
           aws.instance_type = machine_values[:instance_type]
           aws.ami = machine_values[:ami]
           override.ssh.username = machine_values[:ssh_username]
-          override.ssh.private_key_path = ENV['AWS_PRIVATE_KEYPAIR_PATH']
+          override.ssh.private_key_path = ENV['AWS_SSH_KEY_PATH']
         end
         vm_config.vm.provision :shell do |mk|
           mk.privileged = need_privilege(machine_name)
@@ -293,16 +301,40 @@ elsif PROV_SWITCH == "aws"
 
         vm_config.vm.provision :shell do |mc|
           mc.privileged = need_privilege(machine_name)
-          mc.path = "install_agent_test.sh"
+          if AGENT_DOCKER_INSTALL != "null"
+            mc.path = "../bin/agent_docker.sh"
+          else
+            mc.path = "install_agent_test.sh"
+          end
+
         end
       end
     end
   end
 
+elsif PROV_SWITCH == "gce"
+  Vagrant.configure(VAGRANTFILE_API_VERSION) do |config|
+    config.vm.box_url ="https://github.com/mitchellh/vagrant-google/raw/master/google.box"
+    config.vm.box = "gce"
+    
+    config.vm.provider :google do |google, override|
+      google.google_project_id = ENV["GCE_PROJECT_ID"]
+      google.google_client_email = ENV["GCE_CLIENT_EMAIL"]
+      google.google_key_location = ENV["GCE_KEY_LOCATION"]
+
+      override.ssh.username = ENV["USER"]
+      override.ssh.private_key_path = ENV["GCE_PRIVATE_KEY_PATH"]
+    end
+
+    config.vm.provision :shell do |shell|
+      shell.privileged = true
+      shell.path = "agent_docker.sh"
+    end
+  end
 
 
 else
-  puts 'You have to set DCM_AGENT_TEST_PROVISIONER to vb or aws'
+  puts 'You have to set DCM_AGENT_TEST_PROVISIONER to vb,gce, or aws'
   exit
 end
  
