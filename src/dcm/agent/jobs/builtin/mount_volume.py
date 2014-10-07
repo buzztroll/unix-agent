@@ -236,7 +236,7 @@ class MountVolume(direct_pass.DirectPass):
             self.mount_block_volume()
 
         reply = {"return_code": 0, "message": "",
-                 "error_message": "", "return_type": "void"}
+                 "error_message": "", "reply_type": "void"}
         return reply
 
 

@@ -111,7 +111,7 @@ class ReplyRPC(object):
     @utils.class_method_sync
     def nak(self, response_document):
         """
-        This function is called to out tight reject the message.  The user
+        This function is called to out right reject the message.  The user
         is signifying that this message will not be processed at all.
         A call to this function signifies that this object will no longer be
         referenced by the user.
@@ -471,8 +471,9 @@ class ReplyRPC(object):
         """
         self._reinflate_done()
 
-    def _sm_ack_reply_nack_received(self):
-        _g_logger.warn("A NACK was received when in the ACK state")
+    def _sm_ack_reply_nack_received(self, message=None):
+        _g_logger.warn("A NACK was received when in the ACK state "
+                       + str(message))
         try:
             self._db.update_record(self._request_id,
                                    states.ReplyStates.REPLY_NACKED)
@@ -557,7 +558,7 @@ class ReplyRPC(object):
 
         # if the AM receives and ACK but has never heard of the request ID
         # it will send a nack.  this should not happen in a normal course
-        # of events.  At this point we should jsut kill the request and
+        # of events.  At this point we should just kill the request and
         # log a scary message.
         # XXX TODO figure out why this happens
         self._sm.add_transition(states.ReplyStates.ACKED,
