@@ -483,6 +483,17 @@ class ReplyRPC(object):
         except Exception as ex:
             _g_logger.warn("Error shutting down the request", ex)
 
+    def _sm_replied_nacked_reply(self, message=None):
+        """
+        This is called when a request was received but the ACK for that
+        request received a NACK.  However the command finished running
+        and a reply was sent back.  Here we cancel the message and log the
+        event
+        """
+        _g_logger.warn("A command that was already finished ended "
+                       + str(message))
+        self.shutdown()
+
     def _setup_states(self):
         self._sm.add_transition(states.ReplyStates.NEW,
                                 states.ReplyEvents.REQUEST_RECEIVED,
@@ -559,8 +570,11 @@ class ReplyRPC(object):
         # if the AM receives and ACK but has never heard of the request ID
         # it will send a nack.  this should not happen in a normal course
         # of events.  At this point we should just kill the request and
-        # log a scary message.
-        # XXX TODO figure out why this happens
+        # log a scary message.  We also need to kill anything running for that
+        # that request
+        # This will happen when the agent manager quits on a request before
+        # the agent sends the ack.  when the AM receives the ack it has already
+        # canceled the request and thus NACKs the ACK
         self._sm.add_transition(states.ReplyStates.ACKED,
                                 states.ReplyEvents.REPLY_NACK_RECEIVED,
                                 states.ReplyStates.REPLY_NACKED,
@@ -658,10 +672,14 @@ class ReplyRPC(object):
                                 states.ReplyEvents.CANCEL_RECEIVED,
                                 states.ReplyStates.REPLY_NACKED,
                                 None)
+
+        # this will happen when the plugin finishes and thus replies
+        # to a request that had its ACK NACKed.  In this case we
+        # just cancel the messaging and log a message
         self._sm.add_transition(states.ReplyStates.REPLY_NACKED,
-                                states.ReplyEvents.STATUS_RECEIVED,
+                                states.ReplyEvents.USER_REPLIES,
                                 states.ReplyStates.REPLY_NACKED,
-                                self._sm_send_status)
+                                self._sm_replied_nacked_reply)
 
         # this next state should only occur when a message is out
         # of order or the agent manager made a mistake
