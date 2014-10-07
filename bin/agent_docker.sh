@@ -1,11 +1,18 @@
 #!/usr/bin/env bash
+
+#************************
+# set and uncomment the below variables to customize your install
+#************************
 #AGENT_BASE_URL=
 #AGENT_UNSTABLE=
 #AGENT_VERSION=
-#DCM_HOST=
-#DCM_CLOUD=
+#DCM_HOST=ec2-54-202-173-104.us-west-2.compute.amazonaws.com
+#DCM_CLOUD=AWS
 #DCM_DOCKER_PULL_REPOS=
 DCM_DOCKER_VERSION=1.2.0
+#************************
+
+
 set -e
  
 function update(){
@@ -131,7 +138,7 @@ function identify_platform() {
 function install_docker() {
     case $DCM_AGENT_FORCE_DISTRO_VERSION in
         ubuntu-14.04)
-            sudo apt-get -y install docker.io$DCM_DOCKER_VERSION
+            sudo apt-get -y install docker.io $DCM_DOCKER_VERSION
             sudo ln -sf /usr/bin/docker.io /usr/local/bin/docker
             sudo sed -i '$acomplete -F _docker docker' /etc/bash_completion.d/docker.io
             ;;
