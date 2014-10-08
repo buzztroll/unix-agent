@@ -67,11 +67,6 @@ function install_agent() {
     else
         ./installer.sh --base-path /dcm
     fi
-
-    /etc/init.d/dcm-agent start
-    if [ $? -eq 0 ]; then
-        echo 'The agent service has started'
-    fi
 }
 
 function identify_platform() {
@@ -285,6 +280,15 @@ case "$(uname -m)" in
         ;;
 esac
 
+if agent_exists; then
+    echo  'python agent is already installed'
+else
+    echo '**************************************'
+    echo 'Proceeding with installation of Agent'
+    echo '**************************************'
+    install_agent
+fi
+
 if docker_exists; then
     echo >&2 'Warning: "docker" or "lxc-docker" command appears to already exist.'
 else
@@ -294,20 +298,17 @@ else
     install_docker
 fi
 
-if agent_exists; then
-    echo  'python agent is already installed'
-else
-    echo '**************************************'
-    echo 'Proceeding with installation of Agent' 
-    echo '**************************************'
-    install_agent
-fi   
-
-
 echo
 echo 'Adding dcm to docker group'
 sudo usermod -aG docker dcm
+
+if [ -e /etc/init.d/dcm-agent ]; then
+    /etc/init.d/dcm-agent start
+    if [ $? -eq 0 ]; then
+        echo 'The agent service has started'
+    fi
+fi
+
 echo
 echo 'Remember that you will have to log out and back in for this to take effect!'
 echo 'Install is complete'
-
