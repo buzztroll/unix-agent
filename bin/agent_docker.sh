@@ -6,8 +6,8 @@
 #AGENT_BASE_URL=
 #AGENT_UNSTABLE=
 #AGENT_VERSION=
-#DCM_HOST=ec2-54-202-173-104.us-west-2.compute.amazonaws.com
-#DCM_CLOUD=AWS
+#DCM_HOST=ec2-54-185-194-247.us-west-2.compute.amazonaws.com
+#DCM_CLOUD=Amazon
 #DCM_DOCKER_PULL_REPOS=
 DCM_DOCKER_VERSION=1.2.0
 #************************
@@ -52,10 +52,10 @@ function install_agent() {
     cd /tmp
 
     if [ "X$AGENT_BASE_URL" == "X" ]; then
-
-        AGENT_BASE_URL="https://s3.amazonaws.com/dcmagentnightly"
+        AGENT_BASE_URL="https://s3.amazonaws.com/dcmagentdockerdemo"
     fi
- 
+    export AGENT_BASE_URL
+
     installer_url="$AGENT_BASE_URL""/installer.sh"
     curl $installer_url > installer.sh
     chmod 755 installer.sh
@@ -285,15 +285,6 @@ case "$(uname -m)" in
         ;;
 esac
 
-if agent_exists; then
-    echo  'python agent is already installed'
-else
-    echo '**************************************'
-    echo 'Proceeding with installation of Agent' 
-    echo '**************************************'
-    install_agent
-fi   
-
 if docker_exists; then
     echo >&2 'Warning: "docker" or "lxc-docker" command appears to already exist.'
 else
@@ -302,6 +293,15 @@ else
     echo '**************************************'
     install_docker
 fi
+
+if agent_exists; then
+    echo  'python agent is already installed'
+else
+    echo '**************************************'
+    echo 'Proceeding with installation of Agent' 
+    echo '**************************************'
+    install_agent
+fi   
 
 
 echo
