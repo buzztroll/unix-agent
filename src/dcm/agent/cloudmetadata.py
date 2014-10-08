@@ -119,6 +119,34 @@ class AWSMetaData(CloudMetaData):
         return [conf.meta_data_object.get_cloud_metadata("local-ipv4")]
 
 
+class CloudStackMetaData(CloudMetaData):
+    def __init__(self, conf):
+        _g_logger.debug("Using CloudStack")
+        self.conf = conf
+        self.base_url = conf.cloud_metadata_url
+
+    def _set_metadata_url(self):
+        if not self.base_url:
+            dhcp_addr = get_dhcp_ip_address(self.conf)
+            self.base_url = "http://" + dhcp_addr
+        _g_logger.debug("The CloudStack metadata server is " + self.base_url)
+
+    def get_cloud_metadata(self, key):
+        _g_logger.debug("Get metadata %s" % key)
+        self._set_metadata_url()
+        url = self.base_url + "/" + key
+        result = _get_metadata_server_url_data(url)
+        _g_logger.debug("Metadata value of %s is %s" % (key, result))
+        return result
+
+    def get_instance_id(self):
+        self._set_metadata_url()
+        instance_id = self.get_cloud_metadata("latest/instance-id")
+        super(CloudStackMetaData, self).get_instance_id()
+        _g_logger.debug("Instance ID is %s" % str(instance_id))
+        return instance_id
+
+
 class JoyentMetaData(CloudMetaData):
     def __init__(self, conf):
         self.conf = conf
@@ -193,8 +221,13 @@ def set_metadata_object(conf):
         meta_data_obj = GCEMetaData(conf)
     elif cloud_name == CLOUD_TYPES.Azure:
         meta_data_obj = AzureMetaData()
+    elif cloud_name == CLOUD_TYPES.CloudStack or \
+                    cloud_name == CLOUD_TYPES.CloudStack3:
+        meta_data_obj = CloudStackMetaData(conf)
     else:
         meta_data_obj = CloudMetaData()
+
+    _g_logger.debug("Metadata comes from " + str(meta_data_obj))
 
     conf.meta_data_object = meta_data_obj
 
