@@ -30,7 +30,7 @@ if [ $? != 0 ] ; then
 	fi
 fi
 # Create user.
-grep -q $DCM_USERNAME /etc/passwd
+id -u $DCM_USERNAME
 if [ $? != 0 ] ; then
 	useradd -d $BASEDIRNAME/home -g $DCM_USERNAME -s /bin/false -m $DCM_USERNAME
 	if [ $? != 0 ] ; then
