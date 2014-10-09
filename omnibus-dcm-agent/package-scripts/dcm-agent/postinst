@@ -21,7 +21,7 @@ BASEDIRNAME="/dcm"
 mkdir $BASEDIRNAME
 echo "Creating user and group..."
 # Create user/group group.
-grep -q $DCM_USERNAME /etc/group
+grep -q "^$DCM_USERNAME:" /etc/group
 if [ $? != 0 ] ; then
 	groupadd $DCM_USERNAME
 	if [ $? != 0 ] ; then
