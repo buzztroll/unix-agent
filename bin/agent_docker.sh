@@ -6,9 +6,9 @@
 #AGENT_BASE_URL=
 #AGENT_UNSTABLE=
 #AGENT_VERSION=
-#DCM_HOST=ec2-54-185-194-247.us-west-2.compute.amazonaws.com
-#DCM_CLOUD=Amazon
-#DCM_DOCKER_PULL_REPOS=
+DCM_HOST=ec2-54-185-194-247.us-west-2.compute.amazonaws.com
+DCM_CLOUD=Amazon
+DCM_DOCKER_PULL_REPOS=ubuntu
 DCM_DOCKER_VERSION=1.2.0
 #************************
 
@@ -130,6 +130,10 @@ function identify_platform() {
     export DCM_AGENT_FORCE_DISTRO_VERSION="$distro_name""-""$distro_version"
 }
 
+function reconfigure_agent() {
+   /opt/dcm-agent/embedded/agentve/bin/dcm-agent-configure --base-path /dcm --cloud $DCM_CLOUD --url wss://$DCM_HOST:16433/ws
+}
+
 function install_docker() {
     case $DCM_AGENT_FORCE_DISTRO_VERSION in
         ubuntu-14.04)
@@ -192,7 +196,12 @@ function install_docker() {
         echo '**************************************'
         echo 'Docker has been successfully installed'
         echo '**************************************'
-#        sudo docker pull ubuntu
+
+        if [ "X$DCM_DOCKER_PULL_REPOS" != "X" ]; then
+            for r in $DCM_DOCKER_PULL_REPOS; do
+                docker pull $r
+            done
+        fi
     fi
 
 }
@@ -281,7 +290,9 @@ case "$(uname -m)" in
 esac
 
 if agent_exists; then
-    echo  'python agent is already installed'
+    echo 'python agent is already installed'
+    echo 'Reconfiguring with the new values'
+    reconfigure_agent
 else
     echo '**************************************'
     echo 'Proceeding with installation of Agent'
