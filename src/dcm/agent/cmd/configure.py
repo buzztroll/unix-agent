@@ -239,9 +239,9 @@ def pick_meta_data(conf_d):
     elif cloud == cloudmetadata.CLOUD_TYPES.Google:
         mu = "http://metadata.google.internal/computeMetadata/v1"
     elif cloud == cloudmetadata.CLOUD_TYPES.CloudStack:
-        mu = "lastest/instance-id"
+        mu = None
     elif cloud == cloudmetadata.CLOUD_TYPES.CloudStack3:
-        mu = "latest/local-hostname"
+        mu = None
     else:
         return None
 
