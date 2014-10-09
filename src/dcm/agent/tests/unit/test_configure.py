@@ -89,11 +89,9 @@ class TestConfigure(unittest.TestCase):
                 mu = "http://metadata.google.internal/computeMetadata/v1"
                 self.assertEqual(mu, cloud_from_file)
             elif cloud == "CloudStack":
-                mu = "lastest/instance-id"
-                self.assertEqual(mu, cloud_from_file)
+                self.assertIsNone(cloud_from_file)
             elif cloud == "CloudStack3":
-                mu = "latest/local-hostname"
-                self.assertEqual(mu, cloud_from_file)
+                self.assertIsNone(cloud_from_file)
             else:
                 self.assertIsNone(cloud_from_file)
 
