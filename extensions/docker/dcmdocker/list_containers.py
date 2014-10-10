@@ -14,6 +14,7 @@
 import uuid
 
 import dcmdocker.utils as docker_utils
+from dcm.agent.jobs import pages
 
 
 class DockerListContainer(docker_utils.DockerJob):
@@ -43,7 +44,8 @@ class DockerListContainer(docker_utils.DockerJob):
                                               before=self.args.before,
                                               limit=self.args.limit)
             token = str(uuid.uuid4()).replace("-", "")
-            self.conf.page_monitor.new_json_page(out, token)
+            pager = pages.JsonPage(12*1024, out)
+            self.conf.page_monitor.new_pager(pager, token)
         else:
             token = self.args.page_token
 

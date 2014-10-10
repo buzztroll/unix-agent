@@ -18,12 +18,23 @@ from dcm.agent import exceptions
 import dcm.agent.messaging.utils as utils
 
 
-class JsonPage(object):
-    def __init__(self, page_size, obj_list):
+class BasePage(object):
+    def __init__(self, page_size):
         self.creation_time = datetime.datetime.now()
-        self._obj_list = obj_list
         self._page_size = page_size
         self._lock = threading.RLock()
+
+    def lock(self):
+        self._lock.acquire()
+
+    def unlock(self):
+        self._lock.release()
+
+
+class JsonPage(BasePage):
+    def __init__(self, page_size, obj_list):
+        super(JsonPage, self).__init__(page_size)
+        self._obj_list = obj_list
 
     @utils.class_method_sync
     def get_next_page(self):
@@ -38,11 +49,17 @@ class JsonPage(object):
         self._obj_list = self._obj_list[len(page_list):]
         return (page_list, len(self._obj_list))
 
-    def lock(self):
-        self._lock.acquire()
 
-    def unlock(self):
-        self._lock.release()
+class StringPage(BasePage):
+    def __init__(self, page_size, string_data):
+        super(StringPage, self).__init__(page_size)
+        self._string_data = string_data
+
+    @utils.class_method_sync
+    def get_next_page(self):
+        this_page = self._string_data[:self._page_size]
+        self._string_data = self._string_data[self._page_size:]
+        return (this_page, len(self._string_data))
 
 
 class PageMonitor(object):
@@ -79,8 +96,7 @@ class PageMonitor(object):
         return page, token
 
     @utils.class_method_sync
-    def new_json_page(self, json_list, token):
-        pager = JsonPage(self._page_size, json_list)
+    def new_pager(self, pager, token):
         self._pages[token] = pager
 
     def lock(self):
