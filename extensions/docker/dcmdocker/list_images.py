@@ -15,6 +15,7 @@ import logging
 import uuid
 
 import dcmdocker.utils as docker_utils
+from dcm.agent.jobs import pages
 
 
 _g_logger = logging.getLogger(__name__)
@@ -42,7 +43,8 @@ class ListImages(docker_utils.DockerJob):
                                           all=self.args.all,
                                           viz=self.args.viz)
             token = str(uuid.uuid4()).replace("-", "")
-            self.conf.page_monitor.new_json_page(out, token)
+            pager = pages.JsonPage(12*1024, out)
+            self.conf.page_monitor.new_pager(pager, token)
         else:
             token = self.args.page_token
 
