@@ -759,7 +759,9 @@ class RequestListener(object):
             _g_logger.info("Found a message for a non active record "
                            + request_id)
             # is this an old completed request that is in the DB
-            db_record = self._db.lookup_req(request_id)
+            # db_record = self._db.lookup_req(request_id)
+            # XXX TODO db_looks are causing problems.  revisit
+            db_record = False
             if db_record:
                 _g_logger.info("Inflating the record from the DB."
                                + request_id)
