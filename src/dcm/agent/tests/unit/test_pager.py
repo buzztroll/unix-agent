@@ -6,7 +6,7 @@ from dcm.agent import exceptions
 from dcm.agent.jobs import pages
 
 
-class TestHandshake(unittest.TestCase):
+class TestPager(unittest.TestCase):
 
     def setUp(self):
         pass
@@ -28,7 +28,9 @@ class TestHandshake(unittest.TestCase):
 
         page_monitor = pages.PageMonitor(page_size=page_size)
         token = "applesauce"
-        page_monitor.new_json_page(json_list, token)
+
+        pager = pages.JsonPage(page_size, json_list)
+        page_monitor.new_pager(pager, token)
         page_1, new_token = page_monitor.get_next_page(token)
 
         self.assertEqual(token, new_token)
@@ -52,7 +54,8 @@ class TestHandshake(unittest.TestCase):
         try:
             json_list = [json_entry, json_entry]
             token = "pudding"
-            page_monitor.new_json_page(json_list, token)
+            pager = pages.JsonPage(page_size, json_list)
+            page_monitor.new_pager(pager, token)
 
             time.sleep(3)
 
