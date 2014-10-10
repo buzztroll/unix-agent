@@ -57,8 +57,9 @@ class ReplyRPC(object):
         self._sm = states.StateMachine(starting_state)
         self._setup_states()
         self._db = db
-        with tracer.RequestTracer(self._request_id):
-            self._sm.event_occurred(starting_event, message=message)
+        if reply_doc is None:
+            with tracer.RequestTracer(self._request_id):
+                self._sm.event_occurred(starting_event, message=message)
 
     def get_request_id(self):
         return self._request_id
@@ -443,28 +444,28 @@ class ReplyRPC(object):
             self._reply_message_timer = None
         self._reply_listener.message_done(self)
 
-    def _sm_reply_ack_re_acked(self):
+    def _sm_reply_ack_re_acked(self, message=None):
         """
         This is called when a re-inflated state had already been reply acked,
         and is now acked again.  We just take it out of memory.
         """
         self._reinflate_done()
 
-    def _sm_reply_ack_now_nacked(self):
+    def _sm_reply_ack_now_nacked(self, message=None):
         """
         This is called whenever a re-inflated command reaches a terminal state
         that was
         """
         self._reinflate_done()
 
-    def _sm_reply_nack_re_nacked(self):
+    def _sm_reply_nack_re_nacked(self, message=None):
         """
         This is called when a re-inflated state had already been reply nacked,
         and is now nacked again.  We just take it out of memory.
         """
         self._reinflate_done()
 
-    def _sm_reply_nack_now_acked(self):
+    def _sm_reply_nack_now_acked(self, message=None):
         """
         This is called whenever a re-inflated command reaches acked state but
         it was previously nacked
@@ -755,10 +756,13 @@ class RequestListener(object):
                 req.incoming_message(incoming_doc)
                 return
 
+            _g_logger.info("Found a message for a non active record "
+                           + request_id)
             # is this an old completed request that is in the DB
             db_record = self._db.lookup_req(request_id)
             if db_record:
-                _g_logger.debug("Inflating the record from the DB.")
+                _g_logger.info("Inflating the record from the DB."
+                               + request_id)
                 req = ReplyRPC(
                     self,
                     self._conf.agent_id,
