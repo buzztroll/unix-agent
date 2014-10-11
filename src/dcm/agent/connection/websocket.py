@@ -273,6 +273,7 @@ class WebSocketConnection(threading.Thread):
             self._ws.connect()
             self._ws.send_handshake(self._hs_string)
         except Exception as ex:
+            _g_logger.exception("Failed to connect to %s" % self._server_url)
             self._throw_error(ex, notify=False)
             self._increase_backoff()
 
