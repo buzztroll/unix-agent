@@ -49,7 +49,7 @@ loggers:
         propagate: no
 
     dcm.agent.messaging:
-        level: INFO
+        level: DEBUG
         handlers: [file_handler]
         propagate: no
 
