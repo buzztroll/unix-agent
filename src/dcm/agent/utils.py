@@ -104,7 +104,8 @@ def run_command(conf, cmd_line, cwd=None, env=None):
         # read everything logged and send it to the logger
         with open(log_file, "r") as fptr:
             for line in fptr.readlines():
-                log_to_dcm(logging.INFO, line)
+                if line.strip():
+                    log_to_dcm(logging.INFO, line)
         os.remove(log_file)
     return rc
 

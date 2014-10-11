@@ -17,6 +17,10 @@ if [ "X$PIPEINPUT" != "X" ]; then
    msg="$msg$PIPEINPUT"
 fi
 
+if [ -z $msg ]; then
+    exit 0
+fi
+
 if [ -z $DCM_LOG_FILE ]; then
     echo "$tag[$msg]" 1>&2
 else

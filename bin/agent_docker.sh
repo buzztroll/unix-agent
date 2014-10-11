@@ -63,7 +63,7 @@ function install_agent() {
     if [[ "X$DCM_CLOUD" != "X" || "X$DCM_HOST" != "X" ]]; then
         echo 'Agent being installed with cloud parameter: ' $DCM_CLOUD
         echo 'Agent being installed with dcm host: ' $DCM_HOST
-        ./installer.sh --base-path /dcm --cloud $DCM_CLOUD --url wss://$DCM_HOST:16433/ws
+        ./installer.sh --base-path /dcm --cloud $DCM_CLOUD --url wss://$DCM_HOST:16433/ws -B
     else
         ./installer.sh --base-path /dcm
     fi
@@ -131,7 +131,9 @@ function identify_platform() {
 }
 
 function reconfigure_agent() {
-   /opt/dcm-agent/embedded/agentve/bin/dcm-agent-configure --base-path /dcm --cloud $DCM_CLOUD --url wss://$DCM_HOST:16433/ws
+   /etc/init.d/dcm-agent stop
+   pkill -9 dcm-agent
+   /opt/dcm-agent/embedded/agentve/bin/dcm-agent-configure --base-path /dcm --cloud $DCM_CLOUD --url wss://$DCM_HOST:16433/ws -B
 }
 
 function install_docker() {

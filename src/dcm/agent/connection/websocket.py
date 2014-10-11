@@ -167,6 +167,7 @@ class WebSocketConnection(threading.Thread):
         self._next_connect_time = datetime.datetime.now()
         self._heartbeat_freq = heartbeat
 
+    @utils.class_method_sync
     def connect(self, receive_object, handshake_observer, handshake_doc):
         self._receive_queue = parent_receive_q.get_master_receive_queue(
             receive_object, str(self))
@@ -181,6 +182,7 @@ class WebSocketConnection(threading.Thread):
         self._send_queue.put(doc)
         self._cond.notify()
 
+    @utils.class_method_sync
     def close(self):
         _g_logger.debug("Websocket connection closed.")
         self.event_close()
@@ -273,6 +275,7 @@ class WebSocketConnection(threading.Thread):
             self._ws.connect()
             self._ws.send_handshake(self._hs_string)
         except Exception as ex:
+            _g_logger.exception("Failed to connect to %s" % self._server_url)
             self._throw_error(ex, notify=False)
             self._increase_backoff()
 
