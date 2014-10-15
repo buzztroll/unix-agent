@@ -210,6 +210,29 @@ class AzureMetaData(CloudMetaData):
         return "%s:%s:%s" % (ha[0], ha[0], ha[0])
 
 
+class OpenStackMetaData(CloudMetaData):
+    def __init__(self, conf):
+        self.conf = conf
+        if conf.cloud_metadata_url:
+            self.base_url = conf.cloud_metadata_url
+        else:
+            self.base_url = "http://169.254.169.254/openstack/2012-08-10/meta_data.json"
+
+    def get_cloud_metadata(self, key):
+        _g_logger.debug("Get OpenStack metadata %s" % key)
+
+        try:
+            json_data = _get_metadata_server_url_data(self.base_url)
+            jdict = json.loads(json_data)
+            return jdict[key]
+        except:
+            _g_logger.exception("Failed to get the OpenStack metadata")
+            return None
+
+    def get_instance_id(self):
+        return self.get_cloud_metadata("uuid")
+
+
 def set_metadata_object(conf):
     cloud_name = normalize_cloud_name(conf.cloud_type)
 
@@ -221,6 +244,8 @@ def set_metadata_object(conf):
         meta_data_obj = GCEMetaData(conf)
     elif cloud_name == CLOUD_TYPES.Azure:
         meta_data_obj = AzureMetaData()
+    elif cloud_name == CLOUD_TYPES.OpenStack:
+        meta_data_obj = OpenStackMetaData(conf)
     elif cloud_name == CLOUD_TYPES.CloudStack or \
                     cloud_name == CLOUD_TYPES.CloudStack3:
         meta_data_obj = CloudStackMetaData(conf)
@@ -245,7 +270,7 @@ def get_dhcp_ip_address(conf):
     return conf.dhcp_address
 
 
-def _get_metadata_server_url_data(url, timeout=1, headers=None):
+def _get_metadata_server_url_data(url, timeout=10, headers=None):
     if not url:
         return None
 
