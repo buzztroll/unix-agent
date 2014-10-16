@@ -64,7 +64,7 @@ class MountVolume(direct_pass.DirectPass):
         return rc
 
     def write_key_file(self, block_device):
-        if self.args.encryptionKey is None:
+        if self.args.encryptedFsEncryptionKey is None:
             return None
 
         if block_device:
@@ -74,14 +74,14 @@ class MountVolume(direct_pass.DirectPass):
         key_file_path = os.path.join(key_file_dir, "fskey.txt")
 
         with open(key_file_path, "w") as fptr:
-            fptr.write(self.args.encryptionKey)
+            fptr.write(self.args.encryptedFsEncryptionKey)
 
         return key_file_path
 
     def format(self, device_id):
         return utils.agent_format(
             self.conf, device_id, self.args.fileSystem,
-            self.args.mountPoint, self.args.encryptionKey)
+            self.args.mountPoint, self.args.encryptedFsEncryptionKey)
 
     def configure_raid(self, device_id):
         if self.args.formatVolume:
@@ -130,7 +130,7 @@ class MountVolume(direct_pass.DirectPass):
             target_device = self.args.devices[0]
 
         td = target_device
-        if self.args.encryptionKey is not None:
+        if self.args.encryptedFsEncryptionKey is not None:
             encrypted_device = "es" + target_device
             td = encrypted_device
 
@@ -143,7 +143,7 @@ class MountVolume(direct_pass.DirectPass):
             self.configure_raid(target_device)
 
         if self.args.formatVolume:
-            if self.args.encryptionKey:
+            if self.args.encryptedFsEncryptionKey:
                 key_file_path = None
                 try:
                     key_file_path = self.write_key_file(True)
@@ -157,7 +157,7 @@ class MountVolume(direct_pass.DirectPass):
                 finally:
                     utils.safe_delete(key_file_path)
             self.format(target_device)
-        elif self.args.encryptionKey:
+        elif self.args.encryptedFsEncryptionKey:
             key_file_path = None
             try:
                 key_file_path = self.write_key_file(True)
