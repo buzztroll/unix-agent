@@ -84,6 +84,14 @@ class AgentPluginParameterException(Exception):
         super(AgentPluginParameterException, self).__init__(message)
 
 
+class AgentPluginParameterBadValueException(Exception):
+    def __init__(self, command_name, argument_name):
+        message = ("The command %(command_name)s requires the arguments "
+                   "%(argument_name)s and it was not found."
+                   % locals())
+        super(AgentPluginParameterException, self).__init__(message)
+
+
 class AgentPluginOperationException(Exception):
     pass
 
@@ -148,7 +156,7 @@ class InvalidMessageParameterValueException(MalformedMessageException):
 
 
 class AgentPluginBadParameterException(MalformedMessageException):
-    msg = "The command %(command_name)s received invalid arguemnts." \
+    msg = "The command %(command_name)s received invalid arguments." \
           "%(message)s"
 
     def __init__(self, command_name, message):
