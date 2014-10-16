@@ -101,18 +101,18 @@ class MountVolume(direct_pass.DirectPass):
         return rc
 
     def _normalize_device(self):
-        if len(self.args.devices) > 1:
-            return "md0"
-        target_device = self.args.devices[0]
-        if self.conf.cloud_type == CLOUD_TYPES.CloudStack or\
-            self.conf.cloud_type == CLOUD_TYPES.CloudStack3:
+        if self.conf.cloud_type != CLOUD_TYPES.CloudStack and\
+            self.conf.cloud_type != CLOUD_TYPES.CloudStack3:
+            return self.args.devices[:]
+        modified_device_list = []
+        for target_device in self.args.devices:
             if target_device not in _cloud_stack_map:
                 raise exceptions.AgentPluginBadParameterException(
                 "mount_volume",
                 "When using cloud stack the device must be one of: %s" %
                 str(_cloud_stack_map.keys()))
-            return _cloud_stack_map[target_device]
-        return _cloud_stack_map
+            modified_device_list.append(_cloud_stack_map[target_device])
+        return modified_device_list
 
     def mount_block_volume(self):
         if not self.args.devices:
@@ -181,6 +181,7 @@ class MountVolume(direct_pass.DirectPass):
         if self.args.fileSystem is None:
             self.args.fileSystem = self.conf.storage_default_file_system
 
+        self.args.devices = self._normalize_device()
         rc = self.mount_block_volume()
 
         reply = {"return_code": rc, "message": "",
