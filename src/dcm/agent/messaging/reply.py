@@ -756,8 +756,6 @@ class RequestListener(object):
                 req.incoming_message(incoming_doc)
                 return
 
-            _g_logger.info("Found a message for a non active record "
-                           + request_id)
             # is this an old completed request that is in the DB
             # db_record = self._db.lookup_req(request_id)
             # XXX TODO db_looks are causing problems.  revisit
