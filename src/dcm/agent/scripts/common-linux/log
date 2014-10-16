@@ -17,7 +17,7 @@ if [ "X$PIPEINPUT" != "X" ]; then
    msg="$msg$PIPEINPUT"
 fi
 
-if [ -z $msg ]; then
+if [ "X$msg" == "X" ]; then
     exit 0
 fi
 

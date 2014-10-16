@@ -1452,7 +1452,7 @@ class TestProtocolCommands(reply.ReplyObserverInterface):
             "arguments": {"formatVolume": True,
                           "fileSystem": "ext3",
                           "raidLevel": "NONE",
-                          "encryptionKey": None,
+                          "encryptedFsEncryptionKey": None,
                           "mountPoint": mount_point,
                           "devices": [device_id]}}
         req_rpc = self._rpc_wait_reply(doc)
@@ -1475,7 +1475,7 @@ class TestProtocolCommands(reply.ReplyObserverInterface):
             "arguments": {"formatVolume": False,
                           "fileSystem": "ext3",
                           "raidLevel": "NONE",
-                          "encryptionKey": None,
+                          "encryptedFsEncryptionKey": None,
                           "mountPoint": mount_point,
                           "devices": [device_id]}}
         req_rpc = self._rpc_wait_reply(doc)
@@ -1518,7 +1518,7 @@ class TestProtocolCommands(reply.ReplyObserverInterface):
             "arguments": {"formatVolume": True,
                           "fileSystem": "ext3",
                           "raidLevel": "NONE",
-                          "encryptionKey":
+                          "encryptedFsEncryptionKey":
                               base64.b64encode(bytearray(enc_key)),
                           "mountPoint": mount_point,
                           "devices": [device_id]}}

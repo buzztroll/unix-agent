@@ -16,6 +16,19 @@ import os
 from dcm.agent import exceptions
 import dcm.agent.utils as utils
 import dcm.agent.jobs.direct_pass as direct_pass
+from dcm.agent.cloudmetadata import CLOUD_TYPES
+
+
+_cloud_stack_map = {
+    "1": "xvdb",
+    "2": "xvdc",
+    "4": "xvde",
+    "5": "xvdf",
+    "6": "xvdg",
+    "7": "xvdh",
+    "8": "xvdi",
+    "9": "xvdj"
+}
 
 
 class MountVolume(direct_pass.DirectPass):
@@ -26,7 +39,7 @@ class MountVolume(direct_pass.DirectPass):
          True, bool, None),
         "fileSystem": ("", True, str, None),
         "raidLevel": ("", True, str, None),
-        "encryptionKey": ("", False, utils.base64type_convertor, None),
+        "encryptedFsEncryptionKey": ("", False, utils.base64type_convertor, None),
         "mountPoint": ("", True, str, None),
         "devices": ("", True, list, None)
     }
@@ -35,86 +48,9 @@ class MountVolume(direct_pass.DirectPass):
         super(MountVolume, self).__init__(
             conf, job_id, items_map, name, arguments)
 
-    def mount_ephemeral_volume(self):
-        mapped = False
-        if not self.args.devices:
-            if self.args.encryptionKey:
-                if os.path.exists("/dev/mapper/essdb"):
-                    self.args.devices = ["essdb"]
-                    mapped = True
-                elif os.path.exists("/dev/mapper/essda2"):
-                    self.args.devices = ["essda2"]
-                    mapped = True
-
-            if not mapped:
-                if os.path.exists("/dev/sdb"):
-                    self.args.devices = ["sdb"]
-                else:
-                    self.args.devices = ["sda2"]
-
-        if self.args.encryptionKey is None:
-            device_mappings = utils.get_device_mappings(self.conf)
-            for dm in device_mappings:
-                if dm["device_id"] == self.args.devices[0]:
-                    if dm["file_system"] == self.args.fileSystem:
-                        return 0
-
-                    if not os.path.exists(dm["mount_point"]):
-                        return 21
-                    if not os.path.isdir(dm["mount_point"]):
-                        return 22
-
-                    if len(os.listdir(dm["mount_point"])) > 0:
-                        return 0
-
-                    utils.unmount(self.conf, dm["mount_point"])
-                    self.format(self.args.devices[0])
-            utils.mount(self.conf,
-                        self.args.devices[0],
-                        self.args.fileSystem,
-                        self.args.mountPoint)
-        else:
-            key_file_path = None
-            try:
-                key_file_path = self.write_key_file(False)
-
-                unencrypted_mount = None
-                encrypted_mount = None
-                encrypted_device_id = "es" + self.args.devices[0]
-                device_mappings = utils.get_device_mappings(self.conf)
-                for dm in device_mappings:
-                    if dm["device_id"] == self.args.devices[0]:
-                        if dm["device_type"] != utils.DeviceTypes.EPHEMERAL:
-                            raise exceptions.AgentJobException(
-                                "Attempt to mount non-ephemeral device " +
-                                self.args.devices[0] +
-                                " as an ephemeral mount.")
-                        if dm["encrypted"]:
-                            unencrypted_mount = dm
-                    elif encrypted_device_id == dm["device_id"]:
-                        if dm["encrypted"]:
-                            encrypted_mount = dm
-                if unencrypted_mount is None and encrypted_mount is None:
-                    utils.open_encrypted_device(self.conf,
-                                                self.args.devices[0],
-                                                encrypted_device_id,
-                                                key_file_path)
-
-                    utils.mount(self.conf, encrypted_device_id,
-                                self.args.fileSystem, self.args.mountPoint)
-                elif unencrypted_mount is None:
-                    utils.unmount(self.args.mountPoint)
-                    self.setup_encryption(self.args.devices[0],
-                                          encrypted_device_id,
-                                          key_file_path)
-                    utils.open_encrypted_device(self.conf,
-                                                self.args.devices[0],
-                                                encrypted_device_id,
-                                                key_file_path)
-                    self.format(encrypted_device_id)
-                    self.mount(encrypted_device_id)
-            finally:
-                utils.safe_delete(key_file_path)
+        if self.args.raidLevel is None or self.args.raidLevel.upper() != "NONE":
+            raise exceptions.AgentPluginBadParameterException(
+                "mount_volume", "only raid level NONE is supported.")
 
     def setup_encryption(self, device_id, encrypted_device_id, key_file_path):
         command = [self.conf.get_script_location("setupEncryption"),
@@ -147,7 +83,7 @@ class MountVolume(direct_pass.DirectPass):
             self.conf, device_id, self.args.fileSystem,
             self.args.mountPoint, self.args.encryptionKey)
 
-    def configureRaid(self, device_id):
+    def configure_raid(self, device_id):
         if self.args.formatVolume:
             exe = self.conf.get_script_location("configureRaid")
         else:
@@ -163,6 +99,20 @@ class MountVolume(direct_pass.DirectPass):
             raise exceptions.AgentExecutableException(
                 cmd, rc, stdout, stderr)
         return rc
+
+    def _normalize_device(self):
+        if len(self.args.devices) > 1:
+            return "md0"
+        target_device = self.args.devices[0]
+        if self.conf.cloud_type == CLOUD_TYPES.CloudStack or\
+            self.conf.cloud_type == CLOUD_TYPES.CloudStack3:
+            if target_device not in _cloud_stack_map:
+                raise exceptions.AgentPluginBadParameterException(
+                "mount_volume",
+                "When using cloud stack the device must be one of: %s" %
+                str(_cloud_stack_map.keys()))
+            return _cloud_stack_map[target_device]
+        return _cloud_stack_map
 
     def mount_block_volume(self):
         if not self.args.devices:
@@ -222,6 +172,7 @@ class MountVolume(direct_pass.DirectPass):
                     target_device,
                     self.args.fileSystem,
                     self.args.mountPoint)
+        return 0
 
     def run(self):
         if self.args.mountPoint is None:
@@ -230,12 +181,9 @@ class MountVolume(direct_pass.DirectPass):
         if self.args.fileSystem is None:
             self.args.fileSystem = self.conf.storage_default_file_system
 
-        if self.args.raidLevel is None:
-            self.mount_ephemeral_volume()
-        else:
-            self.mount_block_volume()
+        rc = self.mount_block_volume()
 
-        reply = {"return_code": 0, "message": "",
+        reply = {"return_code": rc, "message": "",
                  "error_message": "", "reply_type": "void"}
         return reply
 
