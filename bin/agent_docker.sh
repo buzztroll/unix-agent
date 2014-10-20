@@ -48,6 +48,37 @@ function agent_exists() {
     fi
 }
 
+function agent_get_cloud_name() {
+    if [ "X$DCM_CLOUD" != "X" ]; then
+        return 0
+    fi
+
+    if [ -x "/usr/sbin/mdata-get" ]; then
+        DCM_CLOUD="Joyent"
+        return 0
+    fi
+    if [ -x "/lib/smartdc/mdata-get" ]; then
+        DCM_CLOUD="Joyent"
+        return 0
+    fi
+
+    url="http://metadata.google.internal/computeMetadata/v1/instance/attributes/es-dmcm-launch-id"
+    curl -s $url > /dev/null
+    if [ $? -eq 0 ]; then
+        DCM_CLOUD="Google"
+        return 0
+    fi
+
+    url="http://169.254.169.254/latest/meta-data/instance-id"
+    curl -s $url > /dev/null
+    if [ $? -eq 0 ]; then
+        DCM_CLOUD="Amazon"
+        return 0
+    fi
+
+    return 1
+}
+
 function install_agent() {
     cd /tmp
 
@@ -60,6 +91,7 @@ function install_agent() {
     curl $installer_url > installer.sh
     chmod 755 installer.sh
 
+    agent_get_cloud_name
     if [[ "X$DCM_CLOUD" != "X" || "X$DCM_HOST" != "X" ]]; then
         echo 'Agent being installed with cloud parameter: ' $DCM_CLOUD
         echo 'Agent being installed with dcm host: ' $DCM_HOST
