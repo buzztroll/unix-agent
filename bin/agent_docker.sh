@@ -48,7 +48,7 @@ function agent_exists() {
     fi
 }
 
-function agent_get_cloud_name() {
+function agent_guess_cloud() {
     if [ "X$DCM_CLOUD" != "X" ]; then
         return 0
     fi
@@ -91,7 +91,11 @@ function install_agent() {
     curl $installer_url > installer.sh
     chmod 755 installer.sh
 
-    agent_get_cloud_name
+    # agent_guess_cloud works by seeing if curl succeeds or fails so we
+    # must disable strict error checking while calling it
+    set +e
+    agent_guess_cloud
+    set -e
     if [[ "X$DCM_CLOUD" != "X" || "X$DCM_HOST" != "X" ]]; then
         echo 'Agent being installed with cloud parameter: ' $DCM_CLOUD
         echo 'Agent being installed with dcm host: ' $DCM_HOST
