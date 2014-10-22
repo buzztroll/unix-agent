@@ -20,7 +20,7 @@ AGENT_BASE_URL=<url>
     For example: https://s3.amazonaws.com/dcmagentunstable.  Packages will
     be found under that url with a name that matches:
     dcm-agent-<distribution>-<distribution version>-<architecture>.<pkg type>
-    For example: dcm-agent-centos-6.5-amd64.deb
+    For example: dcm-agent-ubuntu-10.04-amd64.deb
 
 AGENT_UNSTABLE
   - When set the script will download and install the latest unstable version
@@ -154,7 +154,7 @@ function identify_platform() {
             "SUSE LINUX")
                 distro_name="suse"
                 ;;
-            "n/a")
+            *)
                 echo "Sorry we could not detect your environment"
                 exit 1
                 ;;
@@ -171,6 +171,10 @@ function identify_platform() {
                 distro_version=$(echo $redhat_info | awk '{print $4}')
                 distro_name="rhel"
             ;;
+            *)
+                echo "Sorry we could not detect your environment via RHEL path"
+                exit 1
+                ;;
         esac
     elif [ -f "/etc/debian_version" ]; then
         distro_version=$(cat /etc/debian_version)
@@ -192,7 +196,19 @@ function identify_platform() {
     fi
     distro_version=`echo $distro_version | awk -F '.' '{ print $1 "." $2 }'`
 
-    export DCM_AGENT_FORCE_DISTRO_VERSION="$distro_name""-""$distro_version"
+    echo "determining architecture..."
+    tmp_bits=`uname -m`
+    if [ "Xx86_64" == "X$tmp_bits" ]; then
+        if [ "X$distro_name" == "Xcentos" ]; then
+             arch="-x86_64"
+        else
+             arch="-amd64"
+        fi
+    else
+        arch="-i386"
+    fi
+    echo "done"
+    export DCM_AGENT_FORCE_DISTRO_VERSION="$distro_name""-""$distro_version""$arch"
 }
 
 function set_installer() {
@@ -241,20 +257,6 @@ fi
 echo $DCM_AGENT_FORCE_DISTRO_VERSION
 set_installer
 
-echo "determining architecture..."
-tmp_bits=`uname -m`
-if [ "Xx86_64" == "X$tmp_bits" ]; then
-    if [ "X$distro_name" == "Xcentos" ]; then
-         arch="-x86_64"
-    else
-         arch="-amd64"
-    fi
-else
-    arch="-i386"
-fi
-echo $arch
-echo "done"
-
 if [[ "X$AGENT_BASE_URL" == "X" && "X$AGENT_BASE_URL" != "XNONE" ]]; then
     if [ "X$AGENT_UNSTABLE" != "X" ]; then
         base_url="https://s3.amazonaws.com/dcmagentunstable"
@@ -270,7 +272,7 @@ if [ "X$AGENT_VERSION" != "X" ]; then
     agent_version_ext="-$X$AGENT_VERSION"
 fi
 
-fname="dcm-agent-$DCM_AGENT_FORCE_DISTRO_VERSION$arch$agent_version_ext.$pkg_ext"
+fname="dcm-agent-$DCM_AGENT_FORCE_DISTRO_VERSION$agent_version_ext.$pkg_ext"
 
 echo "Starting the installation process..."
 
