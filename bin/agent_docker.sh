@@ -6,7 +6,7 @@
 #AGENT_BASE_URL=
 #AGENT_UNSTABLE=
 #AGENT_VERSION=
-#DCM_HOST=ec2-54-185-194-247.us-west-2.compute.amazonaws.com
+DCM_HOST=ec2-54-190-80-64.us-west-2.compute.amazonaws.com
 #DCM_CLOUD=Amazon
 #DCM_DOCKER_PULL_REPOS=ubuntu
 #DCM_DOCKER_VERSION=1.2.0
@@ -177,20 +177,20 @@ function reconfigure_agent() {
 function install_docker() {
     case $DCM_AGENT_FORCE_DISTRO_VERSION in
         ubuntu-14.04)
-            sudo apt-get -y install docker.io $DCM_DOCKER_VERSION
-            sudo ln -sf /usr/bin/docker.io /usr/local/bin/docker
-            sudo sed -i '$acomplete -F _docker docker' /etc/bash_completion.d/docker.io
+            apt-get -y install docker.io $DCM_DOCKER_VERSION
+            ln -sf /usr/bin/docker.io /usr/local/bin/docker
+            sed -i '$acomplete -F _docker docker' /etc/bash_completion.d/docker.io
             ;;
 
         debian-7.*|ubuntu-12.04)
             DEBIAN_FRONTEND=noninteractive
 
             # aufs is preferred over devicemapper; try to ensure the driver is available.
-            if ! grep -q aufs /proc/filesystems && ! $sh_c 'modprobe aufs'; then
+            if ! grep -q aufs /proc/filesystems && ! modprobe aufs; then
                 kern_extras="linux-image-extra-$(uname -r)"
-                    ( set -x; $sh_c 'sleep 3; apt-get install -y -q '"$kern_extras" ) || true
+                    ( set -x; sleep 3; apt-get install -y -q "$kern_extras" ) || true
 
-                    if ! grep -q aufs /proc/filesystems && ! $sh_c 'modprobe aufs'; then
+                    if ! grep -q aufs /proc/filesystems && ! modprobe aufs; then
                         echo >&2 'Warning: tried to install '"$kern_extras"' (for AUFS)'
                         echo >&2 ' but we still have no AUFS.  Docker may not work. Proceeding anyways!'
                         ( set -x; sleep 10 )
@@ -198,30 +198,30 @@ function install_docker() {
             fi
 
             if [ ! -e /usr/lib/apt/methods/https ]; then
-                    ( set -x; $sh_c 'sleep 3; apt-get install -y -q apt-transport-https' )
+                    ( set -x; sleep 3; apt-get install -y -q apt-transport-https )
             fi
             if [ -z "$curl" ]; then
-                    ( set -x; $sh_c 'sleep 3; apt-get install -y -q curl' )
+                    ( set -x; sleep 3; apt-get install -y -q curl )
                     curl='curl -sSL'
             fi
             (
                 set -x
                 if [ "https://get.docker.io/" = "$url" ]; then
-                    $sh_c "apt-key adv --keyserver hkp://keyserver.ubuntu.com:80 --recv-keys 36A1D7869245C8950F966E92D8576A8BA88D21E9"
+                    apt-key adv --keyserver hkp://keyserver.ubuntu.com:80 --recv-keys 36A1D7869245C8950F966E92D8576A8BA88D21E9
                 elif [ "https://test.docker.io/" = "$url" ]; then
-                    $sh_c "apt-key adv --keyserver hkp://keyserver.ubuntu.com:80 --recv-keys 740B314AE3941731B942C66ADF4FD13717AAD7D6"
+                    apt-key adv --keyserver hkp://keyserver.ubuntu.com:80 --recv-keys 740B314AE3941731B942C66ADF4FD13717AAD7D6
                 else
-                    $sh_c "$curl ${url}gpg | apt-key add -"
+                    $curl ${url}gpg | apt-key add -
                 fi
-                $sh_c "echo deb ${url}ubuntu docker main > /etc/apt/sources.list.d/docker.list"
-                $sh_c 'sleep 3; apt-get update -y; apt-get install -y -q lxc-docker$DCM_DOCKER_VERSION'
+                echo deb ${url}ubuntu docker main > /etc/apt/sources.list.d/docker.list
+                sleep 3; apt-get update -y; apt-get install -y -q lxc-docker$DCM_DOCKER_VERSION
             )
             ;;
 
         centos-6.5)
-            sudo yum -y install epel-release
-            sudo yum -y install docker-io$DCM_DOCKER_VERSION
-            sudo service docker start
+            yum -y install epel-release
+            yum -y install docker-io$DCM_DOCKER_VERSION
+            service docker start
             ;;
         
         *)
@@ -300,20 +300,6 @@ else
 fi
 
 url='https://get.docker.io/'
-#user="$(id -un 2>/dev/null || true)"
-
-sh_c='sh -c'
-if [ "$user" != 'root' ]; then
-    if command_exists sudo; then
-        sh_c='sudo sh -c'
-    elif command_exists su; then
-        sh_c='su -c'
-    else
-        echo >&2 'Error: this installer needs the ability to run commands as root.'
-        echo >&2 'We are unable to find either "sudo" or "su" available to make this happen.'
-        exit 1
-    fi
-fi
 
 identify_platform
 update
@@ -351,7 +337,7 @@ fi
 
 echo
 echo 'Adding dcm to docker group'
-sudo usermod -aG docker dcm
+usermod -aG docker dcm
 
 if [ -e /etc/init.d/dcm-agent ]; then
     /etc/init.d/dcm-agent start
