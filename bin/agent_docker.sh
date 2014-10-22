@@ -6,7 +6,7 @@
 #AGENT_BASE_URL=
 #AGENT_UNSTABLE=
 #AGENT_VERSION=
-DCM_HOST=ec2-54-190-80-64.us-west-2.compute.amazonaws.com
+#DCM_HOST=ec2-54-190-80-64.us-west-2.compute.amazonaws.com
 #DCM_CLOUD=Amazon
 #DCM_DOCKER_PULL_REPOS=ubuntu
 #DCM_DOCKER_VERSION=1.2.0
