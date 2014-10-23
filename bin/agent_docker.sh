@@ -16,7 +16,7 @@
 set -e
  
 function update(){
-    case $DCM_AGENT_FORCE_DISTRO_VERSION in
+    case $DCM_DISTRO_VERSION in
         centos*)
             yum install -y curl
             ;;
@@ -66,6 +66,13 @@ function agent_guess_cloud() {
     curl -s $url > /dev/null
     if [ $? -eq 0 ]; then
         DCM_CLOUD="Google"
+        return 0
+    fi
+
+    url="http://169.254.169.254/openstack/2012-08-10/meta_data.json"
+    curl -s $url > /dev/null
+    if [ $? -eq 0 ]; then
+        DCM_CLOUD="OpenStack"
         return 0
     fi
 
@@ -163,7 +170,7 @@ function identify_platform() {
     fi
     distro_version=`echo $distro_version | awk -F '.' '{ print $1 "." $2 }'`
 
-    export DCM_AGENT_FORCE_DISTRO_VERSION="$distro_name""-""$distro_version"
+    DCM_DISTRO_VERSION="$distro_name""-""$distro_version"
 }
 
 function reconfigure_agent() {
@@ -175,7 +182,7 @@ function reconfigure_agent() {
 }
 
 function install_docker() {
-    case $DCM_AGENT_FORCE_DISTRO_VERSION in
+    case $DCM_DISTRO_VERSION in
         ubuntu-14.04)
             apt-get -y install docker.io $DCM_DOCKER_VERSION
             ln -sf /usr/bin/docker.io /usr/local/bin/docker
