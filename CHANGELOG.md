@@ -15,10 +15,16 @@ Features
 * Added support for CloudStack handshakes.
 * Avoid the expensive "initialize" call when re-handshaking after the
   connection is dropped.
+* Added a script to the archive for configuring the agent and docker from
+  userdata (cloud-init style).
+* Added in OpenStack meta-data allowing a successful handshake with servers
+  launched on OpenStack clouds.
 
 Bug Fixes:
 * When installing if a user existed whose name contained the string "dcm"
   the install would fail.  This is now fixed.
+* Repaired the install script so that the architecture can be forced as well.
+* Fixed an error in the CloudStack handshake.
 
 # 0.9.3 (2014-09-12)
 
