@@ -39,9 +39,12 @@ class PullRepo(docker_utils.DockerJob):
         # only log the last line at info level
         id_map = {}
         for line in out:
-            j_obj = json.loads(line)
-            id_map[j_obj['id']] = line
             _g_logger.debug(line)
+            try:
+                j_obj = json.loads(line)
+                id_map[j_obj['id']] = line
+            except Exception as ex:
+                _g_logger.debug("Error dealing with the pull output " + str(ex))
         for k in id_map:
             utils.log_to_dcm(logging.INFO, id_map[k])
         reply_doc = {
