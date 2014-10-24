@@ -62,27 +62,28 @@ function agent_guess_cloud() {
         return 0
     fi
 
-    url="http://metadata.google.internal/computeMetadata/v1/instance/attributes/es-dmcm-launch-id"
-    curl -s $url > /dev/null
-    if [ $? -eq 0 ]; then
+    metadata_url="http://metadata.google.internal/computeMetadata/v1/instance/attributes/es-dmcm-launch-id"
+    http_code=`curl -H "Metadata-Flavor: Google"  -s -o /dev/null -w "%{http_code}" $metadata_url`
+    if [[ $? -eq 0  && "X$http_code" == "X200" ]]; then
         DCM_CLOUD="Google"
         return 0
     fi
 
-    url="http://169.254.169.254/openstack/2012-08-10/meta_data.json"
-    curl -s $url > /dev/null
-    if [ $? -eq 0 ]; then
+    metadata_url="http://169.254.169.254/openstack/2012-08-10/meta_data.json"
+    http_code=`curl -s -o /dev/null -w "%{http_code}" $metadata_url`
+    if [[ $? -eq 0  && "X$http_code" == "X200" ]]; then
         DCM_CLOUD="OpenStack"
         return 0
     fi
 
     url="http://169.254.169.254/latest/meta-data/instance-id"
-    curl -s $url > /dev/null
-    if [ $? -eq 0 ]; then
+    http_code=`curl -s -o /dev/null -w "%{http_code}" $metadata_url`
+    if [[ $? -eq 0  && "X$http_code" == "X200" ]]; then
         DCM_CLOUD="Amazon"
         return 0
     fi
 
+    echo "UKNOWN CLOUD!"
     return 1
 }
 
@@ -103,11 +104,13 @@ function install_agent() {
     set +e
     agent_guess_cloud
     set -e
-    if [[ "X$DCM_CLOUD" != "X" || "X$DCM_HOST" != "X" ]]; then
+    if [[ "X$DCM_CLOUD" != "X" && "X$DCM_HOST" != "X" ]]; then
         echo 'Agent being installed with cloud parameter: ' $DCM_CLOUD
         echo 'Agent being installed with dcm host: ' $DCM_HOST
         ./installer.sh --base-path /dcm --cloud $DCM_CLOUD --url wss://$DCM_HOST:16433/ws -B
     else
+        echo "WARNING: o DCM cloud found or the DCM host was not provided"
+        echo "This is ok for making baked in images"
         ./installer.sh --base-path /dcm
     fi
 }
@@ -182,6 +185,8 @@ function reconfigure_agent() {
 }
 
 function install_docker() {
+    url='https://get.docker.io/'
+
     case $DCM_DISTRO_VERSION in
         ubuntu-14.04)
             apt-get -y install docker.io $DCM_DOCKER_VERSION
