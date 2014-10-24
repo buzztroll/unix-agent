@@ -76,14 +76,14 @@ function agent_guess_cloud() {
         return 0
     fi
 
-    url="http://169.254.169.254/latest/meta-data/instance-id"
+    metadata_url="http://169.254.169.254/latest/meta-data/instance-id"
     http_code=`curl -s -o /dev/null -w "%{http_code}" $metadata_url`
     if [[ $? -eq 0  && "X$http_code" == "X200" ]]; then
         DCM_CLOUD="Amazon"
         return 0
     fi
 
-    echo "UKNOWN CLOUD!"
+    echo "UNKNOWN CLOUD!"
     return 1
 }
 
