@@ -177,10 +177,13 @@ function identify_platform() {
 }
 
 function reconfigure_agent() {
+   set +e
    /etc/init.d/dcm-agent stop
    pkill -9 dcm-agent
    rm -f /dcm/etc/agentdb.sql
    rm -f /dcm/logs/agent.log
+   agent_guess_cloud
+   set -e
    /opt/dcm-agent/embedded/agentve/bin/dcm-agent-configure --base-path /dcm --cloud $DCM_CLOUD --url wss://$DCM_HOST:16433/ws -B
 }
 
