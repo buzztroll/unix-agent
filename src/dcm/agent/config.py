@@ -252,6 +252,11 @@ class AgentConfig(object):
     def start_job_runner(self):
         self.jr = job_runner.JobRunner(self)
 
+    def stop_job_runner(self):
+        if self.jr:
+            self.jr.shutdown()
+            self.jr = None
+
     def get_temp_file(self, filename, isdir=False):
         new_dir = tempfile.mkdtemp(dir=self.storage_temppath)
         if isdir:
@@ -350,7 +355,7 @@ def build_options_list():
 
         ConfigOpt("system", "user", str, default="dcm"),
 
-        ConfigOpt("cloud", "type", str, default=CLOUD_TYPES.Amazon,
+        ConfigOpt("cloud", "type", str, default=CLOUD_TYPES.UNKNOWN,
                   help_msg="The type of cloud on which this agent is running"),
         ConfigOpt("cloud", "metadata_url", str,
                   default=None,

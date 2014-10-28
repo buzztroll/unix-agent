@@ -156,9 +156,8 @@ class DCMAgent(object):
             self.db_cleaner.join()
         if self._intrusion_detection:
             self._intrusion_detection.stop()
-        if self.conf.jr:
-            self.g_logger.debug("Shutting down the job runner")
-            self.conf.jr.shutdown()
+        self.g_logger.debug("Shutting down the job runner")
+        self.conf.stop_job_runner()
         if self.request_listener:
             self.g_logger.debug("Stopping the reply listener")
             self.request_listener.shutdown()

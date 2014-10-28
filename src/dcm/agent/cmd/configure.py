@@ -220,6 +220,17 @@ def select_cloud(default=cloudmetadata.CLOUD_TYPES.Amazon):
     return cloud
 
 
+def guess_default_cloud(conf_d):
+    (h, cloud_name) = conf_d["cloud"]["type"]
+    if cloud_name != cloudmetadata.CLOUD_TYPES.UNKNOWN:
+        return
+    conf = config.AgentConfig([])
+    name = cloudmetadata.guess_effective_cloud(conf)
+    if name is None:
+        raise Exception("Cloud %s is not a known type." % cloud_name)
+    conf_d["cloud"]["type"] = (h, name)
+
+
 def normalize_cloud_name(conf_d):
     (h, cloud) = conf_d["cloud"]["type"]
     name = cloudmetadata.normalize_cloud_name(cloud)
@@ -524,6 +535,7 @@ def main(argv=sys.argv[1:]):
     opts = parser.parse_args(args=argv)
 
     conf_d = gather_values(opts)
+    guess_default_cloud(conf_d)
     do_interactive(opts, conf_d)
     normalize_cloud_name(conf_d)
     pick_meta_data(conf_d)

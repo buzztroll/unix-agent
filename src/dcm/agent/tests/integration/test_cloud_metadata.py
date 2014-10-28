@@ -40,7 +40,7 @@ class TestCloudMetadata(unittest.TestCase):
 
     @classmethod
     def tearDownClass(cls):
-        cls.conf.jr.shutdown()
+        cls.conf.stop_job_runner()
         shutil.rmtree(cls.test_base_path)
 
     def setUp(self):
