@@ -14,6 +14,7 @@
 import base64
 
 import os
+import subprocess
 import tempfile
 import datetime
 import traceback
@@ -99,7 +100,17 @@ def run_command(conf, cmd_line, cwd=None, env=None):
                "DCM_BASEDIR": conf.storage_base_dir,
                "DCM_SERVICES_DIR": conf.storage_services_dir,
                "DCM_LOG_FILE": log_file}
-    rc = conf.jr.run_command(cmd_line, cwd=cwd, env=env)
+    if conf.jr is not None:
+        rc = conf.jr.run_command(cmd_line, cwd=cwd, env=env)
+    else:
+        _g_logger.warn("Running without the job runner process")
+        process = subprocess.Popen(cmd_line,
+                                   stdout=subprocess.PIPE,
+                                   stderr=subprocess.PIPE,
+                                   cwd=cwd,
+                                   env=env)
+        stdout, stderr = process.communicate()
+        rc = (stdout, stderr, process.returncode)
     if log_file:
         # read everything logged and send it to the logger
         with open(log_file, "r") as fptr:
