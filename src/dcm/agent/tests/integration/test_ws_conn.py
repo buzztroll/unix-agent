@@ -70,19 +70,27 @@ class TestWsConnection(object):
         t1 = threading.Thread(target=_run_agent, args=(agent,))
         t1.start()
 
+        # run for time after the first connect.  that way we know it is up
         try:
+
+            print "getting the first one"
+            (clientsocket, address) = serversocket.accept()
+            clientsocket.close()
+            print "got it"
+            connect_count = 0
             now = datetime.datetime.now()
             end_time = now + datetime.timedelta(seconds=test_run_time/1000)
 
-            connect_count = 0
-
             while now < end_time:
+                print "waiting to connect " + str(now)
                 (clientsocket, address) = serversocket.accept()
                 clientsocket.close()
                 connect_count += 1
                 now = datetime.datetime.now()
+                print "connected " + str(now)
         finally:
             serversocket.close()
             agent.shutdown_main_loop()
             t1.join()
-        nose.tools.ok_(10 < connect_count < 50)
+        nose.tools.ok_(10 < connect_count < 50,
+                       "connect_count is %d" % connect_count)

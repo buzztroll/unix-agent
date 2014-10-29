@@ -241,6 +241,45 @@ class AgentDB(object):
             session.delete(rec)
 
 
+class FakeAgentDB(object):
+
+    def __init__(self, db_file):
+        pass
+
+    def starting_agent(self, session=None):
+        pass
+
+    def check_agent_id(self, agent_id, session=None):
+        pass
+
+    def get_all_complete(self, session=None):
+        return []
+
+    def get_all_rejected(self, session=None):
+        return []
+
+    def get_all_reply_nacked(self, session=None):
+        return []
+
+    def get_all_ack(self, session=None):
+        return []
+
+    def get_all_reply(self, session=None):
+        return []
+
+    def lookup_req(self, request_id, session=None):
+        return None
+
+    def new_record(self, request_id, request_doc, reply_doc, state,
+                   agent_id, session=None):
+        pass
+
+    def update_record(self, request_id, state, reply_doc=None, session=None):
+        pass
+
+    def clean_all_expired(self, cut_off_time, session=None):
+        pass
+
 class DBCleaner(threading.Thread):
 
     def __init__(self, db, max_time, max_size, interval):
