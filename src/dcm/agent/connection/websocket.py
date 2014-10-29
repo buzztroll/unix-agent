@@ -25,6 +25,7 @@ from dcm.agent import exceptions
 from dcm.agent.messaging import states
 
 import dcm.agent.messaging.utils as utils
+import dcm.agent.utils as agent_utils
 import dcm.agent.parent_receive_q as parent_receive_q
 
 
@@ -52,6 +53,7 @@ class RepeatQueue(object):
         self._q = Queue.Queue()
         self._lock = threading.RLock()
         self._message_id_set = set()
+        self._request_id_count = {}
 
     def put(self, item, block=True, timeout=None):
         self._lock.acquire()
@@ -66,10 +68,21 @@ class RepeatQueue(object):
                     else:
                         _g_logger.debug("Adding the message with id %s " %
                                         message_id)
-
                     self._message_id_set.add(message_id)
+                if 'request_id' in item:
+                    request_id = item['request_id']
+                    if request_id not in self._request_id_count:
+                        self._request_id_count[request_id] = 0
+                    self._request_id_count[request_id] += 1
+
+                    if self._request_id_count[request_id] > 500:
+                        msg = "TOO MANY MESSAGES FOR %s!" % request_id
+                        _g_logger.error(msg)
+                        agent_utils.log_to_dcm(logging.ERROR, msg)
+                        agent_utils.build_assertion_exception(_g_logger, msg)
+                        return
             except Exception as ex:
-                _g_logger.info("Exception checking if message is a retrans "
+                _g_logger.warn("Exception checking if message is a retrans "
                                "%s" % ex.message)
             return self._q.put(item, block=block, timeout=timeout)
         finally:
@@ -151,7 +164,6 @@ class WebSocketConnection(threading.Thread):
                  heartbeat=None):
         super(WebSocketConnection, self).__init__()
         self._send_queue = RepeatQueue()
-        self._recv_queue = None
         self._ws_manager = None
         self._server_url = server_url
         self._cond = threading.Condition()

@@ -475,14 +475,8 @@ class ReplyRPC(object):
     def _sm_ack_reply_nack_received(self, message=None):
         _g_logger.warn("A NACK was received when in the ACK state "
                        + str(message))
-        try:
-            self._db.update_record(self._request_id,
-                                   states.ReplyStates.REPLY_NACKED)
-            if self._reply_message_timer:
-                self._reply_message_timer.cancel()
-            self._reply_listener.message_done(self)
-        except Exception as ex:
-            _g_logger.warn("Error shutting down the request", ex)
+        # this will be cleaned up when the command replies, which it is
+        # required to do
 
     def _sm_replied_nacked_reply(self, message=None):
         """
