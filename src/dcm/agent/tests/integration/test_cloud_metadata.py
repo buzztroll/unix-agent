@@ -82,7 +82,8 @@ class TestCloudMetadata(unittest.TestCase):
         self._get_instance_data_cloud_none(cloudmetadata.CLOUD_TYPES.Amazon)
 
     def test_get_instance_data_google_none(self):
-        self.conf.meta_data_object = cloudmetadata.GCEMetaData(self.conf)
+        self.conf.meta_data_object = cloudmetadata.GCEMetaData(
+            base_url=self.conf.cloud_metadata_url)
         self._get_instance_data_cloud_none(cloudmetadata.CLOUD_TYPES.Google)
 
     def test_get_instance_data_joyent_none(self):
@@ -101,14 +102,16 @@ class TestCloudMetadata(unittest.TestCase):
 
     @patch('dcm.agent.cloudmetadata._get_metadata_server_url_data')
     def test_get_aws_instance_id(self, mock_server):
-        self.conf.meta_data_object = cloudmetadata.AWSMetaData(self.conf)
+        self.conf.meta_data_object = cloudmetadata.AWSMetaData(
+            base_url=self.conf.cloud_metadata_url)
         mock_server.return_value = 'fake_instance_id'
         instance_id = self.conf.meta_data_object.get_instance_id()
         self.assertEqual(instance_id, 'fake_instance_id')
 
     @patch('dcm.agent.cloudmetadata._get_metadata_server_url_data')
     def test_get_gce_instance_id(self, mock_server):
-        self.conf.meta_data_object = cloudmetadata.GCEMetaData(self.conf)
+        self.conf.meta_data_object = cloudmetadata.GCEMetaData(
+            base_url=self.conf.cloud_metadata_url)
         mock_server.return_value = 'fake_instance_id'
         instance_id = self.conf.meta_data_object.get_instance_id()
         self.assertEqual(instance_id, 'fake_instance_id')
