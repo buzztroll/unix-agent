@@ -54,7 +54,7 @@ class RepeatQueue(object):
         self._lock = threading.RLock()
         self._message_id_set = set()
         self._request_id_count = {}
-        self._max_req_id = max_req_id
+        self._max_req_id = max_req_id + 1
 
     def put(self, item, block=True, timeout=None):
         self._lock.acquire()
