@@ -49,11 +49,12 @@ class WsConnStates:
 
 class RepeatQueue(object):
 
-    def __init__(self):
+    def __init__(self, max_req_id=500):
         self._q = Queue.Queue()
         self._lock = threading.RLock()
         self._message_id_set = set()
         self._request_id_count = {}
+        self._max_req_id = max_req_id
 
     def put(self, item, block=True, timeout=None):
         self._lock.acquire()
@@ -74,12 +75,12 @@ class RepeatQueue(object):
                     if request_id not in self._request_id_count:
                         self._request_id_count[request_id] = 0
                     self._request_id_count[request_id] += 1
-
-                    if self._request_id_count[request_id] > 500:
+                    if self._request_id_count[request_id] >= self._max_req_id:
                         msg = "TOO MANY MESSAGES FOR %s!" % request_id
                         _g_logger.error(msg)
-                        agent_utils.log_to_dcm(logging.ERROR, msg)
                         agent_utils.build_assertion_exception(_g_logger, msg)
+                        if self._request_id_count[request_id] == self._max_req_id:
+                            agent_utils.log_to_dcm(logging.ERROR, msg)
                         return
             except Exception as ex:
                 _g_logger.warn("Exception checking if message is a retrans "
