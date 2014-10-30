@@ -6,15 +6,35 @@
 #AGENT_BASE_URL=
 #AGENT_UNSTABLE=
 #AGENT_VERSION=
-#DCM_HOST=ec2-54-190-80-64.us-west-2.compute.amazonaws.com
+#
+#  you can only use DCM_HOST or DCM_URL
+#
+#DCM_URL=https://<hostname>:16433/ws
+#DCM_HOST=<hostname>
+#
 #DCM_CLOUD=Amazon
 #DCM_DOCKER_PULL_REPOS=ubuntu
 #DCM_DOCKER_VERSION=1.2.0
 #************************
 
-
 set -e
- 
+
+if [[ "X$DCM_URL" != "X" && "X$DCM_HOST" != "X" ]]; then
+    echo "Only DCM_URL or DCM_HOST can be used.  Not both"
+    exit 1
+fi
+if [ "X$DCM_HOST" != "X" ]; then
+    if [ "X$DCM_HOST" == "Xdcm.enstratius.com" ]; then
+        DCM_URL="wss://dcm.enstratius.com/agentManager"
+    else
+        DCM_URL="wss://$DCM_HOST:16433/ws"
+    fi
+elif [ "X$DCM_URL" == "X" ]; then
+    DCM_URL="wss://dcm.enstratius.com/agentManager"
+fi
+# at this point DCM_URL is necessarily set
+
+
 function update(){
     case $DCM_DISTRO_VERSION in
         centos*)
@@ -104,12 +124,12 @@ function install_agent() {
     set +e
     agent_guess_cloud
     set -e
-    if [[ "X$DCM_CLOUD" != "X" && "X$DCM_HOST" != "X" ]]; then
+    if [ "X$DCM_CLOUD" != "X" ]; then
         echo 'Agent being installed with cloud parameter: ' $DCM_CLOUD
-        echo 'Agent being installed with dcm host: ' $DCM_HOST
-        ./installer.sh --base-path /dcm --cloud $DCM_CLOUD --url wss://$DCM_HOST:16433/ws -B
+        echo 'Agent being installed with dcm host: ' $DCM_URL
+        ./installer.sh --base-path /dcm --cloud $DCM_CLOUD --url $DCM_URL -B
     else
-        echo "WARNING: o DCM cloud found or the DCM host was not provided"
+        echo "WARNING: The DCM cloud was not provided"
         echo "This is ok for making baked in images"
         ./installer.sh --base-path /dcm
     fi
@@ -184,7 +204,7 @@ function reconfigure_agent() {
    rm -f /dcm/logs/agent.log
    agent_guess_cloud
    set -e
-   /opt/dcm-agent/embedded/agentve/bin/dcm-agent-configure --base-path /dcm --cloud $DCM_CLOUD --url wss://$DCM_HOST:16433/ws -B
+   /opt/dcm-agent/embedded/agentve/bin/dcm-agent-configure --base-path /dcm --cloud $DCM_CLOUD --url $DCM_URL -B
 }
 
 function install_docker() {
@@ -268,7 +288,7 @@ function help() {
        
          Here are the possible options:
          -h/--help         show this help menu
-         -d/--dcm          sets DCM_HOST
+         -d/--dcm          sets DCM_URL
          -a/--agenturl     sets AGENT_BASE_URL default=https://s3.amazonaws.com/dcmagentnigthly
          -v/--version      sets AGENT_VERSION
          -c/--cloud        sets DCM_CLOUD
@@ -292,7 +312,7 @@ else
               exit 
               ;;
             -d=*|--dcm=*)
-              DCM_HOST="${arg#*=}"
+              DCM_URL="${arg#*=}"
               ;;
             -a=*|--agenturl=*)
               AGENT_BASE_URL="${arg#*=}" 

@@ -47,6 +47,7 @@ class CLOUD_TYPES:
     ServerExpress = "ServerExpress"
     Terremark = "Terremark"
     VMware = "VMware"
+    Konami = "Konami"
     UNKNOWN = "UNKNOWN"
 
 
@@ -271,6 +272,21 @@ class OpenStackMetaData(CloudMetaData):
 
     def get_cloud_type(self):
         return CLOUD_TYPES.OpenStack
+
+
+class KonamiMetaData(object):
+    def get_cloud_metadata(self, key):
+        env_str = "DCM_KONAMI_%s" % key
+        try:
+            return os.environ[env_str]
+        except:
+            return None
+
+    def get_instance_id(self):
+        return self.get_cloud_metadata("INSTANCE_ID")
+
+    def get_cloud_type(self):
+        return CLOUD_TYPES.Konami
 
 
 def set_metadata_object(conf):
