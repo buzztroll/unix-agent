@@ -217,26 +217,31 @@ function set_installer() {
             platform="ubuntu"
             pkg_ext="deb"
             installer_cmd="dpkg -i"
+            pkg_mgr_cmd="apt-get install -y"
             ;;
         debian*)
             platform="debian"
             pkg_ext="deb"
             installer_cmd="dpkg -i"
+            pkg_mgr_cmd="apt-get install -y"
             ;;
         cent*)
             platform="el"
             pkg_ext="rpm"
             installer_cmd="rpm -Uvh"
+            pkg_mgr_cmd="yum install -y"
             ;;
         rhel*)
             platform="el"
             pkg_ext="rpm"
             installer_cmd="rpm -Uvh"
+            pkg_mgr_cmd="yum install -y"
             ;;
         suse*)
             platform="suse"
             pkg_ext="deb"
             installer_cmd="dpkg -i"
+            pkg_mgr_cmd="apt-get install -y"
             ;;
         *)
             echo "Sorry we could not detect your environment"
@@ -245,17 +250,28 @@ function set_installer() {
     esac
 }
 
-which curl > /dev/null
-if [ $? -ne 0 ]; then
-    echo "curl must be installed on your system to use this installer."
-    exit 1
-fi
-
 if [ "X$DCM_AGENT_FORCE_DISTRO_VERSION" == "X" ]; then
     identify_platform
 fi
 echo $DCM_AGENT_FORCE_DISTRO_VERSION
 set_installer
+
+which curl > /dev/null
+if [ $? -ne 0 ]; then
+    $pkg_mgr_cmd curl
+    if [ $? -ne 0 ]; then
+        echo "curl must be installed on your system to use this installer."
+        exit 1
+    fi
+fi
+which sudo > /dev/null
+if [ $? -ne 0 ]; then
+    $pkg_mgr_cmd sudo
+    if [ $? -ne 0 ]; then
+        echo "sudo must be installed on your system to use this installer."
+        exit 1
+    fi
+fi
 
 if [[ "X$AGENT_BASE_URL" == "X" && "X$AGENT_BASE_URL" != "XNONE" ]]; then
     if [ "X$AGENT_UNSTABLE" != "X" ]; then
