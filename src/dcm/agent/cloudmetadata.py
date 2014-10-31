@@ -241,7 +241,6 @@ class AzureMetaData(CloudMetaData):
         ha = hostname.split(".")
         return "%s:%s:%s" % (ha[0], ha[0], ha[0])
 
-
     def is_effective_cloud(self):
         pass
 
