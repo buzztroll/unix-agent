@@ -1,2 +1,4 @@
 #
-export AGENT_BASE_URL=https://s3.amazonaws.com/dcmagentunstable
+export AGENT_BASE_URL=https://s3.amazonaws.com/dcmagentnightly
+export DCM_AGENT_CLOUD=Konami
+export DCM_AGENT_SSH_KEY="ssh-rsa AAAAB3NzaC1yc2EAAAADAQABAAABAQDdY8U2OGk91mcHrR6713sPDAtYoFeTyh9i513Aoh+QNuPGn4aX8AJB1Bm4H2wcsOT6KnU6yYqWa0WxJtxgcOmpsTQ8Cl//5e7KXD5cjYuE8NpebvOSNoC5oY3nbTBzoj+ioBjfGHJSZo95qjVC+W3a+NNTuXVNM4m5QTbt8BUQB2FHgJb5NCaPFkJ5U2tihMc3HzMouGHtAUlEc992Fc/jQTJ6LQH+GVsqpGdYBL1pqjMkegdPe3DlxW8g7dEtreDbZbtV3NKiQ6qjid/9MQba0aDW0/Vh7BxbamY8fbrI1QpW0pzR2R184wkSzHW1mASldhEpbOQJFFwnpsJ/yLZb bresnaha@Johns-MacBook-Pro.local"
