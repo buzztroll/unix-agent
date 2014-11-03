@@ -284,6 +284,11 @@ class KonamiMetaData(object):
     def get_instance_id(self):
         return self.get_cloud_metadata("INSTANCE_ID")
 
+    def get_handshake_ip_address(self, conf):
+        private = self.get_cloud_metadata("PRIVATE_IP")
+        public = self.get_cloud_metadata("PUBLIC_IP")
+        return [private, public]
+
     def get_cloud_type(self):
         return CLOUD_TYPES.Konami
 
