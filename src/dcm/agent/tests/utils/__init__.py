@@ -92,3 +92,14 @@ def system_changing(func):
         return func(*args, **kwargs)
     inner.__name__ = func.__name__
     return inner
+
+
+def skip_docker(func):
+    def inner(*args, **kwargs):
+        if os.path.exists("/.dockerinit"):
+            raise skip.SkipTest(
+                "We are running on docker and thus skipping this test.  "
+                "%s" % func.__name__)
+        return func(*args, **kwargs)
+    inner.__name__ = func.__name__
+    return inner
