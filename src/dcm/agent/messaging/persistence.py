@@ -94,7 +94,7 @@ def class_method_session(func):
     return wrapper
 
 
-class AgentDB(object):
+class SqlAlchemyAgentDB(object):
 
     def __init__(self, db_file):
         if db_file == ":memory:":
@@ -102,15 +102,13 @@ class AgentDB(object):
         else:
             dburl = "sqlite:///%s" % db_file
         self._engine = sqlalchemy.create_engine(dburl)
+        self.Session = sqlalchemy.orm.sessionmaker()
         g_metadata.create_all(self._engine)
-
-        self._session_factory = sqlalchemy.orm.sessionmaker(bind=self._engine)
-        self._Session = sqlalchemy.orm.scoped_session(self._session_factory)
-        self._Session = self._session_factory
+        self.Session.configure(bind=self._engine)
         self._lock = threading.RLock()
 
     def _get_session(self):
-        return self._Session()
+        return self.Session()
 
     def lock(self):
         self._lock.acquire()
@@ -279,6 +277,7 @@ class FakeAgentDB(object):
 
     def clean_all_expired(self, cut_off_time, session=None):
         pass
+
 
 class DBCleaner(threading.Thread):
 

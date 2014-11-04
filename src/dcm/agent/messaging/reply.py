@@ -38,7 +38,6 @@ class ReplyRPC(object):
         self._cancel_callback_kwargs = None
         self._reply_message_timer = None
         self._reply_listener = reply_listener
-        self._response_doc = None
         self._timeout = timeout
         self._conn = connection
         self._resend_reply_cnt = 0
@@ -46,20 +45,13 @@ class ReplyRPC(object):
         self._lock = threading.RLock()
 
         if reply_doc is None:
-            starting_state = states.ReplyStates.NEW
-            starting_event = states.ReplyEvents.REQUEST_RECEIVED
-            message = {}
+            starting_state = states.ReplyStates.REQUESTING
         else:
             starting_state = start_state
-            starting_event = states.ReplyEvents.USER_REPLIES
-            message = reply_doc
-
+        self._response_doc = reply_doc
         self._sm = states.StateMachine(starting_state)
         self._setup_states()
         self._db = db
-        if reply_doc is None:
-            with tracer.RequestTracer(self._request_id):
-                self._sm.event_occurred(starting_event, message=message)
 
     def get_request_id(self):
         return self._request_id
@@ -700,7 +692,6 @@ class RequestListener(object):
         self._db = db
         self._id_system = id_system
         self._lock = threading.RLock()
-
         self._db.starting_agent()
 
     def get_reply_observers(self):
@@ -736,24 +727,22 @@ class RequestListener(object):
                 os.killpg(0, signal.SIGKILL)
                 sys.exit(10)
 
+            # if it is a alert message short circuit
             if incoming_doc["type"] == types.MessageTypes.ALERT_ACK:
                 if self._id_system:
                     self._id_system.incoming_message(incoming_doc)
                 return
 
             request_id = incoming_doc["request_id"]
+
             # is this request already in memory?
-            # if it is a alert message short circuit
             if request_id in self._requests:
                 # send it through, state machine will deal with it
                 req = self._requests[request_id]
                 req.incoming_message(incoming_doc)
                 return
-
-            # is this an old completed request that is in the DB
-            # db_record = self._db.lookup_req(request_id)
-            # XXX TODO db_looks are causing problems.  revisit
-            db_record = False
+            # if the request id has already been seen by the database
+            db_record = self._db.lookup_req(request_id)
             if db_record:
                 _g_logger.info("Inflating the record from the DB."
                                + request_id)
@@ -772,8 +761,9 @@ class RequestListener(object):
                 # on the memory list
                 self._requests[request_id] = req
                 req.incoming_message(incoming_doc)
+                return
 
-            elif incoming_doc["type"] == types.MessageTypes.REQUEST:
+            if incoming_doc["type"] == types.MessageTypes.REQUEST:
                 if len(self._requests.keys()) >=\
                         self._conf.messaging_max_at_once > -1:
 
