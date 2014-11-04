@@ -443,6 +443,7 @@ class TestProtocolCommands(reply.ReplyObserverInterface):
         except KeyError:
             pass
 
+    @test_utils.skip_docker
     @test_utils.system_changing
     def test_initialize(self):
         cust = 10l
@@ -487,6 +488,7 @@ class TestProtocolCommands(reply.ReplyObserverInterface):
         nose.tools.eq_(r["payload"]["return_code"], 0)
         # TODO verify that this matches the output of the command
 
+    @test_utils.skip_docker
     @test_utils.system_changing
     def test_rename(self):
         orig_hostname = socket.gethostname()
@@ -512,6 +514,7 @@ class TestProtocolCommands(reply.ReplyObserverInterface):
 
         nose.tools.eq_(socket.gethostname(), orig_hostname)
 
+    @test_utils.skip_docker
     @test_utils.system_changing
     def test_rename_bad_hostname(self):
         orig_hostname = socket.gethostname()
@@ -536,6 +539,7 @@ class TestProtocolCommands(reply.ReplyObserverInterface):
 
         nose.tools.eq_(socket.gethostname(), orig_hostname)
 
+    @test_utils.skip_docker
     @test_utils.system_changing
     def test_rename_long_hostname(self):
         orig_hostname = socket.gethostname()
@@ -1386,6 +1390,7 @@ class TestProtocolCommands(reply.ReplyObserverInterface):
         r = req_reply.get_reply()
         nose.tools.eq_(r["payload"]["return_code"], 0)
 
+    @test_utils.skip_docker
     @test_utils.system_changing
     def test_rename_bad_name(self):
         orig_hostname = socket.gethostname()
@@ -1411,6 +1416,7 @@ class TestProtocolCommands(reply.ReplyObserverInterface):
         nose.tools.eq_(socket.gethostname(), orig_hostname)
 
 
+    @test_utils.skip_docker
     @test_utils.system_changing
     def test_initialize_rename_error(self):
         cust = 10l
