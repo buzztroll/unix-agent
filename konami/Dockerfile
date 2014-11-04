@@ -20,4 +20,5 @@ ADD install-agent.sh /tmp/agent_install/install-agent.sh
 RUN /tmp/agent_install/install-agent.sh
 
 ADD reconfigure-and-start-agent.sh /etc/my_init.d/99_reconfigure-and-start-agent.sh
+ADD rename /dcm/bin/rename
 RUN apt-get clean && rm -rf /var/lib/apt/lists/* /tmp/* /var/tmp/*
