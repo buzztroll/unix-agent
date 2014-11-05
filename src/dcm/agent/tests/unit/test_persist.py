@@ -16,7 +16,7 @@ import dcm.agent.messaging.states as messaging_states
 class TestPersistMemory(unittest.TestCase):
 
     def setUp(self):
-        self.db = persistence.SqlAlchemyAgentDB(":memory:")
+        self.db = persistence.SQLiteAgentDB(":memory:")
 
     def test_complete_empty(self):
         res = self.db.get_all_complete()
@@ -181,7 +181,7 @@ class TestPersistDisk(unittest.TestCase):
 
     def setUp(self):
         _, self.db_file = tempfile.mkstemp("test_db")
-        self.db = persistence.SqlAlchemyAgentDB(self.db_file)
+        self.db = persistence.SQLiteAgentDB(self.db_file)
 
     def tearDown(self):
         os.remove(self.db_file)
@@ -212,7 +212,7 @@ class TestPersistMultiThread(unittest.TestCase):
 
     def setUp(self):
         _, self.db_file = tempfile.mkstemp("test_db")
-        self.db = persistence.SqlAlchemyAgentDB(self.db_file)
+        self.db = persistence.SQLiteAgentDB(self.db_file)
 
     def tearDown(self):
         os.remove(self.db_file)

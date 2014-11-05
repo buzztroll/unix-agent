@@ -256,7 +256,7 @@ class TestRequestListener(object):
         test_utils.connect_to_debugger()
 
     def setUp(self):
-        self.db = persistence.SqlAlchemyAgentDB(":memory:")
+        self.db = persistence.SQLiteAgentDB(":memory:")
 
     def test_read_request(self):
         conn = mock.Mock()

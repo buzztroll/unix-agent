@@ -22,7 +22,7 @@ class TestSingleCommands(unittest.TestCase):
         self.disp = dispatcher.Dispatcher(self.conf_obj)
         self.test_base_path = tempfile.mkdtemp()
         self.db_path = os.path.join(self.test_base_path, "agentdb.sql")
-        self.db = persistence.SqlAlchemyAgentDB(self.db_path)
+        self.db = persistence.SQLiteAgentDB(self.db_path)
 
     def tearDown(self):
         self.disp.stop()
@@ -90,7 +90,7 @@ class TestSerialCommands(unittest.TestCase):
         self.disp = dispatcher.Dispatcher(self.conf_obj)
         self.test_base_path = tempfile.mkdtemp()
         self.db_path = os.path.join(self.test_base_path, "agentdb.sql")
-        self.db = persistence.SqlAlchemyAgentDB(self.db_path)
+        self.db = persistence.SQLiteAgentDB(self.db_path)
 
     def tearDown(self):
         self.disp.stop()
@@ -152,7 +152,7 @@ class TestRetransmission(unittest.TestCase):
         self.conf_obj = config.AgentConfig([test_conf_path])
         self.test_base_path = tempfile.mkdtemp()
         self.db_path = os.path.join(self.test_base_path, "agentdb.sql")
-        self.db = persistence.SqlAlchemyAgentDB(self.db_path)
+        self.db = persistence.SQLiteAgentDB(self.db_path)
 
     def tearDown(self):
         shutil.rmtree(self.test_base_path)
