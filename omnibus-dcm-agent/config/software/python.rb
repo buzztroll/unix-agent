@@ -32,7 +32,7 @@ build do
   env = {
     "CFLAGS" => "-I#{install_dir}/embedded/include -O3 -g -pipe",
     "LDFLAGS" => "-Wl,-rpath,#{install_dir}/embedded/lib -L#{install_dir}/embedded/lib",
-    "CPPFLAGS" => "-I/opt/dcm-agent/embedded/include",
+    "CPPFLAGS" => "-I#{install_dir}/embedded/include",
   }
 
   command "./configure" \
