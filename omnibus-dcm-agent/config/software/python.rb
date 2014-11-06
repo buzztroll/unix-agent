@@ -17,6 +17,7 @@
 name "python"
 default_version "2.7.8"
 
+dependency "sqlite"
 dependency "gdbm"
 dependency "ncurses"
 dependency "zlib"
