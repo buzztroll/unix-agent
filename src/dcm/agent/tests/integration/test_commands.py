@@ -29,7 +29,6 @@ class TestSingleCommands(unittest.TestCase):
         shutil.rmtree(self.test_base_path)
 
     def _get_conn(self, incoming_lines, outfile, drop_count):
-        self._incoming_io = StringIO.StringIO(incoming_lines)
         return test_conn.TestReplySuccessfullyAlways(
             incoming_lines, outfile, reply_ignore_count=drop_count)
 
@@ -97,7 +96,6 @@ class TestSerialCommands(unittest.TestCase):
         shutil.rmtree(self.test_base_path)
 
     def _get_conn(self, incoming_lines, outfile, drop_count):
-        self._incoming_io = StringIO.StringIO(incoming_lines)
         return test_conn.TestReplySuccessfullyAlways(
             incoming_lines, outfile, reply_ignore_count=drop_count)
 
@@ -151,14 +149,13 @@ class TestRetransmission(unittest.TestCase):
         test_conf_path = test_utils.get_conf_file()
         self.conf_obj = config.AgentConfig([test_conf_path])
         self.test_base_path = tempfile.mkdtemp()
-        self.db_path = os.path.join(self.test_base_path, "agentdb.sql")
+        self.db_path = os.path.join(self.test_base_path, "agentdb.db")
         self.db = persistence.SQLiteAgentDB(self.db_path)
 
     def tearDown(self):
         shutil.rmtree(self.test_base_path)
 
     def _get_conn(self, incoming_lines, outfile, drop_count, retrans_list):
-        self._incoming_io = StringIO.StringIO(incoming_lines)
         conn = test_conn.TestReplySuccessfullyAlways(
             incoming_lines, outfile, reply_ignore_count=drop_count,
             retrans_requests=retrans_list)

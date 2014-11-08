@@ -18,8 +18,8 @@ import sqlite3
 import threading
 
 from dcm.agent import exceptions
-import dcm.agent.messaging.utils as messaging_utils
 import dcm.agent.messaging.states as messaging_states
+import dcm.agent.messaging.utils as messaging_utils
 
 
 _g_logger = logging.getLogger(__name__)
@@ -81,6 +81,8 @@ class SQLiteRequestObject(object):
 
     # this is the disconnected object
     def __init__(self, row):
+        if row is None:
+            raise exceptions.PersistenceException("The row is none")
         column_order = _get_column_order()
         i = 0
         for attr in column_order:
@@ -88,43 +90,53 @@ class SQLiteRequestObject(object):
             i += 1
 
 
-def class_method_session(func):
-    def wrapper(self, *args, **kwargs):
-        session = self._get_session()
-        try:
-            kwargs['session'] = session
-            rc = func(self, *args, **kwargs)
-            session.commit()
-            return rc
-        except:
-            session.rollback()
-            raise
-        finally:
-            session.close()
-    return wrapper
-
-
 class SQLiteAgentDB(object):
 
     def __init__(self, db_file):
         self._db_file = db_file
-        with sqlite3.connect(self._db_file) as db_conn:
-            db_conn.executescript(_g_sqllite_ddl)
+        self._lock = threading.RLock()
+
+        try:
+            self._db_conn = sqlite3.connect(self._db_file, check_same_thread=False)
+            try:
+                self._db_conn.executescript(_g_sqllite_ddl)
+                self._db_conn.commit()
+            except Exception as ex:
+                _g_logger.exception(
+                    "Could not open " + db_file + " " + str(ex))
+                self._db_conn.rollback()
+                raise
+        except Exception as ex:
+            _g_logger.exception(
+                "Could not connect to the DB " + db_file + " " + str(ex))
+            raise
+
+    def lock(self):
+        self._lock.acquire()
+
+    def unlock(self):
+        self._lock.release()
 
     def _execute(self, func):
-        with sqlite3.connect(self._db_file) as db_conn:
-            cursor = db_conn.cursor()
+        try:
+            cursor = self._db_conn.cursor()
             try:
                 rc = func(cursor)
-                cursor.commit()
+                self._db_conn.commit()
                 return rc
             except Exception as ex:
-                _g_logger.exception(ex)
-                cursor.rollback()
+                _g_logger.exception(
+                    "Could not open " + self._db_file + " " + str(ex))
+                self._db_conn.rollback()
                 raise
             finally:
                 cursor.close()
+        except Exception as ex:
+            _g_logger.exception(
+                "Could not connect to the DB " + self._db_file + " " + str(ex))
+            raise
 
+    @messaging_utils.class_method_sync
     def starting_agent(self):
         r = {
             'Exception':
@@ -136,77 +148,108 @@ class SQLiteAgentDB(object):
 
         def do_it(cursor):
             cursor.execute(stmt,
-                           messaging_states.ReplyStates.REPLY,
-                           reply_doc,
-                           messaging_states.ReplyStates.ACKED)
+                           (messaging_states.ReplyStates.REPLY,
+                            reply_doc,
+                            messaging_states.ReplyStates.ACKED))
         self._execute(do_it)
 
+    @messaging_utils.class_method_sync
     def check_agent_id(self, agent_id):
-        stmt = ("DELETE FROM requests where agent_id <> ?")
+        stmt = 'DELETE FROM requests where agent_id <> ?'
         def do_it(cursor):
-            cursor.execute(stmt, agent_id)
+            cursor.execute(stmt, (agent_id,))
         self._execute(do_it)
 
     def _get_all_state(self, state):
         stmt = ("SELECT " + ", ".join(_get_column_order()) +
-                " FROM requests WHERE state=" + state)
+                " FROM requests WHERE state=\"" + state + '"')
         def do_it(cursor):
             cursor.execute(stmt)
             rows = cursor.fetchall()
+            if not rows:
+                return []
             return [SQLiteRequestObject(i) for i in rows]
         return self._execute(do_it)
 
+    @messaging_utils.class_method_sync
     def get_all_complete(self):
         return self._get_all_state(messaging_states.ReplyStates.REPLY_ACKED)
 
+    @messaging_utils.class_method_sync
     def get_all_rejected(self, session=None):
         return self._get_all_state(messaging_states.ReplyStates.NACKED)
 
+    @messaging_utils.class_method_sync
     def get_all_reply_nacked(self, session=None):
         return self._get_all_state(messaging_states.ReplyStates.REPLY_NACKED)
 
+    @messaging_utils.class_method_sync
     def get_all_ack(self):
         return self._get_all_state(messaging_states.ReplyStates.ACKED)
 
+    @messaging_utils.class_method_sync
     def get_all_reply(self):
         return self._get_all_state(messaging_states.ReplyStates.REPLY)
 
+    @messaging_utils.class_method_sync
     def lookup_req(self, request_id):
         stmt = ("SELECT " + ", ".join(_get_column_order()) + " FROM "
-                "requests where request_id=?")
+                'requests where request_id=?')
 
         def do_it(cursor):
-            cursor.execute(stmt, request_id)
+            cursor.execute(stmt, [request_id])
             row = cursor.fetchone()
+            if not row:
+                return
             return SQLiteRequestObject(row)
         return self._execute(do_it)
 
+    @messaging_utils.class_method_sync
     def new_record(self, request_id, request_doc, reply_doc, state,
                    agent_id):
-        stmt = ("INSERT INTO REQUESTS(request_id, creation_time, request_doc, "
+        stmt = ("INSERT INTO requests(request_id, creation_time, request_doc, "
                 "reply_doc, state, agent_id, last_update_time) "
                 "VALUES(?, ?, ?, ?, ?, ?, ?)")
 
+        if request_id != request_doc['request_id']:
+            raise exceptions.PersistenceException("The request_id must match "
+                                              "the request_doc")
+
+        if request_doc is not None:
+            request_doc = json.dumps(request_doc)
+        if reply_doc is not None:
+            reply_doc = json.dumps(reply_doc)
         def do_it(cursor):
             nw = datetime.datetime.now()
-            cursor.execute(stmt, request_id, nw, request_doc,
-                           reply_doc, state, agent_id, nw)
+            parms = (request_id, nw, request_doc,
+                            reply_doc, state, agent_id, nw)
+            cursor.execute(stmt, parms)
         self._execute(do_it)
 
+    @messaging_utils.class_method_sync
     def update_record(self, request_id, state, reply_doc=None):
         stmt = ("UPDATE requests SET state=?, reply_doc=?, last_update_time=? "
                 "WHERE request_id=?")
+        try:
+            if reply_doc is not None:
+                reply_doc = json.dumps(reply_doc)
+            def do_it(cursor):
+                nw = datetime.datetime.now()
+                cursor.execute(stmt, (state, reply_doc, nw, request_id))
+                if cursor.rowcount != 1:
+                    raise exceptions.PersistenceException(
+                        "%d rows were updated when exactly 1 should have "
+                        "been" % cursor.rowcount)
+            self._execute(do_it)
+        except Exception as ex:
+            raise exceptions.PersistenceException(ex)
 
-        def do_it(cursor):
-            nw = datetime.datetime.now()
-            cursor.execute(stmt, state, reply_doc, nw, request_id)
-        self._execute(do_it)
-
+    @messaging_utils.class_method_sync
     def clean_all_expired(self, cut_off_time):
         stmt = ("DELETE FROM requests WHERE request_id in (SELECT request_id "
                 "FROM requests WHERE last_update_time < ?)")
         def do_it(cursor):
-            cursor.execute(stmt, cut_off_time)
+            cursor.execute(stmt, (cut_off_time,))
         self._execute(do_it)
 
 

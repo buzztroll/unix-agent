@@ -48,7 +48,7 @@ class TestPersistMemory(unittest.TestCase):
             self.db.update_record("Nope", "ASTATE")
         except exceptions.PersistenceException:
             passed = True
-        nose.tools.ok_(passed)
+        nose.tools.ok_(passed, "An exception did not happen")
 
     def test_new_record_ack_search(self):
         request_id = str(uuid.uuid4())
@@ -109,6 +109,7 @@ class TestPersistMemory(unittest.TestCase):
         res = self.db.lookup_req(request_id)
         nose.tools.eq_(res.agent_id, agent_id)
         nose.tools.eq_(res.request_id, request_id)
+        print res.reply_doc
         nose.tools.eq_(json.loads(res.reply_doc), reply_doc)
 
     def test_new_record_update_lookup(self):
@@ -195,7 +196,7 @@ class TestPersistDisk(unittest.TestCase):
 
         request_id2 = str(uuid.uuid4())
         request_doc = {"request_id": request_id2}
-        self.db.new_record(request_id, request_doc, None, state, agent_id)
+        self.db.new_record(request_id2, request_doc, None, state, agent_id)
 
         cleaner = persistence.DBCleaner(self.db, 10, 10, 0.05)
         cleaner.start()
@@ -226,7 +227,7 @@ class TestPersistMultiThread(unittest.TestCase):
 
         request_id2 = str(uuid.uuid4())
         request_doc = {"request_id": request_id2}
-        self.db.new_record(request_id, request_doc, None, state, agent_id)
+        self.db.new_record(request_id2, request_doc, None, state, agent_id)
 
         failed = []
 
@@ -253,7 +254,7 @@ class TestPersistMultiThread(unittest.TestCase):
 
         request_id2 = str(uuid.uuid4())
         request_doc = {"request_id": request_id2}
-        self.db.new_record(request_id, request_doc, None, state, agent_id)
+        self.db.new_record(request_id2, request_doc, None, state, agent_id)
 
         failed = []
 
