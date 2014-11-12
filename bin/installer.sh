@@ -199,7 +199,7 @@ function identify_platform() {
     echo "determining architecture..."
     tmp_bits=`uname -m`
     if [ "Xx86_64" == "X$tmp_bits" ]; then
-        if [ "X$distro_name" == "Xcentos" ]; then
+        if [[ "X$distro_name" == "Xcentos" || "X$distro_name" == "Xrhel" ]]; then
              arch="-x86_64"
         else
              arch="-amd64"
