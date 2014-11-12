@@ -22,9 +22,10 @@ platform_cloice = None
 
 
 platform_choices = ["ubuntu", "el", "debian", "suse", "centos", "rhel",
-                    "fedora_core"]
+                    "fedora"]
 g_user_env_str = "DCM_USER"
 g_basedir_env_str = "DCM_BASEDIR"
+
 
 cloud_choices = {
     1: cloudmetadata.CLOUD_TYPES.Amazon,

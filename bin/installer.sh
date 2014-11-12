@@ -171,6 +171,10 @@ function identify_platform() {
                 distro_version=$(echo $redhat_info | awk '{print $4}')
                 distro_name="rhel"
             ;;
+            Fedora)
+                distro_version=$(echo $redhat_info | awk '{print $3}')
+                distro_name="fedora"
+            ;;
             *)
                 echo "Sorry we could not detect your environment via RHEL path"
                 exit 1
@@ -194,12 +198,18 @@ function identify_platform() {
         echo "[ERROR] Unable to identify platform."
         exit 1
     fi
-    distro_version=`echo $distro_version | awk -F '.' '{ print $1 "." $2 }'`
+    major_version=`echo $distro_version | awk -F '.' '{ print $1 }'`
+    minor_version=`echo $distro_version | awk -F '.' '{ print $2 }'`
+    if [ "X$minor_version" == "X" ]; then
+        distro_version=$major_version
+    else
+        distro_version="$major_version"".""$minor_version"
+    fi
 
     echo "determining architecture..."
     tmp_bits=`uname -m`
     if [ "Xx86_64" == "X$tmp_bits" ]; then
-        if [[ "X$distro_name" == "Xcentos" || "X$distro_name" == "Xrhel" ]]; then
+        if [[ "X$distro_name" == "Xcentos" || "X$distro_name" == "Xrhel" || "X$distro_name" == "Xfedora" ]]; then
              arch="-x86_64"
         else
              arch="-amd64"
