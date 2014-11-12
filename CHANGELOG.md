@@ -1,3 +1,18 @@
+# 0.9.5 (2014-11-12)
+
+Features
+* Added RHEL with x86_64 and fedora as supported distrobutions.
+* Added in initial agent support for docker.
+* Added a means to guess the effective cloud that a VM is on.
+* Added in suppport for OpenStack.
+* Added script to install both the agent and docker.
+
+Bug Fixes
+* Added sudo and curl when needed in the installer script.
+* Changing the default agent manager contact string and allowed
+  for a default port in the url.
+* Reconfiguring an agent if one was previously installed on the VM.
+
 # 0.9.4 (2014-10-03)
 
 Features
