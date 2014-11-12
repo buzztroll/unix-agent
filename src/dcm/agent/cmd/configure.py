@@ -471,7 +471,8 @@ def get_url(default=None):
     # validate
     try:
         up = urlparse.urlparse(url)
-        int(up.port)
+        if up.port is not None:
+            int(up.port)
     except Exception:
         raise Exception("The agent manager contact %s is not a valid url"
                         % url)
