@@ -273,7 +273,7 @@ class OpenStackMetaData(CloudMetaData):
         return CLOUD_TYPES.OpenStack
 
 
-class KonamiMetaData(object):
+class KonamiMetaData(CloudMetaData):
     def get_cloud_metadata(self, key):
         env_str = "DCM_KONAMI_%s" % key
         try:
@@ -310,6 +310,8 @@ def set_metadata_object(conf):
                     cloud_name == CLOUD_TYPES.CloudStack3:
         meta_data_obj = CloudStackMetaData(
             conf, base_url=conf.cloud_metadata_url)
+    elif cloud_name == CLOUD_TYPES.Konami:
+        meta_data_obj = KonamiMetaData()
     else:
         meta_data_obj = CloudMetaData()
 
