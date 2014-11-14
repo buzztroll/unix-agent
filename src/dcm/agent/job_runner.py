@@ -28,6 +28,8 @@ class JobRunnerWorker(multiprocessing.Process):
 
     def _sync_job(self, wrk):
         (msg_type, cmd, cwd, env) = wrk
+        env['DCM_AGENT_PLATFORM_NAME'] = self._conf.platform_name
+        env['DCM_AGENT_PLATFORM_VERSION'] = self._conf.platform_version
         try:
             _g_logger.info("Child runner starting the script %s ;"
                            " env=%s"

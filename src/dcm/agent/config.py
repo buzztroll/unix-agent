@@ -185,6 +185,13 @@ class AgentConfig(object):
         #  here is where we set which Meta object to use from cloudmetadata.py
         set_metadata_object(self)
 
+        self._normalize_options()
+
+        setup_logging(self.logging_configfile)
+        self.token = utils.generate_token()
+        self.page_monitor = pages.PageMonitor()
+
+    def _normalize_options(self):
         if self.storage_dbfile is None:
             self.storage_dbfile = \
                 os.path.join(self.storage_base_dir, "etc", "agentdb.sql")
@@ -200,9 +207,10 @@ class AgentConfig(object):
         if not self.storagecloud_secure:
             libcloud.security.VERIFY_SSL_CERT = False
 
-        setup_logging(self.logging_configfile)
-        self.token = utils.generate_token()
-        self.page_monitor = pages.PageMonitor()
+        if self.platform_name is None or self.platform_version is None:
+            distro_name, distro_version = utils.identify_platform()
+            self.platform_name = distro_name
+            self.platform_version = distro_version
 
     def set_handshake(self, handshake_doc):
         self.state = "WAITING"
@@ -372,9 +380,14 @@ def build_options_list():
                   default="common-linux"),
         ConfigOpt("platform", "name", str, default=None,
                   help_msg="The platform/distribution on which this agent is"
-                           "being installed.",
-                  options=["ubuntu", "el", "suse", "debian", "rhel",
-                           "centos", "fedora_core"]),
+                           "being installed.  Must be used with "
+                           "[platform]version.",
+                  options=["ubuntu", "debian", "rhel",
+                           "centos", "fedora"]),
+        ConfigOpt("platform", "version", str, default=None,
+          help_msg="The platform/distribution version on which this "
+                   "agent is being installed.  Must be used with "
+                   "[platform]name."),
         ConfigOpt("jobs", "retain_job_time", int, default=3600),
         ConfigOpt("test", "skip_handshake", bool, default=False),
 

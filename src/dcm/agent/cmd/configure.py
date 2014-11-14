@@ -11,6 +11,7 @@ import platform
 import textwrap
 import urlparse
 from dcm.agent import config, cloudmetadata
+import dcm.agent.utils as agent_utils
 import ConfigParser
 
 import dcm.agent
@@ -18,11 +19,6 @@ import dcm.agent
 
 # below are the variables with no defaults that must be determined
 cloud_choice = None
-platform_cloice = None
-
-
-platform_choices = ["ubuntu", "el", "debian", "suse", "centos", "rhel",
-                    "fedora"]
 g_user_env_str = "DCM_USER"
 g_basedir_env_str = "DCM_BASEDIR"
 
@@ -108,13 +104,6 @@ def setup_command_line_parser():
                         dest="temp_path",
                         help="The temp path")
 
-    parser.add_argument("--platform", "-P",
-                        dest="platform",
-                        help="The platform where this is being installed. "
-                             "It is recommended that you only set this option "
-                             "if this script fails to determine it for you.",
-                        choices=platform_choices)
-
     parser.add_argument("--user", "-U",
                         dest="user",
                         help="The system user that will run the agent.")
@@ -145,51 +134,6 @@ def run_command(cmd):
         stdout = None
         stderr = ex.message
     return rc, stdout, stderr
-
-
-def identify_platform(opts):
-
-    if not opts.initial and platform.system().lower() != "linux":
-        raise Exception("This agent can only be used on Linux platform.")
-
-    lsb = "/usr/bin/lsb_release"
-    if os.path.exists(lsb) and os.access(lsb, os.X_OK):
-        rc, stdout, stderr = run_command(" ".join([lsb, "-i"]))
-        if rc == 0 and stdout:
-            parts = stdout.split()
-            if len(parts) == 3:
-                cand = parts[2].strip()
-                if cand == "Ubuntu":
-                    return "ubuntu"
-                elif cand == "CentOS":
-                    return "centos"
-                elif cand == "RedHatEnterpriseServer":
-                    return "rhel"
-                elif cand == "SUSE LINUX":
-                    return "suse"
-                elif cand == "n/a":
-                    return "el"
-
-    if os.path.exists("/etc/redhat-release"):
-        with open("/etc/redhat-release") as fptr:
-            redhat_info = fptr.readline().split()[0]
-            if redhat_info == "CentOS":
-                return "centos"
-            elif redhat_info == "Red":
-                return "rhel"
-    if os.path.exists("/etc/debian_version"):
-        return "debian"
-    if os.path.exists("/etc/SuSE-release"):
-        return "suse"
-    if os.path.exists("/etc/system-release"):
-        with open("/etc/system-release") as fptr:
-            line = fptr.readline().strip().lower()
-            if line.find("amazon linux ami") >= 0:
-                return "el"
-
-    if opts.initial:
-        return None
-    raise Exception("The platform could not be determined")
 
 
 def _get_input(prompt):
@@ -390,7 +334,6 @@ def merge_opts(conf_d, opts):
         "base_path": ("storage", "base_dir"),
         "services_path": ("storage", "services_dir"),
         "temp_path": ("storage", "temppath"),
-        "platform": ("platform", "name"),
         "con_type": ("connection", "type"),
         "mount_path": ("storage", "mountpoint")
     }
@@ -524,10 +467,6 @@ def gather_values(opts):
     merge_opts(conf_d, opts)
     # set defaults for relative paths
     update_relative_paths(conf_d)
-    (h, plat) = conf_d["platform"]["name"]
-    if not plat:
-        plat = identify_platform(opts)
-        conf_d["platform"]["name"] = (h, plat)
 
     return conf_d
 

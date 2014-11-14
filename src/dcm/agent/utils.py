@@ -12,7 +12,6 @@
 #   is obtained from Dell, Inc.
 #  ======================================================================
 import base64
-
 import os
 import subprocess
 import tempfile
@@ -342,3 +341,88 @@ def user_name(proposed_name):
     if re.match("^(?![_-])[a-zA-Z0-9_-]+(?<![_-])$", string_name):
         return proposed_name
     raise ValueError("bad user name")
+
+
+def identify_platform():
+
+    distro_name = None
+    distro_version = None
+
+    os_release_path = "/etc/os-release"
+    if os.path.exists(os_release_path):
+        with open(os_release_path) as fptr:
+            for line in fptr.readlines():
+                key, value = line.split("=", 1)
+                if key == "ID":
+                    distro_name = value
+                elif key == "VERSION_ID":
+                    distro_version = value
+        if distro_name and distro_version:
+            return distro_name, distro_version
+
+    os_release_path = "/etc/lsb-release"
+    if os.path.exists(os_release_path):
+        with open(os_release_path) as fptr:
+            for line in fptr.readlines():
+                key, value = line.split("=", 1)
+                if key == "DISTRIB_ID":
+                    distro_name = value.lower()
+                elif key == "DISTRIB_RELEASE":
+                    distro_version = value
+        if distro_name and distro_version:
+            return distro_name, distro_version
+
+    lsb = "/usr/bin/lsb_release"
+    if os.path.exists(lsb) and os.access(lsb, os.X_OK):
+        rc, stdout, stderr = run_command(" ".join([lsb, "-i"]))
+        if rc != 0 or not stdout:
+            raise exceptions.AgentPlatformNotDetectedException()
+
+        parts = stdout.split()
+        if len(parts) != 3:
+            raise exceptions.AgentPlatformNotDetectedException()
+
+        cand = parts[2].strip()
+        if cand == "Ubuntu":
+            distro_name = "ubuntu"
+        elif cand == "CentOS":
+            distro_name = "centos"
+        elif cand == "RedHatEnterpriseServer":
+            distro_name = "rhel"
+        elif cand == "Debian":
+            distro_name = "debian"
+        else:
+            raise exceptions.AgentPlatformNotDetectedException()
+
+        rc, stdout, stderr = run_command(" ".join([lsb, "-r"]))
+        if rc != 0:
+            raise exceptions.AgentPlatformNotDetectedException()
+        parts = stdout.split()
+        distro_version = parts[2].strip
+
+        return distro_name, distro_version
+
+    if os.path.exists("/etc/redhat-release"):
+        with open("/etc/redhat-release") as fptr:
+            redhat_info = fptr.readline().split()
+        if redhat_info[0] == "CentOS":
+            distro_version = redhat_info[2]
+            distro_name = "centos"
+        elif redhat_info[0] == "Red":
+            distro_version = redhat_info[3]
+            distro_name = "rhel"
+        elif redhat_info[0] == "Fedora":
+            distro_version = redhat_info[2]
+            distro_name = "fedora"
+        else:
+            raise exceptions.AgentPlatformNotDetectedException()
+        return distro_name, distro_version
+
+    if os.path.exists("/etc/debian_version"):
+        with open("/etc/debian_version") as fptr:
+            distro_version = fptr.read().strip()
+        distro_name = "debian"
+        return distro_name, distro_version
+
+    raise exceptions.AgentPlatformNotDetectedException()
+
