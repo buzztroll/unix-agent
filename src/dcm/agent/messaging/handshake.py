@@ -60,6 +60,7 @@ def get_handshake(conf):
         'version': dcm.agent.g_version,
         'protocol_version': dcm.agent.g_protocol_version,
         'platform': conf.platform_name,
+        'platform_version': conf.platform_version,
         'features': features
     }
     return handshake_doc
