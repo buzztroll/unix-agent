@@ -220,3 +220,11 @@ class AgentStorageCloudException(Exception):
 
 class PersistenceException(Exception):
     pass
+
+
+class AgentPlatformNotDetectedException(Exception):
+    def __init__(self):
+        message = ("The platform was not detected")
+        super(AgentPlatformNotDetectedException, self).__init__(message)
+
+

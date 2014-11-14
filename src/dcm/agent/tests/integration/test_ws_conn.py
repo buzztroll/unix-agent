@@ -35,7 +35,6 @@ class TestWsConnection(object):
         conf_args = ["-c", "Amazon",
                      "-u", "http://doesntmatter.org/ws",
                      "-p", test_base_path,
-                     "-P", "ubuntu",
                      "-C", "ws",
                      "-m", os.path.join(test_base_path, "mount"),
                      "-s", os.path.join(test_base_path, "services"),

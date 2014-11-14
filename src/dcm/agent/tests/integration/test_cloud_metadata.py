@@ -24,7 +24,6 @@ class TestCloudMetadata(unittest.TestCase):
                      "-u", "http://doesntmatter.org/ws",
                      "-m", os.path.join(cls.test_base_path, "mnt"),
                      "-p", cls.test_base_path,
-                     "-P", "ubuntu",
                      "-s", os.path.join(cls.test_base_path, "services"),
                      "-t", os.path.join(cls.test_base_path, "tmp"),
                      "-C", "success_tester",

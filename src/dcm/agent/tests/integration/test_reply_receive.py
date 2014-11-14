@@ -1447,6 +1447,7 @@ class TestProtocolCommands(reply.ReplyObserverInterface):
         else:
             raise skip.SkipTest("No second drive was found")
 
+        print device_id
         mappings = utils.get_device_mappings(self.conf_obj)
         for dm in mappings:
             if dm['device_id'] == device_id:
@@ -1461,12 +1462,14 @@ class TestProtocolCommands(reply.ReplyObserverInterface):
                           "encryptedFsEncryptionKey": None,
                           "mountPoint": mount_point,
                           "devices": [device_id]}}
+        print "trying to mount"
         req_rpc = self._rpc_wait_reply(doc)
         r = req_rpc.get_reply()
         jd = r["payload"]["reply_object"]
         while jd["job_status"] in ["WAITING", "RUNNING"]:
             jd = self._get_job_description(jd["job_id"])
         nose.tools.eq_(jd["job_status"], "COMPLETE")
+        print "done mount"
 
         found = False
         mappings = utils.get_device_mappings(self.conf_obj)
@@ -1490,6 +1493,7 @@ class TestProtocolCommands(reply.ReplyObserverInterface):
         while jd["job_status"] in ["WAITING", "RUNNING"]:
             jd = self._get_job_description(jd["job_id"])
         nose.tools.eq_(jd["job_status"], "COMPLETE")
+        print "done format"
 
         arguments = {
             "deviceId": device_id,
