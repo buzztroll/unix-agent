@@ -15,7 +15,7 @@ import dcm.agent.dispatcher as dispatcher
 import dcm.agent.exceptions as exceptions
 import dcm.agent.logger as logger
 from dcm.agent.messaging import persistence
-import dcm.agent.messaging.handshake as handshake
+import dcm.agent.handshake as handshake
 import dcm.agent.messaging.reply as reply
 import dcm.agent.parent_receive_q as parent_receive_q
 import dcm.agent.utils as utils
