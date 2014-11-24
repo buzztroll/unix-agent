@@ -21,14 +21,14 @@ FOR_TEST_AGENT_ID_ENV = "FOR_TEST_AGENT_ID_ENV"
 
 
 def get_handshake(conf):
-    plugin_dict = get_plugin_handshake_descriptor(conf)
+    plugin_dict = jobs.get_all_plugins(conf)
     features = conf.features.copy()
     for plugin_name in plugin_dict:
-        p_feature = jobs.get_plugin_features(
+        p_feature = jobs.get_module_features(
             conf, plugin_name, plugin_dict[plugin_name])
         features.update(p_feature)
 
-    features['plugins'] = plugin_dict
+    features['plugins'] = get_plugin_handshake_descriptor(conf)
 
     if conf.test_skip_handshake:
         # TODO make this configurable from the test conf files

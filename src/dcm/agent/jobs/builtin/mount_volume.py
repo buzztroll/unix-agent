@@ -15,7 +15,7 @@
 import os
 from dcm.agent import exceptions
 import dcm.agent.utils as utils
-import dcm.agent.config.PLATFORM_TYPES as PLATFORM_TYPES
+import dcm.agent.config as config
 import dcm.agent.jobs.direct_pass as direct_pass
 from dcm.agent.cloudmetadata import CLOUD_TYPES
 
@@ -33,7 +33,7 @@ _cloud_stack_map = {
 
 
 _support_matrix = {
-    CLOUD_TYPES.Amazon.lower(): [PLATFORM_TYPES.PLATFORM_UBUNTU.lower()]
+    CLOUD_TYPES.Amazon.lower(): [config.PLATFORM_TYPES.PLATFORM_UBUNTU.lower()]
 }
 
 
