@@ -15,6 +15,7 @@
 import os
 from dcm.agent import exceptions
 import dcm.agent.utils as utils
+import dcm.agent.config.PLATFORM_TYPES as PLATFORM_TYPES
 import dcm.agent.jobs.direct_pass as direct_pass
 from dcm.agent.cloudmetadata import CLOUD_TYPES
 
@@ -29,6 +30,19 @@ _cloud_stack_map = {
     "8": "xvdi",
     "9": "xvdj"
 }
+
+
+_support_matrix = {
+    CLOUD_TYPES.Amazon.lower(): [PLATFORM_TYPES.PLATFORM_UBUNTU.lower()]
+}
+
+
+def _is_supported(conf):
+    try:
+        supported_distros = _support_matrix[conf.cloud_type.lower()]
+    except KeyError:
+        return False
+    return conf.platform_name.lower() in supported_distros
 
 
 class MountVolume(direct_pass.DirectPass):
@@ -48,6 +62,9 @@ class MountVolume(direct_pass.DirectPass):
         super(MountVolume, self).__init__(
             conf, job_id, items_map, name, arguments)
 
+        if not _is_supported(conf):
+            raise exceptions.AgentUnsupportedCloudFeature(
+                "mount is not supported on this cloud and platform")
         if self.args.raidLevel is None or self.args.raidLevel.upper() != "NONE":
             raise exceptions.AgentPluginBadParameterException(
                 "mount_volume", "only raid level NONE is supported.")
@@ -191,3 +208,10 @@ class MountVolume(direct_pass.DirectPass):
 
 def load_plugin(conf, job_id, items_map, name, arguments):
     return MountVolume(conf, job_id, items_map, name, arguments)
+
+
+def get_features(conf):
+    if _is_supported(conf):
+        return {'mount': True,
+                'format': True}
+    return {}

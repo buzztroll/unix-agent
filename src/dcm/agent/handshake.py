@@ -11,7 +11,6 @@
 #   this material is strictly forbidden unless prior written permission
 #   is obtained from Dell, Inc.
 #  ======================================================================
-import importlib
 import os
 
 from dcm.agent import cloudmetadata, jobs
@@ -23,7 +22,12 @@ FOR_TEST_AGENT_ID_ENV = "FOR_TEST_AGENT_ID_ENV"
 
 def get_handshake(conf):
     plugin_dict = get_plugin_handshake_descriptor(conf)
-    features = conf.features
+    features = conf.features.copy()
+    for plugin_name in plugin_dict:
+        p_feature = jobs.get_plugin_features(
+            conf, plugin_name, plugin_dict[plugin_name])
+        features.update(p_feature)
+
     features['plugins'] = plugin_dict
 
     if conf.test_skip_handshake:

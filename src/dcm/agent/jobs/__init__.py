@@ -10,6 +10,16 @@ from dcm.agent import exceptions, utils
 _g_logger = logging.getLogger(__name__)
 
 
+_g_module_map = {}
+
+
+def import_module(module_name):
+    if module_name not in _g_module_map:
+        module = importlib.import_module(module_name)
+        _g_module_map[module_name] = module
+    return _g_module_map[module_name]
+
+
 class ArgHolder(object):
     pass
 
@@ -141,7 +151,7 @@ class ExePlugin(Plugin):
 def load_python_module(
         module_name, conf, request_id, items_map, name, arguments):
     try:
-        module = importlib.import_module(module_name)
+        module = import_module(module_name)
         _g_logger.debug("Module acquired " + str(dir(module)))
         rc = module.load_plugin(conf, request_id, items_map, name, arguments)
         return rc
@@ -263,3 +273,16 @@ def parse_plugin_doc(conf, name):
     raise exceptions.AgentPluginConfigException(
         "Plugin %s was not found." % name)
 
+
+def get_module_features(conf, plugin_name, items_map):
+    if items_map['type'] != 'python_module':
+        return {}
+    try:
+        module = import_module(items_map['module_name'])
+        get_features_func = getattr(module, 'get_features', None)
+        if get_features_func is None:
+            return {}
+        return get_features_func(conf)
+    except BaseException as ex:
+        _g_logger.error("The agent is miss configured " + str(ex))
+        raise

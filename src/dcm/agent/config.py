@@ -20,6 +20,20 @@ from dcm.agent.jobs import pages
 _g_logger = logging.getLogger(__name__)
 
 
+class PLATFORM_TYPES(object):
+    PLATFORM_UBUNTU = "ubuntu"
+    PLATFORM_SUSE = "suse"
+    PLATFORM_RHEL = "rhel"
+    PLATFORM_CENTOS = "centos"
+    PLATFORM_DEBIAN = "debian"
+    PLATFORM_FEDORE = "fedora_core"
+
+
+def get_all_platforms():
+    return [getattr(PLATFORM_TYPES, i)
+            for i in dir(PLATFORM_TYPES) if i.startswith("PLATFORM_")]
+
+
 def get_python_script_dir():
     # we allow it to pull out of the python package for tests and
     # installs that are done from something other than out packaging
