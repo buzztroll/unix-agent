@@ -104,6 +104,7 @@ def run_command(conf, cmd_line, cwd=None, env=None):
     else:
         _g_logger.warn("Running without the job runner process")
         process = subprocess.Popen(cmd_line,
+                                   shell=True,
                                    stdout=subprocess.PIPE,
                                    stderr=subprocess.PIPE,
                                    cwd=cwd,
@@ -374,7 +375,7 @@ def identify_platform(conf):
 
     lsb = "/usr/bin/lsb_release"
     if os.path.exists(lsb) and os.access(lsb, os.X_OK):
-        rc, stdout, stderr = run_command(conf, " ".join([lsb, "-i"]))
+        (stdout, stderr, rc) = run_command(conf, " ".join([lsb, "-i"]))
         if rc != 0 or not stdout:
             raise exceptions.AgentPlatformNotDetectedException()
 
@@ -394,11 +395,11 @@ def identify_platform(conf):
         else:
             raise exceptions.AgentPlatformNotDetectedException()
 
-        rc, stdout, stderr = run_command(" ".join([lsb, "-r"]))
+        (stdout, stderr, rc) = run_command(conf, " ".join([lsb, "-r"]))
         if rc != 0:
             raise exceptions.AgentPlatformNotDetectedException()
         parts = stdout.split()
-        distro_version = parts[2].strip
+        distro_version = parts[1].strip()
 
         return distro_name, distro_version
 
@@ -425,4 +426,3 @@ def identify_platform(conf):
         return distro_name, distro_version
 
     raise exceptions.AgentPlatformNotDetectedException()
-
