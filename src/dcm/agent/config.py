@@ -222,7 +222,7 @@ class AgentConfig(object):
             libcloud.security.VERIFY_SSL_CERT = False
 
         if self.platform_name is None or self.platform_version is None:
-            distro_name, distro_version = utils.identify_platform()
+            distro_name, distro_version = utils.identify_platform(self)
             self.platform_name = distro_name
             self.platform_version = distro_version
 
