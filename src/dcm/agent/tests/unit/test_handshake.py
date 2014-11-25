@@ -3,7 +3,7 @@ import tempfile
 import unittest
 
 import dcm.agent
-from dcm.agent.messaging import handshake
+from dcm.agent import handshake
 import dcm.agent.config as config
 
 
