@@ -1,3 +1,12 @@
+# 0.9.6 (2014-11-25)
+
+Features
+* Added module feature descriptors for handshake.
+* Added autodetection of platform.
+
+Bug Fixes
+* Loaded konami properly for testing support.
+
 # 0.9.5 (2014-11-12)
 
 Features
