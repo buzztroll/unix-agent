@@ -343,7 +343,7 @@ def user_name(proposed_name):
     raise ValueError("bad user name")
 
 
-def identify_platform():
+def identify_platform(conf):
 
     distro_name = None
     distro_version = None
@@ -374,7 +374,7 @@ def identify_platform():
 
     lsb = "/usr/bin/lsb_release"
     if os.path.exists(lsb) and os.access(lsb, os.X_OK):
-        rc, stdout, stderr = run_command(" ".join([lsb, "-i"]))
+        rc, stdout, stderr = run_command(conf, " ".join([lsb, "-i"]))
         if rc != 0 or not stdout:
             raise exceptions.AgentPlatformNotDetectedException()
 
