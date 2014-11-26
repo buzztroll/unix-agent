@@ -6,7 +6,7 @@ import dcm.agent.exceptions as exceptions
 from dcm.agent.messaging import persistence
 import dcm.agent.messaging.reply as reply
 import dcm.agent.messaging.types as types
-import dcm.agent.tests.utils as test_utils
+import dcm.agent.tests.utils.general as test_utils
 
 
 class TestRequesterStandardPath(object):

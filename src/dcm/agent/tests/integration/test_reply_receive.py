@@ -29,7 +29,7 @@ import dcm.agent.logger as logger
 import dcm.agent.dispatcher as dispatcher
 import dcm.agent.config as config
 from dcm.agent.messaging import reply, request, persistence
-import dcm.agent.tests.utils as test_utils
+import dcm.agent.tests.utils.general as test_utils
 import dcm.agent.tests.utils.test_connection as test_conn
 
 

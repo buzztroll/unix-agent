@@ -4,4 +4,3 @@ apache-libcloud == 0.14.1
 psutil == 1.2.1
 pysqlite == 2.6.3
 clint == 0.3.7
-nose == 1.2
