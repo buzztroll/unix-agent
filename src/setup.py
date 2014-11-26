@@ -68,7 +68,6 @@ setup(name='dcm-agent',
                         "psutil == 1.2.1",
                         "apache-libcloud == 0.14.1",
                         "SQLAlchemy == 0.9.4",
-                        "nose == 1.2",
                         "clint == 0.3.7"],
 
       package_data={"dcm.agent": ["dcm/agent/scripts/*",

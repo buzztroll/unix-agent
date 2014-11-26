@@ -10,7 +10,7 @@ import dcm.agent.config as config
 from dcm.agent.messaging import types, persistence
 import dcm.agent.messaging.reply as reply
 import dcm.agent.tests.utils.test_connection as test_conn
-import dcm.agent.tests.utils as test_utils
+import dcm.agent.tests.utils.general as test_utils
 
 
 class TestSingleCommands(unittest.TestCase):

@@ -9,7 +9,7 @@ import sys
 import dcm
 
 import dcm.agent.cmd.configure as configure
-import dcm.agent.tests.utils as test_utils
+import dcm.agent.tests.utils.general as test_utils
 
 
 class TestConfigure(unittest.TestCase):

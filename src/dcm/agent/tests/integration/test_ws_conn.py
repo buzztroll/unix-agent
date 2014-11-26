@@ -8,7 +8,7 @@ import nose
 
 from dcm.agent.cmd import service, configure
 import dcm.agent.config as config
-import dcm.agent.tests.utils as test_utils
+import dcm.agent.tests.utils.general as test_utils
 
 
 # does not inherit from unittest because of the python generators for

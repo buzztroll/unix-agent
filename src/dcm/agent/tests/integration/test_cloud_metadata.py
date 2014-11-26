@@ -10,7 +10,7 @@ import nose.plugins.skip as skip
 
 from dcm.agent import cloudmetadata, config
 from dcm.agent.cmd import configure
-import dcm.agent.tests.utils as test_utils
+import dcm.agent.tests.utils.general as test_utils
 
 
 class TestCloudMetadata(unittest.TestCase):
