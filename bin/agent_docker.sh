@@ -10,7 +10,7 @@
 #
 #DCM_URL=wss://<hostname>/agentManager
 #  or if running on older installation
-#DCM_URL="wss://$DCM_HOST:16433/ws"
+#DCM_URL="wss://<host>:16433/ws"
 #
 #DCM_CLOUD=Amazon
 #DCM_DOCKER_PULL_REPOS=ubuntu
