@@ -7,10 +7,10 @@
 #AGENT_UNSTABLE=
 #AGENT_VERSION=
 #
-#  you can only use DCM_HOST or DCM_URL
 #
-#DCM_URL=https://<hostname>/agentManager
-#DCM_HOST=<hostname>
+#DCM_URL=wss://<hostname>/agentManager
+#  or if running on older installation
+#DCM_URL="wss://$DCM_HOST:16433/ws"
 #
 #DCM_CLOUD=Amazon
 #DCM_DOCKER_PULL_REPOS=ubuntu
@@ -23,20 +23,9 @@ fi
 
 set -e
 
-if [[ "X$DCM_URL" != "X" && "X$DCM_HOST" != "X" ]]; then
-    echo "Only DCM_URL or DCM_HOST can be used.  Not both"
-    exit 1
-fi
-if [ "X$DCM_HOST" != "X" ]; then
-    if [ "X$DCM_HOST" == "Xdcm.enstratius.com" ]; then
-        DCM_URL="wss://dcm.enstratius.com/agentManager"
-    else
-        DCM_URL="wss://$DCM_HOST:16433/ws"
-    fi
-elif [ "X$DCM_URL" == "X" ]; then
+if [ "X$DCM_URL" == "X" ]; then
     DCM_URL="wss://dcm.enstratius.com/agentManager"
 fi
-# at this point DCM_URL is necessarily set
 
 
 function update(){
