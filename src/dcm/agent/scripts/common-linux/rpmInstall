@@ -1,0 +1,11 @@
+#!/usr/bin/env bash
+
+BASENAME=`basename $0`
+DIRNAME=`dirname $0`
+. "$DIRNAME/common_mod"
+
+logTag="rpmInstall"
+LOGGER=$DIRNAME/log
+
+set -e
+$REAL_SUDO yum install -y ${@}

@@ -1,0 +1,12 @@
+#!/usr/bin/env bash
+
+BASENAME=`basename $0`
+DIRNAME=`dirname $0`
+. "$DIRNAME/common_mod"
+
+logTag="debInstall"
+LOGGER=$DIRNAME/log
+
+set -e
+$REAL_SUDO apt-get update -y
+$REAL_SUDO apt-get install -y ${@}

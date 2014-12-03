@@ -11,15 +11,25 @@
 #   this material is strictly forbidden unless prior written permission
 #   is obtained from Dell, Inc.
 #  ======================================================================
+import ConfigParser
 import json
 import logging
 import os
 import shutil
+import tempfile
 from dcm.agent import exceptions, utils, storagecloud
 import dcm.agent.jobs as jobs
+from dcm.agent import config
 
 
 _g_logger = logging.getLogger(__name__)
+
+
+_g_platform_dep_installer = {
+    config.PLATFORM_TYPES.PLATFORM_RHEL: ["rpmInstall", "puppet"],
+    config.PLATFORM_TYPES.PLATFORM_UBUNTU: ["debInstall", "puppet"],
+    config.PLATFORM_TYPES.PLATFORM_DEBIAN: ["debInstall", "puppet"]
+}
 
 
 class ConfigureServer(jobs.Plugin):
@@ -160,7 +170,48 @@ class ConfigureServer(jobs.Plugin):
             utils.safe_delete(run_list_file_name)
             utils.safe_delete(token_file_path)
 
+    def _edit_puppet_conf(self, path):
+        puppet_conf_temp = self.conf.get_temp_file("puppet.conf")
+
+        with open(path, "r") as inf, open(puppet_conf_temp, "w") as outf:
+            outf.writelines([l.strip() + os.linesep for l in inf.readlines()])
+
+        parser = ConfigParser.SafeConfigParser()
+        parser.read(puppet_conf_temp)
+
+        if not parser.has_section("agent"):
+            parser.add_section("agent")
+        parser.set("agent", "certname", "ES_NODE_NAME")
+        parser.set("agent", "server", "ES_PUPPET_MASTER")
+
+        with open(puppet_conf_temp, "w") as fptr:
+            parser.write(fptr)
+        return puppet_conf_temp
+
     def configure_server_with_puppet(self):
+        try:
+            pkg_installer_cmd = _g_platform_dep_installer[self.conf.platform_name]
+            if pkg_installer_cmd:
+                cmd_path = self.conf.get_script_location(pkg_installer_cmd[0])
+                pkg_installer_cmd[0] = cmd_path
+                (stdout, stderr, rc) = utils.run_command(
+                    self.conf, pkg_installer_cmd)
+                _g_logger.debug("Results of install: stdout: %s, stderr: %s, rc %d"
+                                % (str(stdout), str(stderr), rc))
+                # even if this fails we will try to continue
+        except BaseException as ex:
+            _g_logger.exception("An error occurred trying to install puppet.  "
+                                "We are continuing anyway for legacy server "
+                                "images")
+
+        puppet_conf_file_list = ["/etc/puppet/puppet.conf",
+                                 "/etc/puppetlabs/puppet/puppet.conf"]
+        new_puppet_conf = None
+        for puppet_conf_file in puppet_conf_file_list:
+            if os.path.exists(puppet_conf_file):
+                new_puppet_conf = self._edit_puppet_conf(puppet_conf_file)
+                break
+
         puppet_dir = self.conf.get_temp_file("puppetconf", isdir=True)
         cert_file_path = self.conf.get_temp_file("cert.pem")
         key_file_path = self.conf.get_temp_file("key.pem")
@@ -183,6 +234,8 @@ class ConfigureServer(jobs.Plugin):
                    endpoint,
                    cert_file_path,
                    key_file_path]
+            if new_puppet_conf:
+                cmd.append(new_puppet_conf)
             return utils.run_command(self.conf, cmd)
         finally:
             utils.safe_delete(puppet_dir)
