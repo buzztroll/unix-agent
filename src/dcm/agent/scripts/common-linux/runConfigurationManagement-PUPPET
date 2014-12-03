@@ -48,6 +48,11 @@ PUPPET_MASTER_URL=$3
 PUPPET_MASTER=`echo ${PUPPET_MASTER_URL} | sed -e "s/[^/]*\/\/\([^@]*@\)\?\([^:/]*\).*/\2/"`
 CERT_FILE_PATH=$4
 KEY_FILE_PATH=$5
+SRC_PUPPET_CONF_PATH=$6
+
+if [ ! -z $SRC_PUPPET_CONF_PATH ]; then
+    $REAL_SUDO cp -f $SRC_PUPPET_CONF_PATH $PUPPET_CONF
+fi
 
 PUPPET_BIN=`sudo which puppet`
 

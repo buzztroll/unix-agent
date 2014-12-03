@@ -173,17 +173,20 @@ class ConfigureServer(jobs.Plugin):
     def _edit_puppet_conf(self, path):
         puppet_conf_temp = self.conf.get_temp_file("puppet.conf")
 
-        with open(path, "r") as inf, open(puppet_conf_temp) as outf:
-            outf.writelines([l.strip() for l in inf.readlines()])
+        with open(path, "r") as inf, open(puppet_conf_temp, "w") as outf:
+            outf.writelines([l.strip() + os.linesep for l in inf.readlines()])
 
         parser = ConfigParser.SafeConfigParser()
         parser.read(puppet_conf_temp)
 
+        if not parser.has_section("agent"):
+            parser.add_section("agent")
         parser.set("agent", "certname", "ES_NODE_NAME")
         parser.set("agent", "server", "ES_PUPPET_MASTER")
 
-        with open(path, "w") as fptr:
+        with open(puppet_conf_temp, "w") as fptr:
             parser.write(fptr)
+        return puppet_conf_temp
 
     def configure_server_with_puppet(self):
         try:
@@ -203,9 +206,10 @@ class ConfigureServer(jobs.Plugin):
 
         puppet_conf_file_list = ["/etc/puppet/puppet.conf",
                                  "/etc/puppetlabs/puppet/puppet.conf"]
+        new_puppet_conf = None
         for puppet_conf_file in puppet_conf_file_list:
             if os.path.exists(puppet_conf_file):
-                self._edit_puppet_conf(puppet_conf_file)
+                new_puppet_conf = self._edit_puppet_conf(puppet_conf_file)
                 break
 
         puppet_dir = self.conf.get_temp_file("puppetconf", isdir=True)
@@ -230,6 +234,8 @@ class ConfigureServer(jobs.Plugin):
                    endpoint,
                    cert_file_path,
                    key_file_path]
+            if new_puppet_conf:
+                cmd.append(new_puppet_conf)
             return utils.run_command(self.conf, cmd)
         finally:
             utils.safe_delete(puppet_dir)
