@@ -25,7 +25,9 @@ _g_logger = logging.getLogger(__name__)
 
 
 _g_platform_dep_installer = {
-    config.PLATFORM_TYPES.PLATFORM_RHEL: ["debInstall", "puppet"]
+    config.PLATFORM_TYPES.PLATFORM_RHEL: ["rpmInstall", "puppet"],
+    config.PLATFORM_TYPES.PLATFORM_UBUNTU: ["debInstall", "puppet"],
+    config.PLATFORM_TYPES.PLATFORM_DEBIAN: ["debInstall", "puppet"]
 }
 
 
@@ -175,13 +177,20 @@ class ConfigureServer(jobs.Plugin):
         parser.set("agent", "server", "ES_PUPPET_MASTER")
 
     def configure_server_with_puppet(self):
-        pkg_installer = _g_platform_dep_installer[self.conf.platform_name]
-        if pkg_installer:
-            cmd_list = self.conf.get_script_location(pkg_installer)
-            (stdout, stderr, rc) = utils.run_command(self.conf, cmd_list)
-            _g_logger.debug("Results of install: stdout: %s, stderr: %s, rc %d"
-                            % (str(stdout), str(stderr), rc))
-            # even if this fails we will try to continue
+        try:
+            pkg_installer_cmd = _g_platform_dep_installer[self.conf.platform_name]
+            if pkg_installer_cmd:
+                cmd_path = self.conf.get_script_location(pkg_installer_cmd[0])
+                pkg_installer_cmd[0] = cmd_path
+                (stdout, stderr, rc) = utils.run_command(
+                    self.conf, pkg_installer_cmd)
+                _g_logger.debug("Results of install: stdout: %s, stderr: %s, rc %d"
+                                % (str(stdout), str(stderr), rc))
+                # even if this fails we will try to continue
+        except BaseException as ex:
+            _g_logger.exception("An error occurred trying to install puppet.  "
+                                "We are continuing anyway for legacy server "
+                                "images")
 
         puppet_conf_file_list = ["/var/lib/puppet",
                                  "/etc/puppetlabs/puppet/puppet.conf"]

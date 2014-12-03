@@ -359,7 +359,7 @@ def identify_platform(conf):
                 elif key == "VERSION_ID":
                     distro_version = value
         if distro_name and distro_version:
-            return distro_name, distro_version
+            return distro_name.strip(), distro_version.strip()
 
     os_release_path = "/etc/lsb-release"
     if os.path.exists(os_release_path):
@@ -371,7 +371,7 @@ def identify_platform(conf):
                 elif key == "DISTRIB_RELEASE":
                     distro_version = value
         if distro_name and distro_version:
-            return distro_name, distro_version
+            return distro_name.strip(), distro_version.strip()
 
     lsb = "/usr/bin/lsb_release"
     if os.path.exists(lsb) and os.access(lsb, os.X_OK):
@@ -401,7 +401,7 @@ def identify_platform(conf):
         parts = stdout.split()
         distro_version = parts[1].strip()
 
-        return distro_name, distro_version
+        return distro_name.strip(), distro_version.strip()
 
     if os.path.exists("/etc/redhat-release"):
         with open("/etc/redhat-release") as fptr:
@@ -417,12 +417,12 @@ def identify_platform(conf):
             distro_name = "fedora"
         else:
             raise exceptions.AgentPlatformNotDetectedException()
-        return distro_name, distro_version
+        return distro_name.strip(), distro_version.strip()
 
     if os.path.exists("/etc/debian_version"):
         with open("/etc/debian_version") as fptr:
             distro_version = fptr.read().strip()
         distro_name = "debian"
-        return distro_name, distro_version
+        return distro_name.strip(), distro_version.strip()
 
     raise exceptions.AgentPlatformNotDetectedException()
