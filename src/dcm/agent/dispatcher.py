@@ -182,18 +182,24 @@ class Dispatcher(object):
         # sending the message so the agent will have it for restarts
         reply_obj.ack(None, None, None)
         if long_runner:
-            dj = self._long_runner.start_new_job(
-                self._conf,
-                request_id,
-                items_map,
-                payload["command"],
-                payload["arguments"])
-            payload_doc = dj.get_message_payload()
-            reply_doc = {
-                "return_code": 0,
-                "reply_type": "job_description",
-                "reply_object": payload_doc
-            }
+            try:
+                dj = self._long_runner.start_new_job(
+                    self._conf,
+                    request_id,
+                    items_map,
+                    payload["command"],
+                    payload["arguments"])
+            except BaseException as ex:
+                reply_doc = {
+                    'Exception': urllib.quote(str(ex.message).encode('utf-8')),
+                    'return_code': 1}
+            else:
+                payload_doc = dj.get_message_payload()
+                reply_doc = {
+                    "return_code": 0,
+                    "reply_type": "job_description",
+                    "reply_object": payload_doc
+                }
             wr = WorkReply(request_id, reply_doc)
             self.reply_q.put(wr)
         elif immediate:

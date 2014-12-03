@@ -16,6 +16,7 @@ import json
 import logging
 import os
 import shutil
+import tempfile
 from dcm.agent import exceptions, utils, storagecloud
 import dcm.agent.jobs as jobs
 from dcm.agent import config
@@ -170,11 +171,19 @@ class ConfigureServer(jobs.Plugin):
             utils.safe_delete(token_file_path)
 
     def _edit_puppet_conf(self, path):
+        puppet_conf_temp = self.conf.get_temp_file("puppet.conf")
+
+        with open(path, "r") as inf, open(puppet_conf_temp) as outf:
+            outf.writelines([l.strip() for l in inf.readlines()])
+
         parser = ConfigParser.SafeConfigParser()
-        parser.read(path)
+        parser.read(puppet_conf_temp)
 
         parser.set("agent", "certname", "ES_NODE_NAME")
         parser.set("agent", "server", "ES_PUPPET_MASTER")
+
+        with open(path, "w") as fptr:
+            parser.write(fptr)
 
     def configure_server_with_puppet(self):
         try:
@@ -192,7 +201,7 @@ class ConfigureServer(jobs.Plugin):
                                 "We are continuing anyway for legacy server "
                                 "images")
 
-        puppet_conf_file_list = ["/var/lib/puppet",
+        puppet_conf_file_list = ["/etc/puppet/puppet.conf",
                                  "/etc/puppetlabs/puppet/puppet.conf"]
         for puppet_conf_file in puppet_conf_file_list:
             if os.path.exists(puppet_conf_file):

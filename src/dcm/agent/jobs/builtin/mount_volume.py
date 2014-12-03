@@ -62,13 +62,6 @@ class MountVolume(direct_pass.DirectPass):
         super(MountVolume, self).__init__(
             conf, job_id, items_map, name, arguments)
 
-        if not _is_supported(conf):
-            raise exceptions.AgentUnsupportedCloudFeature(
-                "mount is not supported on this cloud and platform")
-        if self.args.raidLevel is None or self.args.raidLevel.upper() != "NONE":
-            raise exceptions.AgentPluginBadParameterException(
-                "mount_volume", "only raid level NONE is supported.")
-
     def setup_encryption(self, device_id, encrypted_device_id, key_file_path):
         command = [self.conf.get_script_location("setupEncryption"),
                    device_id,
@@ -192,6 +185,16 @@ class MountVolume(direct_pass.DirectPass):
         return 0
 
     def run(self):
+        if not _is_supported(self.conf):
+            raise exceptions.AgentUnsupportedCloudFeature(
+                "mount is not supported on the distro " +
+                self.conf.cloud_type.lower() + " and cloud " +
+                self.conf.platform_name.lower())
+
+        if self.args.raidLevel is None or self.args.raidLevel.upper() != "NONE":
+            raise exceptions.AgentPluginBadParameterException(
+                "mount_volume", "only raid level NONE is supported.")
+
         if self.args.mountPoint is None:
             self.args.mountPoint = self.conf.storage_mountpoint
 
