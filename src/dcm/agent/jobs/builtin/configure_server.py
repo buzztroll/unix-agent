@@ -11,15 +11,22 @@
 #   this material is strictly forbidden unless prior written permission
 #   is obtained from Dell, Inc.
 #  ======================================================================
+import ConfigParser
 import json
 import logging
 import os
 import shutil
 from dcm.agent import exceptions, utils, storagecloud
 import dcm.agent.jobs as jobs
+from dcm.agent import config
 
 
 _g_logger = logging.getLogger(__name__)
+
+
+_g_platform_dep_installer = {
+    config.PLATFORM_TYPES.PLATFORM_RHEL: ["debInstall", "puppet"]
+}
 
 
 class ConfigureServer(jobs.Plugin):
@@ -160,7 +167,29 @@ class ConfigureServer(jobs.Plugin):
             utils.safe_delete(run_list_file_name)
             utils.safe_delete(token_file_path)
 
+    def _edit_puppet_conf(self, path):
+        parser = ConfigParser.SafeConfigParser()
+        parser.read(path)
+
+        parser.set("agent", "certname", "ES_NODE_NAME")
+        parser.set("agent", "server", "ES_PUPPET_MASTER")
+
     def configure_server_with_puppet(self):
+        pkg_installer = _g_platform_dep_installer[self.conf.platform_name]
+        if pkg_installer:
+            cmd_list = self.conf.get_script_location(pkg_installer)
+            (stdout, stderr, rc) = utils.run_command(self.conf, cmd_list)
+            _g_logger.debug("Results of install: stdout: %s, stderr: %s, rc %d"
+                            % (str(stdout), str(stderr), rc))
+            # even if this fails we will try to continue
+
+        puppet_conf_file_list = ["/var/lib/puppet",
+                                 "/etc/puppetlabs/puppet/puppet.conf"]
+        for puppet_conf_file in puppet_conf_file_list:
+            if os.path.exists(puppet_conf_file):
+                self._edit_puppet_conf(puppet_conf_file)
+                break
+
         puppet_dir = self.conf.get_temp_file("puppetconf", isdir=True)
         cert_file_path = self.conf.get_temp_file("cert.pem")
         key_file_path = self.conf.get_temp_file("key.pem")
