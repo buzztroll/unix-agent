@@ -7,32 +7,25 @@
 #AGENT_UNSTABLE=
 #AGENT_VERSION=
 #
-#  you can only use DCM_HOST or DCM_URL
 #
-#DCM_URL=https://<hostname>:16433/ws
-#DCM_HOST=<hostname>
+#DCM_URL=wss://<hostname>/agentManager
+#  or if running on older installation
+#DCM_URL="wss://<hostname>:16433/ws"
 #
 #DCM_CLOUD=Amazon
 #DCM_DOCKER_PULL_REPOS=ubuntu
 #DCM_DOCKER_VERSION=1.2.0
 #************************
 
+if [ $DCM_DOCKER_VERSION -z ]; then
+    export DCM_DOCKER_VERSION=1.3.2
+fi
+
 set -e
 
-if [[ "X$DCM_URL" != "X" && "X$DCM_HOST" != "X" ]]; then
-    echo "Only DCM_URL or DCM_HOST can be used.  Not both"
-    exit 1
-fi
-if [ "X$DCM_HOST" != "X" ]; then
-    if [ "X$DCM_HOST" == "Xdcm.enstratius.com" ]; then
-        DCM_URL="wss://dcm.enstratius.com/agentManager"
-    else
-        DCM_URL="wss://$DCM_HOST:16433/ws"
-    fi
-elif [ "X$DCM_URL" == "X" ]; then
+if [ "X$DCM_URL" == "X" ]; then
     DCM_URL="wss://dcm.enstratius.com/agentManager"
 fi
-# at this point DCM_URL is necessarily set
 
 
 function update(){
@@ -212,9 +205,10 @@ function install_docker() {
 
     case $DCM_DISTRO_VERSION in
         ubuntu-14.04)
-            apt-get -y install docker.io $DCM_DOCKER_VERSION
-            ln -sf /usr/bin/docker.io /usr/local/bin/docker
-            sed -i '$acomplete -F _docker docker' /etc/bash_completion.d/docker.io
+            apt-key adv --keyserver hkp://keyserver.ubuntu.com:80 --recv-keys 36A1D7869245C8950F966E92D8576A8BA88D21E9
+            echo deb https://get.docker.com/ubuntu docker main> /etc/apt/sources.list.d/docker.list
+            apt-get update -y
+            apt-get install -y lxc-docker-$DCM_DOCKER_VERSION
             ;;
 
         debian-7.*|ubuntu-12.04)
@@ -249,7 +243,7 @@ function install_docker() {
                     $curl ${url}gpg | apt-key add -
                 fi
                 echo deb ${url}ubuntu docker main > /etc/apt/sources.list.d/docker.list
-                sleep 3; apt-get update -y; apt-get install -y -q lxc-docker$DCM_DOCKER_VERSION
+                sleep 3; apt-get update -y; apt-get install -y -q lxc-docker-$DCM_DOCKER_VERSION
             )
             ;;
 
@@ -363,6 +357,13 @@ fi
 
 if docker_exists; then
     echo >&2 'Warning: "docker" or "lxc-docker" command appears to already exist.'
+    found_version=`docker --version | awk '{ print $3 }' | sed 's/,//'`
+    if [ "X$found_version" != "X$DCM_DOCKER_VERSION" ]; then
+        echo '*******************************************************************'
+        echo "Upgrading Docker from version $found_version to $DCM_DOCKER_VERSION"
+        echo '*******************************************************************'
+        install_docker
+    fi
 else
     echo '**************************************'
     echo 'Proceeding with installation of Docker'
