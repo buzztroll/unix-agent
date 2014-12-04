@@ -1,3 +1,14 @@
+# 0.9.7 (2014-12-04)
+
+Features
+* Install puppet client and DCM appropriate configuration when running
+  configure_server with puppet.
+* Enable mount but limit it to specific clouds and distributions.
+
+Bug Fixes
+* Decode unicode before sending log lines to DCM.
+* Report errors from listDevices properly.
+
 # 0.9.6 (2014-11-25)
 
 Features
