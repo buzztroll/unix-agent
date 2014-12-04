@@ -205,43 +205,49 @@ def get_device_mappings(conf):
     if rc != 0:
         raise exceptions.AgentExecutableException(command, rc, stdout, stderr)
 
-    device_mapping_list = []
-    lines = stdout.split(os.linesep)
-    for line in lines:
-        parts = line.split()
-        if len(parts) != 5:
-            continue
+    try:
+        device_mapping_list = []
+        lines = stdout.split(os.linesep)
+        for line in lines:
+            parts = line.split()
+            if len(parts) != 5:
+                continue
 
-        elements = parts[0].split("/")
-        device_id = elements[len(elements) - 1]
-        file_system = parts[1]
-        mount_point = parts[2]
-        size = int(parts[3])
-        used = int(parts[4])
-        if parts[0].startswith("/dev/mapper"):
-            encrypted = True
-        else:
-            encrypted = False
+            elements = parts[0].split("/")
+            device_id = elements[len(elements) - 1]
+            file_system = parts[1]
+            mount_point = parts[2]
+            size = int(parts[3])
+            used = int(parts[4])
+            if parts[0].startswith("/dev/mapper"):
+                encrypted = True
+            else:
+                encrypted = False
 
-        if mount_point == "/":
-            device_type = DeviceTypes.ROOT
-        elif mount_point == conf.storage_services_dir:
-            device_type = DeviceTypes.SERVICE
-        elif mount_point == conf.storage_mountpoint:
-            device_type = DeviceTypes.EPHEMERAL
-        else:
-            device_type = DeviceTypes.CUSTOM
+            if mount_point == "/":
+                device_type = DeviceTypes.ROOT
+            elif mount_point == conf.storage_services_dir:
+                device_type = DeviceTypes.SERVICE
+            elif mount_point == conf.storage_mountpoint:
+                device_type = DeviceTypes.EPHEMERAL
+            else:
+                device_type = DeviceTypes.CUSTOM
 
-        device_mapping = {
-            "device_id": device_id,
-            "encrypted": encrypted,
-            "file_system": file_system,
-            "mount_point": mount_point,
-            "size":  size,
-            "used": used,
-            "device_type": device_type
-        }
-        device_mapping_list.append(device_mapping)
+            device_mapping = {
+                "device_id": device_id,
+                "encrypted": encrypted,
+                "file_system": file_system,
+                "mount_point": mount_point,
+                "size":  size,
+                "used": used,
+                "device_type": device_type
+            }
+            device_mapping_list.append(device_mapping)
+    except Exception as ex:
+        _g_logger.exception(ex.message)
+        _g_logger.error("listDevice stdout: " + stdout)
+        _g_logger.error("listDevice stderr: " + stderr)
+        raise
 
     return device_mapping_list
 
