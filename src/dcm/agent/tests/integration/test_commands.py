@@ -29,7 +29,7 @@ class TestSingleCommands(unittest.TestCase):
         shutil.rmtree(self.test_base_path)
 
     def _get_conn(self, incoming_lines, outfile, drop_count):
-        return test_conn.TestReplySuccessfullyAlways(
+        return test_conn.TestConnection(
             incoming_lines, outfile, reply_ignore_count=drop_count)
 
     def _simple_message(self, drop_count, command, stdout, stderr):
@@ -96,7 +96,7 @@ class TestSerialCommands(unittest.TestCase):
         shutil.rmtree(self.test_base_path)
 
     def _get_conn(self, incoming_lines, outfile, drop_count):
-        return test_conn.TestReplySuccessfullyAlways(
+        return test_conn.TestConnection(
             incoming_lines, outfile, reply_ignore_count=drop_count)
 
     def _many_message(self, count, drop_count, command):
@@ -156,7 +156,7 @@ class TestRetransmission(unittest.TestCase):
         shutil.rmtree(self.test_base_path)
 
     def _get_conn(self, incoming_lines, outfile, drop_count, retrans_list):
-        conn = test_conn.TestReplySuccessfullyAlways(
+        conn = test_conn.TestConnection(
             incoming_lines, outfile, reply_ignore_count=drop_count,
             retrans_requests=retrans_list)
         return conn
@@ -225,7 +225,6 @@ class TestRetransmission(unittest.TestCase):
         # verify that 2 requests were sent.  The second request
         # comes after the ack
         events = [i[0] for i in to]
-        events.remove('REQUEST_RECEIVED')
         events.remove('REQUEST_RECEIVED')
 
     def test_retrans_after_ack_long(self):

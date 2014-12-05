@@ -38,7 +38,7 @@ class RequestRetransmission(object):
         self.request_doc = doc
 
 
-class TestReplySuccessfullyAlways(conniface.ConnectionInterface):
+class TestConnection(conniface.ConnectionInterface):
 
     def __init__(self, reader, writer, reply_ignore_count=0,
                  retrans_requests=None):
