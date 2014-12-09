@@ -20,7 +20,7 @@ import dcm.agent.messaging.reply as reply
 import dcm.agent.parent_receive_q as parent_receive_q
 import dcm.agent.utils as utils
 import dcm.agent.intrusion_detection as intrusion_detect
-
+import dcm.agent.cloudmetadata as cm
 
 _g_conf_file_env = "DCM_AGENT_CONF"
 
@@ -180,6 +180,26 @@ def console_log(cli_args, level, msg, **kwargs):
     print >> sys.stderr, msg % kwargs
 
 
+def _get_info(conf):
+    if os.path.isfile("/tmp/boot.log"):
+        with open("/tmp/boot.log", "r") as mfile:
+            boot_data = mfile.read()
+    if os.path.isfile("/tmp/error.log"):
+        with open("/tmp/error.log", "r") as mfile:
+            error_data = mfile.read()
+    effective_cloud = cm.guess_effective_cloud(conf)
+    cm.set_metadata_object(conf)
+    meta_data_obj = conf.meta_data_object
+    platform = utils.identify_platform(conf)
+    version = dcm.agent.g_version
+    print effective_cloud
+    print str(meta_data_obj)
+    print platform
+    print version
+    print boot_data if boot_data else "no boot data"
+    print error_data if error_data else "no error data"
+
+
 def parse_command_line(argv):
     conf_parser = argparse.ArgumentParser(description="Start the agent")
     conf_parser.add_argument(
@@ -192,6 +212,10 @@ def parse_command_line(argv):
                              help="Display just the version of this "
                                   "agent installation.",
                              dest="version",
+                             default=False)
+    conf_parser.add_argument("-r", "--report", action="store_true",
+                             help="Get debug info on agent installation.",
+                             dest="report",
                              default=False)
     return conf_parser.parse_known_args(args=argv)
 
@@ -206,6 +230,10 @@ def start_main_service(cli_args):
         agent.pre_threads()
         if cli_args.version:
             print "Version %s" % dcm.agent.g_version
+            return 0
+
+        if cli_args.report:
+            _get_info(conf)
             return 0
 
         utils.verify_config_file(conf)
