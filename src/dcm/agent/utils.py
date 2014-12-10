@@ -339,6 +339,11 @@ def base64type_convertor(b64str):
     return base64.b64decode(b64str).decode("utf-8")
 
 
+def base64type_binary_convertor(b64str):
+    """base 64 decoded string"""
+    return base64.b64decode(b64str)
+
+
 def user_name(proposed_name):
     """Safe user name"""
 

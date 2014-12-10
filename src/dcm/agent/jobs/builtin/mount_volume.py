@@ -53,7 +53,8 @@ class MountVolume(direct_pass.DirectPass):
          True, bool, None),
         "fileSystem": ("", True, str, None),
         "raidLevel": ("", True, str, None),
-        "encryptedFsEncryptionKey": ("", False, utils.base64type_convertor, None),
+        "encryptedFsEncryptionKey": ("", False,
+                                     utils.base64type_binary_convertor, None),
         "mountPoint": ("", True, str, None),
         "devices": ("", True, list, None)
     }

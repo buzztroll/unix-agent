@@ -76,7 +76,8 @@ class Plugin(object):
                 if a is not None:
                     try:
                         a = t(a)
-                    except:
+                    except Exception as ex:
+                        _g_logger.exception(ex.message)
                         raise exceptions.AgentPluginBadParameterException(
                             self.name, "Parameter %s has an invalid "
                                        "value" % arg)
