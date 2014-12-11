@@ -181,33 +181,38 @@ def console_log(cli_args, level, msg, **kwargs):
     print >> sys.stderr, msg % kwargs
 
 
-def _get_info(conf):
-    tar = tarfile.open("agent_info.tar", "w")
+def _gather_info(conf):
+    tar = tarfile.open("/tmp/agent_info.tar.gz", "w:gz")
 
     if os.path.isfile("/tmp/boot.log"):
         tar.add("/tmp/boot.log")
-        with open("/tmp/boot.log", "r") as mfile:
-            boot_data = mfile.read()
+
     if os.path.isfile("/tmp/error.log"):
         tar.add("/tmp/error.log")
-        with open("/tmp/error.log", "r") as mfile:
-            error_data = mfile.read()
 
     if os.path.exists("/dcm"):
         tar.add("/dcm")
+
     effective_cloud = cm.guess_effective_cloud(conf)
     meta_data_obj = conf.meta_data_object
     platform = utils.identify_platform(conf)
     version = dcm.agent.g_version
-    print "Effective cloud is: " + effective_cloud
-    print "MetaData object is: " + str(meta_data_obj)
-    print "Platform is %s %s" % (platform[0], platform[1])
-    print "Version: " + version
-    os.system('cp agent_info.tar /dcm/agent_info.tar')
-    print "********"
-    print "To get all log and configuration file copy /dcm/agent_info.tar to your local machine"
-    print "********"
+    protocol_version = dcm.agent.g_protocol_version
+    message =  "Effective cloud is: " + effective_cloud + "\n"
+    message += "MetaData object is: " + str(meta_data_obj) + "\n"
+    message += "Platform is %s %s" % (platform[0], platform[1]) + "\n"
+    message += "Version: " + version + "\n"
+    message += "Protocol version: " + protocol_version
+
+    with open("/tmp/meta_info.txt", "w") as mi:
+        mi.write(message)
+    mi.close()
+    tar.add("tmp/meta_info.txt")
+
     tar.close()
+    print "***************************************************************************************"
+    print "To get all log and configuration file copy /tmp/agent_info.tar.gz to your local machine"
+    print "***************************************************************************************"
 
 def parse_command_line(argv):
     conf_parser = argparse.ArgumentParser(description="Start the agent")
@@ -246,7 +251,7 @@ def start_main_service(cli_args):
             cm._g_logger.disabled = True
             config._g_logger.disabled = True
             agent.g_logger.disabled = True
-            _get_info(conf)
+            _gather_info(conf)
             return 0
 
         utils.verify_config_file(conf)
