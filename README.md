@@ -28,7 +28,16 @@ To install the agent from the this source do the following:
 
 pip install src/requirements.txt
 pip install src/test-requirements.txt
-python setup.py install
+python src/setup.py install
+
+Installation of Docker Extensions
+============
+
+To install the docker extensions from the this source do the following:
+
+pip install extensions/docker/dcmdocker/requirements.txt
+pip install extensions/docker/dcmdocker/test-requirements.txt
+python extensions/docker/dcmdocker/setup.py install
 
 Configure
 =========
