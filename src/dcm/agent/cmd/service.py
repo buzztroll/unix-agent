@@ -7,6 +7,7 @@ import signal
 import sys
 import clint
 import psutil
+import tarfile
 
 import dcm.agent
 import dcm.agent.messaging as messaging
@@ -20,7 +21,7 @@ import dcm.agent.messaging.reply as reply
 import dcm.agent.parent_receive_q as parent_receive_q
 import dcm.agent.utils as utils
 import dcm.agent.intrusion_detection as intrusion_detect
-
+import dcm.agent.cloudmetadata as cm
 
 _g_conf_file_env = "DCM_AGENT_CONF"
 
@@ -180,6 +181,57 @@ def console_log(cli_args, level, msg, **kwargs):
     print >> sys.stderr, msg % kwargs
 
 
+def _gather_info(conf):
+    tar = tarfile.open("/tmp/agent_info.tar.gz", "w:gz")
+
+    if os.path.isfile("/tmp/boot.log"):
+        tar.add("/tmp/boot.log")
+
+    if os.path.isfile("/tmp/error.log"):
+        tar.add("/tmp/error.log")
+
+    if os.path.exists("/dcm"):
+        tar.add("/dcm")
+    try:
+        effective_cloud = cm.guess_effective_cloud(conf)
+    except:
+        effective_cloud = "Not able to determine cloud"
+
+    try:
+        platform = utils.identify_platform(conf)
+    except:
+        platform = "Not able to determine platform"
+
+    meta_data_obj = conf.meta_data_object
+
+    try:
+        startup_script = meta_data_obj.get_startup_script()
+    except:
+        startup_script = "Not able to retrieve startup script"
+
+    version = dcm.agent.g_version
+    protocol_version = dcm.agent.g_protocol_version
+    message =  "Effective cloud is: " + effective_cloud + "\n"
+    message += "Platform is %s %s" % (platform[0], platform[1]) + "\n"
+    message += "Version: " + version + "\n"
+    message += "Protocol version: " + protocol_version
+
+    with open("/tmp/startup_script.txt", "w") as ss:
+        ss.write(startup_script)
+    ss.close()
+
+    with open("/tmp/meta_info.txt", "w") as mi:
+        mi.write(message)
+    mi.close()
+
+    tar.add("/tmp/meta_info.txt")
+    tar.add("/tmp/startup_script.txt")
+    tar.close()
+    print "***************************************************************************************"
+    print "To get all log and configuration file copy /tmp/agent_info.tar.gz to your local machine"
+    print "***************************************************************************************"
+
+
 def parse_command_line(argv):
     conf_parser = argparse.ArgumentParser(description="Start the agent")
     conf_parser.add_argument(
@@ -192,6 +244,10 @@ def parse_command_line(argv):
                              help="Display just the version of this "
                                   "agent installation.",
                              dest="version",
+                             default=False)
+    conf_parser.add_argument("-r", "--report", action="store_true",
+                             help="Get debug info on agent installation.",
+                             dest="report",
                              default=False)
     return conf_parser.parse_known_args(args=argv)
 
@@ -206,6 +262,14 @@ def start_main_service(cli_args):
         agent.pre_threads()
         if cli_args.version:
             print "Version %s" % dcm.agent.g_version
+            return 0
+
+        if cli_args.report:
+            utils._g_logger.disabled = True
+            cm._g_logger.disabled = True
+            config._g_logger.disabled = True
+            agent.g_logger.disabled = True
+            _gather_info(conf)
             return 0
 
         utils.verify_config_file(conf)

@@ -68,6 +68,9 @@ class CloudMetaData(object):
         _g_logger.debug("Get instance ID called")
         return None
 
+    def get_startup_script(self):
+        raise exceptions.AgentNotImplementedException("get_startup_script")
+
     def get_ipv4_addresses(self, conf):
         ip_list = []
         (stdout, stderr, rc) = utils.run_script(conf, "getIpAddresses", [])
@@ -112,6 +115,13 @@ class AWSMetaData(CloudMetaData):
         url = self.base_url + "/" + key
         result = _get_metadata_server_url_data(url)
         _g_logger.debug("Metadata value of %s is %s" % (key, result))
+        return result
+
+    def get_startup_script(self):
+        url = "http://169.254.169.254/latest/user-data"
+        _g_logger.debug("Get user-data %s" % url)
+        result = _get_metadata_server_url_data(url)
+        _g_logger.debug("user-data: %s" % result)
         return result
 
     def get_instance_id(self):
@@ -199,6 +209,9 @@ class JoyentMetaData(CloudMetaData):
         _g_logger.debug("Instance ID is %s" % str(instance_id))
         return instance_id
 
+    def get_startup_script(self):
+        return self.get_cloud_metadata("user-script")
+
     def get_cloud_type(self):
         return CLOUD_TYPES.Joyent
 
@@ -217,6 +230,9 @@ class GCEMetaData(CloudMetaData):
             url, headers=[("Metadata-Flavor", "Google")])
         _g_logger.debug("Metadata value of %s is %s" % (key, result))
         return result
+
+    def get_startup_script(self):
+        return self.get_cloud_metadata("instance/attributes/startup-script")
 
     def get_instance_id(self):
         instance_id = self.get_cloud_metadata(
@@ -265,6 +281,10 @@ class OpenStackMetaData(CloudMetaData):
         except:
             _g_logger.exception("Failed to get the OpenStack metadata")
             return None
+
+    def get_startup_script(self):
+        url = "http://169.254.169.254/openstack/2012-08-10/user_data"
+        return _get_metadata_server_url_data(url)
 
     def get_instance_id(self):
         return self.get_cloud_metadata("uuid")
