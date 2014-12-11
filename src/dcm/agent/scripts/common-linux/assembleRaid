@@ -32,7 +32,7 @@ if [ -x ${CUSTOM}-pre ] ; then
 	exit_if_pipe_false
 fi
 
-sudo modprobe md
+sudo modprobe raid0
 
 map=""
 el_ver=0

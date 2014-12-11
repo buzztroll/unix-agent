@@ -12,6 +12,7 @@
 #   is obtained from Dell, Inc.
 #  ======================================================================
 
+import logging
 import os
 from dcm.agent import exceptions
 import dcm.agent.utils as utils
@@ -36,6 +37,14 @@ _support_matrix = {
     CLOUD_TYPES.Amazon.lower(): [config.PLATFORM_TYPES.PLATFORM_UBUNTU.lower()]
 }
 
+_g_logger = logging.getLogger(__name__)
+
+_g_platform_dep_installer = {
+    config.PLATFORM_TYPES.PLATFORM_UBUNTU: ["debInstall",
+                                            "--no-install-recommends",
+                                            "mdadm"],
+}
+
 
 def _is_supported(conf):
     try:
@@ -52,8 +61,9 @@ class MountVolume(direct_pass.DirectPass):
         ("A boolean indicating if the volume should be formated.",
          True, bool, None),
         "fileSystem": ("", True, str, None),
-        "raidLevel": ("", True, str, None),
-        "encryptedFsEncryptionKey": ("", False, utils.base64type_convertor, None),
+        "raidLevel": ("", True, str, "NONE"),
+        "encryptedFsEncryptionKey": ("", False,
+                                     utils.base64type_binary_convertor, None),
         "mountPoint": ("", True, str, None),
         "devices": ("", True, list, None)
     }
@@ -61,6 +71,19 @@ class MountVolume(direct_pass.DirectPass):
     def __init__(self, conf, job_id, items_map, name, arguments):
         super(MountVolume, self).__init__(
             conf, job_id, items_map, name, arguments)
+
+    def _install_deps(self):
+        if self.conf.platform_name in _g_platform_dep_installer:
+            _g_logger.debug("Installing packaging deps")
+            pkg_installer_cmd = \
+                _g_platform_dep_installer[self.conf.platform_name]
+            if pkg_installer_cmd:
+                cmd_path = self.conf.get_script_location(pkg_installer_cmd[0])
+                pkg_installer_cmd[0] = cmd_path
+                (stdout, stderr, rc) = utils.run_command(
+                    self.conf, pkg_installer_cmd)
+                _g_logger.debug("Results of install: stdout: %s, stderr: "
+                                "%s, rc %d" % (str(stdout), str(stderr), rc))
 
     def setup_encryption(self, device_id, encrypted_device_id, key_file_path):
         command = [self.conf.get_script_location("setupEncryption"),
@@ -94,6 +117,7 @@ class MountVolume(direct_pass.DirectPass):
             self.args.mountPoint, self.args.encryptedFsEncryptionKey)
 
     def configure_raid(self, device_id):
+        _g_logger.info("Configuring RAID on " + str(device_id))
         if self.args.formatVolume:
             exe = self.conf.get_script_location("configureRaid")
         else:
@@ -104,11 +128,17 @@ class MountVolume(direct_pass.DirectPass):
         for d in self.args.devices:
             cmd.append(d)
 
+        _g_logger.debug("Running the raid configuration command %s" % str(cmd))
         (stdout, stderr, rc) = utils.run_command(self.conf, cmd)
+        _g_logger.debug("configure raid results: %d stdout=%s stderr=%s" %
+                        (rc, str(stdout), str(stderr)))
+
         if rc != 0:
+            _g_logger.error(
+                "Failed to run raid configuration: stdout=%s\nstderr=%s"
+                % (str(stdout), str(stderr)))
             raise exceptions.AgentExecutableException(
                 cmd, rc, stdout, stderr)
-        return rc
 
     def _normalize_device(self):
         if self.conf.cloud_type != CLOUD_TYPES.CloudStack and\
@@ -138,6 +168,8 @@ class MountVolume(direct_pass.DirectPass):
             target_device = "md0"
         else:
             target_device = self.args.devices[0]
+
+        _g_logger.debug("target device is " + target_device)
 
         td = target_device
         if self.args.encryptedFsEncryptionKey is not None:
@@ -191,10 +223,6 @@ class MountVolume(direct_pass.DirectPass):
                 self.conf.cloud_type.lower() + " and cloud " +
                 self.conf.platform_name.lower())
 
-        if self.args.raidLevel is None or self.args.raidLevel.upper() != "NONE":
-            raise exceptions.AgentPluginBadParameterException(
-                "mount_volume", "only raid level NONE is supported.")
-
         if self.args.mountPoint is None:
             self.args.mountPoint = self.conf.storage_mountpoint
 
@@ -202,6 +230,7 @@ class MountVolume(direct_pass.DirectPass):
             self.args.fileSystem = self.conf.storage_default_file_system
 
         self.args.devices = self._normalize_device()
+        self._install_deps()
         rc = self.mount_block_volume()
 
         reply = {"return_code": rc, "message": "",
