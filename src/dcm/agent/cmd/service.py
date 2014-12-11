@@ -203,11 +203,7 @@ def _get_info(conf):
     print "MetaData object is: " + str(meta_data_obj)
     print "Platform is %s %s" % (platform[0], platform[1])
     print "Version: " + version
-    print "*************************log files*********************************"
-    print boot_data if boot_data else "no boot data"
-    print error_data if error_data else "no error data"
-    print "**********************end log files*********************************"
-    os.system('mv agent_info.tar /dcm/agent_info.tar')
+    os.system('cp agent_info.tar /dcm/agent_info.tar')
     print "********"
     print "To get all log and configuration file copy /dcm/agent_info.tar to your local machine"
     print "********"
