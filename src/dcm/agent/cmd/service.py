@@ -192,27 +192,45 @@ def _gather_info(conf):
 
     if os.path.exists("/dcm"):
         tar.add("/dcm")
+    try:
+        effective_cloud = cm.guess_effective_cloud(conf)
+    except:
+        effective_cloud = "Not able to determine cloud"
 
-    effective_cloud = cm.guess_effective_cloud(conf)
+    try:
+        platform = utils.identify_platform(conf)
+    except:
+        platform = "Not able to determine platform"
+
     meta_data_obj = conf.meta_data_object
-    platform = utils.identify_platform(conf)
+
+    try:
+        startup_script = meta_data_obj.get_startup_script()
+    except:
+        startup_script = "Not able to retrieve startup script"
+
     version = dcm.agent.g_version
     protocol_version = dcm.agent.g_protocol_version
     message =  "Effective cloud is: " + effective_cloud + "\n"
-    message += "MetaData object is: " + str(meta_data_obj) + "\n"
     message += "Platform is %s %s" % (platform[0], platform[1]) + "\n"
     message += "Version: " + version + "\n"
     message += "Protocol version: " + protocol_version
 
+    with open("/tmp/startup_script.txt", "w") as ss:
+        ss.write(startup_script)
+    ss.close()
+
     with open("/tmp/meta_info.txt", "w") as mi:
         mi.write(message)
     mi.close()
-    tar.add("tmp/meta_info.txt")
 
+    tar.add("/tmp/meta_info.txt")
+    tar.add("/tmp/startup_script.txt")
     tar.close()
     print "***************************************************************************************"
     print "To get all log and configuration file copy /tmp/agent_info.tar.gz to your local machine"
     print "***************************************************************************************"
+
 
 def parse_command_line(argv):
     conf_parser = argparse.ArgumentParser(description="Start the agent")
