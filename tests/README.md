@@ -36,7 +36,10 @@ and you have cloned [the es-ex-pyagent repo](https://www.github.com/enStratus/es
   *  ``` source /opt/dcm-agent/embedded/agentve.101/bin/activate ```
   *  ``` pip install -r /<projectdirectory>/es-ex-pyagent/src/requirements.txt ```
   *  ``` pip install -r /<projectdirectory>/es-ex-pyagent/src/test-requirements.txt ```
-  *  ``` python setup.py develop  ```
+  *  ``` python /<projectdirectory>/es-ex-pyagent/src/setup.py develop  ```
+  *  ``` pip install -r /<projectdirectory>/es-ex-pyagent/extensions/docker/dcmdocker/requirements.txt ```
+  *  ``` pip install -r /<projectdirectory>/es-ex-pyagent/extensions/docker/dcmdocker/test-requirements.txt ```
+  *  ``` python /<projectdirectory>/es-ex-pyagent/extensions/docker/dcmdocker/setup.py develop  ```
 
   * Install unzip then cp and unzip pycharm-debug.egg into virtualenv site-packages
   *  ``` apt-get install unzip ```
