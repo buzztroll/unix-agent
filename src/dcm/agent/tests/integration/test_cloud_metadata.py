@@ -129,6 +129,36 @@ class TestCloudMetadata(unittest.TestCase):
         instance_id = self.conf.meta_data_object.get_instance_id()
         self.assertEqual(instance_id, 'fake_instance_id:fake_instance_id:fake_instance_id')
 
+    @patch('dcm.agent.cloudmetadata._get_metadata_server_url_data')
+    def test_get_aws_startup_script(self, mock_server):
+        self.conf.meta_data_object = cloudmetadata.AWSMetaData(
+            base_url=self.conf.cloud_metadata_url)
+        mock_server.return_value = 'fake_startup_script'
+        script = self.conf.meta_data_object.get_startup_script()
+        self.assertEqual(script, 'fake_startup_script')
+
+    @patch('dcm.agent.cloudmetadata._get_metadata_server_url_data')
+    def test_get_gce_startup_script(self, mock_server):
+        self.conf.meta_data_object = cloudmetadata.GCEMetaData(
+            base_url=self.conf.cloud_metadata_url)
+        mock_server.return_value = 'fake_startup_script'
+        script = self.conf.meta_data_object.get_startup_script()
+        self.assertEqual(script, 'fake_startup_script')
+
+    @patch('dcm.agent.cloudmetadata.JoyentMetaData.get_cloud_metadata')
+    def test_get_joyent_startup_script(self, mock_joyent_meta):
+        self.conf.meta_data_object = cloudmetadata.JoyentMetaData(self.conf)
+        mock_joyent_meta.return_value = 'fake_startup_script'
+        script = self.conf.meta_data_object.get_startup_script()
+        self.assertEqual(script, 'fake_startup_script')
+
+    @patch('dcm.agent.cloudmetadata._get_metadata_server_url_data')
+    def test_get_openstack_startup_script(self, mock_cloud_meta):
+        self.conf.meta_data_object = cloudmetadata.OpenStackMetaData()
+        mock_cloud_meta.return_value = 'fake_startup_script'
+        script = self.conf.meta_data_object.get_startup_script()
+        self.assertEqual(script, 'fake_startup_script')
+
     def test_set_metadata_object(self):
         for cloud in self.clouds:
             self.conf.cloud_type = self.cloud_types[cloud]
