@@ -1,3 +1,16 @@
+# 0.9.8 (2014-12-11)
+
+Features
+* Upgraded the agent installer script to docker 1.3.2.
+* Ubuntu distributions on EC2 can mount mount encrypted volumes.
+* RAID mounts on Ubuntu distribution on EC2.
+* Add a debug report utility so that users can more accurately
+  report versions and deployments when they experience problems.
+
+Bug Fixes
+* A race condition in the jobrunner which could cause a mismatch of
+  output was fixed.
+
 # 0.9.7 (2014-12-04)
 
 Features
@@ -13,7 +26,7 @@ Bug Fixes
 
 Features
 * Added module feature descriptors for handshake.
-* Added autodetection of platform.
+* Added auto-detection of platform.
 
 Bug Fixes
 * Loaded konami properly for testing support.
@@ -21,10 +34,10 @@ Bug Fixes
 # 0.9.5 (2014-11-12)
 
 Features
-* Added RHEL with x86_64 and fedora as supported distrobutions.
+* Added RHEL with x86_64 and fedora as supported distributions.
 * Added in initial agent support for docker.
 * Added a means to guess the effective cloud that a VM is on.
-* Added in suppport for OpenStack.
+* Added in support for OpenStack.
 * Added script to install both the agent and docker.
 
 Bug Fixes
