@@ -7,6 +7,7 @@ import signal
 import sys
 import clint
 import psutil
+import tarfile
 
 import dcm.agent
 import dcm.agent.messaging as messaging
@@ -181,12 +182,19 @@ def console_log(cli_args, level, msg, **kwargs):
 
 
 def _get_info(conf):
+    tar = tarfile.open("agent_info.tar", "w")
+
     if os.path.isfile("/tmp/boot.log"):
+        tar.add("/tmp/boot.log")
         with open("/tmp/boot.log", "r") as mfile:
             boot_data = mfile.read()
     if os.path.isfile("/tmp/error.log"):
+        tar.add("/tmp/error.log")
         with open("/tmp/error.log", "r") as mfile:
             error_data = mfile.read()
+
+    if os.path.exists("/dcm"):
+        tar.add("/dcm")
     effective_cloud = cm.guess_effective_cloud(conf)
     meta_data_obj = conf.meta_data_object
     platform = utils.identify_platform(conf)
@@ -199,7 +207,11 @@ def _get_info(conf):
     print boot_data if boot_data else "no boot data"
     print error_data if error_data else "no error data"
     print "**********************end log files*********************************"
-
+    os.system('mv agent_info.tar /dcm/agent_info.tar')
+    print "********"
+    print "To get all log and configuration file copy /dcm/agent_info.tar to your local machine"
+    print "********"
+    tar.close()
 
 def parse_command_line(argv):
     conf_parser = argparse.ArgumentParser(description="Start the agent")
