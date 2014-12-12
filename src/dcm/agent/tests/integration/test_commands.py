@@ -22,15 +22,14 @@ class TestSingleCommands(unittest.TestCase):
         self.disp = dispatcher.Dispatcher(self.conf_obj)
         self.test_base_path = tempfile.mkdtemp()
         self.db_path = os.path.join(self.test_base_path, "agentdb.sql")
-        self.db = persistence.AgentDB(self.db_path)
+        self.db = persistence.SQLiteAgentDB(self.db_path)
 
     def tearDown(self):
         self.disp.stop()
         shutil.rmtree(self.test_base_path)
 
     def _get_conn(self, incoming_lines, outfile, drop_count):
-        self._incoming_io = StringIO.StringIO(incoming_lines)
-        return test_conn.TestReplySuccessfullyAlways(
+        return test_conn.TestConnection(
             incoming_lines, outfile, reply_ignore_count=drop_count)
 
     def _simple_message(self, drop_count, command, stdout, stderr):
@@ -90,15 +89,14 @@ class TestSerialCommands(unittest.TestCase):
         self.disp = dispatcher.Dispatcher(self.conf_obj)
         self.test_base_path = tempfile.mkdtemp()
         self.db_path = os.path.join(self.test_base_path, "agentdb.sql")
-        self.db = persistence.AgentDB(self.db_path)
+        self.db = persistence.SQLiteAgentDB(self.db_path)
 
     def tearDown(self):
         self.disp.stop()
         shutil.rmtree(self.test_base_path)
 
     def _get_conn(self, incoming_lines, outfile, drop_count):
-        self._incoming_io = StringIO.StringIO(incoming_lines)
-        return test_conn.TestReplySuccessfullyAlways(
+        return test_conn.TestConnection(
             incoming_lines, outfile, reply_ignore_count=drop_count)
 
     def _many_message(self, count, drop_count, command):
@@ -151,15 +149,14 @@ class TestRetransmission(unittest.TestCase):
         test_conf_path = test_utils.get_conf_file()
         self.conf_obj = config.AgentConfig([test_conf_path])
         self.test_base_path = tempfile.mkdtemp()
-        self.db_path = os.path.join(self.test_base_path, "agentdb.sql")
-        self.db = persistence.AgentDB(self.db_path)
+        self.db_path = os.path.join(self.test_base_path, "agentdb.db")
+        self.db = persistence.SQLiteAgentDB(self.db_path)
 
     def tearDown(self):
         shutil.rmtree(self.test_base_path)
 
     def _get_conn(self, incoming_lines, outfile, drop_count, retrans_list):
-        self._incoming_io = StringIO.StringIO(incoming_lines)
-        conn = test_conn.TestReplySuccessfullyAlways(
+        conn = test_conn.TestConnection(
             incoming_lines, outfile, reply_ignore_count=drop_count,
             retrans_requests=retrans_list)
         return conn
@@ -228,7 +225,6 @@ class TestRetransmission(unittest.TestCase):
         # verify that 2 requests were sent.  The second request
         # comes after the ack
         events = [i[0] for i in to]
-        events.remove('REQUEST_RECEIVED')
         events.remove('REQUEST_RECEIVED')
 
     def test_retrans_after_ack_long(self):

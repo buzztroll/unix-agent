@@ -194,7 +194,7 @@ class TestProtocolCommands(reply.ReplyObserverInterface):
         self.test_con = test_conn.ReqRepQHolder()
         self.req_conn = self.test_con.get_req_conn()
         self.reply_conn = self.test_con.get_reply_conn()
-        self.db = persistence.FakeAgentDB(
+        self.db = persistence.SQLiteAgentDB(
             os.path.join(self.test_base_path, "etc", "agentdb.sql"))
         self.request_listener = reply.RequestListener(
             self.conf_obj, self.reply_conn, self.disp, self.db)

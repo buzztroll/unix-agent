@@ -62,7 +62,7 @@ def get_connection_object(conf):
                 msg="Using the %s connection type." % con_type)
 
         outf = open(conf.connection_dest_file, "w")
-        con = test_connection.TestReplySuccessfullyAlways(fptr, outf)
+        con = test_connection.TestConnection(fptr, outf)
     elif con_type == "ws":
         if not conf.connection_agentmanager_url:
             raise exceptions.AgentOptionValueNotSetException(

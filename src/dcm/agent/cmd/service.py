@@ -58,7 +58,7 @@ class DCMAgent(object):
         self.incoming_handshake_doc = None
         self.g_logger = logging.getLogger(__name__)
         self.g_logger.info("Using DB %s" % conf.storage_dbfile)
-        self._db = persistence.FakeAgentDB(conf.storage_dbfile)
+        self._db = persistence.SQLiteAgentDB(conf.storage_dbfile)
         self._intrusion_detection = None
         self.db_cleaner = None
 
@@ -299,7 +299,7 @@ def get_status(cli_args):
     config_files = get_config_files(conffile=cli_args.conffile)
     conf = config.AgentConfig(config_files)
 
-    db_obj = messaging.persistence.FakeAgentDB(conf.storage_dbfile)
+    db_obj = messaging.persistence.SQLiteAgentDB(conf.storage_dbfile)
 
     complete = db_obj.get_all_complete()
     replied = db_obj.get_all_reply()

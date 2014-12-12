@@ -14,31 +14,28 @@
 import datetime
 import json
 import logging
+import sqlite3
 import threading
 
-import sqlalchemy
-import sqlalchemy.orm
-import sqlalchemy.orm.exc as orm_exc
 from dcm.agent import exceptions
-import dcm.agent.messaging.utils as messaging_utils
 import dcm.agent.messaging.states as messaging_states
+import dcm.agent.messaging.utils as messaging_utils
 
 
-g_metadata = sqlalchemy.MetaData()
-g_logger = logging.getLogger(__name__)
+_g_logger = logging.getLogger(__name__)
 
 
-request_table = sqlalchemy.Table(
-    'requests', g_metadata,
-    sqlalchemy.Column('request_id', sqlalchemy.String(64), primary_key=True),
-    sqlalchemy.Column('creation_time', sqlalchemy.types.TIMESTAMP(),
-                      default=datetime.datetime.now()),
-    sqlalchemy.Column('request_doc', sqlalchemy.Text),
-    sqlalchemy.Column('reply_doc', sqlalchemy.Text),
-    sqlalchemy.Column('state', sqlalchemy.String(32)),
-    sqlalchemy.Column('agent_id', sqlalchemy.String(64)),
-    sqlalchemy.Column('last_update_time', sqlalchemy.types.TIMESTAMP()),
-    )
+_g_sqllite_ddl = """
+create table if not exists requests (
+    request_id        TEXT primary key not null,
+    creation_time     date,
+    request_doc       text,
+    reply_doc         text,
+    state             string,
+    agent_id          string,
+    last_update_time  date
+);
+"""
 
 
 def fail_started_state(db_record):
@@ -75,42 +72,44 @@ class RequestObject(object):
         self.agent_id = connected_obj.agent_id
 
 
-sqlalchemy.orm.mapper(RequestDBObject, request_table)
+def _get_column_order():
+    return ["request_id", "creation_time", "request_doc",
+            "reply_doc", "state", "agent_id", "last_update_time"]
 
 
-def class_method_session(func):
-    def wrapper(self, *args, **kwargs):
-        session = self._get_session()
-        try:
-            kwargs['session'] = session
-            rc = func(self, *args, **kwargs)
-            session.commit()
-            return rc
-        except:
-            session.rollback()
-            raise
-        finally:
-            session.close()
-    return wrapper
+class SQLiteRequestObject(object):
+
+    # this is the disconnected object
+    def __init__(self, row):
+        if row is None:
+            raise exceptions.PersistenceException("The row is none")
+        column_order = _get_column_order()
+        i = 0
+        for attr in column_order:
+            setattr(self, attr, row[i])
+            i += 1
 
 
-class AgentDB(object):
+class SQLiteAgentDB(object):
 
     def __init__(self, db_file):
-        if db_file == ":memory:":
-            dburl = "sqlite://"
-        else:
-            dburl = "sqlite:///%s" % db_file
-        self._engine = sqlalchemy.create_engine(dburl)
-        g_metadata.create_all(self._engine)
-
-        self._session_factory = sqlalchemy.orm.sessionmaker(bind=self._engine)
-        self._Session = sqlalchemy.orm.scoped_session(self._session_factory)
-        self._Session = self._session_factory
+        self._db_file = db_file
         self._lock = threading.RLock()
 
-    def _get_session(self):
-        return self._Session()
+        try:
+            self._db_conn = sqlite3.connect(self._db_file, check_same_thread=False)
+            try:
+                self._db_conn.executescript(_g_sqllite_ddl)
+                self._db_conn.commit()
+            except Exception as ex:
+                _g_logger.exception(
+                    "Could not open " + db_file + " " + str(ex))
+                self._db_conn.rollback()
+                raise
+        except Exception as ex:
+            _g_logger.exception(
+                "Could not connect to the DB " + db_file + " " + str(ex))
+            raise
 
     def lock(self):
         self._lock.acquire()
@@ -118,167 +117,141 @@ class AgentDB(object):
     def unlock(self):
         self._lock.release()
 
-    @messaging_utils.class_method_sync
-    @class_method_session
-    def starting_agent(self, session=None):
-        self._clear_all_lost(session)
-
-    def _clear_all_lost(self, session):
-        # load every object
-        # in this step we decide that we cannot recover an job that has not
-        # been known to reply.  If in the future we feel we can re-run jobs
-        # safe then changes will need to be made here
-        started_requests = session.query(RequestDBObject).filter(
-            RequestDBObject.state==messaging_states.ReplyStates.ACKED).all()
-        for req in started_requests:
-            fail_started_state(req)
-            session.add(req)
-
-    @messaging_utils.class_method_sync
-    @class_method_session
-    def check_agent_id(self, agent_id, session=None):
-        session.query(RequestDBObject).filter(
-            RequestDBObject.agent_id != agent_id).delete()
-
-    @messaging_utils.class_method_sync
-    @class_method_session
-    def get_all_complete(self, session=None):
-        # load every object
-        complete_tasks = session.query(RequestDBObject).filter(
-            RequestDBObject.state==messaging_states.ReplyStates.REPLY_ACKED).\
-            all()
-        external_tasks = [RequestObject(i) for i in complete_tasks]
-        return external_tasks
-
-    @messaging_utils.class_method_sync
-    @class_method_session
-    def get_all_rejected(self, session=None):
-        # load every object
-        complete_tasks = session.query(RequestDBObject).filter(
-            RequestDBObject.state==messaging_states.ReplyStates.NACKED).\
-            all()
-        external_tasks = [RequestObject(i) for i in complete_tasks]
-        return external_tasks
-
-    @messaging_utils.class_method_sync
-    @class_method_session
-    def get_all_reply_nacked(self, session=None):
-        # load every object
-        complete_tasks = session.query(RequestDBObject).filter(
-            RequestDBObject.state==messaging_states.ReplyStates.REPLY_NACKED).\
-            all()
-        external_tasks = [RequestObject(i) for i in complete_tasks]
-        return external_tasks
-
-    @messaging_utils.class_method_sync
-    @class_method_session
-    def get_all_ack(self, session=None):
-        # load every object
-        complete_tasks = session.query(RequestDBObject).filter(
-            RequestDBObject.state==messaging_states.ReplyStates.ACKED).all()
-        external_tasks = [RequestObject(i) for i in complete_tasks]
-        return external_tasks
-
-    @messaging_utils.class_method_sync
-    @class_method_session
-    def get_all_reply(self, session=None):
-        # load every object
-        re_inflate_tasks = session.query(RequestDBObject).filter(
-            RequestDBObject.state==messaging_states.ReplyStates.REPLY).all()
-        external_tasks = [RequestObject(i) for i in re_inflate_tasks]
-        return external_tasks
-
-    @messaging_utils.class_method_sync
-    @class_method_session
-    def lookup_req(self, request_id, session=None):
+    def _execute(self, func):
         try:
-            record = session.query(RequestDBObject).filter(
-                RequestDBObject.request_id==request_id).one()
-            return RequestObject(record)
-        except orm_exc.NoResultFound:
-            return None
-
-    @messaging_utils.class_method_sync
-    @class_method_session
-    def new_record(self, request_id, request_doc, reply_doc, state,
-                   agent_id, session=None):
-        req_doc_str = json.dumps(request_doc)
-
-        db_obj = RequestDBObject(request_doc['request_id'],
-                                 req_doc_str, agent_id, state)
-        if reply_doc:
-            db_obj.reply_doc = json.dumps(reply_doc)
-        session.add(db_obj)
-
-    @messaging_utils.class_method_sync
-    @class_method_session
-    def update_record(self, request_id, state, reply_doc=None, session=None):
-        try:
-            record = session.query(RequestDBObject).filter(
-                RequestDBObject.request_id==request_id).one()
-        except orm_exc.NoResultFound as ex:
-            raise exceptions.PersistenceException(
-                "The record %s was not found" % request_id)
-        record.state = state
-        if reply_doc is not None:
+            cursor = self._db_conn.cursor()
             try:
-                reply_doc_str = json.dumps(reply_doc)
+                rc = func(cursor)
+                self._db_conn.commit()
+                return rc
             except Exception as ex:
-                g_logger.exception("cannot encode reply " + str(reply_doc))
+                _g_logger.exception(
+                    "Could not open " + self._db_file + " " + str(ex))
+                self._db_conn.rollback()
                 raise
-            record.reply_doc = reply_doc_str
-        session.add(record)
+            finally:
+                cursor.close()
+        except Exception as ex:
+            _g_logger.exception(
+                "Could not connect to the DB " + self._db_file + " " + str(ex))
+            raise
 
     @messaging_utils.class_method_sync
-    @class_method_session
-    def clean_all_expired(self, cut_off_time, session=None):
-        try:
-            recs = session.query(RequestDBObject).filter(
-                RequestDBObject.last_update_time < cut_off_time).all()
-        except orm_exc.NoResultFound:
-            return
-        for rec in recs:
-            session.delete(rec)
+    def starting_agent(self):
+        r = {
+            'Exception':
+                "The job was executed but the state of the execution was lost.",
+            'return_code': 1}
+        reply_doc = json.dumps(r)
 
+        stmt = ("UPDATE requests SET state=?, reply_doc=? WHERE state=?")
 
-class FakeAgentDB(object):
+        def do_it(cursor):
+            cursor.execute(stmt,
+                           (messaging_states.ReplyStates.REPLY,
+                            reply_doc,
+                            messaging_states.ReplyStates.ACKED))
+        self._execute(do_it)
 
-    def __init__(self, db_file):
-        pass
+    @messaging_utils.class_method_sync
+    def check_agent_id(self, agent_id):
+        stmt = 'DELETE FROM requests where agent_id <> ?'
+        def do_it(cursor):
+            cursor.execute(stmt, (agent_id,))
+        self._execute(do_it)
 
-    def starting_agent(self, session=None):
-        pass
+    def _get_all_state(self, state):
+        stmt = ("SELECT " + ", ".join(_get_column_order()) +
+                " FROM requests WHERE state=\"" + state + '"')
+        def do_it(cursor):
+            cursor.execute(stmt)
+            rows = cursor.fetchall()
+            if not rows:
+                return []
+            return [SQLiteRequestObject(i) for i in rows]
+        return self._execute(do_it)
 
-    def check_agent_id(self, agent_id, session=None):
-        pass
+    @messaging_utils.class_method_sync
+    def get_all_complete(self):
+        return self._get_all_state(messaging_states.ReplyStates.REPLY_ACKED)
 
-    def get_all_complete(self, session=None):
-        return []
-
+    @messaging_utils.class_method_sync
     def get_all_rejected(self, session=None):
-        return []
+        return self._get_all_state(messaging_states.ReplyStates.NACKED)
 
+    @messaging_utils.class_method_sync
     def get_all_reply_nacked(self, session=None):
-        return []
+        return self._get_all_state(messaging_states.ReplyStates.REPLY_NACKED)
 
-    def get_all_ack(self, session=None):
-        return []
+    @messaging_utils.class_method_sync
+    def get_all_ack(self):
+        return self._get_all_state(messaging_states.ReplyStates.ACKED)
 
-    def get_all_reply(self, session=None):
-        return []
+    @messaging_utils.class_method_sync
+    def get_all_reply(self):
+        return self._get_all_state(messaging_states.ReplyStates.REPLY)
 
-    def lookup_req(self, request_id, session=None):
-        return None
+    @messaging_utils.class_method_sync
+    def lookup_req(self, request_id):
+        stmt = ("SELECT " + ", ".join(_get_column_order()) + " FROM "
+                'requests where request_id=?')
 
+        def do_it(cursor):
+            cursor.execute(stmt, [request_id])
+            row = cursor.fetchone()
+            if not row:
+                return
+            return SQLiteRequestObject(row)
+        return self._execute(do_it)
+
+    @messaging_utils.class_method_sync
     def new_record(self, request_id, request_doc, reply_doc, state,
-                   agent_id, session=None):
-        pass
+                   agent_id):
+        stmt = ("INSERT INTO requests(request_id, creation_time, request_doc, "
+                "reply_doc, state, agent_id, last_update_time) "
+                "VALUES(?, ?, ?, ?, ?, ?, ?)")
 
-    def update_record(self, request_id, state, reply_doc=None, session=None):
-        pass
+        if request_id != request_doc['request_id']:
+            raise exceptions.PersistenceException("The request_id must match "
+                                              "the request_doc")
 
-    def clean_all_expired(self, cut_off_time, session=None):
-        pass
+        if request_doc is not None:
+            request_doc = json.dumps(request_doc)
+        if reply_doc is not None:
+            reply_doc = json.dumps(reply_doc)
+        def do_it(cursor):
+            nw = datetime.datetime.now()
+            parms = (request_id, nw, request_doc,
+                            reply_doc, state, agent_id, nw)
+            cursor.execute(stmt, parms)
+        self._execute(do_it)
+
+    @messaging_utils.class_method_sync
+    def update_record(self, request_id, state, reply_doc=None):
+        stmt = ("UPDATE requests SET state=?, reply_doc=?, last_update_time=? "
+                "WHERE request_id=?")
+        try:
+            if reply_doc is not None:
+                reply_doc = json.dumps(reply_doc)
+            def do_it(cursor):
+                nw = datetime.datetime.now()
+                cursor.execute(stmt, (state, reply_doc, nw, request_id))
+                if cursor.rowcount != 1:
+                    raise exceptions.PersistenceException(
+                        "%d rows were updated when exactly 1 should have "
+                        "been" % cursor.rowcount)
+            self._execute(do_it)
+        except Exception as ex:
+            raise exceptions.PersistenceException(ex)
+
+    @messaging_utils.class_method_sync
+    def clean_all_expired(self, cut_off_time):
+        stmt = ("DELETE FROM requests WHERE request_id in (SELECT request_id "
+                "FROM requests WHERE last_update_time < ?)")
+        def do_it(cursor):
+            cursor.execute(stmt, (cut_off_time,))
+        self._execute(do_it)
+
 
 class DBCleaner(threading.Thread):
 
@@ -300,7 +273,7 @@ class DBCleaner(threading.Thread):
                     microseconds=self._max_time)
                 self._db.clean_all_expired(cut_off_time)
             except Exception as ex:
-                g_logger.exception("An exception occurred in the db sweeper "
+                _g_logger.exception("An exception occurred in the db sweeper "
                                    "thread " + ex.message)
             finally:
                 self._cond.release()
