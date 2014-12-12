@@ -45,6 +45,11 @@ _g_platform_dep_installer = {
                                             "mdadm"],
 }
 
+_g_platform_dep_crypto_installer = {
+    config.PLATFORM_TYPES.PLATFORM_UBUNTU: ["debInstall",
+                                            "cryptsetup"],
+}
+
 
 def _is_supported(conf):
     try:
@@ -58,25 +63,30 @@ class MountVolume(direct_pass.DirectPass):
 
     protocol_arguments = {
         "formatVolume":
-        ("A boolean indicating if the volume should be formated.",
+        ("A boolean indicating if the volume should be formatted.",
          True, bool, None),
-        "fileSystem": ("", True, str, None),
-        "raidLevel": ("", True, str, "NONE"),
-        "encryptedFsEncryptionKey": ("", False,
-                                     utils.base64type_binary_convertor, None),
-        "mountPoint": ("", True, str, None),
-        "devices": ("", True, list, None)
+        "fileSystem":
+            ("The file system type to which the volume will be formatted",
+             True, str, None),
+        "raidLevel": ("The RAID configuration to use", True, str, "NONE"),
+        "encryptedFsEncryptionKey":
+            ("The encryption key for encrypted volumes", False,
+             utils.base64type_binary_convertor, None),
+        "mountPoint": ("The directory on which the volume will be mounted",
+                       False, str, None),
+        "devices": ("The list of devices that will be used.",
+                    True, list, None)
     }
 
     def __init__(self, conf, job_id, items_map, name, arguments):
         super(MountVolume, self).__init__(
             conf, job_id, items_map, name, arguments)
 
-    def _install_deps(self):
-        if self.conf.platform_name in _g_platform_dep_installer:
+    def _install_deps(self, dep_dict):
+        if self.conf.platform_name in dep_dict:
             _g_logger.debug("Installing packaging deps")
             pkg_installer_cmd = \
-                _g_platform_dep_installer[self.conf.platform_name]
+                dep_dict[self.conf.platform_name]
             if pkg_installer_cmd:
                 cmd_path = self.conf.get_script_location(pkg_installer_cmd[0])
                 pkg_installer_cmd[0] = cmd_path
@@ -175,6 +185,7 @@ class MountVolume(direct_pass.DirectPass):
         if self.args.encryptedFsEncryptionKey is not None:
             encrypted_device = "es" + target_device
             td = encrypted_device
+            self._install_deps(_g_platform_dep_crypto_installer)
 
         device_mappings = utils.get_device_mappings(self.conf)
         for mapping in device_mappings:
@@ -226,11 +237,16 @@ class MountVolume(direct_pass.DirectPass):
         if self.args.mountPoint is None:
             self.args.mountPoint = self.conf.storage_mountpoint
 
+        if os.path.exists(self.args.mountPoint):
+            raise exceptions.AgentOptionException(
+                "The path %s exists.  For safety the agent only mounts "
+                "volumes on paths that do not exist.")
+
         if self.args.fileSystem is None:
             self.args.fileSystem = self.conf.storage_default_file_system
 
         self.args.devices = self._normalize_device()
-        self._install_deps()
+        self._install_deps(_g_platform_dep_installer)
         rc = self.mount_block_volume()
 
         reply = {"return_code": rc, "message": "",

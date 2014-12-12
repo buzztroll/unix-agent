@@ -282,8 +282,6 @@ def make_dirs(conf_d):
         (os.path.join(base_path, "home"), 0750),
         (os.path.join(base_path, "cfg"), 0750),
         (conf_d["storage"]["services_dir"][1], 0755),
-        (conf_d["storage"]["mountpoint"][1], 0750),
-        (os.path.join(conf_d["storage"]["mountpoint"][1], "tmp"), 0750),
         (conf_d["storage"]["temppath"][1], 01777),
     ]
 

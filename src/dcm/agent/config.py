@@ -362,7 +362,7 @@ def build_options_list():
         FilenameOpt("storage", "temppath", default="/tmp"),
         FilenameOpt("storage", "services_dir", default="/mnt/services"),
         FilenameOpt("storage", "base_dir", default="/dcm"),
-        FilenameOpt("storage", "mountpoint", default="/mnt"),
+        FilenameOpt("storage", "mountpoint", default="/mnt/dcmdata"),
         FilenameOpt("storage", "dbfile", default=None),
         FilenameOpt("storage", "script_dir", default=None),
 
@@ -372,7 +372,6 @@ def build_options_list():
         ConfigOpt("storage", "db_timeout", int, default=60*60*4,
                   help_msg="The amount of time in seconds for a request id to "
                            "stay in the database."),
-        ConfigOpt("storage", "mount_enabled", bool, default=True),
         ConfigOpt("storage", "default_filesystem", str, default="ext3"),
 
         ConfigOpt("system", "user", str, default="dcm"),
