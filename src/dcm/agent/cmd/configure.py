@@ -298,8 +298,6 @@ def do_set_owner_and_perms(conf_d):
 
     print "Changing ownership to %s:%s" % (user, user)
     os.system("chown -R %s:%s %s" % (user, user, base_path))
-    os.system("chown -R %s:%s %s" % (user, user,
-                                     conf_d["storage"]["mountpoint"][1]))
 
 
 def merge_opts(conf_d, opts):
