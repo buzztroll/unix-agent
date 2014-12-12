@@ -27,7 +27,7 @@ _g_conf_file_env = "DCM_AGENT_CONF"
 
 
 def get_config_files(base_dir=None, conffile=None):
-    candidates = ["/etc/dcm/agent.conf",
+    candidates = ["/dcm/etc/agent.conf",
                   os.path.expanduser("~/.dcm/agent.conf")]
     if base_dir:
         candidates.append(os.path.join(base_dir, "etc", "agent.conf"))
@@ -199,22 +199,22 @@ def _gather_info(conf):
 
     try:
         platform = utils.identify_platform(conf)
-    except:
-        platform = "Not able to determine platform"
+    except Exception as ex:
+        platform = "Not able to determine platform: " + str(ex)
 
     meta_data_obj = conf.meta_data_object
 
     try:
         startup_script = meta_data_obj.get_startup_script()
-    except:
-        startup_script = "Not able to retrieve startup script"
+    except Exception as ex:
+        startup_script = "Not able to retrieve startup script: " + str(ex)
 
     version = dcm.agent.g_version
     protocol_version = dcm.agent.g_protocol_version
     message =  "Effective cloud is: " + effective_cloud + "\n"
     message += "Platform is %s %s" % (platform[0], platform[1]) + "\n"
     message += "Version: " + version + "\n"
-    message += "Protocol version: " + protocol_version
+    message += "Protocol version: " + str(protocol_version)
 
     with open("/tmp/startup_script.txt", "w") as ss:
         ss.write(startup_script)
