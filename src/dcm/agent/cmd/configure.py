@@ -23,28 +23,8 @@ g_user_env_str = "DCM_USER"
 g_basedir_env_str = "DCM_BASEDIR"
 
 
-cloud_choices = {
-    1: cloudmetadata.CLOUD_TYPES.Amazon,
-    2: cloudmetadata.CLOUD_TYPES.Atmos,
-    3: cloudmetadata.CLOUD_TYPES.ATT,
-    4: cloudmetadata.CLOUD_TYPES.Azure,
-    5: cloudmetadata.CLOUD_TYPES.Bluelock,
-    6: cloudmetadata.CLOUD_TYPES.CloudCentral,
-    7: cloudmetadata.CLOUD_TYPES.CloudSigma,
-    8: cloudmetadata.CLOUD_TYPES.CloudStack,
-    9: cloudmetadata.CLOUD_TYPES.CloudStack3,
-    10: cloudmetadata.CLOUD_TYPES.Eucalyptus,
-    11: cloudmetadata.CLOUD_TYPES.GoGrid,
-    12: cloudmetadata.CLOUD_TYPES.Google,
-    13: cloudmetadata.CLOUD_TYPES.IBM,
-    14: cloudmetadata.CLOUD_TYPES.Joyent,
-    15: cloudmetadata.CLOUD_TYPES.OpenStack,
-    16: cloudmetadata.CLOUD_TYPES.Rackspace,
-    17: cloudmetadata.CLOUD_TYPES.ServerExpress,
-    18: cloudmetadata.CLOUD_TYPES.Terremark,
-    19: cloudmetadata.CLOUD_TYPES.VMware,
-    20: cloudmetadata.CLOUD_TYPES.Other
-}
+cloud_choices = [i for i in
+                 dir(cloudmetadata.CLOUD_TYPES) if not i.startswith("__")]
 
 
 def setup_command_line_parser():
@@ -54,9 +34,7 @@ def setup_command_line_parser():
     parser.add_argument("--cloud", "-c", metavar="{Amazon, etc...}",
                         dest="cloud",
                         help="The cloud where this virtual machine will be "
-                             "run.  Options: %s" % ", ".join(
-                                 cloud_choices.values()))
-                        # choices=cloud_choices.values())
+                             "run.  Options: %s" % ", ".join(cloud_choices))
     parser.add_argument("--url", "-u", dest="url",
                         help="The location of the dcm web socket listener")
 
@@ -145,17 +123,18 @@ def select_cloud(default=cloudmetadata.CLOUD_TYPES.Amazon):
     :param default:
     :return:
     """
-    for c in sorted(cloud_choices.keys()):
-        col = "%2d) %-13s" % (c, cloud_choices[c])
+
+    for i, cloud_name in enumerate(cloud_choices):
+        col = "%2d) %-13s" % (i, cloud_name)
         print col
 
     cloud = None
     while cloud is None:
         input_str = _get_input("Select your cloud (%s): " % default)
-        input_str = input_str.strip()
+        input_str = input_str.strip().lower()
         if not input_str:
-            input_str = default
-        if input_str.lower() in [i.lower() for i in cloud_choices.values()]:
+            input_str = default.lower()
+        if input_str in [i.lower() for i in cloud_choices]:
             return input_str
         try:
             ndx = int(input_str)
@@ -282,8 +261,6 @@ def make_dirs(conf_d):
         (os.path.join(base_path, "home"), 0750),
         (os.path.join(base_path, "cfg"), 0750),
         (conf_d["storage"]["services_dir"][1], 0755),
-        (conf_d["storage"]["mountpoint"][1], 0750),
-        (os.path.join(conf_d["storage"]["mountpoint"][1], "tmp"), 0750),
         (conf_d["storage"]["temppath"][1], 01777),
     ]
 

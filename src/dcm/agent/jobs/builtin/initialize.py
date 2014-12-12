@@ -86,13 +86,6 @@ class InitializeJob(jobs.Plugin):
                 res_doc["message"] = res_doc["message"] + " : rename failed"
                 return res_doc
 
-            if self.conf.storage_mount_enabled:
-                utils.log_to_dcm(logging.INFO, "Mount is enabled")
-                if self.args.encryptedEphemeralFsKey:
-                    self.logger.info(
-                        "Attempting to mount the ephemeral file system")
-                    # TODO mount encrypted FS
-
             # make the temp directory
             utils.log_to_dcm(logging.INFO, "Create the temporary directory")
             res_doc = self.make_temp.run()
