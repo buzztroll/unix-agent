@@ -35,7 +35,7 @@ class CLOUD_TYPES:
 #    CloudSigma = "CloudSigma"
     CloudStack = "CloudStack"
     CloudStack3 = "CloudStack3"
-#    Eucalyptus = "Eucalyptus"
+    Eucalyptus = "Eucalyptus"
 #    GoGrid = "GoGrid"
     Google = "Google"
 #    IBM = "IBM"

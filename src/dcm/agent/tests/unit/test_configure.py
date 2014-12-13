@@ -61,7 +61,7 @@ class TestConfigure(unittest.TestCase):
             self.assertTrue(os.path.exists(d), d)
 
     def test_all_cloud_configure(self):
-        for cloud in configure.cloud_choices.values():
+        for cloud in configure.cloud_choices:
             conf_args = ["-p", self.test_base_path, "-c", cloud]
             rc = configure.main(conf_args)
             self.assertEqual(rc, 0)
