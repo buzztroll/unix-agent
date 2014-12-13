@@ -62,6 +62,8 @@ class TestConfigure(unittest.TestCase):
 
     def test_all_cloud_configure(self):
         for cloud in configure.cloud_choices:
+            if cloud.lower() == "unknown":
+                continue
             conf_args = ["-p", self.test_base_path, "-c", cloud]
             rc = configure.main(conf_args)
             self.assertEqual(rc, 0)
@@ -134,14 +136,14 @@ class TestConfigure(unittest.TestCase):
             self.assertRaises(Exception, configure.get_url)
 
     def test_configure_cloud_choice(self):
-        cloud_choice = "1"
+        cloud_choice = "0"
         with mock.patch('dcm.agent.cmd.configure._get_input'):
             configure._get_input.return_value = cloud_choice
             cloud = configure.select_cloud()
-        self.assertEqual(cloud.lower(), "amazon")
+        self.assertEqual(cloud.lower(), configure.cloud_choices[0].lower())
 
     def test_configure_bad_cloud_choice(self):
-        aws = ["bad", "1"]
+        aws = ["bad", "0"]
 
         def _l_get_input(prompt):
             return aws.pop()
@@ -152,11 +154,11 @@ class TestConfigure(unittest.TestCase):
             cloud = configure.select_cloud()
         finally:
             dcm.agent.cmd.configure._get_input = func
-        self.assertEqual(cloud.lower(), "amazon")
+        self.assertEqual(cloud.lower(), configure.cloud_choices[0].lower())
 
     def test_interactive_configure(self):
         def _l_get_input(prompt):
-            return "12"
+            return "0"
 
         url = "ws://someplace.com:5434/path"
         with mock.patch('sys.stdin'):
@@ -180,4 +182,4 @@ class TestConfigure(unittest.TestCase):
         agentmanager_url = parser.get("connection", "agentmanager_url")
         self.assertEqual(agentmanager_url, url)
         cloud_type = parser.get("cloud", "type")
-        self.assertEqual(cloud_type, "Google")
+        self.assertEqual(cloud_type, configure.cloud_choices[0])
