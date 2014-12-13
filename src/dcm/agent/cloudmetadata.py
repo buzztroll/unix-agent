@@ -35,7 +35,7 @@ class CLOUD_TYPES:
 #    CloudSigma = "CloudSigma"
     CloudStack = "CloudStack"
     CloudStack3 = "CloudStack3"
-#    Eucalyptus = "Eucalyptus"
+    Eucalyptus = "Eucalyptus"
 #    GoGrid = "GoGrid"
     Google = "Google"
 #    IBM = "IBM"
@@ -43,7 +43,7 @@ class CLOUD_TYPES:
     Konami = "Konami"
 #    Nimbula = "Nimbula"
     OpenStack = "OpenStack"
-#    Other = "Other"
+    Other = "Other"
 #    Rackspace = "Rackspace"
 #    ServerExpress = "ServerExpress"
 #    Terremark = "Terremark"
@@ -332,6 +332,8 @@ def set_metadata_object(conf):
             conf, base_url=conf.cloud_metadata_url)
     elif cloud_name == CLOUD_TYPES.Konami:
         meta_data_obj = KonamiMetaData()
+    elif cloud_name == CLOUD_TYPES.Other:
+        meta_data_obj = UnknownMetaData()
     else:
         meta_data_obj = CloudMetaData()
 
