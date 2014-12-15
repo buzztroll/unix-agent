@@ -242,44 +242,6 @@ class ConfigureServer(jobs.Plugin):
             utils.safe_delete(cert_file_path)
             utils.safe_delete(key_file_path)
 
-    def configure_server_with_es(self):
-        temp_dir = self.conf.get_temp_file("es_conf", isdir=True)
-        t_stdout = ""
-        t_stderr = ""
-        try:
-            for script_path in self.args.scriptFiles:
-                script_dir = os.path.dirname(script_path)
-                script_name = os.path.basename(script_path)
-
-                temp_script_path = os.path.join(temp_dir, script_name)
-
-                storagecloud.download(
-                    self.args.storageDelegate,
-                    script_dir,
-                    script_name,
-                    self.args.storagePublicKey,
-                    self.args.storagePrivateKey,
-                    temp_script_path,
-                    region_id=self.args.providerRegionId,
-                    endpoint=self.args.storageEndpoint,
-                    account=self.args.storageAccount)
-
-                exe = self.conf.get_script_location(
-                    "runConfigurationManagement-ENSTRATUS")
-                cmd = [exe,
-                       self.args.runAsUser,
-                       str(self.conf.customer_id),
-                       temp_script_path]
-                (stdout, stderr, rc) = utils.run_command(self.conf, cmd)
-                if rc != 0:
-                    raise exceptions.AgentPluginOperationException(
-                        "Script %s failed" % script_name)
-                t_stderr = t_stderr + stderr
-                t_stdout = t_stdout + stdout
-            return (t_stdout, t_stderr, 0)
-        finally:
-            shutil.rmtree(temp_dir, ignore_errors=True)
-
     def run(self):
         if self.conf.is_imaging():
             raise exceptions.AgentPluginOperationIsImagingException(
@@ -288,18 +250,17 @@ class ConfigureServer(jobs.Plugin):
         _g_logger.info("Running configuration management of type " +
                        self.args.configType)
 
+        if self.args.configType.upper() == "ENSTRATUS":
+            raise exceptions.AgentOptionException(
+                "configType", "CHEF or PUPPET", self.args.configType)
+
         if self.name == "configure_server" or\
                 self.name == "configure_server_15":
             (stdout, stderr, rc) = self.configure_server_legacy()
         elif self.name == "configure_server_16":
-            if self.args.configType.upper() != "ENSTRATUS":
-                (stdout, stderr, rc) = self.configure_server_legacy()
-            else:
-                (stdout, stderr, rc) = self.configure_server_with_es()
+            (stdout, stderr, rc) = self.configure_server_legacy()
         else:
-            if self.args.configType.upper() == "ENSTRATUS":
-                (stdout, stderr, rc) = self.configure_server_with_es()
-            elif self.args.configType.upper() == "CHEF":
+            if self.args.configType.upper() == "CHEF":
                 (stdout, stderr, rc) = self.configure_server_with_chef()
             elif self.args.configType.upper() == "PUPPET":
                 (stdout, stderr, rc) = self.configure_server_with_puppet()
