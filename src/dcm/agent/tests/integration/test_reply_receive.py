@@ -478,16 +478,6 @@ class TestProtocolCommands(reply.ReplyObserverInterface):
 
         # TODO verify that this matches the output of the command
 
-    def test_get_service_states(self):
-        doc = {
-            "command": "get_service_states",
-            "arguments": {"agent_token": None}
-        }
-        req_reply = self._rpc_wait_reply(doc)
-        r = req_reply.get_reply()
-        nose.tools.eq_(r["payload"]["return_code"], 0)
-        # TODO verify that this matches the output of the command
-
     @test_utils.skip_docker
     @test_utils.system_changing
     def test_rename(self):
