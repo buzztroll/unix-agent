@@ -741,37 +741,6 @@ class TestProtocolCommands(reply.ReplyObserverInterface):
         That will be writen over there
         """
 
-        # test configure
-        arguments = {
-            "forCustomerId": self.customer_id,
-            "serviceId": service_id,
-            "runAsUser": self.run_as_user,
-            "configurationData": base64.b64encode(
-                bytearray(configuration_data))
-        }
-        doc = {
-            "command": "configure_service",
-            "arguments": arguments
-        }
-        start_time = datetime.datetime.now().replace(microsecond=0)
-        req_reply = self._rpc_wait_reply(doc)
-        r = req_reply.get_reply()
-        nose.tools.eq_(r["payload"]["return_code"], 0)
-        jd = r["payload"]["reply_object"]
-        while jd["job_status"] in ["WAITING", "RUNNING"]:
-            jd = self._get_job_description(jd["job_id"])
-        nose.tools.eq_(jd["job_status"], "COMPLETE")
-
-        nose.tools.ok_(os.path.exists("/tmp/service_configure"))
-
-        with open("/tmp/service_configure", "r") as fptr:
-            secs = fptr.readline()
-            params = fptr.readline()
-        tm = datetime.datetime.utcfromtimestamp(float(secs))
-        nose.tools.ok_(tm >= start_time)
-        p_a = params.split()
-        nose.tools.ok_(len(p_a), 2)
-
         cfg_file = os.path.join(service_dir, "cfg", "enstratiusinitd.cfg")
         nose.tools.ok_(os.path.exists(cfg_file))
 
@@ -782,31 +751,6 @@ class TestProtocolCommands(reply.ReplyObserverInterface):
         ssl_public = "SFSOHWEKJRNMNSD<MNCSDNFSLEJFLKSENF<SDNCVDMS< CV"
         ssl_private = "sdfsdfsdjkhwekrjnwekrnweknv,mx vm,nwekrnlwekndfems,nfsd"
         configuration_data = configuration_data + "poerPPPO"
-
-        # test with ssl configure
-        arguments = {
-            "forCustomerId": self.customer_id,
-            "serviceId": service_id,
-            "runAsUser": self.run_as_user,
-            "configurationData": base64.b64encode(
-                bytearray(configuration_data)),
-            "sslAddress": "http://someplacefcdx.com",
-            "sslPublic": base64.b64encode(bytearray(ssl_public)),
-            "sslPrivate": base64.b64encode(bytearray(ssl_private)),
-            "sslChain": "thisisthesslschain"
-        }
-        doc = {
-            "command": "configure_service_with_ssl",
-            "arguments": arguments
-        }
-        start_time = datetime.datetime.now().replace(microsecond=0)
-        req_reply = self._rpc_wait_reply(doc)
-        r = req_reply.get_reply()
-        nose.tools.eq_(r["payload"]["return_code"], 0)
-        jd = r["payload"]["reply_object"]
-        while jd["job_status"] in ["WAITING", "RUNNING"]:
-            jd = self._get_job_description(jd["job_id"])
-        nose.tools.eq_(jd["job_status"], "COMPLETE")
 
         nose.tools.ok_(os.path.exists("/tmp/service_configure"))
 
