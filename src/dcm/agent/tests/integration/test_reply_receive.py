@@ -1438,7 +1438,7 @@ class TestProtocolCommands(reply.ReplyObserverInterface):
 
     @test_utils.system_changing
     def test_mount_variety(self):
-        mount_point = tempfile.mkdtemp()
+        mount_point = os.path.join(tempfile.mkdtemp(), "mnt")
 
         if os.path.exists("/dev/sdb"):
             device_id = "sdb"
@@ -1446,6 +1446,12 @@ class TestProtocolCommands(reply.ReplyObserverInterface):
             device_id = "hdb"
         else:
             raise skip.SkipTest("No second drive was found")
+
+        mappings = utils.get_device_mappings(self.conf_obj)
+        for dm in mappings:
+            if dm['device_id'] == device_id:
+                os.system("umount " + dm['mount_point'])
+
 
         print device_id
         mappings = utils.get_device_mappings(self.conf_obj)
@@ -1479,9 +1485,21 @@ class TestProtocolCommands(reply.ReplyObserverInterface):
                 nose.tools.eq_(dm['mount_point'], mount_point)
         nose.tools.ok_(found)
 
+        arguments = {
+            "deviceId": device_id,
+        }
+        doc = {
+            "command": "unmount_volume",
+            "arguments": arguments
+        }
+        req_reply = self._rpc_wait_reply(doc)
+        r = req_reply.get_reply()
+        nose.tools.eq_(r["payload"]["return_code"], 0)
+
+        mount_point = os.path.join(tempfile.mkdtemp(), "mnt2")
         doc = {
             "command": "mount_volume",
-            "arguments": {"formatVolume": False,
+            "arguments": {"formatVolume": True,
                           "fileSystem": "ext3",
                           "raidLevel": "NONE",
                           "encryptedFsEncryptionKey": None,
@@ -1514,7 +1532,7 @@ class TestProtocolCommands(reply.ReplyObserverInterface):
             raise skip.SkipTest("set %s to try encryption tests" % enc_str)
 
         enc_key = os.environ["ENCRYPTED_FILE_ENV"]
-        mount_point = tempfile.mkdtemp()
+        mount_point = os.path.join(tempfile.mkdtemp(), "mnt")
         device_id = "sdb"
 
         mappings = utils.get_device_mappings(self.conf_obj)
