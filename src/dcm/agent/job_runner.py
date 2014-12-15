@@ -4,7 +4,6 @@ import os
 import subprocess
 import tempfile
 import threading
-from dcm.agent import system_lock
 import time
 
 
@@ -59,7 +58,6 @@ class JobRunnerWorker(multiprocessing.Process):
         _g_logger.info("Child job runner starting")
         self._pipe = pipe
         self._exit = multiprocessing.Event()
-        self._svc_lock = system_lock.ChildProcessLockMgr(conf)
         self._conf = conf
         self._jobs = {}
 
@@ -114,23 +112,6 @@ class JobRunnerWorker(multiprocessing.Process):
 
         return (rc, stdout, stderr)
 
-    def _lock(self, wrk):
-        (_, timeout, lock_fs) = wrk
-        try:
-            self._svc_lock.lock(timeout, lock_fs)
-            reply = (0, "")
-        except Exception as ex:
-            reply = (1, ex.message)
-        return reply
-
-    def _unlock(self, wrk):
-        try:
-            self._svc_lock.unlock()
-            reply = (0, "")
-        except Exception as ex:
-            reply = (1, ex.message)
-        return reply
-
     def run(self):
         try:
             while not self._exit.is_set():
@@ -141,12 +122,8 @@ class JobRunnerWorker(multiprocessing.Process):
                     _g_logger.debug("Received job type %s" % wrk[0])
                     if wrk[0] == JobRunnerWorker.CMD_JOB:
                         reply = self._sync_job(wrk)
-                    elif wrk[0] == JobRunnerWorker.LOCK_JOB:
-                        reply = self._lock(wrk)
                     elif wrk[0] == JobRunnerWorker.CMD_POLL_JOB:
                         reply = self._poll_job(wrk)
-                    elif wrk[0] == JobRunnerWorker.UNLOCK_JOB:
-                        reply = self._unlock(wrk)
                     else:
                         _g_logger.error(
                             "An unknown work type was received %s" % wrk[0])
@@ -207,20 +184,6 @@ class JobRunner(object):
         _g_logger.info("Output from the command %s. rc=%d, stdout=%s, "
                        "stderr=%s" % (cmd, rc, stdout, stderr))
         return (stdout, stderr, rc)
-
-    def lock(self, timeout, lock_fs):
-        _g_logger.debug("Sending lock the child runner")
-        (rc, message) = self._send_receive_safe(
-            (JobRunnerWorker.LOCK_JOB, timeout, lock_fs))
-        if rc != 0:
-            raise Exception(message)
-
-    def unlock(self):
-        _g_logger.debug("Sending unlock the child runner")
-        (rc, message) = self._send_receive_safe(
-            (JobRunnerWorker.UNLOCK_JOB, 1))
-        if rc != 0:
-            raise Exception(message)
 
     def shutdown(self):
         _g_logger.debug("Job runner shutting down")
