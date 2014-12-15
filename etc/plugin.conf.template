@@ -27,8 +27,3 @@ script_name: removeUser
 type: python_module
 module_name: dcm.agent.jobs.builtin.list_devices
 script_name: listDevices
-
-[plugin:get_service_states]
-type: python_module
-module_name: dcm.agent.jobs.builtin.get_service_states
-script_name: checkService
