@@ -44,4 +44,3 @@ class TestRequesterStandardPath(unittest.TestCase):
                 break
 
         self.assertEqual(count_back, max_id)
-

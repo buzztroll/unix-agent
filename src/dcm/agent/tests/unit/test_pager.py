@@ -64,4 +64,3 @@ class TestPager(unittest.TestCase):
                               token)
         finally:
             page_monitor.stop()
-

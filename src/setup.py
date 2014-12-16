@@ -21,7 +21,6 @@ def get_git_version():
         else:
             semversion = stdoutdata.strip()
 
-
         p = subprocess.Popen("git rev-parse HEAD",
                              cwd=basedir,
                              shell=True,

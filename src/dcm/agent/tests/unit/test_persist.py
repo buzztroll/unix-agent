@@ -327,4 +327,3 @@ class TestPersistMultiThread(unittest.TestCase):
         nose.tools.ok_(res is not None)
         res = self.db.lookup_req(request_id2)
         nose.tools.ok_(res is not None)
-

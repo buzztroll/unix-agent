@@ -221,7 +221,8 @@ class GCEMetaData(CloudMetaData):
         if base_url is not None:
             self.base_url = base_url
         else:
-            self.base_url = "http://metadata.google.internal/computeMetadata/v1"
+            self.base_url =\
+                "http://metadata.google.internal/computeMetadata/v1"
 
     def get_cloud_metadata(self, key):
         _g_logger.debug("Get metadata %s" % key)
@@ -269,7 +270,8 @@ class OpenStackMetaData(CloudMetaData):
         if base_url is not None:
             self.base_url = base_url
         else:
-            self.base_url = "http://169.254.169.254/openstack/2012-08-10/meta_data.json"
+            self.base_url =\
+                "http://169.254.169.254/openstack/2012-08-10/meta_data.json"
 
     def get_cloud_metadata(self, key):
         _g_logger.debug("Get OpenStack metadata %s" % key)
@@ -327,7 +329,7 @@ def set_metadata_object(conf):
     elif cloud_name == CLOUD_TYPES.OpenStack:
         meta_data_obj = OpenStackMetaData(base_url=conf.cloud_metadata_url)
     elif cloud_name == CLOUD_TYPES.CloudStack or \
-                    cloud_name == CLOUD_TYPES.CloudStack3:
+            cloud_name == CLOUD_TYPES.CloudStack3:
         meta_data_obj = CloudStackMetaData(
             conf, base_url=conf.cloud_metadata_url)
     elif cloud_name == CLOUD_TYPES.Konami:

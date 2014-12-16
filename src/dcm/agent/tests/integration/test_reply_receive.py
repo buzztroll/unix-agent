@@ -403,7 +403,8 @@ class TestProtocolCommands(reply.ReplyObserverInterface):
         if "SYSTEM_CHANGING_TEST" not in os.environ:
             raise skip.SkipTest('skipping')
 
-        spec_chars = ['*', '&', '!', '?', '/', '\\', '.', '^', '$', '(', ')', '{', '}', '[', ']']
+        spec_chars = ['*', '&', '!', '?', '/', '\\', '.', '^', '$', '(', ')',
+                      '{', '}', '[', ']']
 
         for sc in spec_chars:
             yield self._build_fake_names, sc
@@ -741,7 +742,6 @@ class TestProtocolCommands(reply.ReplyObserverInterface):
 
         nose.tools.eq_(socket.gethostname(), orig_hostname)
 
-
     @test_utils.skip_docker
     @test_utils.system_changing
     def test_initialize_rename_error(self):
@@ -777,7 +777,6 @@ class TestProtocolCommands(reply.ReplyObserverInterface):
         for dm in mappings:
             if dm['device_id'] == device_id:
                 os.system("umount " + dm['mount_point'])
-
 
         print device_id
         mappings = utils.get_device_mappings(self.conf_obj)
@@ -873,7 +872,7 @@ class TestProtocolCommands(reply.ReplyObserverInterface):
                           "fileSystem": "ext3",
                           "raidLevel": "NONE",
                           "encryptedFsEncryptionKey":
-                              base64.b64encode(bytearray(enc_key)),
+                          base64.b64encode(bytearray(enc_key)),
                           "mountPoint": mount_point,
                           "devices": [device_id]}}
         req_rpc = self._rpc_wait_reply(doc)

@@ -179,13 +179,14 @@ def _map_cloud_name_to_provider(cloud_type,
                                 account=None,
                                 **kwargs):
     """
-    This function is called by get_cloud_driver and is uses cloud_type and cloud_map
-    to get the correct cloud driver function.  If cloud_type is not in cloud_map then
-    _no_driver_function is called which raises an exception
+    This function is called by get_cloud_driver and is uses cloud_type and
+    cloud_map to get the correct cloud driver function.  If cloud_type is not
+    in cloud_map then _no_driver_function is called which raises an exception
 
     :param cloud_type: Name of cloud from dcm.agent.cloudmetadata:CLOUD_TYPES
                        Ex: CLOUD_TYPES.Amazon -> 'Amazon'
-    :param storage_access_key: cloud specific access key or account name for Azure
+    :param storage_access_key: cloud specific access key or account name
+    for Azure
     :param storage_secret_key: cloud specific secret access key
     :param region_id: default=None
     :param endpoint: default=None except OpenStack is special

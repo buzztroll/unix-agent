@@ -13,7 +13,7 @@
 #  ======================================================================
 import logging
 import re
-from dcm.agent import exceptions, cloudmetadata, utils
+from dcm.agent import exceptions, utils
 
 import dcm.agent.jobs.direct_pass as direct_pass
 
@@ -36,7 +36,7 @@ def legalize(hostname):
         if (c >= 'a' and c <= 'z') or\
             (c >= 'A' and c <= 'Z') or\
             (c >= '0' and c <= '9') or\
-            c == '-' or c =='.':
+                c == '-' or c == '.':
             new_hostname.append(c)
         elif c == ' ' or c == '_':
             new_hostname.append('-')

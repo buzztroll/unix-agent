@@ -99,7 +99,7 @@ class JobRunnerWorker(multiprocessing.Process):
         pid = wrk[1]
         sync_job = self._jobs[pid]
         rc = sync_job.poll()
-        if rc == None:
+        if rc is None:
             return (rc, None, None)
         del self._jobs[pid]
         stdout = sync_job.get_stdout()
@@ -164,7 +164,8 @@ class JobRunner(object):
         if env is None:
             env = {}
         _g_logger.info("Sending the command %s to the child runner" % cmd)
-        (rc, pid, msg) = self._send_receive_safe((JobRunnerWorker.CMD_JOB, cmd, cwd, env))
+        (rc, pid, msg) = self._send_receive_safe(
+            (JobRunnerWorker.CMD_JOB, cmd, cwd, env))
         if rc != 0:
             _g_logger.error("The command failed to start %s" % msg)
             return ("", msg, rc)
