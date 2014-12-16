@@ -97,7 +97,8 @@ class SQLiteAgentDB(object):
         self._lock = threading.RLock()
 
         try:
-            self._db_conn = sqlite3.connect(self._db_file, check_same_thread=False)
+            self._db_conn = sqlite3.connect(
+                self._db_file, check_same_thread=False)
             try:
                 self._db_conn.executescript(_g_sqllite_ddl)
                 self._db_conn.commit()
@@ -140,7 +141,7 @@ class SQLiteAgentDB(object):
     def starting_agent(self):
         r = {
             'Exception':
-                "The job was executed but the state of the execution was lost.",
+            "The job was executed but the state of the execution was lost.",
             'return_code': 1}
         reply_doc = json.dumps(r)
 
@@ -156,6 +157,7 @@ class SQLiteAgentDB(object):
     @messaging_utils.class_method_sync
     def check_agent_id(self, agent_id):
         stmt = 'DELETE FROM requests where agent_id <> ?'
+
         def do_it(cursor):
             cursor.execute(stmt, (agent_id,))
         self._execute(do_it)
@@ -163,6 +165,7 @@ class SQLiteAgentDB(object):
     def _get_all_state(self, state):
         stmt = ("SELECT " + ", ".join(_get_column_order()) +
                 " FROM requests WHERE state=\"" + state + '"')
+
         def do_it(cursor):
             cursor.execute(stmt)
             rows = cursor.fetchall()
@@ -213,16 +216,17 @@ class SQLiteAgentDB(object):
 
         if request_id != request_doc['request_id']:
             raise exceptions.PersistenceException("The request_id must match "
-                                              "the request_doc")
+                                                  "the request_doc")
 
         if request_doc is not None:
             request_doc = json.dumps(request_doc)
         if reply_doc is not None:
             reply_doc = json.dumps(reply_doc)
+
         def do_it(cursor):
             nw = datetime.datetime.now()
             parms = (request_id, nw, request_doc,
-                            reply_doc, state, agent_id, nw)
+                     reply_doc, state, agent_id, nw)
             cursor.execute(stmt, parms)
         self._execute(do_it)
 
@@ -233,6 +237,7 @@ class SQLiteAgentDB(object):
         try:
             if reply_doc is not None:
                 reply_doc = json.dumps(reply_doc)
+
             def do_it(cursor):
                 nw = datetime.datetime.now()
                 cursor.execute(stmt, (state, reply_doc, nw, request_id))
@@ -248,6 +253,7 @@ class SQLiteAgentDB(object):
     def clean_all_expired(self, cut_off_time):
         stmt = ("DELETE FROM requests WHERE request_id in (SELECT request_id "
                 "FROM requests WHERE last_update_time < ?)")
+
         def do_it(cursor):
             cursor.execute(stmt, (cut_off_time,))
         self._execute(do_it)
@@ -274,7 +280,7 @@ class DBCleaner(threading.Thread):
                 self._db.clean_all_expired(cut_off_time)
             except Exception as ex:
                 _g_logger.exception("An exception occurred in the db sweeper "
-                                   "thread " + ex.message)
+                                    "thread " + ex.message)
             finally:
                 self._cond.release()
 

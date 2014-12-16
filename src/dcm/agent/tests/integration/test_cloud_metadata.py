@@ -125,9 +125,11 @@ class TestCloudMetadata(unittest.TestCase):
     @patch('dcm.agent.cloudmetadata.AzureMetaData.get_instance_id')
     def test_get_azure_instance_id(self, mock_instance_id):
         self.conf.meta_data_object = cloudmetadata.AzureMetaData()
-        mock_instance_id.return_value = 'fake_instance_id:fake_instance_id:fake_instance_id'
+        mock_instance_id.return_value =\
+            'fake_instance_id:fake_instance_id:fake_instance_id'
         instance_id = self.conf.meta_data_object.get_instance_id()
-        self.assertEqual(instance_id, 'fake_instance_id:fake_instance_id:fake_instance_id')
+        self.assertEqual(instance_id,
+                         'fake_instance_id:fake_instance_id:fake_instance_id')
 
     @patch('dcm.agent.cloudmetadata._get_metadata_server_url_data')
     def test_get_aws_startup_script(self, mock_server):
@@ -164,5 +166,5 @@ class TestCloudMetadata(unittest.TestCase):
             self.conf.cloud_type = self.cloud_types[cloud]
             self.conf.meta_data_object = None
             cloudmetadata.set_metadata_object(self.conf)
-            self.assertIsInstance(self.conf.meta_data_object, self.clouds[cloud])
-
+            self.assertIsInstance(self.conf.meta_data_object,
+                                  self.clouds[cloud])

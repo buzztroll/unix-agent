@@ -397,10 +397,11 @@ def build_options_list():
                            "[platform]version.",
                   options=["ubuntu", "debian", "rhel",
                            "centos", "fedora"]),
-        ConfigOpt("platform", "version", str, default=None,
-          help_msg="The platform/distribution version on which this "
-                   "agent is being installed.  Must be used with "
-                   "[platform]name."),
+        ConfigOpt(
+            "platform", "version", str, default=None,
+            help_msg="The platform/distribution version on which this "
+                     "agent is being installed.  Must be used with "
+                     "[platform]name."),
         ConfigOpt("jobs", "retain_job_time", int, default=3600),
         ConfigOpt("test", "skip_handshake", bool, default=False),
 

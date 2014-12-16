@@ -79,7 +79,8 @@ class RepeatQueue(object):
                         msg = "TOO MANY MESSAGES FOR %s!" % request_id
                         _g_logger.error(msg)
                         agent_utils.build_assertion_exception(_g_logger, msg)
-                        if self._request_id_count[request_id] == self._max_req_id:
+                        if self._request_id_count[request_id] ==\
+                                self._max_req_id:
                             agent_utils.log_to_dcm(logging.ERROR, msg)
                         return
             except Exception as ex:

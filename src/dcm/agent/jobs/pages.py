@@ -108,7 +108,7 @@ class PageMonitor(object):
     @utils.class_method_sync
     def clean_sweep(self):
         too_old = datetime.datetime.now() - \
-                  datetime.timedelta(seconds=self._life_span)
+            datetime.timedelta(seconds=self._life_span)
         kill_keys = []
         for k in self._pages:
             pager = self._pages[k]

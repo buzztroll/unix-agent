@@ -36,9 +36,10 @@ class TestStorageCloud(unittest.TestCase):
     def test_get_cloud_driver_returns_expected(self):
 
         for key in self.cloud_name_map:
-            cloud_driver = sc.get_cloud_driver(key,
-                                               'whatever',
-                                               'ij;oh;ojoj;ljlkhjtdoesnotmatter')
+            cloud_driver = sc.get_cloud_driver(
+                key,
+                'whatever',
+                'ij;oh;ojoj;ljlkhjtdoesnotmatter')
 
             assert (cloud_driver.__module__ == self.cloud_name_map[key])
 
@@ -58,17 +59,20 @@ class TestStorageCloud(unittest.TestCase):
                           'whatever',
                           'whatever')
 
-    def test_that_aws_driver_function_picks_correct_driver_based_on_regionid(self):
+    def test_that_aws_driver_function_picks_correct_driver_based_on_regionid(
+            self):
 
         for key in self.region_map:
-            cloud_driver = sc.get_cloud_driver(1,
-                                               'whatever',
-                                               'ij;oh;ojoj;ljlkhjtdoesnotmatter',
-                                               region_id=key)
+            cloud_driver = sc.get_cloud_driver(
+                1,
+                'whatever',
+                'ij;oh;ojoj;ljlkhjtdoesnotmatter',
+                region_id=key)
 
             assert (cloud_driver.__class__.__name__ == self.region_map[key])
 
-    def test_that_aws_driver_function_picks_default_region_on_bogus_region_id(self):
+    def test_that_aws_driver_function_picks_default_region_on_bogus_region_id(
+           self):
 
         cloud_driver = sc.get_cloud_driver(1,
                                            'whatever',
@@ -76,4 +80,3 @@ class TestStorageCloud(unittest.TestCase):
                                            region_id='fakeregionid')
 
         assert (cloud_driver.__class__.__name__ == 'S3StorageDriver')
-

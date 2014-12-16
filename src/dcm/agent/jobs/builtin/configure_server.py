@@ -190,14 +190,16 @@ class ConfigureServer(jobs.Plugin):
 
     def configure_server_with_puppet(self):
         try:
-            pkg_installer_cmd = _g_platform_dep_installer[self.conf.platform_name]
+            pkg_installer_cmd =\
+                _g_platform_dep_installer[self.conf.platform_name]
             if pkg_installer_cmd:
                 cmd_path = self.conf.get_script_location(pkg_installer_cmd[0])
                 pkg_installer_cmd[0] = cmd_path
                 (stdout, stderr, rc) = utils.run_command(
                     self.conf, pkg_installer_cmd)
-                _g_logger.debug("Results of install: stdout: %s, stderr: %s, rc %d"
-                                % (str(stdout), str(stderr), rc))
+                _g_logger.debug(
+                    "Results of install: stdout: %s, stderr: %s, rc %d"
+                    % (str(stdout), str(stderr), rc))
                 # even if this fails we will try to continue
         except BaseException as ex:
             _g_logger.exception("An error occurred trying to install puppet.  "

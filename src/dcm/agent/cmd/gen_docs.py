@@ -74,9 +74,11 @@ def main():
     """
     :return: handler for the module
     """
-    parser = argparse.ArgumentParser(prog='dcm-agent-gen-docs',
-                                     description='A utility to output the agent protocol arguments in an easy to read format.',
-                                     usage='dcm-agent-gen-docs [> output file]')
+    parser = argparse.ArgumentParser(
+        prog='dcm-agent-gen-docs',
+        description='A utility to output the agent protocol arguments in '
+                    'an easy to read format.',
+        usage='dcm-agent-gen-docs [> output file]')
     parser.parse_args()
 
     for f in filelist:

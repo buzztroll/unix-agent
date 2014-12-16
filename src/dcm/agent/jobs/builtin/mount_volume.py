@@ -66,12 +66,12 @@ class MountVolume(direct_pass.DirectPass):
         ("A boolean indicating if the volume should be formatted.",
          True, bool, None),
         "fileSystem":
-            ("The file system type to which the volume will be formatted",
-             True, str, None),
+        ("The file system type to which the volume will be formatted",
+         True, str, None),
         "raidLevel": ("The RAID configuration to use", True, str, "NONE"),
         "encryptedFsEncryptionKey":
-            ("The encryption key for encrypted volumes", False,
-             utils.base64type_binary_convertor, None),
+        ("The encryption key for encrypted volumes", False,
+         utils.base64type_binary_convertor, None),
         "mountPoint": ("The directory on which the volume will be mounted",
                        False, str, None),
         "devices": ("The list of devices that will be used.",
@@ -152,15 +152,15 @@ class MountVolume(direct_pass.DirectPass):
 
     def _normalize_device(self):
         if self.conf.cloud_type != CLOUD_TYPES.CloudStack and\
-            self.conf.cloud_type != CLOUD_TYPES.CloudStack3:
+                self.conf.cloud_type != CLOUD_TYPES.CloudStack3:
             return self.args.devices[:]
         modified_device_list = []
         for target_device in self.args.devices:
             if target_device not in _cloud_stack_map:
                 raise exceptions.AgentPluginBadParameterException(
-                "mount_volume",
-                "When using cloud stack the device must be one of: %s" %
-                str(_cloud_stack_map.keys()))
+                    "mount_volume",
+                    "When using cloud stack the device must be one of: %s" %
+                    str(_cloud_stack_map.keys()))
             modified_device_list.append(_cloud_stack_map[target_device])
         return modified_device_list
 
