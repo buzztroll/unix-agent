@@ -97,7 +97,7 @@ def run_command(conf, cmd_line, cwd=None, env=None):
         _, log_file = tempfile.mkstemp(dir=conf.storage_temppath)
         env = {"DCM_USER": conf.system_user,
                "DCM_BASEDIR": conf.storage_base_dir,
-               "DCM_SERVICES_DIR": conf.storage_services_dir,
+               "DCM_TMP_DIR": conf.storage_temppath,
                "DCM_LOG_FILE": log_file}
     if conf.jr is not None:
         rc = conf.jr.run_command(cmd_line, cwd=cwd, env=env)

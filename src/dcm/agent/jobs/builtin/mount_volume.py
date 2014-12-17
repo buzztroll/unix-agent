@@ -237,10 +237,12 @@ class MountVolume(direct_pass.DirectPass):
         if self.args.mountPoint is None:
             self.args.mountPoint = self.conf.storage_mountpoint
 
+        # if the mount point exists and is not empty we cannot use it
         if os.path.exists(self.args.mountPoint):
-            raise exceptions.AgentOptionException(
-                "The path %s exists.  For safety the agent only mounts "
-                "volumes on paths that do not exist.")
+            if os.listdir(self.args.mountPoint):
+                raise exceptions.AgentOptionException(
+                    "The path %s exists.  For safety the agent only mounts "
+                    "volumes on paths that do not exist or are empty.")
 
         if self.args.fileSystem is None:
             self.args.fileSystem = self.conf.storage_default_file_system

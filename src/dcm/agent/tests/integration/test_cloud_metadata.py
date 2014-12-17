@@ -22,7 +22,6 @@ class TestCloudMetadata(unittest.TestCase):
         cls.test_base_path = tempfile.mkdtemp()
         conf_args = ["-c", "Amazon",
                      "-u", "http://doesntmatter.org/ws",
-                     "-m", os.path.join(cls.test_base_path, "mnt"),
                      "-p", cls.test_base_path,
                      "-s", os.path.join(cls.test_base_path, "services"),
                      "-t", os.path.join(cls.test_base_path, "tmp"),

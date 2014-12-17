@@ -18,27 +18,15 @@ SELF=$(cd $(dirname $0); pwd -P)/$(basename $0)
 
 case "${1:-''}" in
   'start')
-    log_daemon_msg "Starting the dcm-agent"
-    if [ -x $DCM_BASEDIR/bin/esboot ] ; then
-        su - $DCM_USER -s "/bin/bash" -c "$DCM_BASEDIR/bin/esboot start"
-    fi
-
     start-stop-daemon -m -c $DCM_USER --start --quiet -b --oknodo --pidfile $PIDFILE --exec $EXE -- -c $CONF
     ;;
 
   'stop')
     log_daemon_msg "Stopping the dcm-agent"
-    if [ -x $DCM_BASEDIR/bin/esboot ] ; then
-        su - $DCM_USER -s "/bin/bash" -c "$DCM_BASEDIR/bin/esboot stop"
-    fi
     start-stop-daemon --stop --quiet --oknodo --pidfile $PIDFILE
     ;;
     
   'restart')
-    if [ -x $DCM_BASEDIR/bin/esboot ] ; then
-	    su - $DCM_USER -s "/bin/bash" -c "$DCM_BASEDIR/bin/esboot stop"
-        su - $DCM_USER -s "/bin/bash" -c "$DCM_BASEDIR/bin/esboot start"
-    fi
     start-stop-daemon --stop --quiet --oknodo --pidfile $PIDFILE
     start-stop-daemon -m -c $DCM_USER --start --quiet -b --oknodo --pidfile $PIDFILE --exec $EXE -- -c $CONF
     ;;
