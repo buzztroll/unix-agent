@@ -1,3 +1,17 @@
+# 0.9.9 (2014-12-17)
+
+Features
+* Removed legacy support for services and various other things that
+  are not needed in the new agent.
+* Removed SQL Alchemy and replaced with direct SQLite support.
+* Removed references to clouds that are not yet fully supported.
+* Upgrade to python 2.7.8
+* pep8 cleanup of the source code.
+* Do not mount if the mount point is not empty.
+
+Bug Fixes
+* Allowed default mount point to work.
+
 # 0.9.8 (2014-12-11)
 
 Features

@@ -1,5 +1,5 @@
 [default]
-exe_path = /services/agent/bin
+exe_path = /dcm/bin
 
 [plugin:backup]
 type: python_module
