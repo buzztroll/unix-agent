@@ -15,7 +15,6 @@
 import logging
 from dcm.agent import utils
 from dcm.agent.jobs.builtin.add_user import AddUser
-from dcm.agent.jobs.builtin.make_temp import MakeTemp
 from dcm.agent.jobs.builtin.rename import Rename
 
 import dcm.agent.jobs as jobs
