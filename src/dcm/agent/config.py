@@ -268,9 +268,6 @@ class AgentConfig(object):
         else:
             self.imaging_event.clear()
 
-    def get_service_directory(self, service_name):
-        return os.path.join(self.storage_services_dir, service_name)
-
     def start_job_runner(self):
         self.jr = job_runner.JobRunner(self)
 
@@ -360,7 +357,6 @@ def build_options_list():
                     help_msg="The location of the plugin configuration file"),
 
         FilenameOpt("storage", "temppath", default="/tmp"),
-        FilenameOpt("storage", "services_dir", default="/mnt/services"),
         FilenameOpt("storage", "base_dir", default="/dcm"),
         FilenameOpt("storage", "mountpoint", default="/mnt/dcmdata"),
         FilenameOpt("storage", "dbfile", default=None),

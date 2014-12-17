@@ -118,7 +118,7 @@ if [[ $EXIT != 0 ]]; then
 fi
 
 puppet_stdfile=`mktemp -q /tmp/dcmagentpuppetrun.XXXXXX`
-$REAL_SUDO -i ${PUPPET_BIN} agent --onetime --no-daemonize --detailed-exitcodes --logdest=/mnt/tmp/es-puppet-firstrun.log > $puppet_stdfile 2>&1
+$REAL_SUDO -i ${PUPPET_BIN} agent --onetime --no-daemonize --detailed-exitcodes --logdest=$DCM_TMP_DIR/es-puppet-firstrun.log > $puppet_stdfile 2>&1
 
 EXIT=$?
 
@@ -128,13 +128,13 @@ fi
 if [[ $EXIT == 4 || $EXIT == 6 || $EXIT == 1 ]]; then
         $LOGGER -t "$logTag" "Initial puppet run failed: $EXIT"
 
-  if [ -e /mnt/tmp/es-puppet-firstrun.log ]; then
-    while read line; do $LOGGER -t "$logTag" "$line"; done </mnt/tmp/es-puppet-firstrun.log
+  if [ -e $DCM_TMP_DIR/es-puppet-firstrun.log ]; then
+    while read line; do $LOGGER -t "$logTag" "$line"; done <$DCM_TMP_DIR/es-puppet-firstrun.log
   fi
         exit 99
 fi
 
-if [ -e /mnt/tmp/es-puppet-firstrun.log ]; then
-  while read line; do $LOGGER -t "$logTag" "$line"; done </mnt/tmp/es-puppet-firstrun.log
+if [ -e $DCM_TMP_DIR/es-puppet-firstrun.log ]; then
+  while read line; do $LOGGER -t "$logTag" "$line"; done <$DCM_TMP_DIR/es-puppet-firstrun.log
 fi
 $LOGGER -t "$logTag" "Finished running configuration management for Puppet."

@@ -15,7 +15,6 @@
 import logging
 from dcm.agent import utils
 from dcm.agent.jobs.builtin.add_user import AddUser
-from dcm.agent.jobs.builtin.make_temp import MakeTemp
 from dcm.agent.jobs.builtin.rename import Rename
 
 import dcm.agent.jobs as jobs
@@ -61,9 +60,6 @@ class InitializeJob(jobs.Plugin):
         self.rename = Rename(self.conf, self.job_id, {"script_name": "rename"},
                              "rename",
                              {"serverName": self.arguments["serverName"]})
-        self.make_temp = MakeTemp(self.conf, self.job_id,
-                                  {"script_name": "makeTemp"}, "make_temp",
-                                  {})
         self.add_user = AddUser(self.conf, self.job_id,
                                 {"script_name": "addUser"}, "add_user",
                                 {"firstName": "Customer",
@@ -88,10 +84,6 @@ class InitializeJob(jobs.Plugin):
 
             # make the temp directory
             utils.log_to_dcm(logging.INFO, "Create the temporary directory")
-            res_doc = self.make_temp.run()
-            if res_doc["return_code"] != 0:
-                res_doc["message"] = res_doc["message"] + " : makeTemp failed"
-                return res_doc
             # add customer user
             utils.log_to_dcm(logging.INFO, "Adding the user")
             res_doc = self.add_user.run()

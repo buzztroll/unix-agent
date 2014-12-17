@@ -29,20 +29,6 @@ if [ -x ${CUSTOM}-pre ] ; then
 	exit_if_pipe_false
 fi
 
-for file in $DCM_SERVICES_DIR/* ; do
-	if [ -d "$file" ] ; then
-		svcid=`basename "$file"`
-		svc="${file}/bin/enstratus-stop"
-		if [ -x "${svc}" ] ; then
-			$LOGGER -t "$logTag" Terminating "${svcid}..."
-			cd "$file"; "$svc" "$svcid" 2>&1 | $LOGGER -t "$logTag"
-			cd ..
-			$LOGGER -t "$logTag" Terminated "${svcid}".
-		fi
-	fi
-done
-
 $LOGGER -t "$logTag" Enstratius is now shutting down the agent.
-
-sudo /etc/init.d/tomcat-enstratus stop 2>&1 | $LOGGER -t "$logTag"
-
+# XXX TODO fork this out with a delay?
+/etc/init.d/dcm-agent stop

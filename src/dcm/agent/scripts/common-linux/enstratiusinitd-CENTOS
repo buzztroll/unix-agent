@@ -50,27 +50,16 @@ SELF=$(cd $(dirname $0); pwd -P)/$(basename $0)
 
 case "${1:-''}" in
   'start')
-    if [ -x $DCM_BASEDIR/bin/esboot ] ; then
-        su - $DCM_USER -s "/bin/bash" -c "$DCM_BASEDIR/bin/esboot start"
-    fi
-
     start
     exit $?
     ;;
 
   'stop')
-    if [ -x $DCM_BASEDIR/bin/esboot ] ; then
-        su - $DCM_USER -s "/bin/bash" -c "$DCM_BASEDIR/bin/esboot stop"
-    fi
     stop
     exit $?
     ;;
 
   'restart')
-    if [ -x $DCM_BASEDIR/bin/esboot ] ; then
-	    su - $DCM_USER -s "/bin/bash" -c "$DCM_BASEDIR/bin/esboot stop"
-        su - $DCM_USER -s "/bin/bash" -c "$DCM_BASEDIR/bin/esboot start"
-    fi
     stop
     start
     exit $?

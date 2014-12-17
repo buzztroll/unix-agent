@@ -140,7 +140,6 @@ class TestProtocolCommands(reply.ReplyObserverInterface):
         conf_args = ["-c", "Amazon",
                      "-u", "http://doesntmatter.org/ws",
                      "-p", cls.test_base_path,
-                     "-s", os.path.join(cls.test_base_path, "services"),
                      "-t", os.path.join(cls.test_base_path, "tmp"),
                      "-C", "success_tester",
                      "-U", cls.run_as_user,
@@ -566,109 +565,6 @@ class TestProtocolCommands(reply.ReplyObserverInterface):
         time.sleep(0.1)
 
         return jd
-
-    def _backup_data(self,
-                     s_id,
-                     file_path,
-                     primary,
-                     secondary,
-                     use_storage=False):
-
-        object_name = "objname" + str(uuid.uuid4()).split("-")[0]
-        cfg = """
-        A bunch of config data
-        """ + str(uuid.uuid4())
-
-        cloud_list = [primary]
-        arguments = {
-            "configuration": base64.b64encode(bytearray(cfg)),
-            "serviceId": s_id,
-            "primaryCloudId": primary.id,
-            "runAsUser": self.run_as_user,
-            "primaryApiKey": base64.b64encode(bytearray(primary.key)),
-            "primarySecretKey": base64.b64encode(bytearray(primary.secret)),
-            "toBackupDirectory": self.bucket,
-            "serviceImageFile": file_path,
-            "dataSourceName": object_name,
-            "primaryRegionId": primary.region
-        }
-        if use_storage:
-            arguments["storageDelegate"] = primary.id
-            arguments["storageApiKey"] = \
-                base64.b64encode(bytearray(primary.key))
-            arguments["storageSecretKey"] = \
-                base64.b64encode(bytearray(primary.secret))
-
-        if secondary:
-            cloud_list.append(secondary)
-            arguments["secondaryCloudId"] = secondary.id
-            arguments["secondaryApiKey"] = \
-                base64.b64encode(bytearray(secondary.key))
-            arguments["secondarySecretKey"] = \
-                base64.b64encode(bytearray(secondary.secret))
-            arguments["secondaryRegionId"] = secondary.region
-            if use_storage:
-                arguments["secondaryStorageDelegate"] = secondary.id
-                arguments["secondaryStorageApiKey"] = \
-                    base64.b64encode(bytearray(secondary.key))
-                arguments["secondaryStorageSecretKey"] = \
-                    base64.b64encode(bytearray(secondary.secret))
-
-        doc = {
-            "command": "backup_data_source",
-            "arguments": arguments
-        }
-        req_reply = self._rpc_wait_reply(doc)
-        r = req_reply.get_reply()
-        nose.tools.eq_(r["payload"]["return_code"], 0)
-        nose.tools.eq_(r["payload"]["reply_type"], "job_description")
-
-        jd = r["payload"]["reply_object"]
-        while jd["job_status"] in ["WAITING", "RUNNING"]:
-            jd = self._get_job_description(jd["job_id"])
-        nose.tools.eq_(jd["job_status"], "COMPLETE")
-
-        for cloud in cloud_list:
-            cloud_driver = storagecloud.get_cloud_driver(
-                cloud.id,
-                cloud.key,
-                cloud.secret,
-                region_id=cloud.region)
-
-            found = False
-            container = cloud_driver.get_container(self.bucket)
-            obj_list = cloud_driver.list_container_objects(container)
-            for obj in obj_list:
-                ndx = obj.name.find(object_name)
-                if ndx >= 0:
-                    found = True
-            nose.tools.ok_(found)
-
-    def _upload_enstratius_config_scripts(self, primary, files_uuids):
-        # load up a bunch of scripts that will be downloaded and run.
-        # the scripts just echo a uuid to a file and after config
-        # the test will check each file for the right uuid
-        cloud = storagecloud.get_cloud_driver(
-            primary.id,
-            primary.key,
-            primary.secret,
-            region_id=primary.region)
-
-        scripts = []
-        for f, u in files_uuids:
-            osf, tmp_path = tempfile.mkstemp()
-            os.write(osf, "#!/usr/bin/env bash")
-            os.write(osf, os.linesep)
-            os.write(osf, "echo %s > /tmp/%s" % (u, f))
-            os.write(osf, os.linesep)
-            os.write(osf, "exit 0")
-            os.write(osf, os.linesep)
-            os.close(osf)
-
-            container = cloud.get_container(self.bucket)
-            cloud.upload_object(tmp_path, container, f)
-            scripts.append(os.path.join(self.bucket, f))
-        return scripts
 
     @test_utils.system_changing
     def test_configure_server_unknown_type_error(self):
