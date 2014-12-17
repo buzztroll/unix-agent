@@ -574,13 +574,11 @@ class TestProtocolCommands(reply.ReplyObserverInterface):
 
         files_uuids = []
 
-        script_files = self._upload_enstratius_config_scripts(
-            primary, files_uuids)
         arguments = {
             "configType": "NOReal",
             "providerRegionId": primary.region,
             "storageDelegate": primary.id,
-            "scriptFiles": script_files,
+            "scriptFiles": [],
             "storagePublicKey": base64.b64encode(bytearray(primary.key)),
             "storagePrivateKey": base64.b64encode(bytearray(primary.secret)),
             "personalityFiles": [],
