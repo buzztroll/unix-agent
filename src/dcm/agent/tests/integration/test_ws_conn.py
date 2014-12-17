@@ -37,7 +37,6 @@ class TestWsConnection(object):
                      "-p", test_base_path,
                      "-C", "ws",
                      "-m", os.path.join(test_base_path, "mount"),
-                     "-s", os.path.join(test_base_path, "services"),
                      "-t", os.path.join(test_base_path, "tmp"),
                      "-U", run_as_user,
                      "-l", "/tmp/agent_test_log.log"]

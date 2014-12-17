@@ -168,7 +168,6 @@ def secure_delete(conf, file_name):
 class DeviceTypes(object):
     ROOT = "ROOT"
     EPHEMERAL = "EPHEMERAL"
-    SERVICE = "SERVICE"
     CUSTOM = "CUSTOM"
 
 
@@ -200,8 +199,6 @@ def get_device_mappings(conf):
 
             if mount_point == "/":
                 device_type = DeviceTypes.ROOT
-            elif mount_point == conf.storage_services_dir:
-                device_type = DeviceTypes.SERVICE
             elif mount_point == conf.storage_mountpoint:
                 device_type = DeviceTypes.EPHEMERAL
             else:

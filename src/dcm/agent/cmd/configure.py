@@ -69,10 +69,6 @@ def setup_command_line_parser():
                         default=False,
                         help="Setup the agent to start when the VM boots")
 
-    parser.add_argument("--services-path", "-s",
-                        dest="services_path",
-                        help="The services path")
-
     parser.add_argument("--reload-conf", "-r",
                         dest="reload",
                         help="The previous config file that will be used "
@@ -260,7 +256,6 @@ def make_dirs(conf_d):
         (os.path.join(base_path, "logs"), 0755),
         (os.path.join(base_path, "home"), 0750),
         (os.path.join(base_path, "cfg"), 0750),
-        (conf_d["storage"]["services_dir"][1], 0755),
         (conf_d["storage"]["temppath"][1], 01777),
     ]
 
@@ -279,7 +274,6 @@ def make_dirs(conf_d):
 def do_set_owner_and_perms(conf_d):
     (_, script_dir) = conf_d["storage"]["script_dir"]
     (_, base_path) = conf_d["storage"]["base_dir"]
-    (_, services_path) = conf_d["storage"]["services_dir"]
     (_, user) = conf_d["system"]["user"]
 
     for f in os.listdir(script_dir):
@@ -293,7 +287,6 @@ def do_set_owner_and_perms(conf_d):
         fptr.write(os.linesep)
         fptr.write("DCM_BASEDIR=%s" % base_path)
         fptr.write(os.linesep)
-        fptr.write("DCM_SERVICES_DIR=%s" % services_path)
         fptr.write(os.linesep)
 
     print "Changing ownership to %s:%s" % (user, user)
@@ -307,7 +300,6 @@ def merge_opts(conf_d, opts):
         "user": ("system", "user"),
         "url": ("connection", "agentmanager_url"),
         "base_path": ("storage", "base_dir"),
-        "services_path": ("storage", "services_dir"),
         "temp_path": ("storage", "temppath"),
         "con_type": ("connection", "type"),
         "mount_path": ("storage", "mountpoint")

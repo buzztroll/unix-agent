@@ -140,7 +140,6 @@ class TestProtocolCommands(reply.ReplyObserverInterface):
         conf_args = ["-c", "Amazon",
                      "-u", "http://doesntmatter.org/ws",
                      "-p", cls.test_base_path,
-                     "-s", os.path.join(cls.test_base_path, "services"),
                      "-t", os.path.join(cls.test_base_path, "tmp"),
                      "-C", "success_tester",
                      "-U", cls.run_as_user,
