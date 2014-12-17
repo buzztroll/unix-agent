@@ -29,7 +29,7 @@ class ReplyRPC(object):
                  db,
                  timeout=1.0,
                  reply_doc=None,
-                 start_state=None):
+                 start_state=states.ReplyStates.REQUESTING):
         self._agent_id = agent_id
         self._request_id = request_id
         self._request_document = request_document
@@ -44,12 +44,8 @@ class ReplyRPC(object):
         self._resend_reply_cnt_threshold = 5
         self._lock = threading.RLock()
 
-        if reply_doc is None:
-            starting_state = states.ReplyStates.REQUESTING
-        else:
-            starting_state = start_state
         self._response_doc = reply_doc
-        self._sm = states.StateMachine(starting_state)
+        self._sm = states.StateMachine(start_state)
         self._setup_states()
         self._db = db
 
