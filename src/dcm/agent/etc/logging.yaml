@@ -16,7 +16,7 @@ filters:
 handlers:
     file_handler:
         class: logging.handlers.RotatingFileHandler
-        level: INFO
+        level: @LOG_LEVEL@
         formatter: simple
         filename: @LOGFILE_PATH@
         maxBytes: 10485760
@@ -26,7 +26,7 @@ handlers:
 
     job_runner_file_handler:
         class: logging.handlers.RotatingFileHandler
-        level: INFO
+        level: @LOG_LEVEL@
         formatter: simple
         filename: @LOGFILE_PATH@.job_runner
         maxBytes: 10485760
@@ -36,7 +36,7 @@ handlers:
 
     dcm_logger:
         class: dcm.agent.logger.dcmLogger
-        level: INFO
+        level: @LOG_LEVEL@
         formatter: todcm
         filters: [add_request]
         encoding: utf8
@@ -44,31 +44,31 @@ handlers:
 
 loggers:
     dcm.agent:
-        level: INFO
+        level: @LOG_LEVEL@
         handlers: [file_handler]
         propagate: no
 
     dcm.agent.messaging:
-        level: INFO
+        level: @LOG_LEVEL@
         handlers: [file_handler]
         propagate: no
 
     dcm.agent.job_runner:
-        level: INFO
+        level: @LOG_LEVEL@
         handlers: [job_runner_file_handler]
         propagate: no
 
     dcm.agent.jobs:
-        level: INFO
+        level: @LOG_LEVEL@
         handlers: [file_handler]
         propagate: no
 
     dcm.agent.log.to.agent.manager:
-        level: DEBUG
+        level: @LOG_LEVEL@
         handlers: [dcm_logger, file_handler]
         propagate: no
 
 
 root:
-    level: INFO
+    level: @LOG_LEVEL@
     handlers: [file_handler]

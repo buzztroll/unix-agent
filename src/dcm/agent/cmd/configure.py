@@ -87,8 +87,12 @@ def setup_command_line_parser():
                         help="The type of connection that will be formed "
                              "with the agent manager.")
 
-    parser.add_argument("--logfile", "-l",
-                        dest="logfile")
+    parser.add_argument("--logfile", "-l", dest="logfile")
+
+    parser.add_argument("--loglevel", "-l",
+                        dest="loglevel",
+                        default="INFO",
+                        help="The level of logging for the agent.")
     return parser
 
 
@@ -342,6 +346,7 @@ def do_plugin_and_logging_conf(conf_d, opts):
     with open(dest_logging_path, "w") as fptr:
         for line in lines:
             line = line.replace("@LOGFILE_PATH@", log_file)
+            line = line.replace("@LOG_LEVEL@", opts.loglevel)
             fptr.write(line)
 
 
@@ -441,6 +446,11 @@ def gather_values(opts):
 def main(argv=sys.argv[1:]):
     parser = setup_command_line_parser()
     opts = parser.parse_args(args=argv)
+
+    opts.loglevel = opts.loglevel.upper()
+    if opts.loglevel not in ["ERROR", "WARN", "INFO", "DEBUG"]:
+        print "WARNING: %s is an invalid log level.  Using INFO" % opts.loglevel
+        opts.loglevel = "INFO"
 
     conf_d = gather_values(opts)
     guess_default_cloud(conf_d)

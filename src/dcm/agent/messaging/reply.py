@@ -733,6 +733,8 @@ class RequestListener(object):
 
             # is this request already in memory?
             if request_id in self._requests:
+                _g_logger.debug("The message was found in the requests.")
+
                 # send it through, state machine will deal with it
                 req = self._requests[request_id]
                 req.incoming_message(incoming_doc)
@@ -779,6 +781,8 @@ class RequestListener(object):
                     self._conn.send(nack_doc)
                     return
 
+                _g_logger.debug("A new request has come in.")
+
                 req = ReplyRPC(
                     self,
                     self._conf.agent_id,
@@ -804,6 +808,8 @@ class RequestListener(object):
             else:
                 # if we have never heard of the ID and this is not a new
                 # request we return a courtesy error
+                _g_logger.debug("Unknown message ID sending a NACK")
+
                 nack_doc = {'type': types.MessageTypes.NACK,
                             'message_id': utils.new_message_id(),
                             'request_id': request_id,
@@ -839,6 +845,8 @@ class RequestListener(object):
         try:
             request_id = reply_message.get_request_id()
             del self._requests[request_id]
+            _g_logger.debug("The message %s has completed and is being "
+                            "removed" % request_id)
             self._messages_processed += 1
         finally:
             self._lock.release()
