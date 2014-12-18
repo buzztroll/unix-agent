@@ -89,7 +89,7 @@ def setup_command_line_parser():
 
     parser.add_argument("--logfile", "-l", dest="logfile")
 
-    parser.add_argument("--loglevel", "-l",
+    parser.add_argument("--loglevel", "-L",
                         dest="loglevel",
                         default="INFO",
                         help="The level of logging for the agent.")
