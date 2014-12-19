@@ -183,6 +183,9 @@ class ConfigureServer(jobs.Plugin):
             parser.add_section("agent")
         parser.set("agent", "certname", "ES_NODE_NAME")
         parser.set("agent", "server", "ES_PUPPET_MASTER")
+        if not parser.has_section("main"):
+            parser.add_section("main")
+        parser.set("main", "pluginsync", "true")
 
         with open(puppet_conf_temp, "w") as fptr:
             parser.write(fptr)
