@@ -1,3 +1,9 @@
+# 0.9.10 (2014-12-19)
+
+Bug Fixes
+* Add pluginsync=true to the puppet configuration.  This fixes puppet
+  on various Ubuntu 32 bit distributions.
+
 # 0.9.9 (2014-12-17)
 
 Features
