@@ -35,7 +35,7 @@ CHEF_CLIENT=`which chef-client`
 
 if [ $? != 0 ]; then
    $LOGGER -t "$logTag" "No chef-client found on system. Installing"
-   curl -L http://www.opscode.com/chef/install.sh | sudo bash
+   curl -L http://www.opscode.com/chef/install.sh | sudo bash -s -- -v 11.16.4
    if [ $? != 0 ]; then
 	$LOGGER -t "$logTag" "Unable to install Chef automatically"
 	exit 1
@@ -84,17 +84,19 @@ if [ $? != 0 ]; then
    exit 1
 fi
 
-sudo $CHEF_CLIENT -j $FIRST_BOOT -E $CHEF_ENVIRONMENT -L $DCM_TMP_DIR/enstratus-chefrun.log > /dev/null 2>&1
+sudo $CHEF_CLIENT -j $FIRST_BOOT -E $CHEF_ENVIRONMENT -L $DCM_TMP_DIR/enstratus-chefrun.log 2>&1
 EXIT=$?
-
-sudo chmod 644 $DCM_TMP_DIR/enstratus-chefrun.log
 
 if [ $EXIT != 0 ]; then
         echo "chef-client run failed: $EXIT" 2>&1 | $LOGGER -t "$logTag"
-        while read line; do $LOGGER -t "$logTag" "$line"; done <$DCM_TMP_DIR/enstratus-chefrun.log
+        if [ -e $DCM_TMP_DIR/enstratus-chefrun.log ]; then
+            sudo chmod 644 $DCM_TMP_DIR/enstratus-chefrun.log
+            while read line; do $LOGGER -t "$logTag" "$line"; done <$DCM_TMP_DIR/enstratus-chefrun.log
+        fi
         exit 99
 fi
 
+sudo chmod 644 $DCM_TMP_DIR/enstratus-chefrun.log
 while read line; do $LOGGER -t "$logTag" "$line"; done <$DCM_TMP_DIR/enstratus-chefrun.log
 sudo rm -f /etc/chef/validation.pem > /dev/null 2>&1
 
