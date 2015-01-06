@@ -133,7 +133,20 @@ class MountVolume(direct_pass.DirectPass):
         else:
             exe = self.conf.get_script_location("assembleRaid")
 
-        cmd = [exe, device_id]
+        if self.args.raidLevel.upper() == "NONE":
+            raise exceptions.AgentPluginBadParameterException(
+                "mount_volume",
+                "When using multiple volumes you must specify a RAID level")
+
+        try:
+            raid_level = str(int(self.args.raidLevel[4:]))
+        except:
+            raise exceptions.AgentPluginBadParameterException(
+                "mount_volume",
+                "Invalid RAID level")
+
+
+        cmd = [exe, raid_level, device_id]
 
         for d in self.args.devices:
             cmd.append(d)
