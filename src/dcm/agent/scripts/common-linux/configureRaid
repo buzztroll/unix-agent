@@ -17,8 +17,9 @@ CUSTOM=$DCM_BASEDIR/custom/bin/${BASENAME}
 $LOGGER -t "$logTag" configureRaid "$@"
 
 args=($@)
-deviceId=$1
-devices=${args[@]:1}
+RAID_LEVEL=$1
+deviceId=$2
+devices=${args[@]:2}
 
 deviceArray=($devices)
 deviceCount=${#deviceArray[*]}
@@ -53,11 +54,11 @@ for d in ${devices}; do
 	map="${map} /dev/${device}"
 done
 
-sudo modprobe raid0
+sudo modprobe raid$RAID_LEVEL
 
 #If you encounter problems related to metadata compatibility, try metadata 1.1.
 #yes | sudo mdadm --create /dev/$deviceId --level 0 --metadata=1.1 --raid-devices $deviceCount $map > /dev/null 2>&1
-yes | sudo /sbin/mdadm --create /dev/$deviceId --level 0 --raid-devices $deviceCount $map > /dev/null 2>&1
+yes | sudo /sbin/mdadm --create /dev/$deviceId --level $RAID_LEVEL --raid-devices $deviceCount $map > /dev/null 2>&1
 if [ $? != 0 ] ; then
 	$LOGGER -t "$logTag" "Unable to create RAID with mdadm."
 	exit 20
