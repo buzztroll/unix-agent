@@ -1,3 +1,12 @@
+# 0.9.11 (2014-1-6)
+
+Features:
+* Support for RAID levels in addition to RAID0
+
+Bug Fixes
+* Locking in the chef version which fixes configuration management on
+  ubuntu 14.04 i386.
+
 # 0.9.10 (2014-12-19)
 
 Bug Fixes
