@@ -104,7 +104,7 @@ def run_command(conf, cmd_line, cwd=None, env=None):
     else:
         _g_logger.warn("Running without the job runner process")
         process = subprocess.Popen(cmd_line,
-                                   shell=True,
+                                   shell=False,
                                    stdout=subprocess.PIPE,
                                    stderr=subprocess.PIPE,
                                    cwd=cwd,
@@ -358,7 +358,7 @@ def identify_platform(conf):
 
     lsb = "/usr/bin/lsb_release"
     if os.path.exists(lsb) and os.access(lsb, os.X_OK):
-        (stdout, stderr, rc) = run_command(conf, " ".join([lsb, "-i"]))
+        (stdout, stderr, rc) = run_command(conf, [lsb, "-i"])
         if rc != 0 or not stdout:
             raise exceptions.AgentPlatformNotDetectedException()
 
@@ -378,7 +378,7 @@ def identify_platform(conf):
         else:
             raise exceptions.AgentPlatformNotDetectedException()
 
-        (stdout, stderr, rc) = run_command(conf, " ".join([lsb, "-r"]))
+        (stdout, stderr, rc) = run_command(conf, [lsb, "-r"])
         if rc != 0:
             raise exceptions.AgentPlatformNotDetectedException()
         parts = stdout.split()
