@@ -103,7 +103,7 @@ class TestConnection(conniface.ConnectionInterface):
                 self._readq.put(retrans.request_doc)
 
     def connect(self, receive_object, incoming_handshake_object,
-                outgoing_handshake_doc):
+                handshake_producer):
         pass
 
     def close(self):
@@ -153,7 +153,7 @@ class ReqRepQHolder(object):
             self._recv_q = rq
 
         def connect(self, receive_object, incoming_handshake_object,
-                    outgoing_handshake_doc):
+                    handshake_producer):
             pass
 
         def set_receiver(self, receive_object):

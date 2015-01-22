@@ -194,7 +194,7 @@ class JoyentMetaData(CloudMetaData):
         else:
             cmd = "/lib/smartdc/mdata-get"
 
-        cmd_args = ["sudo", cmd, key]
+        cmd_args = ["/usr/bin/sudo", cmd, key]
         (stdout, stderr, rc) = utils.run_command(self.conf, cmd_args)
         if rc != 0:
             result = None

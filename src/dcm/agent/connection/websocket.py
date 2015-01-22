@@ -182,11 +182,11 @@ class WebSocketConnection(threading.Thread):
         self._heartbeat_freq = heartbeat
 
     @utils.class_method_sync
-    def connect(self, receive_object, handshake_observer, handshake_doc):
+    def connect(self, receive_object, handshake_observer, handshake_producer):
         self._receive_queue = parent_receive_q.get_master_receive_queue(
             receive_object, str(self))
-        self._hs_string = json.dumps(handshake_doc)
         self.handshake_observer = handshake_observer
+        self.handshake_producer = handshake_producer
         self.start()
         self._backoff_time = None
 
@@ -287,7 +287,8 @@ class WebSocketConnection(threading.Thread):
                 self, self._server_url, self._receive_queue,
                 protocols=['dcm'], heartbeat_freq=self._heartbeat_freq)
             self._ws.connect()
-            self._ws.send_handshake(self._hs_string)
+            hs_doc = self.handshake_producer()
+            self._ws.send_handshake(json.dumps(hs_doc))
         except Exception as ex:
             _g_logger.exception("Failed to connect to %s" % self._server_url)
             self._throw_error(ex, notify=False)
