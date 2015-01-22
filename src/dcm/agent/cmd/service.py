@@ -109,8 +109,8 @@ class DCMAgent(object):
             self.g_logger.debug("Using outgoing handshake document %s"
                                 % str(handshake_doc))
             logger.set_dcm_connection(self.conf, self.conn)
-            self.conn.connect(
-                self.request_listener, self.incoming_handshake, handshake_doc)
+            self.conn.connect(self.request_listener, self.incoming_handshake,
+                              self.get_outgoing_handshake)
 
             rc = self.agent_main_loop()
             return rc
@@ -138,6 +138,9 @@ class DCMAgent(object):
         self.disp.start_workers(self.request_listener)
 
         return True
+
+    def get_outgoing_handshake(self):
+        return handshake.get_handshake(self.conf)
 
     def agent_main_loop(self):
         while not self.shutting_down:
