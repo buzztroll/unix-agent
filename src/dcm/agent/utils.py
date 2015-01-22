@@ -104,7 +104,7 @@ def run_command(conf, cmd_line, cwd=None, env=None):
     else:
         _g_logger.warn("Running without the job runner process")
         process = subprocess.Popen(cmd_line,
-                                   shell=False,
+                                   shell=True,
                                    stdout=subprocess.PIPE,
                                    stderr=subprocess.PIPE,
                                    cwd=cwd,
