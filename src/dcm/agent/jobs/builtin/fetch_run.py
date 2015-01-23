@@ -93,6 +93,8 @@ class FetchRunScript(jobs.Plugin):
         try:
             exe_file = func()
         except BaseException as ex:
+            if type(ex) == exceptions.AgentPluginOperationException:
+                raise
             reply = {"return_code": 1, "message": "",
                      "error_message": "Failed to download the URL %s: %s" %
                                       (self.args.url, ex.message),
