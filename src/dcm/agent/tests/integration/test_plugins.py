@@ -1,3 +1,4 @@
+import base64
 import hashlib
 import os
 import tempfile
@@ -5,9 +6,11 @@ import unittest
 import boto
 import uuid
 import logging
+import sys
 
 from dcm.agent import config
 import dcm.agent.jobs.builtin.fetch_run as fetch_plugin
+import dcm.agent.jobs.builtin.run_script as run_script_plugin
 import dcm.agent.tests.utils.general as test_utils
 from dcm.agent import exceptions
 
@@ -116,5 +119,85 @@ echo $1 > %s
         plugin = fetch_plugin.load_plugin(
             self.conf_obj, str(uuid.uuid4()),
             {}, "fetch_plugin", arguments)
+        self.assertRaises(exceptions.AgentPluginOperationException,
+                          plugin.run)
+
+
+class TestRunScriptPlugin(unittest.TestCase):
+
+    @classmethod
+    def setUpClass(cls):
+        basedir = os.path.dirname((os.path.dirname(__file__)))
+        cls.test_conf_path = \
+            os.path.join(basedir, "etc", "agent.conf")
+        cls.conf_obj = config.AgentConfig([cls.test_conf_path])
+
+    def test_python_run(self):
+        py_script = """import sys
+print sys.executable
+"""
+        b64_py = base64.b64encode(py_script)
+
+        sha256 = hashlib.sha256()
+        # fake a checksum for failure
+        sha256.update(py_script)
+        actual_checksum = sha256.hexdigest()
+
+
+        arguments = {'b64script': b64_py, 'inpython': True, 'checksum': actual_checksum}
+        plugin = run_script_plugin.load_plugin(
+            self.conf_obj, str(uuid.uuid4()),
+            {}, "run_script", arguments)
+        result = plugin.run()
+        self.assertEqual(result['return_code'], 0)
+        self.assertEqual(sys.executable, result['message'].strip())
+
+    def test_script_run(self):
+        msg = str(uuid.uuid4())
+        _, tmpfilepath = tempfile.mkstemp()
+        bash_script = """#!/bin/bash
+echo $1 > %s
+""" % tmpfilepath
+
+        sha256 = hashlib.sha256()
+        sha256.update(bash_script)
+        actual_checksum = sha256.hexdigest()
+
+        b64_script = base64.b64encode(bash_script)
+
+        arguments = {'b64script': b64_script, 'checksum': actual_checksum,
+                     'arguments': [msg]}
+
+        plugin = run_script_plugin.load_plugin(
+            self.conf_obj, str(uuid.uuid4()),
+            {}, "run_script", arguments)
+        result = plugin.run()
+        self.assertEqual(result['return_code'], 0)
+        self.assertTrue(os.path.exists(tmpfilepath))
+
+        with open(tmpfilepath, "r") as fptr:
+            data = fptr.read().strip()
+
+        self.assertEqual(data, msg)
+
+    def test_script_run_bad_checksum(self):
+        msg = str(uuid.uuid4())
+        _, tmpfilepath = tempfile.mkstemp()
+        bash_script = """#!/bin/bash
+echo $1 > %s
+""" % tmpfilepath
+
+        sha256 = hashlib.sha256()
+        sha256.update(str(uuid.uuid4()))
+        actual_checksum = sha256.hexdigest()
+
+        b64_script = base64.b64encode(bash_script)
+
+        arguments = {'b64script': b64_script, 'checksum': actual_checksum,
+                     'arguments': [msg]}
+
+        plugin = run_script_plugin.load_plugin(
+            self.conf_obj, str(uuid.uuid4()),
+            {}, "run_script", arguments)
         self.assertRaises(exceptions.AgentPluginOperationException,
                           plugin.run)

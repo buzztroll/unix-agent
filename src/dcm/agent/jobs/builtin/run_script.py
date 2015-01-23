@@ -11,6 +11,7 @@
 #   this material is strictly forbidden unless prior written permission
 #   is obtained from Dell, Inc.
 #  ======================================================================
+import sys
 from dcm.agent import exceptions
 import hashlib
 import logging
@@ -29,8 +30,10 @@ class RunScript(jobs.Plugin):
         "b64script": ("A base64 encoded executable.", True,
                       utils.base64type_convertor, None),
         "checksum": ("The checksum of the script.", True, str, None),
+        "inpython": ("Run this script with the current python environment.",
+                     False, bool, False),
         "arguments": ("The list of arguments to be passed to the script",
-                      True, list, None)
+                      False, list, None)
     }
 
     def __init__(self, conf, job_id, items_map, name, arguments):
@@ -38,7 +41,6 @@ class RunScript(jobs.Plugin):
             conf, job_id, items_map, name, arguments)
 
     def run(self):
-
         script_file = self.conf.get_temp_file("exe_script")
         sha256 = hashlib.sha256()
         sha256.update(self.args.b64script)
@@ -51,8 +53,12 @@ class RunScript(jobs.Plugin):
                 f.write(self.args.b64script)
             os.chmod(script_file, 0x755)
 
-            command_list = [script_file]
-            command_list.extend(self.args.arguments)
+            command_list = []
+            if self.args.inpython:
+                command_list.append(sys.executable)
+            command_list.append(script_file)
+            if self.args.arguments:
+                command_list.extend(self.args.arguments)
             _g_logger.debug("Plugin running the command %s"
                             % str(command_list))
             (stdout, stderr, rc) = utils.run_command(self.conf, command_list)
@@ -63,7 +69,7 @@ class RunScript(jobs.Plugin):
             return reply
         finally:
             if os.path.exists(script_file):
-                utils.secure_delete(self.conf, script_file)
+                os.remove(script_file)
 
 
 def load_plugin(conf, job_id, items_map, name, arguments):
