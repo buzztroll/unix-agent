@@ -3,14 +3,12 @@ import getpass
 import hashlib
 import os
 import random
-import re
 import shutil
 import socket
 import tarfile
 import tempfile
 import threading
 import pwd
-import datetime
 import traceback
 import uuid
 import logging
