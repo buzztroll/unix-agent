@@ -13,6 +13,7 @@
 #  ======================================================================
 import urllib2
 import urlparse
+import sys
 from dcm.agent import exceptions
 import hashlib
 import logging
@@ -32,6 +33,10 @@ class FetchRunScript(jobs.Plugin):
         "connect_timeout": ("The number of seconds to wait to establish a "
                             "connection to the soure url", False, int, 30),
         "checksum": ("The sha256 checksum of the script.", False, str, None),
+        "inpython": ("Run the downloaded script with the current python "
+                     "environment.",
+                     False, bool, False),
+
         "arguments": ("The list of arguments to be passed to the "
                       "downloaded script",
                       False, list, None),
@@ -104,7 +109,11 @@ class FetchRunScript(jobs.Plugin):
         try:
             os.chmod(exe_file, 0x755)
 
-            command_list = [exe_file]
+            command_list = []
+            if self.args.inpython:
+                command_list.append(sys.executable)
+            command_list.append(exe_file)
+
             if self.args.arguments:
                 command_list.extend(self.args.arguments)
             _g_logger.debug("FetchRunScript is running the command %s"
