@@ -16,6 +16,10 @@ class TestFetchExePlugin(unittest.TestCase):
 
     @classmethod
     def setUpClass(cls):
+
+        if test_utils.S3_ACCESS_KEY_ENV not in os.environ or test_utils.S3_SECRET_KEY_ENV not in os.environ:
+            return
+
         basedir = os.path.dirname((os.path.dirname(__file__)))
         cls.test_conf_path = \
             os.path.join(basedir, "etc", "agent.conf")
@@ -30,6 +34,9 @@ class TestFetchExePlugin(unittest.TestCase):
 
     @classmethod
     def tearDownClass(cls):
+        if test_utils.S3_ACCESS_KEY_ENV not in os.environ or test_utils.S3_SECRET_KEY_ENV not in os.environ:
+            return
+
         try:
             all_keys = cls.bucket.get_all_keys()
             cls.bucket.delete_keys([k.name for k in all_keys])
