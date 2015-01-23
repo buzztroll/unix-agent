@@ -48,6 +48,38 @@ class TestFetchExePlugin(unittest.TestCase):
             logging.exception("failed to clean up")
             raise
 
+    def test_file_run(self):
+        msg = str(uuid.uuid4())
+        _, tmpfilepath = tempfile.mkstemp()
+        _, exefile = tempfile.mkstemp()
+        bash_script = """#!/bin/bash
+echo $1 > %s
+""" % tmpfilepath
+
+        with open(exefile, "w") as fptr:
+            fptr.write(bash_script)
+
+        sha256 = hashlib.sha256()
+        sha256.update(bash_script)
+        actual_checksum = sha256.hexdigest()
+
+        url = "file://%s" % exefile
+        # we are now setup for the test
+        arguments = {'url': url, 'arguments': [msg],
+                     'checksum': actual_checksum}
+        plugin = fetch_plugin.load_plugin(
+            self.conf_obj, str(uuid.uuid4()),
+            {}, "fetch_plugin", arguments)
+        result = plugin.run()
+        self.assertEqual(result['return_code'], 0)
+        self.assertTrue(os.path.exists(tmpfilepath))
+
+        with open(tmpfilepath, "r") as fptr:
+            data = fptr.read().strip()
+
+        self.assertEqual(data, msg)
+
+
     @test_utils.aws_access_needed
     def test_good_fetch_run(self):
         msg = str(uuid.uuid4())
