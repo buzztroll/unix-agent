@@ -44,7 +44,10 @@ class FetchRunScript(jobs.Plugin):
         super(FetchRunScript, self).__init__(
             conf, job_id, items_map, name, arguments)
 
-    def _do_http_download(self, exe_file, timeout):
+    def _do_http_download(self):
+        exe_file = self.conf.get_temp_file("fetch_exe_file")
+        timeout = self.args.connect_timeout
+
         u_req = urllib2.Request(self.args.url)
         u_req.add_header("Content-Type", "application/x-www-form-urlencoded")
         u_req.add_header("Connection", "Keep-Alive")
@@ -63,33 +66,41 @@ class FetchRunScript(jobs.Plugin):
                 fptr.write(data)
                 data = response.read(1024)
         actual_checksum = sha256.hexdigest()
-        return actual_checksum
+        if self.args.checksum and actual_checksum != self.args.checksum:
+            raise exceptions.AgentPluginOperationException(
+                "The checksum did not match")
+        return exe_file
+
+    def _do_file(self):
+        url_parts = urlparse.urlparse(self.args.url)
+        return url_parts.path
 
     def run(self):
-        exe_file = self.conf.get_temp_file("fetch_exe_file")
+        _scheme_map = {'http': self._do_http_download,
+                       'https': self._do_http_download,
+                       'file': self._do_file}
 
         url_parts = urlparse.urlparse(self.args.url)
 
-        if url_parts.scheme != "http" and url_parts.scheme != "https":
+        if url_parts.scheme not in _scheme_map.keys():
             # for now we are only accepting http.  in the future we will
             # switch on scheme to decide what cloud storage protocol module
             # to use
             raise exceptions.AgentOptionValueException(
-                "url", url_parts.scheme, "[http, https]")
+                "url", url_parts.scheme, str(_scheme_map.keys()))
 
+        func = _scheme_map[url_parts.scheme]
         try:
-            actual_checksum = \
-                self._do_http_download(exe_file, self.args.connect_timeout)
+            exe_file = func()
         except BaseException as ex:
+            if type(ex) == exceptions.AgentPluginOperationException:
+                raise
             reply = {"return_code": 1, "message": "",
                      "error_message": "Failed to download the URL %s: %s" %
                                       (self.args.url, ex.message),
                      "reply_type": "void"}
             return reply
 
-        if self.args.checksum and actual_checksum != self.args.checksum:
-            raise exceptions.AgentPluginOperationException(
-                "The checksum did not match")
         try:
             os.chmod(exe_file, 0x755)
 
