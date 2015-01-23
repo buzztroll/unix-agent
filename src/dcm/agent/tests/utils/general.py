@@ -10,8 +10,8 @@ from dcm.agent import utils
 
 SYSTEM_CHANGING_TEST_ENV = "SYSTEM_CHANGING_TEST"
 
-S3_ACCESS_KEY_ENV = "S3_ACCESS_KEY"
-S3_SECRET_KEY_ENV = "S3_SECRET_KEY"
+S3_ACCESS_KEY_ENV = "AWS_ACCESS_KEY"
+S3_SECRET_KEY_ENV = "AWS_SECRET_KEY"
 
 
 _debugger_connected = False
@@ -89,6 +89,18 @@ def system_changing(func):
                 "running in a disposable VM) sent the environment "
                 "variable %s" % (func.__name__,
                                  SYSTEM_CHANGING_TEST_ENV))
+        return func(*args, **kwargs)
+    inner.__name__ = func.__name__
+    return inner
+
+
+def aws_access_needed(func):
+    def inner(*args, **kwargs):
+        if S3_ACCESS_KEY_ENV not in os.environ or S3_SECRET_KEY_ENV not in os.environ:
+            raise skip.SkipTest(
+                "Test %s will change only run if the environment variables "
+                "%s and %s are set to the AWS access tokens" %
+                (func.__name__, S3_ACCESS_KEY_ENV, S3_SECRET_KEY_ENV))
         return func(*args, **kwargs)
     inner.__name__ = func.__name__
     return inner
