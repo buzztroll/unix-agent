@@ -51,11 +51,12 @@ class TestFetchExePlugin(unittest.TestCase):
     def test_file_run(self):
         msg = str(uuid.uuid4())
         _, tmpfilepath = tempfile.mkstemp()
-        _, exefile = tempfile.mkstemp()
+        osf, exefile = tempfile.mkstemp()
         bash_script = """#!/bin/bash
 echo $1 > %s
 """ % tmpfilepath
 
+        os.close(osf)
         with open(exefile, "w") as fptr:
             fptr.write(bash_script)
 
