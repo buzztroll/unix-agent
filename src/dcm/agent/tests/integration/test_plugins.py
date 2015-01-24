@@ -20,13 +20,13 @@ class TestFetchExePlugin(unittest.TestCase):
     @classmethod
     def setUpClass(cls):
 
-        if test_utils.S3_ACCESS_KEY_ENV not in os.environ or test_utils.S3_SECRET_KEY_ENV not in os.environ:
-            return
-
         basedir = os.path.dirname((os.path.dirname(__file__)))
         cls.test_conf_path = \
             os.path.join(basedir, "etc", "agent.conf")
         cls.conf_obj = config.AgentConfig([cls.test_conf_path])
+
+        if test_utils.S3_ACCESS_KEY_ENV not in os.environ or test_utils.S3_SECRET_KEY_ENV not in os.environ:
+            return
 
         cls.bucket_name = "agentfetchtest" + str(uuid.uuid4()).split("-")[0]
 
