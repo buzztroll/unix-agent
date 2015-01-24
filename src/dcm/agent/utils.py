@@ -93,13 +93,15 @@ def setup_remote_pydev(host, port):
 
 def run_command(conf, cmd_line, cwd=None):
     _, log_file = tempfile.mkstemp(dir=conf.storage_temppath)
-    env = {"DCM_USER": conf.system_user,
-           "DCM_BASEDIR": conf.storage_base_dir,
-           "DCM_TMP_DIR": conf.storage_temppath,
-           "DCM_LOG_FILE": log_file,
-           "DCM_AGENT_PLATFORM_NAME": conf.platform_name,
-           "DCM_AGENT_PLATFORM_VERSION": conf.platform_version,
-           "DCM_PYTHON": sys.executable}
+    env = {b"DCM_USER": conf.system_user.encode('utf-8'),
+           b"DCM_BASEDIR": conf.storage_base_dir.encode('utf-8'),
+           b"DCM_TMP_DIR": conf.storage_temppath.encode('utf-8'),
+           b"DCM_LOG_FILE": log_file.encode('utf-8'),
+           b"DCM_PYTHON": sys.executable.encode('utf-8')}
+    if conf.platform_name:
+           env[b"DCM_AGENT_PLATFORM_NAME"] = conf.platform_name
+    if conf.platform_version:
+           env[b"DCM_AGENT_PLATFORM_VERSION"] = conf.platform_version
 
     if conf.jr is not None:
         rc = conf.jr.run_command(cmd_line, cwd=cwd, env=env)
