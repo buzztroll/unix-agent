@@ -74,11 +74,11 @@ class FetchRunScript(jobs.Plugin):
         if self.args.checksum and actual_checksum != self.args.checksum:
             raise exceptions.AgentPluginOperationException(
                 "The checksum did not match")
-        return exe_file
+        return exe_file, True
 
     def _do_file(self):
         url_parts = urlparse.urlparse(self.args.url)
-        return url_parts.path
+        return url_parts.path, False
 
     def run(self):
         _scheme_map = {'http': self._do_http_download,
@@ -94,9 +94,10 @@ class FetchRunScript(jobs.Plugin):
             raise exceptions.AgentOptionValueException(
                 "url", url_parts.scheme, str(_scheme_map.keys()))
 
+        exe_file = None
         func = _scheme_map[url_parts.scheme]
         try:
-            exe_file = func()
+            exe_file, cleanup = func()
         except BaseException as ex:
             if type(ex) == exceptions.AgentPluginOperationException:
                 raise
@@ -125,7 +126,7 @@ class FetchRunScript(jobs.Plugin):
                      "error_message": stderr, "reply_type": "void"}
             return reply
         finally:
-            if os.path.exists(exe_file):
+            if exe_file and cleanup and os.path.exists(exe_file):
                 os.remove(exe_file)
 
 
