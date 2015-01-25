@@ -1,3 +1,23 @@
+# 0.9.12 (2015-1-25)
+
+Features:
+* Added a path to the agents python interpreter to the environment variable
+  DCM_PYTHON in the environment in which all scripts are run.
+* Added the fetch_run plug-in.  This will download a executable from a
+  repository (currently just http:// and file:// are supported) and run
+  it locally.
+* Added support to run python scripts with the agents python interpreter
+  directly.
+
+Bug Fixes
+* Fixed a problem where Joyent could not be auto-detected.
+* On certain cloud and distribution combinations an agent may start before
+  the meta-data server is ready.  This results in an "instance ID" of
+  None and thus a failed handshake.  To fix this we get the handshake
+  document with every connection attempt instead of just once at the
+  beginning.  This bug occurred most often on images with "burnt-in"
+  agents.
+
 # 0.9.11 (2014-1-6)
 
 Features:
