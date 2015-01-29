@@ -44,6 +44,12 @@ if [ $# -gt 0 ]; then
     fi;
 fi
 
+which sudo
+if [ $? -ne 0 ]; then
+  echo 'sudo must be installed to continue...exiting now.'
+  exit 1
+fi
+
 # Read input from terminal even if stdin is pipe.
 # This function is to be used for interactive dialogue.
 function read_terminal() {
