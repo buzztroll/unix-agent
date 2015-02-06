@@ -35,9 +35,14 @@ case "${1:-''}" in
     
   'reload')
     ;;
-    
+
+  'status')
+    log_daemon_msg "Reporting Status"
+    $EXE status
+    ;;
+
   *)
-    echo "Usage: $SELF start|stop|restart|reload"
+    echo "Usage: $SELF start|stop|restart|reload|status"
         exit 1
         ;;
     

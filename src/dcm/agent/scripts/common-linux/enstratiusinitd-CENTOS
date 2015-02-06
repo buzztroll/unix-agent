@@ -66,8 +66,14 @@ case "${1:-''}" in
     exit $?
     ;;
 
+  'status')
+    echo -n "Reporting Status..."
+    $EXE status
+    exit $?
+    ;;
+
   *)
-    echo "Usage: $SELF start|stop|restart"
+    echo "Usage: $SELF start|stop|restart|status"
         exit 1
         ;;
 
