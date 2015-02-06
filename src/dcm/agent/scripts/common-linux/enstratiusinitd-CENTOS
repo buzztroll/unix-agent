@@ -28,7 +28,7 @@ start() {
 }
 
 stop() {
-    echo -n "Shutting down dcm-agent..."
+    echo -n "Stopping the dcm-agent..."
     echo
     if [ -f $PIDFILE ]; then
         PID=`cat $PIDFILE`
@@ -60,13 +60,20 @@ case "${1:-''}" in
     ;;
 
   'restart')
+    echo -n "Restarting the dcm-agent..."
     stop
     start
     exit $?
     ;;
 
+  'status')
+    echo -n "Reporting Status..."
+    $EXE status
+    exit $?
+    ;;
+
   *)
-    echo "Usage: $SELF start|stop|restart"
+    echo "Usage: $SELF start|stop|restart|status"
         exit 1
         ;;
 
