@@ -18,6 +18,7 @@ SELF=$(cd $(dirname $0); pwd -P)/$(basename $0)
 
 case "${1:-''}" in
   'start')
+    log_daemon_msg "Starting the dcm-agent"
     start-stop-daemon -m -c $DCM_USER --start --quiet -b --oknodo --pidfile $PIDFILE --exec $EXE -- -c $CONF
     ;;
 
@@ -27,6 +28,7 @@ case "${1:-''}" in
     ;;
     
   'restart')
+    log_daemon_msg "Restarting the dcm-agent"
     start-stop-daemon --stop --quiet --oknodo --pidfile $PIDFILE
     start-stop-daemon -m -c $DCM_USER --start --quiet -b --oknodo --pidfile $PIDFILE --exec $EXE -- -c $CONF
     ;;
