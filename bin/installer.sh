@@ -313,13 +313,25 @@ echo "Starting the installation process..."
 # Install agent.
 install_agent $base_url $fname
 
-# Create configuration file.
+# Create configuration file and optionally install chef client(subject to change).
 if [ "X$1" == "X" ]; then
     echo /opt/dcm-agent/embedded/bin/dcm-agent-configure -i --base-path /dcm
     /opt/dcm-agent/embedded/bin/dcm-agent-configure -i --base-path /dcm
     # Install optional packages.
     install_chef_client
 else
+    for flag in $@
+      do
+        case $flag in
+          (--chef-client|-o)
+          echo "Installing chef-client."
+          curl -s -L https://www.opscode.com/chef/install.sh | bash
+          echo "Done."
+          ;;
+          (*)
+          ;;
+        esac
+      done
     echo /opt/dcm-agent/embedded/bin/dcm-agent-configure $@
     /opt/dcm-agent/embedded/bin/dcm-agent-configure $@
 fi
