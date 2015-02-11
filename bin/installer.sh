@@ -31,10 +31,54 @@ AGENT_VERSION
 
 DCM_AGENT_FORCE_DISTRO_VERSION
   - Instead of detecting the distribution version force it to this env string.
-"
 
-    echo "options:"
-    echo "--unstable: download the latest unreleased packages."
+###############################################################################
+
+Optional Arguments:
+  -h, --help            show this help message and exit
+
+  --cloud {Amazon, etc...}, -c {Amazon, etc...}
+                        The cloud where this virtual machine will be run.
+                        Options: Amazon, Azure, Bluelock, CloudStack,
+                        CloudStack3, Eucalyptus, Google, Joyent, Konami,
+                        OpenStack, Other, UNKNOWN
+
+  --url URL, -u URL     The location of the dcm web socket listener
+
+  --verbose, -v         Increase the amount of output produced by the script.
+
+  --interactive, -i     Run an interactive session where questions will be
+                        asked and answered via stdio.
+
+  --base-path BASE_PATH, -p BASE_PATH
+                        The path to enstratius
+
+  --mount-point MOUNT_PATH, -m MOUNT_PATH
+                        The path to mount point
+
+  --on-boot, -B         Setup the agent to start when the VM boots
+
+  --reload-conf RELOAD, -r RELOAD
+                        The previous config file that will be used to populate
+                        defaults.
+
+  --temp-path TEMP_PATH, -t TEMP_PATH
+                        The temp path
+
+  --user USER, -U USER  The system user that will run the agent.
+
+  --connection-type CON_TYPE, -C CON_TYPE
+                        The type of connection that will be formed with the
+                        agent manager.
+
+  --logfile LOGFILE, -l LOGFILE
+
+  --loglevel LOGLEVEL, -L LOGLEVEL
+                        The level of logging for the agent.
+
+  --chef-client, -o     Install chef client.
+
+"
 }
 
 if [ $# -gt 0 ]; then
@@ -313,13 +357,25 @@ echo "Starting the installation process..."
 # Install agent.
 install_agent $base_url $fname
 
-# Create configuration file.
+# Create configuration file and optionally install chef client(subject to change).
 if [ "X$1" == "X" ]; then
     echo /opt/dcm-agent/embedded/bin/dcm-agent-configure -i --base-path /dcm
     /opt/dcm-agent/embedded/bin/dcm-agent-configure -i --base-path /dcm
     # Install optional packages.
     install_chef_client
 else
+    for flag in $@
+      do
+        case $flag in
+          (--chef-client|-o)
+          echo "Installing chef-client."
+          curl -s -L https://www.opscode.com/chef/install.sh | bash
+          echo "Done."
+          ;;
+          (*)
+          ;;
+        esac
+      done
     echo /opt/dcm-agent/embedded/bin/dcm-agent-configure $@
     /opt/dcm-agent/embedded/bin/dcm-agent-configure $@
 fi
