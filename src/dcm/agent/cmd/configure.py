@@ -42,18 +42,18 @@ def setup_command_line_parser():
                         action='store_true',
                         default=False,
                         help="Increase the amount of output produced by the "
-                             "script."),
+                             "script.")
 
     parser.add_argument("--initial", "-I", dest="initial",
                         action='store_true',
                         default=False,
-                        help=argparse.SUPPRESS),
+                        help=argparse.SUPPRESS)
 
     parser.add_argument("--interactive", "-i", dest="interactive",
                         action='store_true',
                         default=False,
                         help="Run an interactive session where questions "
-                             "will be asked and answered vi stdio."),
+                             "will be asked and answered vi stdio.")
 
     parser.add_argument("--base-path", "-p",
                         dest="base_path",
@@ -93,6 +93,12 @@ def setup_command_line_parser():
                         dest="loglevel",
                         default="INFO",
                         help="The level of logging for the agent.")
+
+    parser.add_argument("--chef-client", "-o", dest="chef-client",
+                        action='store_true',
+                        default=False,
+                        help="This is just a placeholder for now.")
+
     return parser
 
 
