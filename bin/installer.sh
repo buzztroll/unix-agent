@@ -345,7 +345,7 @@ fi
 
 agent_version_ext=""
 if [ "X$AGENT_VERSION" != "X" ]; then
-    agent_version_ext="-$X$AGENT_VERSION"
+    agent_version_ext="-$AGENT_VERSION"
 fi
 
 fname="dcm-agent-$DCM_AGENT_FORCE_DISTRO_VERSION$agent_version_ext.$pkg_ext"
