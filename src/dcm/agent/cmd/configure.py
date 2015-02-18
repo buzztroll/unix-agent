@@ -35,6 +35,7 @@ def setup_command_line_parser():
                         dest="cloud",
                         help="The cloud where this virtual machine will be "
                              "run.  Options: %s" % ", ".join(cloud_choices))
+
     parser.add_argument("--url", "-u", dest="url",
                         help="The location of the dcm web socket listener")
 
@@ -93,6 +94,15 @@ def setup_command_line_parser():
                         dest="loglevel",
                         default="INFO",
                         help="The level of logging for the agent.")
+
+    parser.add_argument("--install-extras",
+                        dest="install_extras",
+                        action='store_true',
+                        help='Boolean Flag to install extra packages')
+
+    parser.add_argument("--extra-package-location",
+                        dest="extra_package_location",
+                        help="Url of extra packages")
 
     parser.add_argument("--chef-client", "-o", dest="chef-client",
                         action='store_true',
@@ -312,7 +322,9 @@ def merge_opts(conf_d, opts):
         "base_path": ("storage", "base_dir"),
         "temp_path": ("storage", "temppath"),
         "con_type": ("connection", "type"),
-        "mount_path": ("storage", "mountpoint")
+        "mount_path": ("storage", "mountpoint"),
+        "install_extras": ("extra", "install"),
+        "extra_package_location": ("extra", "location")
     }
     for opts_name in map_opts_to_conf:
         (s, i) = map_opts_to_conf[opts_name]

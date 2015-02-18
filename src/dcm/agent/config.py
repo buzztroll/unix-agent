@@ -403,7 +403,13 @@ def build_options_list():
 
         ConfigOpt("intrusion", "module", str, default=None,
                   help_msg="The python module to be loaded for handling "
-                           "intrusion detection.")
+                           "intrusion detection."),
+
+        ConfigOpt("extra", "install", bool, default='No',
+                  help_msg="Flag to install extra packages."),
+
+        ConfigOpt("extra", "location", str, default='http://s3.amazonaws.com/es-pyagent',
+                  help_msg="Location of extra packages")
     ]
 
     return option_list
