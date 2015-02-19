@@ -413,3 +413,10 @@ def identify_platform(conf):
         return distro_name.strip(), distro_version.strip()
 
     raise exceptions.AgentPlatformNotDetectedException()
+
+map_platform_installer = {
+    "ubuntu": "dpkg -i",
+    "debian": "dpkg -i",
+    "centos": "rpm -Uvh",
+    "rhel": "rpm -Uvh"
+}
