@@ -8,7 +8,6 @@ import sys
 import clint
 import psutil
 import tarfile
-import ConfigParser
 
 import dcm.agent
 import dcm.agent.messaging as messaging
@@ -261,21 +260,6 @@ def start_main_service(cli_args):
     try:
         config_files = get_config_files(conffile=cli_args.conffile)
         conf = config.AgentConfig(config_files)
-        item_list = []
-        for config_file in config_files:
-            parser = ConfigParser.SafeConfigParser()
-            parser.read(config_file)
-            section_list = parser.sections()
-            if 'extra' in section_list:
-                item_list.append(parser.items('extra'))
-        item_dict = dict((name, value) for name, value in item_list)
-        try:
-            if item_dict['install'] and item_dict['location']:
-                logging.INFO('Installing extra packages from %s' % item_dict['location'])
-                # install step here
-        except KeyError:
-            logging.ERROR("Something may be wrong with the extra section of config file")
-
         agent = DCMAgent(conf)
         agent.pre_threads()
         if cli_args.version:
