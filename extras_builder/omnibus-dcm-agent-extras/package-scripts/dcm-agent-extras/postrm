@@ -1,0 +1,9 @@
+#!/bin/bash
+#
+# Perform necessary dcm-agent-extras removal steps
+# after package is uninstalled.
+#
+
+echo "dcm-agent-extras has been uninstalled!"
+
+exit 0
