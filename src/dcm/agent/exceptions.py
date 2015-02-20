@@ -9,6 +9,12 @@ class AgentOptionException(Exception):
     pass
 
 
+class AgentExtrasNotInstalledException(Exception):
+    def __init__(self, exmsg):
+        message = "The package install failed with: %s" % exmsg
+        super(AgentExtrasNotInstalledException, self).__init__(message)
+
+
 class AgentPageNotFoundException(Exception):
     def __init__(self, page_token):
         message = ("The page set with token %(page_token)s was not found."
