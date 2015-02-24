@@ -335,7 +335,8 @@ def merge_opts(conf_d, opts):
         "temp_path": ("storage", "temppath"),
         "con_type": ("connection", "type"),
         "mount_path": ("storage", "mountpoint"),
-        "extra_package_location": ("extra", "location")
+        "extra_package_location": ("extra", "location"),
+        "package_name": ("extra", "package_name")
     }
     for opts_name in map_opts_to_conf:
         (s, i) = map_opts_to_conf[opts_name]
