@@ -125,7 +125,7 @@ function install_agent(){
         echo "Downloading $url ..."
         curl -s -L $url > /tmp/$filename
     else
-        if [[ $1 == *://* ]] ; then
+        if [[ $AGENT_LOCAL_PACKAGE == *://* ]] ; then
             curl -s -L $AGENT_LOCAL_PACKAGE > /tmp/$filename
         else
             cp $AGENT_LOCAL_PACKAGE /tmp/$filename
