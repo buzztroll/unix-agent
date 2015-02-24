@@ -38,6 +38,7 @@ case "${1:-''}" in
 
   'status')
     log_daemon_msg "Reporting Status"
+    $EXE --version
     $EXE status
     ;;
 
