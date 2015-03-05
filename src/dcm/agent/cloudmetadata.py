@@ -377,6 +377,7 @@ def get_dhcp_ip_address(conf):
 
 def _get_metadata_server_url_data(url, timeout=10, headers=None):
     if not url:
+        _g_logger.debug("URL is  %s" % url)
         return None
 
     _g_logger.debug("Attempting to get metadata at %s" % url)
@@ -391,8 +392,10 @@ def _get_metadata_server_url_data(url, timeout=10, headers=None):
     try:
         response = urllib2.urlopen(u_req, timeout=timeout)
     except urllib2.URLError:
+        _g_logger.debug("URL error message is %s" % urllib2.URLError.message)
         return None
     if response.code != 200:
+        _g_logger.debug("URL response code is %s" % str(response.code))
         return None
     data = response.read().strip()
     return data
