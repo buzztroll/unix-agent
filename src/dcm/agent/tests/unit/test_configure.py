@@ -213,8 +213,8 @@ class TestConfigure(unittest.TestCase):
                      "-p", self.test_base_path,
                      "-C", "ws",
                      "--install-extras",
-                     "--extra-package-location", "http://dcmagentextrasbuilder.s3.amazonaws.com/",
-                     "--package-name", "dcm-agent-extras-ubuntu-14-amd64.deb-0.1.0"]
+                     "--extra-package-location", "http://dcmagentnightly.s3.amazonaws.com/",
+                     "--package-name", "dcm-agent-extras-ubuntu-12.04-0.9.12-amd64.deb"]
         rc = configure.main(conf_args)
         self.assertEqual(rc, 0)
 
