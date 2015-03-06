@@ -476,6 +476,7 @@ def gather_values(opts):
 def install_extras(package_location, distro, version, package=None):
     print "INFO: Installing extra packages from %s" % package_location
     if not package:
+        ### will need to think about a default package
         package = 'dcm-agent-extras-%s-%s' % (distro, version.strip('"'))
     full_url = package_location+package
     cmd = 'curl %s > extras_package' % full_url
