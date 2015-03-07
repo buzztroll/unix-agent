@@ -35,6 +35,15 @@ if [ -z $AWS_SECRET_KEY ]; then
     exit 1
 fi
 
+s3cmd info s3://$DCM_AWS_EXTRAS_BUCKET/$new_pkg
+if [ $? -eq 0 ]; then
+    echo "The extras package already exists..."
+    if [ -z $DCM_EXTRAS_FORCE_REBUILD ]; then
+        echo "Quiting the build early"
+        exit 0
+    fi
+fi
+
 sed -i -e s^AWS_ACCESS_KEY^$AWS_ACCESS_KEY^ -e s^AWS_SECRET_KEY^$AWS_SECRET_KEY^ /root/.s3cfg
 
 echo "Sending $pkg to $new_pkg"
