@@ -217,6 +217,8 @@ def get_default_conf_dict():
     option_list = config.build_options_list()
 
     for c in option_list:
+        if c.hidden:
+            continue
 
         s_d = {}
         if c.section in conf_dict:

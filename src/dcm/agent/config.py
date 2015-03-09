@@ -81,7 +81,8 @@ def get_connection_object(conf):
 class ConfigOpt(object):
 
     def __init__(self, section, name, t, default=None,
-                 options=None, minv=None, maxv=None, help_msg=None):
+                 options=None, minv=None, maxv=None, help_msg=None,
+                 hidden=False):
         self.section = section
         self.name = name
         self.my_type = t
@@ -91,6 +92,7 @@ class ConfigOpt(object):
         self.maxv = maxv
         self.help_msg = help_msg
         self.features = {}
+        self.hidden = hidden
 
     def get_option_name(self):
         option_name = "%s_%s" % (self.section, self.name)
@@ -399,7 +401,9 @@ def build_options_list():
                      "agent is being installed.  Must be used with "
                      "[platform]name."),
         ConfigOpt("jobs", "retain_job_time", int, default=3600),
-        ConfigOpt("test", "skip_handshake", bool, default=False),
+        ConfigOpt("test", "skip_handshake", bool, default=False,
+                  help_msg="This value is for internal testing only.  "
+                           "Do not change it.", hidden=True),
 
         ConfigOpt("intrusion", "module", str, default=None,
                   help_msg="The python module to be loaded for handling "
