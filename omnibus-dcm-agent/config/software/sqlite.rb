@@ -1,14 +1,15 @@
 name "sqlite"
-default_version "3.7.16.2"
+version "3.8.4.1"
 
-dependency "gdbm"
+dependency "libxslt"
 
-vtag = default_version.split('.').map { |elt| '%02d' % elt.to_i }.join[1..-1]
+version_tag = version.split('.').map { |part| '%02d' % part.to_i }.join[1..-1]
+year = "2014"
 
-source :url => "http://www.sqlite.org/2013/sqlite-autoconf-#{vtag}.tar.gz",
-       :md5 => "ce7d2bc0d9b8dd18995b888c6b0b220f"
+source :url => "http://www.sqlite.org/#{year}/sqlite-autoconf-#{version_tag}.tar.gz",
+       :md5 => "6b8cb7b9063a1d97f7b5dc517e8ee0c4"
 
-relative_path "sqlite-autoconf-#{vtag}"
+relative_path "sqlite-autoconf-#{version_tag}"
 
 env = {
   "LDFLAGS" => "-Wl,-rpath,#{install_dir}/embedded/lib -L#{install_dir}/embedded/lib -I#{install_dir}/embedded/include",
@@ -17,8 +18,7 @@ env = {
 }
 
 build do
-  command "./configure --prefix=#{install_dir}/embedded --disable-readline",
-          :env => env
+  command "./configure --prefix=#{install_dir}/embedded --disable-readline", :env => env
   command "make -j #{max_build_jobs}", :env => env
   command "make install"
 end
