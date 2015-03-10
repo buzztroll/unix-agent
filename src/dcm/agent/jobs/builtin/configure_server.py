@@ -183,31 +183,13 @@ class ConfigureServer(jobs.Plugin):
         return puppet_conf_temp
 
     def configure_server_with_puppet(self):
-        distro, version = utils.identify_platform(self.conf)
-        config_files = cfg.get_config_files()
-        if not utils.extras_installed(distro, cfg):
-            for cf in config_files:
-                parser = ConfigParser.SafeConfigParser()
-                parser.read(cf)
-                if parser.has_section('extras'):
-                    try:
-                        location = parser.get('extras', 'location')
-                    except ConfigParser.NoOptionError as e:
-                        _g_logger.debug("Error reading config file with option %s"
-                                        % 'location')
-                        _g_logger.debug("Exception is %s " % e._get_message)
-                else:
-                    raise exceptions.AgentExtrasNotInstalledException("The extras location was not found in agent.conf")
-                    location = 'http://s3.amazonaws.com/es-pyagent/'
-                    _g_logger.info("Runnig with location = %s" % location)
-
-            try:
-                cfg.install_extras(location, distro, version, package=None)
-            except exceptions.AgentExtrasNotInstalledException as ex:
-                _g_logger.exception("An error occurred trying to install puppet.  "
-                                    "We are continuing anyway for legacy server "
-                                    "images")
-                _g_logger.exception("Exception message is %s" % ex.message)
+        try:
+            utils.install_extras(self.conf, package=self.conf.extra_package_name)
+        except exceptions.AgentExtrasNotInstalledException as ex:
+            _g_logger.exception("An error occurred trying to install puppet.  "
+                                "We are continuing anyway for legacy server "
+                                "images")
+            _g_logger.exception("Exception message is %s" % ex.message)
 
         puppet_conf_file_list = ["/etc/puppet/puppet.conf",
                                  "/etc/puppetlabs/puppet/puppet.conf"]

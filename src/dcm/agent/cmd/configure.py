@@ -7,7 +7,6 @@ import os
 import shutil
 import subprocess
 import sys
-import platform
 import textwrap
 import urlparse
 from dcm.agent import config, cloudmetadata
@@ -16,7 +15,6 @@ import ConfigParser
 
 import dcm.agent
 from dcm.agent.cmd.service import get_config_files
-from dcm.agent.exceptions import AgentExtrasNotInstalledException
 
 
 # below are the variables with no defaults that must be determined
@@ -475,31 +473,6 @@ def gather_values(opts):
     return conf_d
 
 
-def install_extras(package_location, distro, version, package=None):
-    print "INFO: Installing extra packages from %s" % package_location
-    if not package:
-        ### will need to think about a default package
-        package = 'dcm-agent-extras-%s-%s' % (distro, version.strip('"'))
-    full_url = package_location+package
-    cmd = 'curl %s > extras_package' % full_url
-    print "INFO: Running: %s" % cmd
-    (rc, stdout, stderr) = run_command([cmd])
-
-    if rc != 0:
-        raise AgentExtrasNotInstalledException(stderr)
-    else:
-        print "INFO: %s" % stdout
-        install_command = agent_utils.map_platform_installer[distro] + ' extras_package'
-        print "INFO: Running: %s" % (install_command)
-        (rc, stdout, stderr) = run_command([install_command])
-
-        if rc !=0:
-            raise AgentExtrasNotInstalledException(stderr)
-        else:
-            print "INFO: %s" % stdout
-            return True
-
-
 def main(argv=sys.argv[1:]):
     parser = setup_command_line_parser()
     opts = parser.parse_args(args=argv)
@@ -530,9 +503,9 @@ def main(argv=sys.argv[1:]):
         conf = config.AgentConfig(config_files)
         distro, version = agent_utils.identify_platform(conf)
         if opts.package_name:
-            install_extras(opts.extra_package_location, distro, version, package=opts.package_name)
+            agent_utils.install_extras(conf, package=opts.package_name)
         else:
-            install_extras(opts.extra_package_location, distro, version)
+            agent_utils.install_extras(conf)
     try:
         make_dirs(conf_d)
         copy_scripts(conf_d)

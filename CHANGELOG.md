@@ -1,3 +1,19 @@
+# 0.9.12 (2015-3-10)
+
+Features:
+* Report an error if sudo is not found on the system.
+* Added daemon logging to the init.d script.
+* Added a flag to install chef-client with the agent installation.
+* Added help to the installer script.
+* Added support for DCM konami instances.
+* Added an omnibus builder for soft dependencies.  Currently puppet is
+  the only package needed.
+* Added dditional logging.
+* Upgraded to SQLite 3.8
+
+Bug Fixes
+* Updated the certs package for curl.
+
 # 0.9.12 (2015-1-25)
 
 Features:

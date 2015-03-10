@@ -187,34 +187,33 @@ class TestConfigure(unittest.TestCase):
         cloud_type = parser.get("cloud", "type")
         self.assertEqual(cloud_type, configure.cloud_choices[0])
 
-
-    @patch('dcm.agent.cmd.configure.run_command')
-    def test_install_extras_passes_with_good_return_code(self, mock_run_cmd):
+    @patch('dcm.agent.utils.extras_installed')
+    @patch('dcm.agent.utils.run_command')
+    def test_install_extras_passes_with_good_return_code(
+            self, mock_run_cmd, extras_installed_cmd):
         mock_run_cmd.return_value = (0, 'stdout', 'stderr')
+        extras_installed_cmd.return_value = True
         config_files = get_config_files()
         conf = config.AgentConfig(config_files)
-        distro, version = agent_utils.identify_platform(conf)
-        result = configure.install_extras('justsomeurlthatwillnotwork/', distro, version)
-        self.assertTrue(result)
+        conf.extra_location = "fake"
+        result = agent_utils.install_extras(conf)
+        self.assertFalse(result)
 
-
-    @patch('dcm.agent.cmd.configure.run_command')
+    @patch('dcm.agent.utils.run_command')
     def test_install_extras_fails_with_bad_return_code(self, mock_run_cmd):
         mock_run_cmd.return_value = (1, 'stdout', 'stderr')
         config_files = get_config_files()
         conf = config.AgentConfig(config_files)
-        distro, version = agent_utils.identify_platform(conf)
-        conf_args = ['justsomeurlthatwillnotwork', distro, version]
-        self.assertRaises(Exception, configure.install_extras, conf_args)
-
-#    def test_config_works_with_install_extras(self):
-#        conf_args = ["-c", "aMazOn",
-#                     "-u", "http://doesntmatter.org/ws",
-#                     "-p", self.test_base_path,
-#                     "-C", "ws",
-#                     "--install-extras",
-#                     "--extra-package-location", "http://dcmagentnightly.s3.amazonaws.com/",
-#                     "--package-name", "dcm-agent-extras-ubuntu-12.04-0.9.12-amd64.deb"]
-#        rc = configure.main(conf_args)
-#        self.assertEqual(rc, 0)
-
+        conf.extra_location = "fake"
+        conf_args = [conf]
+        self.assertRaises(Exception, agent_utils.install_extras, conf_args)
+    #
+    # def test_config_works_with_install_extras(self):
+    #     conf_args = ["-c", "aMazOn",
+    #                  "-u", "http://doesntmatter.org/ws",
+    #                  "-p", self.test_base_path,
+    #                  "-C", "ws",
+    #                  "--install-extras",
+    #                  "--extra-package-location", "http://dcmagentnightly.s3.amazonaws.com/"]
+    #     rc = configure.main(conf_args)
+    #     self.assertEqual(rc, 0)
