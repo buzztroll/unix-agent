@@ -203,7 +203,8 @@ class ConfigureServer(jobs.Plugin):
                                         % 'location')
                         _g_logger.debug("Exception is %s " % e._get_message)
                 else:
-                    location = 'http://s3.amazonaws.com/dcmagentnightly/'
+                    raise exceptions.AgentExtrasNotInstalledException("The extras location was not found in agent.conf")
+                    location = 'http://s3.amazonaws.com/es-pyagent/'
                     _g_logger.info("Runnig with location = %s" % location)
 
             try:
