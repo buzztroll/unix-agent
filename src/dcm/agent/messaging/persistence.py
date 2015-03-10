@@ -14,6 +14,7 @@
 import datetime
 import json
 import logging
+import os
 import sqlite3
 import threading
 
@@ -118,6 +119,14 @@ class SQLiteAgentDB(object):
     def unlock(self):
         self._lock.release()
 
+    def _log_db_info(self):
+        if os.path.exists(self._db_file):
+            st = os.stat(self._db_file)
+            msg = "DB: " + self._db_file + os.linesep + str(st)
+        else:
+            msg = "DB " + self._db_file + " does not exist."
+        _g_logger.debug(msg)
+
     def _execute(self, func):
         try:
             cursor = self._db_conn.cursor()
@@ -127,14 +136,15 @@ class SQLiteAgentDB(object):
                 return rc
             except Exception as ex:
                 _g_logger.exception(
-                    "Could not open " + self._db_file + " " + str(ex))
+                    "Could not access " + self._db_file + " " + str(ex))
                 self._db_conn.rollback()
                 raise
             finally:
                 cursor.close()
         except Exception as ex:
             _g_logger.exception(
-                "Could not connect to the DB " + self._db_file + " " + str(ex))
+                "Failed to access the DB " + self._db_file + " " + str(ex))
+            self._log_db_info()
             raise
 
     @messaging_utils.class_method_sync
