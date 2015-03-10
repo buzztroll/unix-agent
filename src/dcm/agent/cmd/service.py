@@ -260,7 +260,6 @@ def start_main_service(cli_args):
     try:
         config_files = get_config_files(conffile=cli_args.conffile)
         conf = config.AgentConfig(config_files)
-
         agent = DCMAgent(conf)
         agent.pre_threads()
         if cli_args.version:

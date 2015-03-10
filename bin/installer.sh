@@ -78,6 +78,9 @@ Optional Arguments:
 
   --chef-client, -o     Install chef client.
 
+  --install-extras      Install extras package
+
+  --extra-package-location URL,  url of extra packages to be installed.  Default is http://s3.amazonaws.com/es-pyagent
 "
 }
 

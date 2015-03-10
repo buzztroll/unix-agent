@@ -1,4 +1,4 @@
-#  ========= CONFIDENTIAL =========
+# ========= CONFIDENTIAL =========
 #
 #  Copyright (C) 2010-2014 Dell, Inc. - ALL RIGHTS RESERVED
 #
@@ -15,68 +15,59 @@ import ConfigParser
 import json
 import logging
 import os
-import shutil
-import tempfile
-from dcm.agent import exceptions, utils, storagecloud
+from dcm.agent import exceptions, utils
 import dcm.agent.jobs as jobs
 from dcm.agent import config
+from dcm.agent.cmd import configure as cfg
 
 
 _g_logger = logging.getLogger(__name__)
 
 
-_g_platform_dep_installer = {
-    config.PLATFORM_TYPES.PLATFORM_RHEL: ["rpmInstall", "puppet"],
-    config.PLATFORM_TYPES.PLATFORM_UBUNTU: ["debInstall", "puppet"],
-    config.PLATFORM_TYPES.PLATFORM_DEBIAN: ["debInstall", "puppet"]
-}
-
-
 class ConfigureServer(jobs.Plugin):
-
     protocol_arguments = {
         "configType":
-        ("", True, str, None),
+            ("", True, str, None),
         "authId":
-        ("", False, str, None),
+            ("", False, str, None),
         "configurationData":
-        ("", False, utils.base64type_convertor, None),
+            ("", False, utils.base64type_convertor, None),
         "encryptedConfigToken":
-        ("", False, utils.base64type_convertor, None),
+            ("", False, utils.base64type_convertor, None),
         "encryptedAuthSecret":
-        ("", False, utils.base64type_convertor, None),
+            ("", False, utils.base64type_convertor, None),
         "endpoint":
-        ("", False, str, None),
+            ("", False, str, None),
         "providerRegionId":
-        ("", False, str, None),
+            ("", False, str, None),
         "runAsUser":
-        ("", False, str, None),
+            ("", False, str, None),
         "storageDelegate":
-        ("", False, str, None),
+            ("", False, str, None),
         "storageEndpoint":
-        ("", False, str, None),
+            ("", False, str, None),
         "storageAccount":
-        ("", False, str, None),
+            ("", False, str, None),
         "scriptFiles":
-        ("", False, list, None),
+            ("", False, list, None),
         "storagePublicKey":
-        ("", False, utils.base64type_convertor, None),
+            ("", False, utils.base64type_convertor, None),
         "storagePrivateKey":
-        ("", False, utils.base64type_convertor, None),
+            ("", False, utils.base64type_convertor, None),
         "environmentId":
-        ("", False, str, None),
+            ("", False, str, None),
         "personalityFiles":
-        ("", False, list, None),
+            ("", False, list, None),
         "configClientName":
-        ("", False, str, None),
+            ("", False, str, None),
         "configCert":
-        ("", False, utils.base64type_convertor, None),
+            ("", False, utils.base64type_convertor, None),
         "configKey":
-        ("", False, utils.base64type_convertor, None),
+            ("", False, utils.base64type_convertor, None),
         "runListIds":
-        ("", False, list, None),
+            ("", False, list, None),
         "parameterList":
-        ("", False, utils.base64type_convertor, None),
+            ("", False, utils.base64type_convertor, None),
     }
 
     def __init__(self, conf, job_id, items_map, name, arguments):
@@ -192,22 +183,31 @@ class ConfigureServer(jobs.Plugin):
         return puppet_conf_temp
 
     def configure_server_with_puppet(self):
-        try:
-            pkg_installer_cmd =\
-                _g_platform_dep_installer[self.conf.platform_name]
-            if pkg_installer_cmd:
-                cmd_path = self.conf.get_script_location(pkg_installer_cmd[0])
-                pkg_installer_cmd[0] = cmd_path
-                (stdout, stderr, rc) = utils.run_command(
-                    self.conf, pkg_installer_cmd)
-                _g_logger.debug(
-                    "Results of install: stdout: %s, stderr: %s, rc %d"
-                    % (str(stdout), str(stderr), rc))
-                # even if this fails we will try to continue
-        except BaseException as ex:
-            _g_logger.exception("An error occurred trying to install puppet.  "
-                                "We are continuing anyway for legacy server "
-                                "images")
+        distro, version = utils.identify_platform(self.conf)
+        config_files = cfg.get_config_files()
+        if not utils.extras_installed(distro, cfg):
+            for cf in config_files:
+                parser = ConfigParser.SafeConfigParser()
+                parser.read(cf)
+                if parser.has_section('extras'):
+                    try:
+                        location = parser.get('extras', 'location')
+                    except ConfigParser.NoOptionError as e:
+                        _g_logger.debug("Error reading config file with option %s"
+                                        % 'location')
+                        _g_logger.debug("Exception is %s " % e._get_message)
+                else:
+                    raise exceptions.AgentExtrasNotInstalledException("The extras location was not found in agent.conf")
+                    location = 'http://s3.amazonaws.com/es-pyagent/'
+                    _g_logger.info("Runnig with location = %s" % location)
+
+            try:
+                cfg.install_extras(location, distro, version, package=None)
+            except exceptions.AgentExtrasNotInstalledException as ex:
+                _g_logger.exception("An error occurred trying to install puppet.  "
+                                    "We are continuing anyway for legacy server "
+                                    "images")
+                _g_logger.exception("Exception message is %s" % ex.message)
 
         puppet_conf_file_list = ["/etc/puppet/puppet.conf",
                                  "/etc/puppetlabs/puppet/puppet.conf"]
@@ -259,8 +259,8 @@ class ConfigureServer(jobs.Plugin):
             raise exceptions.AgentOptionException(
                 "configType", "CHEF or PUPPET", self.args.configType)
 
-        if self.name == "configure_server" or\
-                self.name == "configure_server_15":
+        if self.name == "configure_server" or \
+            self.name == "configure_server_15":
             (stdout, stderr, rc) = self.configure_server_legacy()
         elif self.name == "configure_server_16":
             (stdout, stderr, rc) = self.configure_server_legacy()

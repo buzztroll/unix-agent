@@ -24,7 +24,6 @@ import random
 import string
 import re
 
-
 _g_logger = logging.getLogger(__name__)
 
 
@@ -413,3 +412,27 @@ def identify_platform(conf):
         return distro_name.strip(), distro_version.strip()
 
     raise exceptions.AgentPlatformNotDetectedException()
+
+
+def extras_installed(distro, cfg):
+    cmd = map_platform_check_package[distro]
+    cmd += ' dcm-agent-extras'
+    _g_logger.info("Checking if extras installed with: %s" % cmd)
+    (rc, stdout, stderr) = cfg.run_command(cmd)
+    if rc == 0:
+        return True
+    return False
+
+map_platform_installer = {
+    "ubuntu": "dpkg -i",
+    "debian": "dpkg -i",
+    "centos": "rpm -Uvh",
+    "rhel": "rpm -Uvh"
+}
+
+map_platform_check_package = {
+    "ubuntu": "dpkg -s",
+    "debian": "dpkg -s",
+    "centos": "rpm -qa | grep",
+    "rhel": "rpm -qa | grep"
+}

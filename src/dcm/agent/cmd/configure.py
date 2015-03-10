@@ -15,6 +15,8 @@ import dcm.agent.utils as agent_utils
 import ConfigParser
 
 import dcm.agent
+from dcm.agent.cmd.service import get_config_files
+from dcm.agent.exceptions import AgentExtrasNotInstalledException
 
 
 # below are the variables with no defaults that must be determined
@@ -35,6 +37,7 @@ def setup_command_line_parser():
                         dest="cloud",
                         help="The cloud where this virtual machine will be "
                              "run.  Options: %s" % ", ".join(cloud_choices))
+
     parser.add_argument("--url", "-u", dest="url",
                         help="The location of the dcm web socket listener")
 
@@ -94,6 +97,25 @@ def setup_command_line_parser():
                         default="INFO",
                         help="The level of logging for the agent.")
 
+    parser.add_argument("--install-extras",
+                        dest="install_extras",
+                        action='store_true',
+                        help='to install addition set of packages (puppet etc) '
+                             'now which are needed for certain actions. '
+                             'If this is not set at boot time the packages will still '
+                             'be downloaded and installed on demand')
+
+    parser.add_argument("--extra-package-location",
+                        dest="extra_package_location",
+                        default="https://es-pyagent.s3.amazonaws.com/",
+                        help="The URL of the dcm-agent-extras package which contains "
+                             "additional software dependencies needed for some commands.")
+
+    parser.add_argument("--package-name",
+                        dest="package_name",
+                        default=None,
+                        help="Name of the extra package to be installed.")
+
     parser.add_argument("--chef-client", "-o", dest="chef-client",
                         action='store_true',
                         default=False,
@@ -110,7 +132,7 @@ def run_command(cmd):
             stdout=subprocess.PIPE,
             stderr=subprocess.PIPE,
             bufsize=0,
-            env={})
+            env=os.environ)
         stdout, stderr = process.communicate()
         rc = process.returncode
     except Exception as ex:
@@ -312,7 +334,9 @@ def merge_opts(conf_d, opts):
         "base_path": ("storage", "base_dir"),
         "temp_path": ("storage", "temppath"),
         "con_type": ("connection", "type"),
-        "mount_path": ("storage", "mountpoint")
+        "mount_path": ("storage", "mountpoint"),
+        "extra_package_location": ("extra", "location"),
+        "package_name": ("extra", "package_name")
     }
     for opts_name in map_opts_to_conf:
         (s, i) = map_opts_to_conf[opts_name]
@@ -449,6 +473,31 @@ def gather_values(opts):
     return conf_d
 
 
+def install_extras(package_location, distro, version, package=None):
+    print "INFO: Installing extra packages from %s" % package_location
+    if not package:
+        ### will need to think about a default package
+        package = 'dcm-agent-extras-%s-%s' % (distro, version.strip('"'))
+    full_url = package_location+package
+    cmd = 'curl %s > extras_package' % full_url
+    print "INFO: Running: %s" % cmd
+    (rc, stdout, stderr) = run_command([cmd])
+
+    if rc != 0:
+        raise AgentExtrasNotInstalledException(stderr)
+    else:
+        print "INFO: %s" % stdout
+        install_command = agent_utils.map_platform_installer[distro] + ' extras_package'
+        print "INFO: Running: %s" % (install_command)
+        (rc, stdout, stderr) = run_command([install_command])
+
+        if rc !=0:
+            raise AgentExtrasNotInstalledException(stderr)
+        else:
+            print "INFO: %s" % stdout
+            return True
+
+
 def main(argv=sys.argv[1:]):
     parser = setup_command_line_parser()
     opts = parser.parse_args(args=argv)
@@ -474,6 +523,14 @@ def main(argv=sys.argv[1:]):
             raise Exception("You must set the base dir for this service "
                             "installation.")
 
+    if opts.install_extras:
+        config_files = get_config_files()
+        conf = config.AgentConfig(config_files)
+        distro, version = agent_utils.identify_platform(conf)
+        if opts.package_name:
+            install_extras(opts.extra_package_location, distro, version, package=opts.package_name)
+        else:
+            install_extras(opts.extra_package_location, distro, version)
     try:
         make_dirs(conf_d)
         copy_scripts(conf_d)
