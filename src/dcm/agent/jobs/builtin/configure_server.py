@@ -23,12 +23,6 @@ from dcm.agent.cmd import configure as cfg
 
 _g_logger = logging.getLogger(__name__)
 
-_g_platform_dep_installer = {
-    config.PLATFORM_TYPES.PLATFORM_RHEL: ["rpmInstall", "puppet"],
-    config.PLATFORM_TYPES.PLATFORM_UBUNTU: ["debInstall", "puppet"],
-    config.PLATFORM_TYPES.PLATFORM_DEBIAN: ["debInstall", "puppet"]
-}
-
 
 class ConfigureServer(jobs.Plugin):
     protocol_arguments = {
