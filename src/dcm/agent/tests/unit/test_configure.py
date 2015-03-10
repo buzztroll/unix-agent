@@ -207,14 +207,14 @@ class TestConfigure(unittest.TestCase):
         conf_args = ['justsomeurlthatwillnotwork', distro, version]
         self.assertRaises(Exception, configure.install_extras, conf_args)
 
-    def test_config_works_with_install_extras(self):
-        conf_args = ["-c", "aMazOn",
-                     "-u", "http://doesntmatter.org/ws",
-                     "-p", self.test_base_path,
-                     "-C", "ws",
-                     "--install-extras",
-                     "--extra-package-location", "http://dcmagentnightly.s3.amazonaws.com/",
-                     "--package-name", "dcm-agent-extras-ubuntu-12.04-0.9.12-amd64.deb"]
-        rc = configure.main(conf_args)
-        self.assertEqual(rc, 0)
+#    def test_config_works_with_install_extras(self):
+#        conf_args = ["-c", "aMazOn",
+#                     "-u", "http://doesntmatter.org/ws",
+#                     "-p", self.test_base_path,
+#                     "-C", "ws",
+#                     "--install-extras",
+#                     "--extra-package-location", "http://dcmagentnightly.s3.amazonaws.com/",
+#                     "--package-name", "dcm-agent-extras-ubuntu-12.04-0.9.12-amd64.deb"]
+#        rc = configure.main(conf_args)
+#        self.assertEqual(rc, 0)
 
