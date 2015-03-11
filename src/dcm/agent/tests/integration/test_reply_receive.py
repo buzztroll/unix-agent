@@ -142,6 +142,10 @@ class TestProtocolCommands(reply.ReplyObserverInterface):
                      "-C", "success_tester",
                      "-U", cls.run_as_user,
                      "-l", "/tmp/agent_test_log.log"]
+        if 'DCM_AWS_EXTRAS_BUCKET' in os.environ:
+            extras_repo = "http://" + os.environ['DCM_AWS_EXTRAS_BUCKET'] + "-tested.s3.amazonaws.com"
+            conf_args.append("--extra-package-location")
+            conf_args.append(extras_repo)
         rc = configure.main(conf_args)
         if rc != 0:
             raise Exception("We could not configure the test env")
