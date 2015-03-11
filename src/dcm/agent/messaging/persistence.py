@@ -125,7 +125,7 @@ class SQLiteAgentDB(object):
             msg = "DB: " + self._db_file + os.linesep + str(st)
         else:
             msg = "DB " + self._db_file + " does not exist."
-        _g_logger.debug(msg)
+        _g_logger.warn(msg)
 
     def _execute(self, func):
         try:
