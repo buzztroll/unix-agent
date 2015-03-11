@@ -23,6 +23,7 @@ class TestConfigure(unittest.TestCase):
 
     def setUp(self):
         self.test_base_path = tempfile.mkdtemp()
+        agent_utils.extras_remove(self.conf)
 
     def tearDown(self):
         shutil.rmtree(self.test_base_path)
@@ -207,13 +208,3 @@ class TestConfigure(unittest.TestCase):
         conf.extra_location = "fake"
         conf_args = [conf]
         self.assertRaises(Exception, agent_utils.install_extras, conf_args)
-    #
-    # def test_config_works_with_install_extras(self):
-    #     conf_args = ["-c", "aMazOn",
-    #                  "-u", "http://doesntmatter.org/ws",
-    #                  "-p", self.test_base_path,
-    #                  "-C", "ws",
-    #                  "--install-extras",
-    #                  "--extra-package-location", "http://dcmagentnightly.s3.amazonaws.com/"]
-    #     rc = configure.main(conf_args)
-    #     self.assertEqual(rc, 0)

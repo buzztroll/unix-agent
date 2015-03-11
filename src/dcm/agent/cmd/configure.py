@@ -98,16 +98,18 @@ def setup_command_line_parser():
     parser.add_argument("--install-extras",
                         dest="install_extras",
                         action='store_true',
-                        help='to install addition set of packages (puppet etc) '
-                             'now which are needed for certain actions. '
-                             'If this is not set at boot time the packages will still '
-                             'be downloaded and installed on demand')
+                        help='to install addition set of packages (puppet etc)'
+                             ' now which are needed for certain actions. '
+                             'If this is not set at boot time the packages '
+                             'will still be downloaded and installed on '
+                             'demand')
 
     parser.add_argument("--extra-package-location",
                         dest="extra_package_location",
                         default="https://es-pyagent.s3.amazonaws.com/",
-                        help="The URL of the dcm-agent-extras package which contains "
-                             "additional software dependencies needed for some commands.")
+                        help="The URL of the dcm-agent-extras package which "
+                             "contains additional software dependencies "
+                             "needed for some commands.")
 
     parser.add_argument("--package-name",
                         dest="package_name",
@@ -461,7 +463,7 @@ def do_interactive(opts, conf_d):
 def gather_values(opts):
     # get the default values based on the defaults set in the config object
     conf_d = get_default_conf_dict()
-    # if we are reloading from a file overide the defaults with what is in
+    # if we are reloading from a file override the defaults with what is in
     # that file
     if opts.reload:
         update_from_config_file(opts.reload, conf_d)
@@ -498,14 +500,6 @@ def main(argv=sys.argv[1:]):
             raise Exception("You must set the base dir for this service "
                             "installation.")
 
-    if opts.install_extras:
-        config_files = get_config_files()
-        conf = config.AgentConfig(config_files)
-        distro, version = agent_utils.identify_platform(conf)
-        if opts.package_name:
-            agent_utils.install_extras(conf, package=opts.package_name)
-        else:
-            agent_utils.install_extras(conf)
     try:
         make_dirs(conf_d)
         copy_scripts(conf_d)
@@ -516,6 +510,13 @@ def main(argv=sys.argv[1:]):
         do_set_owner_and_perms(conf_d)
         if not opts.initial:
             enable_start_agent(opts)
+
+        if opts.install_extras:
+            conf = config.AgentConfig([conf_file_name])
+            if opts.package_name:
+                agent_utils.install_extras(conf, package=opts.package_name)
+            else:
+                agent_utils.install_extras(conf)
 
     except Exception as ex:
         print >> sys.stderr, ex.message

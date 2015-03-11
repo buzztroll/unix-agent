@@ -19,6 +19,7 @@ import datetime
 import traceback
 import sys
 import urllib
+import urllib2
 import dcm
 import exceptions
 import logging
@@ -41,6 +42,13 @@ _g_map_platform_check_package = {
     "debian": ["/usr/bin/dpkg", "-s"],
     "centos": ["rpm", "-q"],
     "rhel": ["rpm", "-q"]
+}
+
+_g_map_platform_remove_package = {
+    "ubuntu": ["/usr/bin/dpkg", "--purge"],
+    "debian": ["/usr/bin/dpkg", "--purge"],
+    "centos": ["rpm", "-e"],
+    "rhel": ["rpm", "-e"]
 }
 
 _g_extras_pkgs_name = "dcm-agent-extras"
@@ -109,7 +117,7 @@ def setup_remote_pydev(host, port):
         return False
 
 
-def run_command(conf, cmd_line, cwd=None):
+def run_command(conf, cmd_line, cwd=None, in_env=None):
     _, log_file = tempfile.mkstemp(dir=conf.storage_temppath)
     env = {b"DCM_USER": conf.system_user.encode('utf-8'),
            b"DCM_BASEDIR": conf.storage_base_dir.encode('utf-8'),
@@ -121,6 +129,8 @@ def run_command(conf, cmd_line, cwd=None):
     if conf.platform_version:
            env[b"DCM_AGENT_PLATFORM_VERSION"] = conf.platform_version
 
+    if in_env is not None:
+        env.update(in_env)
     if conf.jr is not None:
         rc = conf.jr.run_command(cmd_line, cwd=cwd, env=env)
     else:
@@ -364,7 +374,8 @@ def identify_platform(conf):
                 elif key == "VERSION_ID":
                     distro_version = value
         if distro_name and distro_version:
-            return distro_name.strip(), distro_version.strip()
+            return distro_name.strip().replace('"', ''),\
+                   distro_version.strip().replace('"', '')
 
     os_release_path = "/etc/lsb-release"
     if os.path.exists(os_release_path):
@@ -438,7 +449,18 @@ def extras_installed(conf):
     cmd = _g_map_platform_check_package[distro][:]
     cmd.append(_g_extras_pkgs_name)
     _g_logger.info("Checking if extras installed with: %s" % cmd)
-    (rc, stdout, stderr) = run_command(conf, cmd)
+    (stdout, stderr, rc) = run_command(conf, cmd, in_env=os.environ)
+    if rc == 0:
+        return True
+    return False
+
+
+def extras_remove(conf):
+    distro = conf.platform_name
+    cmd = _g_map_platform_remove_package[distro][:]
+    cmd.append(_g_extras_pkgs_name)
+    _g_logger.info("Removing extras with: %s" % cmd)
+    (stdout, stderr, rc) = run_command(conf, cmd, in_env=os.environ)
     if rc == 0:
         return True
     return False
@@ -453,6 +475,19 @@ def package_suffix(distro_name):
     if distro_name.lower() in debs:
         return "deb"
     return None
+
+
+def http_get_to_file(url, filename):
+    try:
+        response = urllib2.urlopen(url)
+        with open(filename, "w") as fptr:
+            data = response.read(64*1024)
+            while data:
+                fptr.write(data)
+                data = response.read(64*1024)
+    except urllib2.URLError as ex:
+        raise exceptions.AgentRuntimeException(
+           "There was a problem connecting to the URL " + url)
 
 
 def install_extras(conf, package=None):
@@ -475,16 +510,19 @@ def install_extras(conf, package=None):
                   (_g_extras_pkgs_name,
                    conf.platform_name, conf.platform_version,
                    version, arch, pkg_suffix)
+    while location.endswith('/'):
+        location = location[:-1]
+
     full_url = "%s/%s" % (location, package)
 
     _, pkg_file = tempfile.mkstemp()
 
     _g_logger.debug("Downloading the extras package file")
-    (filename, headers) = urllib.urlretrieve(full_url, pkg_file)
+    http_get_to_file(full_url, pkg_file)
     install_command = _g_map_platform_installer[conf.platform_name][:]
     install_command.append(pkg_file)
     _g_logger.debug("Running: %s" % install_command)
-    (rc, stdout, stderr) = run_command(conf, install_command)
+    (stdout, stderr, rc) = run_command(conf, install_command, in_env=os.environ)
     if rc !=0:
         raise exceptions.AgentExtrasNotInstalledException(stderr)
     _g_logger.debug(stdout)
