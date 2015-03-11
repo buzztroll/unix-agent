@@ -18,7 +18,6 @@ import tempfile
 import datetime
 import traceback
 import sys
-import urllib
 import urllib2
 import dcm
 import exceptions
@@ -33,22 +32,22 @@ _g_logger = logging.getLogger(__name__)
 _g_map_platform_installer = {
     "ubuntu": ["/usr/bin/dpkg", "-i"],
     "debian": ["/usr/bin/dpkg", "-i"],
-    "centos": ["rpm", "-Uvh"],
-    "rhel": ["rpm" , "-Uvh"]
+    "centos": ["/bin/rpm", "-Uvh"],
+    "rhel": ["/bin/rpm" , "-Uvh"]
 }
 
 _g_map_platform_check_package = {
     "ubuntu": ["/usr/bin/dpkg", "-s"],
     "debian": ["/usr/bin/dpkg", "-s"],
-    "centos": ["rpm", "-q"],
-    "rhel": ["rpm", "-q"]
+    "centos": ["/bin/rpm", "-q"],
+    "rhel": ["/bin/rpm", "-q"]
 }
 
 _g_map_platform_remove_package = {
     "ubuntu": ["/usr/bin/dpkg", "--purge"],
     "debian": ["/usr/bin/dpkg", "--purge"],
-    "centos": ["rpm", "-e"],
-    "rhel": ["rpm", "-e"]
+    "centos": ["/bin/rpm", "-e"],
+    "rhel": ["/bin/rpm", "-e"]
 }
 
 _g_extras_pkgs_name = "dcm-agent-extras"
