@@ -18,13 +18,32 @@ import tempfile
 import datetime
 import traceback
 import sys
+import urllib
+import dcm
 import exceptions
 import logging
 import random
 import string
+import platform
 import re
 
 _g_logger = logging.getLogger(__name__)
+
+_g_map_platform_installer = {
+    "ubuntu": ["/usr/bin/dpkg", "-i"],
+    "debian": ["/usr/bin/dpkg", "-i"],
+    "centos": ["rpm", "-Uvh"],
+    "rhel": ["rpm" , "-Uvh"]
+}
+
+_g_map_platform_check_package = {
+    "ubuntu": ["/usr/bin/dpkg", "-s"],
+    "debian": ["/usr/bin/dpkg", "-s"],
+    "centos": "rpm -qa | grep",
+    "rhel": "rpm -qa | grep"
+}
+
+_g_extras_pkgs_name = "dcm-agent-extras"
 
 
 class OperationalState(object):
@@ -414,25 +433,59 @@ def identify_platform(conf):
     raise exceptions.AgentPlatformNotDetectedException()
 
 
-def extras_installed(distro, cfg):
-    cmd = map_platform_check_package[distro]
-    cmd += ' dcm-agent-extras'
+def extras_installed(conf):
+    distro = conf.platform_name
+    cmd = _g_map_platform_check_package[distro][:]
+    cmd.append(_g_extras_pkgs_name)
     _g_logger.info("Checking if extras installed with: %s" % cmd)
-    (rc, stdout, stderr) = cfg.run_command(cmd)
+    (rc, stdout, stderr) = run_command(conf, cmd)
     if rc == 0:
         return True
     return False
 
-map_platform_installer = {
-    "ubuntu": "dpkg -i",
-    "debian": "dpkg -i",
-    "centos": "rpm -Uvh",
-    "rhel": "rpm -Uvh"
-}
 
-map_platform_check_package = {
-    "ubuntu": "dpkg -s",
-    "debian": "dpkg -s",
-    "centos": "rpm -qa | grep",
-    "rhel": "rpm -qa | grep"
-}
+def package_suffix(distro_name):
+    rpms = ['centos', 'rhel']
+    debs = ['debian', 'ubuntu']
+
+    if distro_name.lower() in rpms:
+        return "rpm"
+    if distro_name.lower() in debs:
+        return "deb"
+    return None
+
+
+def install_extras(conf, package=None):
+    if extras_installed(conf):
+        return False
+    location = conf.extra_location
+    pkg_suffix = package_suffix(conf.platform_name)
+
+    arch = "i386"
+    if platform.machine() == "x86_64":
+        if pkg_suffix == "deb":
+            arch = "amd64"
+        else:
+            arch = "x86_64"
+
+    _g_logger.info("Installing extra packages from %s" % location)
+    if not package:
+        version = dcm.agent.g_version.split('-')[0]
+        package = '%s-%s-%s-%s-%s.%s' %\
+                  (_g_extras_pkgs_name,
+                   conf.platform_name, conf.platform_version,
+                   version, arch, pkg_suffix)
+    full_url = "%s/%s" % (location, package)
+
+    _, pkg_file = tempfile.mkstemp()
+
+    _g_logger.debug("Downloading the extras package file")
+    (filename, headers) = urllib.urlretrieve(full_url, pkg_file)
+    install_command = _g_map_platform_installer[conf.platform_name][:]
+    install_command.append(pkg_file)
+    _g_logger.debug("Running: %s" % install_command)
+    (rc, stdout, stderr) = run_command(conf, install_command)
+    if rc !=0:
+        raise exceptions.AgentExtrasNotInstalledException(stderr)
+    _g_logger.debug(stdout)
+    return True
