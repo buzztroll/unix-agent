@@ -39,8 +39,8 @@ _g_map_platform_installer = {
 _g_map_platform_check_package = {
     "ubuntu": ["/usr/bin/dpkg", "-s"],
     "debian": ["/usr/bin/dpkg", "-s"],
-    "centos": "rpm -qa | grep",
-    "rhel": "rpm -qa | grep"
+    "centos": ["rpm", "-q"],
+    "rhel": ["rpm", "-q"]
 }
 
 _g_extras_pkgs_name = "dcm-agent-extras"
