@@ -23,7 +23,6 @@ class TestConfigure(unittest.TestCase):
 
     def setUp(self):
         self.test_base_path = tempfile.mkdtemp()
-        agent_utils.extras_remove(self.conf)
 
     def tearDown(self):
         shutil.rmtree(self.test_base_path)
