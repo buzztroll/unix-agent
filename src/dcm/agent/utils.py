@@ -115,13 +115,13 @@ def run_command(conf, cmd_line, cwd=None, in_env=None):
            b"DCM_BASEDIR": conf.storage_base_dir.encode('utf-8'),
            b"DCM_TMP_DIR": conf.storage_temppath.encode('utf-8'),
            b"DCM_LOG_FILE": log_file.encode('utf-8'),
-           b"DCM_PYTHON": sys.executable.encode('utf-8'),
-           b"PATH": os.environ['PATH']}
+           b"DCM_PYTHON": sys.executable.encode('utf-8')}
     if conf.platform_name:
-           env[b"DCM_AGENT_PLATFORM_NAME"] = conf.platform_name
+        env[b"DCM_AGENT_PLATFORM_NAME"] = conf.platform_name
     if conf.platform_version:
-           env[b"DCM_AGENT_PLATFORM_VERSION"] = conf.platform_version
-
+        env[b"DCM_AGENT_PLATFORM_VERSION"] = conf.platform_version
+    if 'PATH' in os.environ:
+        env[b'PATH'] = os.environ['PATH']
     if in_env is not None:
         env.update(in_env)
     if conf.jr is not None:
