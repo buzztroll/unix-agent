@@ -481,6 +481,8 @@ def install_extras(conf, package=None):
         return False
     location = conf.extra_location
     pkg_suffix = package_suffix(conf.platform_name)
+    # convert a distro version name that potentially a x.y.z... format to x.y
+    pkg_version = '.'.join(conf.platform_version.split(".")[:2])
 
     arch = "i386"
     if platform.machine() == "x86_64":
@@ -494,7 +496,7 @@ def install_extras(conf, package=None):
         version = dcm.agent.g_version.split('-')[0]
         package = '%s-%s-%s-%s-%s.%s' %\
                   (_g_extras_pkgs_name,
-                   conf.platform_name, conf.platform_version,
+                   conf.platform_name, pkg_version,
                    version, arch, pkg_suffix)
     while location.endswith('/'):
         location = location[:-1]

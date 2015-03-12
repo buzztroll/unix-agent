@@ -38,7 +38,6 @@ class TestExtraConfigure(unittest.TestCase):
         except Exception as ex:
             logging.exception("Failed to remove extras package, NBD")
 
-
     @test_utils.system_changing
     def test_config_works_with_install_extras(self):
         conf_args = ["-c", "aMazOn",

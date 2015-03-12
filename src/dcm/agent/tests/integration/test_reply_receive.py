@@ -12,6 +12,7 @@ import pwd
 import traceback
 import uuid
 import logging
+from mock import patch
 import nose
 from nose.plugins import skip
 import time
@@ -916,8 +917,10 @@ class TestProtocolCommands(reply.ReplyObserverInterface):
         line1_a = lines[0].split()
         nose.tools.eq_(line1_a[1], confClientName)
 
+    @patch('dcm.agent.utils.extras_installed')
     @test_utils.system_changing
-    def test_configure_server_with_puppet(self):
+    def test_configure_server_with_puppet(self, extras_installed_cmd):
+        extras_installed_cmd.return_value = True
         _, tmpfname = tempfile.mkstemp()
         fake_chef_script = """#!/bin/bash
         echo $@ > %s
