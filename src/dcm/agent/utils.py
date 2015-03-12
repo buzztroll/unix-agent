@@ -36,13 +36,6 @@ _g_map_platform_installer = {
     "rhel": ["/bin/rpm" , "-Uvh"]
 }
 
-_g_map_platform_check_package = {
-    "ubuntu": ["/usr/bin/dpkg", "-s"],
-    "debian": ["/usr/bin/dpkg", "-s"],
-    "centos": ["/bin/rpm", "-q"],
-    "rhel": ["/bin/rpm", "-q"]
-}
-
 _g_map_platform_remove_package = {
     "ubuntu": ["/usr/bin/dpkg", "--purge"],
     "debian": ["/usr/bin/dpkg", "--purge"],
@@ -444,14 +437,7 @@ def identify_platform(conf):
 
 
 def extras_installed(conf):
-    distro = conf.platform_name
-    cmd = _g_map_platform_check_package[distro][:]
-    cmd.append(_g_extras_pkgs_name)
-    _g_logger.info("Checking if extras installed with: %s" % cmd)
-    (stdout, stderr, rc) = run_command(conf, cmd, in_env=os.environ)
-    if rc == 0:
-        return True
-    return False
+    return os.path.exists("/opt/dcm-agent-extras")
 
 
 def extras_remove(conf):
