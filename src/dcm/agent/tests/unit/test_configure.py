@@ -194,9 +194,11 @@ class TestConfigure(unittest.TestCase):
         config_files = get_config_files()
         conf = config.AgentConfig(config_files)
         conf.extra_location = "fake"
-        with patch('dcm.agent.utils.run_command') as mock_run_cmd:
-            mock_run_cmd.return_value = (0, 'stdout', 'stderr')
-            result = agent_utils.install_extras(conf)
+        with patch('dcm.agent.utils.extras_installed') as mock_is_extra:
+            mock_is_extra.return_value = False
+            with patch('dcm.agent.utils.run_command') as mock_run_cmd:
+                mock_run_cmd.return_value = ('stdout', 'stderr', 0)
+                result = agent_utils.install_extras(conf)
         self.assertFalse(result)
 
     def test_install_extras_fails_with_bad_return_code(self):
@@ -204,6 +206,9 @@ class TestConfigure(unittest.TestCase):
         conf = config.AgentConfig(config_files)
         conf.extra_location = "fake"
         conf_args = [conf]
-        with patch('dcm.agent.utils.run_command') as mock_run_cmd:
-            mock_run_cmd.return_value = (1, 'stdout', 'stderr')
-            self.assertRaises(Exception, agent_utils.install_extras, conf_args)
+
+        with patch('dcm.agent.utils.extras_installed') as mock_is_extra:
+            mock_is_extra.return_value = False
+            with patch('dcm.agent.utils.run_command') as mock_run_cmd:
+                mock_run_cmd.return_value = ('stdout', 'stderr', 1)
+                self.assertRaises(Exception, agent_utils.install_extras, conf_args)
