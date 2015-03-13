@@ -199,7 +199,7 @@ class TestConfigure(unittest.TestCase):
         with patch('dcm.agent.utils.run_command') as mock_run_cmd:
             mock_run_cmd.return_value = ('stdout', 'stderr', 0)
             result = agent_utils.install_extras(conf)
-        self.assertFalse(result)
+        self.assertTrue(result)
 
     @patch('dcm.agent.utils.http_get_to_file')
     @patch('dcm.agent.utils.extras_installed')
