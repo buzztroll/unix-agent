@@ -3,10 +3,10 @@ import os
 import shutil
 import tempfile
 import unittest
-from dcm.agent import config, cloudmetadata
+from nose.plugins import skip
+from dcm.agent import config
 
 import dcm.agent.cmd.configure as configure
-from dcm.agent.cmd.service import get_config_files
 import dcm.agent.tests.utils.general as test_utils
 import dcm.agent.utils as agent_utils
 
@@ -40,12 +40,15 @@ class TestExtraConfigure(unittest.TestCase):
 
     @test_utils.system_changing
     def test_config_works_with_install_extras(self):
+        if 'DCM_AGENT_TEST_EXTRA_PACKAGE_URL' not in os.environ:
+            raise skip.SkipTest("No extras package known, skipping")
         conf_args = ["-c", "aMazOn",
                      "-u", "http://doesntmatter.org/ws",
                      "-p", self.test_base_path,
                      "-C", "ws",
                      "--install-extras",
-                     "--extra-package-location", "http://dcmagentnightly.s3.amazonaws.com/"]
+                     "--extra-package-location",
+                     os.environ['DCM_AGENT_TEST_EXTRA_PACKAGE_URL']]
         rc = configure.main(conf_args)
         self.assertEqual(rc, 0)
 

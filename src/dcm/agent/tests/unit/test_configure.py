@@ -187,28 +187,30 @@ class TestConfigure(unittest.TestCase):
         cloud_type = parser.get("cloud", "type")
         self.assertEqual(cloud_type, configure.cloud_choices[0])
 
+    @patch('dcm.agent.utils.http_get_to_file')
     @patch('dcm.agent.utils.extras_installed')
     def test_install_extras_passes_with_good_return_code(
-            self, extras_installed_cmd):
-        extras_installed_cmd.return_value = True
+            self, extras_installed_cmd, mock_http_get_to_file):
+        extras_installed_cmd.return_value = False
+        mock_http_get_to_file.return_value = False
         config_files = get_config_files()
         conf = config.AgentConfig(config_files)
         conf.extra_location = "fake"
-        with patch('dcm.agent.utils.extras_installed') as mock_is_extra:
-            mock_is_extra.return_value = False
-            with patch('dcm.agent.utils.run_command') as mock_run_cmd:
-                mock_run_cmd.return_value = ('stdout', 'stderr', 0)
-                result = agent_utils.install_extras(conf)
-        self.assertFalse(result)
+        with patch('dcm.agent.utils.run_command') as mock_run_cmd:
+            mock_run_cmd.return_value = ('stdout', 'stderr', 0)
+            result = agent_utils.install_extras(conf)
+        self.assertTrue(result)
 
-    def test_install_extras_fails_with_bad_return_code(self):
+    @patch('dcm.agent.utils.http_get_to_file')
+    @patch('dcm.agent.utils.extras_installed')
+    def test_install_extras_fails_with_bad_return_code(
+            self, extras_installed_cmd, mock_http_get_to_file):
+        extras_installed_cmd.return_value = False
+        mock_http_get_to_file.return_value = False
         config_files = get_config_files()
         conf = config.AgentConfig(config_files)
         conf.extra_location = "fake"
         conf_args = [conf]
-
-        with patch('dcm.agent.utils.extras_installed') as mock_is_extra:
-            mock_is_extra.return_value = False
-            with patch('dcm.agent.utils.run_command') as mock_run_cmd:
-                mock_run_cmd.return_value = ('stdout', 'stderr', 1)
-                self.assertRaises(Exception, agent_utils.install_extras, conf_args)
+        with patch('dcm.agent.utils.run_command') as mock_run_cmd:
+            mock_run_cmd.return_value = ('stdout', 'stderr', 1)
+            self.assertRaises(Exception, agent_utils.install_extras, conf_args)
