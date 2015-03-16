@@ -357,19 +357,6 @@ def identify_platform(conf):
     distro_name = None
     distro_version = None
 
-    os_release_path = "/etc/os-release"
-    if os.path.exists(os_release_path):
-        with open(os_release_path) as fptr:
-            for line in fptr.readlines():
-                key, value = line.split("=", 1)
-                if key == "ID":
-                    distro_name = value
-                elif key == "VERSION_ID":
-                    distro_version = value
-        if distro_name and distro_version:
-            return distro_name.strip().replace('"', ''),\
-                   distro_version.strip().replace('"', '')
-
     os_release_path = "/etc/lsb-release"
     if os.path.exists(os_release_path):
         with open(os_release_path) as fptr:
