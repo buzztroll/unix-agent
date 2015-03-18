@@ -21,7 +21,7 @@ do
 done
 
 echo "Create the configuration file"
-/opt/dcm-agent/embedded/bin/dcm-agent-configure $@ -i -r $DCM_BASEDIR/etc/agent.conf
+env -i /opt/dcm-agent/embedded/bin/dcm-agent-configure $@ -i -r $DCM_BASEDIR/etc/agent.conf
 if [ $? -ne 0 ]; then
     echo "The default configuration failed"
     exit 1
