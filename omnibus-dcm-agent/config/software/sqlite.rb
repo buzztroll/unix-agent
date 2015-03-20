@@ -7,7 +7,7 @@ version_tag = version.split('.').map { |part| '%02d' % part.to_i }.join[1..-1]
 year = "2014"
 
 source :url => "http://www.sqlite.org/#{year}/sqlite-autoconf-#{version_tag}.tar.gz",
-       :md5 => "51272e875879ee893e51070b07c33888"
+       :md5 => "3cba9fa0b00f07eb189fc1b546e66d9d"
 
 relative_path "sqlite-autoconf-#{version_tag}"
 
