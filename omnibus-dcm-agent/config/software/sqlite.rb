@@ -1,5 +1,5 @@
 name "sqlite"
-version "3.8.4.1"
+version "3.8.8.3"
 
 dependency "libxslt"
 
