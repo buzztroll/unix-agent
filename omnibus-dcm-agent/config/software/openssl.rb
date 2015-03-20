@@ -30,7 +30,7 @@ source url: "https://www.openssl.org/source/openssl-1.0.2a.tar.gz",
 relative_path "openssl-#{version}"
 
 build do
-  patch :source => "openssl-1.0.1f-do-not-build-docs.patch"
+  patch :source => "openssl-1.0.2a-do-not-build-docs.patch"
 
   env = case Ohai['platform']
         when "mac_os_x"
