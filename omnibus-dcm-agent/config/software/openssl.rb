@@ -1,6 +1,5 @@
 #
-# Copyright:: Copyright (c) 2012-2014 Chef Software, Inc.
-# License:: Apache License, Version 2.0
+# Copyright 2012-2014 Chef Software, Inc.
 #
 # Licensed under the Apache License, Version 2.0 (the "License");
 # you may not use this file except in compliance with the License.
@@ -19,9 +18,7 @@ name "openssl"
 
 dependency "zlib"
 dependency "cacerts"
-dependency "libgcc"
-dependency "makedepend"
-
+dependency "makedepend" unless aix?
 
 default_version "1.0.2a"
 source url: "https://www.openssl.org/source/openssl-1.0.2a.tar.gz",
@@ -30,13 +27,25 @@ source url: "https://www.openssl.org/source/openssl-1.0.2a.tar.gz",
 relative_path "openssl-#{version}"
 
 build do
-  patch :source => "openssl-1.0.2a-do-not-build-docs.patch"
 
-  env = case Ohai['platform']
+  env = case ohai["platform"]
+        when "freebsd"
+          freebsd_flags = {
+            "CFLAGS" => "-I#{install_dir}/embedded/include",
+            "LDFLAGS" => "-R#{install_dir}/embedded/lib -L#{install_dir}/embedded/lib",
+          }
+          # Clang became the default compiler in FreeBSD 10+
+          if ohai['os_version'].to_i >= 1000024
+            freebsd_flags.merge!(
+              "CC" => "clang",
+              "CXX" => "clang++",
+            )
+          end
+          freebsd_flags
         when "mac_os_x"
           {
             "CFLAGS" => "-arch x86_64 -m64 -L#{install_dir}/embedded/lib -I#{install_dir}/embedded/include -I#{install_dir}/embedded/include/ncurses",
-            "LDFLAGS" => "-arch x86_64 -R#{install_dir}/embedded/lib -L#{install_dir}/embedded/lib -I#{install_dir}/embedded/include -I#{install_dir}/embedded/include/ncurses"
+            "LDFLAGS" => "-arch x86_64 -R#{install_dir}/embedded/lib -L#{install_dir}/embedded/lib -I#{install_dir}/embedded/include -I#{install_dir}/embedded/include/ncurses",
           }
         when "aix"
         {
@@ -55,12 +64,12 @@ build do
           {
             "CFLAGS" => "-L#{install_dir}/embedded/lib -I#{install_dir}/embedded/include",
             "LDFLAGS" => "-R#{install_dir}/embedded/lib -L#{install_dir}/embedded/lib -I#{install_dir}/embedded/include -static-libgcc",
-            "LD_OPTIONS" => "-R#{install_dir}/embedded/lib"
+            "LD_OPTIONS" => "-R#{install_dir}/embedded/lib",
           }
         else
           {
             "CFLAGS" => "-I#{install_dir}/embedded/include",
-            "LDFLAGS" => "-Wl,-rpath,#{install_dir}/embedded/lib -L#{install_dir}/embedded/lib"
+            "LDFLAGS" => "-Wl,-rpath,#{install_dir}/embedded/lib -L#{install_dir}/embedded/lib",
           }
         end
 
@@ -75,7 +84,7 @@ build do
     "shared",
   ].join(" ")
 
-  configure_command = case Ohai['platform']
+  configure_command = case ohai["platform"]
                       when "aix"
                         ["perl", "./Configure",
                          "aix64-cc",
@@ -97,31 +106,34 @@ build do
                          "-R#{install_dir}/embedded/lib",
                         "-static-libgcc"].join(" ")
                       when "solaris2"
-                        if Config.solaris_compiler == "gcc"
-                          if architecture == "sparc"
-                            ["/bin/sh ./Configure",
-                             "solaris-sparcv9-gcc",
-                             common_args,
-                            "-L#{install_dir}/embedded/lib",
-                            "-I#{install_dir}/embedded/include",
-                            "-R#{install_dir}/embedded/lib",
-                            "-static-libgcc"].join(" ")
-                          else
-                            # This should not require a /bin/sh, but without it we get
-                            # Errno::ENOEXEC: Exec format error
-                            ["/bin/sh ./Configure",
-                             "solaris-x86-gcc",
-                             common_args,
-                            "-L#{install_dir}/embedded/lib",
-                            "-I#{install_dir}/embedded/include",
-                            "-R#{install_dir}/embedded/lib",
-                            "-static-libgcc"].join(" ")
-                          end
+                        if ohai["kernel"]["machine"] =~ /sun/
+                          ["/bin/sh ./Configure",
+                           "solaris-sparcv9-gcc",
+                           common_args,
+                          "-L#{install_dir}/embedded/lib",
+                          "-I#{install_dir}/embedded/include",
+                          "-R#{install_dir}/embedded/lib",
+                          "-static-libgcc"].join(" ")
                         else
-                          raise "sorry, we don't support building openssl on non-gcc solaris builds right now."
+                          # This should not require a /bin/sh, but without it we get
+                          # Errno::ENOEXEC: Exec format error
+                          ["/bin/sh ./Configure",
+                           "solaris-x86-gcc",
+                           common_args,
+                          "-L#{install_dir}/embedded/lib",
+                          "-I#{install_dir}/embedded/include",
+                          "-R#{install_dir}/embedded/lib",
+                          "-static-libgcc"].join(" ")
                         end
                       else
-                        ["./config",
+                        config = if ohai["os"] == "linux" && ohai["kernel"]["machine"] == "ppc64"
+                                   "./Configure linux-ppc64"
+                                 elsif ohai["os"] == "linux" && ohai["kernel"]["machine"] == "s390x"
+                                   "./Configure linux64-s390x"
+                                 else
+                                   "./config"
+                                 end
+                        [config,
                         common_args,
                         "disable-gost",  # fixes build on linux, but breaks solaris
                         "-L#{install_dir}/embedded/lib",
@@ -132,19 +144,19 @@ build do
   # openssl build process uses a `makedepend` tool that we build inside the bundle.
   env["PATH"] = "#{install_dir}/embedded/bin" + File::PATH_SEPARATOR + ENV["PATH"]
 
-  # @todo: move into omnibus-ruby
-  has_gmake = system("gmake --version")
-
-  if has_gmake
-    env.merge!({'MAKE' => 'gmake'})
-    make_binary = 'gmake'
-  else
-    make_binary = 'make'
-  end
-
-  command configure_command, :env => env
-  command "#{make_binary} depend", :env => env
+  command configure_command, env: env
+  make "depend", env: env
   # make -j N on openssl is not reliable
-  command "#{make_binary}", :env => env
-  command "#{make_binary} install", :env => env
+  make env: env
+  if aix?
+    # We have to sudo this because you can't actually run slibclean without being root.
+    # Something in openssl changed in the build process so now it loads the libcrypto
+    # and libssl libraries into AIX's shared library space during the first part of the
+    # compile. This means we need to clear the space since it's not being used and we
+    # can't install the library that is already in use. Ideally we would patch openssl
+    # to make this not be an issue.
+    # Bug Ref: http://rt.openssl.org/Ticket/Display.html?id=2986&user=guest&pass=guest
+    command "sudo /usr/sbin/slibclean", env: env
+  end
+  make "install", env: env
 end

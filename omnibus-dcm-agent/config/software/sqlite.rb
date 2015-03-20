@@ -3,7 +3,8 @@ version "3.8.8.3"
 
 dependency "libxslt"
 
-version_tag = version.split('.').map { |part| '%02d' % part.to_i }.join[1..-1]
+#version_tag = version.split('.').map { |part| '%02d' % part.to_i }.join[1..-1]
+version_tag = "3080803"
 year = "2015"
 
 source :url => "http://www.sqlite.org/#{year}/sqlite-autoconf-#{version_tag}.tar.gz",
@@ -19,6 +20,6 @@ env = {
 
 build do
   command "./configure --prefix=#{install_dir}/embedded --disable-readline", :env => env
-  command "make -j #{max_build_jobs}", :env => env
+  command "make", :env => env
   command "make install"
 end
