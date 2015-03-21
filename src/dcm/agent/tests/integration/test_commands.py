@@ -51,6 +51,7 @@ class TestSingleCommands(unittest.TestCase):
             self.assertEquals(0, output['return_code'])
         finally:
             request_listener.shutdown()
+            request_listener.wait_for_all_nicely()
 
     def test_message_no_fail(self):
         self._simple_message(0, "echo Hello1", "Hello1", None)
@@ -126,6 +127,7 @@ class TestSerialCommands(unittest.TestCase):
             self.assertEquals(0, output['return_code'])
 
         request_listener.shutdown()
+        request_listener.wait_for_all_nicely()
 
     def test_echo_serial_message_no_fail(self):
         self._many_message(2, 0, "echo hello")
@@ -200,6 +202,7 @@ class TestRetransmission(unittest.TestCase):
         finally:
             if request_listener:
                 request_listener.shutdown()
+                request_listener.wait_for_all_nicely()
             if disp:
                 disp.stop()
 
