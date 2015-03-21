@@ -8,9 +8,7 @@ name "dcm-agent-extras"
 maintainer "DCM"
 homepage "https://enstratius.com"
 
-# Defaults to C:/dcm-agent-extras on Windows
-# and /opt/dcm-agent-extras on all other platforms
-install_dir "#{default_root}/#{name}"
+install_dir "/opt/#{name}"
 
 build_version "0.1.0" # SEARCH_TOKEN do not delete
 #build_version Omnibus::BuildVersion.semver

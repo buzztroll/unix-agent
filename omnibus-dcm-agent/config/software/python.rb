@@ -17,7 +17,6 @@
 name "python"
 default_version "2.7.8"
 
-dependency "sqlite"
 dependency "gdbm"
 dependency "ncurses"
 dependency "zlib"
@@ -33,7 +32,6 @@ build do
   env = {
     "CFLAGS" => "-I#{install_dir}/embedded/include -O3 -g -pipe",
     "LDFLAGS" => "-Wl,-rpath,#{install_dir}/embedded/lib -L#{install_dir}/embedded/lib",
-    "CPPFLAGS" => "-I#{install_dir}/embedded/include",
   }
 
   command "./configure" \
@@ -41,8 +39,8 @@ build do
           " --enable-shared" \
           " --with-dbmliborder=gdbm", env: env
 
-  command "make", env: env
-  command "make install", env: env
+  make env: env
+  make "install", env: env
 
   # There exists no configure flag to tell Python to not compile readline
   delete "#{install_dir}/embedded/lib/python2.7/lib-dynload/readline.*"

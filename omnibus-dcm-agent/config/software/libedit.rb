@@ -14,36 +14,35 @@
 # limitations under the License.
 #
 
-name "libxslt"
-default_version "1.1.28"
+name "libedit"
+default_version "20120601-3.0"
 
-dependency "libxml2"
-dependency "libtool" if solaris2?
-dependency "liblzma"
+dependency "ncurses"
 
-version "1.1.26" do
-  source md5: "e61d0364a30146aaa3001296f853b2b9"
+version "20120601-3.0" do
+  source md5: "e50f6a7afb4de00c81650f7b1a0f5aea"
 end
 
-version "1.1.28" do
-  source md5: "9667bf6f9310b957254fdcf6596600b7"
+version "20130712-3.1" do
+  source md5: "0891336c697362727a1fa7e60c5cb96c"
 end
 
-source url: "ftp://xmlsoft.org/libxml2/libxslt-#{version}.tar.gz"
+source url: "http://www.thrysoee.dk/editline/libedit-#{version}.tar.gz"
 
-relative_path "libxslt-#{version}"
+relative_path "libedit-#{version}"
 
 build do
   env = with_standard_compiler_flags(with_embedded_path)
 
+  # The patch is from the FreeBSD ports tree and is for GCC compatibility.
+  # http://svnweb.freebsd.org/ports/head/devel/libedit/files/patch-vi.c?annotate=300896
+  if freebsd?
+    patch source: "freebsd-vi-fix.patch"
+  end
+
   command "./configure" \
-          " --prefix=#{install_dir}/embedded" \
-          " --with-libxml-prefix=#{install_dir}/embedded" \
-          " --with-libxml-include-prefix=#{install_dir}/embedded/include" \
-          " --with-libxml-libs-prefix=#{install_dir}/embedded/lib" \
-          " --without-python" \
-          " --without-crypto", env: env
+          " --prefix=#{install_dir}/embedded", env: env
 
   make "-j #{workers}", env: env
-  make "install", env: env
+  make "-j #{workers} install", env: env
 end

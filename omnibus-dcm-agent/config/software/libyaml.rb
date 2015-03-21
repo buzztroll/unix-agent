@@ -17,8 +17,7 @@
 name "libyaml"
 default_version '0.1.6'
 
-#source url: "http://pyyaml.org/download/libyaml/yaml-#{version}.tar.gz",
-source url: "http://pkgs.fedoraproject.org/repo/pkgs/libyaml/yaml-0.1.6.tar.gz/5fe00cda18ca5daeb43762b80c38e06e/yaml-0.1.6.tar.gz",
+source url: "http://pyyaml.org/download/libyaml/yaml-#{version}.tar.gz",
        md5: '5fe00cda18ca5daeb43762b80c38e06e'
 
 relative_path "yaml-#{version}"
@@ -26,8 +25,8 @@ relative_path "yaml-#{version}"
 build do
   env = with_standard_compiler_flags(with_embedded_path)
 
-  command "./configure --prefix=#{install_dir}/embedded", env: env
+  command "./configure --prefix=#{install_dir}/embedded --enable-shared", env: env
 
-  command "make -j #{max_build_jobs}", env: env
-  command "make -j #{max_build_jobs} install", env: env
+  make "-j #{workers}", env: env
+  make "-j #{workers} install", env: env
 end

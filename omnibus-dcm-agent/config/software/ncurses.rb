@@ -1,6 +1,5 @@
 #
-# Copyright:: Copyright (c) 2012-2014 Chef Software, Inc.
-# License:: Apache License, Version 2.0
+# Copyright 2012-2014 Chef Software, Inc.
 #
 # Licensed under the Apache License, Version 2.0 (the "License");
 # you may not use this file except in compliance with the License.
@@ -18,28 +17,12 @@
 name "ncurses"
 default_version "5.9"
 
-dependency "libgcc"
-dependency "libtool" if Ohai['platform'] == "aix"
+dependency "libtool" if aix?
 
 source url: "http://ftp.gnu.org/gnu/ncurses/ncurses-5.9.tar.gz",
        md5: "8cb9c412e5f2d96bc6f459aa8c6282a1"
 
 relative_path "ncurses-5.9"
-
-env = with_embedded_path()
-env = with_standard_compiler_flags(env, aix: { use_gcc: true })
-
-if Ohai['platform'] == "solaris2"
-  # gcc4 from opencsw fails to compile ncurses
-  env.merge!({"PATH" => "/opt/csw/gcc3/bin:/opt/csw/bin:/usr/local/bin:/usr/sfw/bin:/usr/ccs/bin:/usr/sbin:/usr/bin"})
-  env.merge!({"CC" => "/opt/csw/gcc3/bin/gcc"})
-  env.merge!({"CXX" => "/opt/csw/gcc3/bin/g++"})
-end
-
-# FIXME: validate omnibus-ruby sets this correctly on smartos now via with_standard_compiler_flagS()
-#elsif Ohai['platform'] == "smartos"
-#  env.merge!({"LD_OPTIONS" => "-R#{install_dir}/embedded/lib -L#{install_dir}/embedded/lib "})
-#end
 
 ########################################################################
 #
@@ -57,29 +40,37 @@ end
 ########################################################################
 
 build do
-  if Ohai['platform'] == "smartos"
+  env = with_standard_compiler_flags(with_embedded_path)
+  env.delete('CPPFLAGS')
+
+  if smartos?
     # SmartOS is Illumos Kernel, plus NetBSD userland with a GNU toolchain.
     # These patches are taken from NetBSD pkgsrc and provide GCC 4.7.0
     # compatibility:
     # http://ftp.netbsd.org/pub/pkgsrc/current/pkgsrc/devel/ncurses/patches/
-    patch source: 'patch-aa', plevel: 0
-    patch source: 'patch-ab', plevel: 0
-    patch source: 'patch-ac', plevel: 0
-    patch source: 'patch-ad', plevel: 0
-    patch source: 'patch-cxx_cursesf.h', plevel: 0
-    patch source: 'patch-cxx_cursesm.h', plevel: 0
+    patch source: "patch-aa", plevel: 0
+    patch source: "patch-ab", plevel: 0
+    patch source: "patch-ac", plevel: 0
+    patch source: "patch-ad", plevel: 0
+    patch source: "patch-cxx_cursesf.h", plevel: 0
+    patch source: "patch-cxx_cursesm.h", plevel: 0
 
     # Opscode patches - <someara@opscode.com>
     # The configure script from the pristine tarball detects xopen_source_extended incorrectly.
     # Manually working around a false positive.
-    patch source: 'ncurses-5.9-solaris-xopen_source_extended-detection.patch', plevel: 0
+    patch source: "ncurses-5.9-solaris-xopen_source_extended-detection.patch", plevel: 0
   end
 
-  if Ohai['platform'] == "aix"
-    patch source: 'patch-aix-configure', plevel: 0
+  if aix?
+    patch_env = env.dup
+    patch_env['PATH'] = "/opt/freeware/bin:#{env['PATH']}"
+
+    patch source: "patch-aix-configure", plevel: 0, env: patch_env
   end
 
-  if Ohai['platform'] == "mac_os_x"
+  if mac_os_x? ||
+    # Clang became the default compiler in FreeBSD 10+
+    (freebsd? && ohai['os_version'].to_i >= 1000024)
     # References:
     # https://github.com/Homebrew/homebrew-dupes/issues/43
     # http://invisible-island.net/ncurses/NEWS.html#t20110409
@@ -87,46 +78,50 @@ build do
     # Patches ncurses for clang compiler. Changes have been accepted into
     # upstream, but occurred shortly after the 5.9 release. We should be able
     # to remove this after upgrading to any release created after June 2012
-    patch source: 'ncurses-clang.patch'
+    patch source: "ncurses-clang.patch"
   end
 
   # build wide-character libraries
-  cmd_array = ["./configure",
-           "--prefix=#{install_dir}/embedded",
-           "--with-shared",
-           "--with-termlib",
-           "--without-debug",
-           "--without-normal", # AIX doesn't like building static libs
-           "--enable-overwrite",
-           "--enable-widec"]
+  cmd = [
+    "./configure",
+    "--prefix=#{install_dir}/embedded",
+    "--with-shared",
+    "--with-termlib",
+    "--without-debug",
+    "--without-normal", # AIX doesn't like building static libs
+    "--enable-overwrite",
+    "--enable-widec",
+    "--without-cxx-binding",
+  ]
 
-  cmd_array << "--with-libtool" if Ohai['platform'] == 'aix'
-  command(cmd_array.join(" "),
-          env: env)
-  command "make -j #{max_build_jobs}", env: env
-  command "make -j #{max_build_jobs} install", env: env
+  command cmd.join(" "), env: env
+  make "-j #{workers}", env: env
+  make "-j #{workers} install", env: env
 
-  # build non-wide-character libraries
-  command "make distclean"
-  cmd_array = ["./configure",
-           "--prefix=#{install_dir}/embedded",
-           "--with-shared",
-           "--with-termlib",
-           "--without-debug",
-           "--without-normal",
-           "--enable-overwrite"]
-  cmd_array << "--with-libtool" if Ohai['platform'] == 'aix'
-  command(cmd_array.join(" "),
-          env: env)
-  command "make -j #{max_build_jobs}", env: env
+  # Build non-wide-character libraries
+  make "distclean", env: env
 
-  # installing the non-wide libraries will also install the non-wide
+  cmd = [
+    "./configure",
+    "--prefix=#{install_dir}/embedded",
+    "--with-shared",
+    "--with-termlib",
+    "--without-debug",
+    "--without-normal",
+    "--enable-overwrite",
+    "--without-cxx-binding",
+  ]
+
+  command cmd.join(" "), env: env
+  make "-j #{workers}", env: env
+
+  # Installing the non-wide libraries will also install the non-wide
   # binaries, which doesn't happen to be a problem since we don't
   # utilize the ncurses binaries in private-chef (or oss chef)
-  command "make -j #{max_build_jobs} install", env: env
+  make "-j #{workers} install", env: env
 
   # Ensure embedded ncurses wins in the LD search path
-  if Ohai['platform'] == "smartos"
-    command "ln -sf #{install_dir}/embedded/lib/libcurses.so #{install_dir}/embedded/lib/libcurses.so.1"
+  if smartos?
+    link "#{install_dir}/embedded/lib/libcurses.so", "#{install_dir}/embedded/lib/libcurses.so.1"
   end
 end

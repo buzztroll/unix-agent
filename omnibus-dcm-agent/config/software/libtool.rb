@@ -14,14 +14,27 @@
 # limitations under the License.
 #
 
-name "preparation"
-description "the steps required to preprare the build"
-default_version '1.0.0'
+name "libtool"
+default_version "2.4"
+
+version "2.4" do
+  source md5: "b32b04148ecdd7344abc6fe8bd1bb021"
+end
+
+version "2.4.2" do
+  source md5: "d2f3b7d4627e69e13514a40e72a24d50"
+end
+
+source url: "http://ftp.gnu.org/gnu/libtool/libtool-#{version}.tar.gz"
+
+relative_path "libtool-#{version}"
 
 build do
-  block do
-    touch "#{install_dir}/embedded/lib/.gitkeep"
-    touch "#{install_dir}/embedded/bin/.gitkeep"
-    touch "#{install_dir}/bin/.gitkeep"
-  end
+  env = with_standard_compiler_flags(with_embedded_path)
+
+  command "./configure" \
+          " --prefix=#{install_dir}/embedded", env: env
+
+  make env: env
+  make "install", env: env
 end
