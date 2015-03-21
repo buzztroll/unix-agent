@@ -17,6 +17,7 @@
 name "python"
 default_version "2.7.8"
 
+dependency "sqlite"
 dependency "gdbm"
 dependency "ncurses"
 dependency "zlib"
@@ -32,6 +33,7 @@ build do
   env = {
     "CFLAGS" => "-I#{install_dir}/embedded/include -O3 -g -pipe",
     "LDFLAGS" => "-Wl,-rpath,#{install_dir}/embedded/lib -L#{install_dir}/embedded/lib",
+    "CPPFLAGS" => "-I#{install_dir}/embedded/include",
   }
 
   command "./configure" \
