@@ -1,5 +1,5 @@
 name "dcm-agent"
-default_version "0.9.12"
+default_version Omnibus::BuildVersion.new.git_describe
 
 dependency "python"
 dependency "pip"
