@@ -42,7 +42,7 @@ if [ ! -x "$CHEF_CLIENT" ]; then
    if [ -x "$CHEF_CLIENT" ]; then
     $LOGGER -t "$logTag" "Found chef-client in `echo ${CHEF_CLIENT}`"
    else
-    $LOGGER -t "$logTag" "Chef was not installed correctly`"
+    $LOGGER -t "$logTag" "Chef was not installed correctly"
     exit 99
    fi
    $LOGGER -t "$logTag" "Chef-client install successfully"
