@@ -31,19 +31,19 @@ CHEF_ENVIRONMENT=$7
 CLIENT_RB='/etc/chef/client.rb'
 
 # Check for chef-client
-CHEF_CLIENT=`which chef-client`
-
-if [ $? != 0 ]; then
+CHEF_CLIENT=/opt/chef/bin/chef-client
+if [ ! -x "$CHEF_CLIENT" ]; then
    $LOGGER -t "$logTag" "No chef-client found on system. Installing"
    curl -L http://www.opscode.com/chef/install.sh | sudo bash -s -- -v 11.16.4
    if [ $? != 0 ]; then
 	$LOGGER -t "$logTag" "Unable to install Chef automatically"
 	exit 1
    fi
-   CHEF_CLIENT=`which chef-client`
-   if [ $? != 0 ]; then
-	$LOGGER -t "$logTag" "Still unable to find chef-client. Failing"
-	exit 1
+   if [ -x "$CHEF_CLIENT" ]; then
+    $LOGGER -t "$logTag" "Found chef-client in `echo ${CHEF_CLIENT}`"
+   else
+    $LOGGER -t "$logTag" "Chef was not installed correctly"
+    exit 99
    fi
    $LOGGER -t "$logTag" "Chef-client install successfully"
 fi
