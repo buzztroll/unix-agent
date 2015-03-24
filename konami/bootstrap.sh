@@ -20,13 +20,10 @@ curl $AGENT_BASE_URL/installer.sh > /root/dcmagent/installer.sh
 
 echo "Executing installer."
 echo "/bin/bash /root/dcmagent/installer.sh -I"
-/bin/bash /root/dcmagent/installer.sh -I
+/bin/bash /root/dcmagent/installer.sh --url $DCM_AGENT_URL --cloud $DCM_AGENT_CLOUD
 
 # apt-get clean && rm -rf /var/lib/apt/lists/* /tmp/* /var/tmp/*
 
-echo "Reconfiguring agent."
-echo "/opt/dcm-agent/embedded/agentve/bin/dcm-agent-configure -r /dcm/etc/agent.conf --url $DCM_AGENT_URL --cloud $DCM_AGENT_CLOUD"
-/opt/dcm-agent/embedded/agentve/bin/dcm-agent-configure -r /dcm/etc/agent.conf --url $DCM_AGENT_URL --cloud $DCM_AGENT_CLOUD
 mv /etc/init.d/dcm-agent /root
 # killall 
 
