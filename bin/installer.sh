@@ -204,9 +204,6 @@ function identify_platform() {
             "RedHatEnterpriseServer")
                 distro_name="rhel"
                 ;;
-            "SUSE LINUX")
-                distro_name="suse"
-                ;;
             *)
                 echo "Sorry we could not detect your environment"
                 exit 1
@@ -236,27 +233,17 @@ function identify_platform() {
     elif [ -f "/etc/debian_version" ]; then
         distro_version=$(cat /etc/debian_version)
         distro_name="debian"
-    elif [ -f "/etc/SuSE-release" ]; then
-        distro_version=$(cat /etc/issue | awk '{print $2}')
-        distro_name="suse"
-    elif [ -f "/etc/system-release" ]; then
-        platform=$(sed 's/^\(.\+\) release.\+/\1/' /etc/system-release | tr '[A-Z]' '[a-z]')
-        # amazon is built off of fedora, so act like RHEL
-        if [ "$platform" = "amazon linux ami" ]; then
-            platform="el"
-            pkg_ext="rpm"
-            installer_cmd="rpm -Uvh"
-        fi
     else
         echo "[ERROR] Unable to identify platform."
         exit 1
     fi
+
     major_version=`echo $distro_version | awk -F '.' '{ print $1 }'`
     minor_version=`echo $distro_version | awk -F '.' '{ print $2 }'`
-    if [ "X$minor_version" == "X" ]; then
-        distro_version=$major_version
-    else
+    if [ "$distro_name" == "ubuntu" ]; then
         distro_version="$major_version"".""$minor_version"
+    else
+        distro_version=$major_version
     fi
 
     echo "determining architecture..."
@@ -299,12 +286,6 @@ function set_installer() {
             pkg_ext="rpm"
             installer_cmd="rpm -Uvh"
             pkg_mgr_cmd="yum install -y"
-            ;;
-        suse*)
-            platform="suse"
-            pkg_ext="deb"
-            installer_cmd="dpkg -i"
-            pkg_mgr_cmd="apt-get install -y"
             ;;
         *)
             echo "Sorry we could not detect your environment"
