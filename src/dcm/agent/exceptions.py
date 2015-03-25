@@ -52,6 +52,22 @@ class AgentOptionValueNotSetException(AgentOptionException):
         super(AgentOptionValueNotSetException, self).__init__(message)
 
 
+class AgentOptionValueAlreadySetException(AgentOptionException):
+    def __init__(self, opt_name, msg=None):
+        message = ("%(opt_name)s has already been used." % locals())
+        if msg:
+            message = message + " " + msg
+        super(AgentOptionValueAlreadySetException, self).__init__(message)
+
+
+class AgentOptionValueNotSetException(AgentOptionException):
+    def __init__(self, opt_name, value, msg=None):
+        message = ("The value %(value)s for option %(opt_name)s has not been set." % locals())
+        if msg:
+            message = message + " " + msg
+        super(AgentOptionValueNotSetException, self).__init__(message)
+
+
 class AgentOptionPathNotFoundException(AgentOptionException):
     def __init__(self, name, path):
         message = ("The config option %(name)s points to an invalid path: "
