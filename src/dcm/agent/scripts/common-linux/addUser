@@ -134,18 +134,21 @@ if [ "X${SSH_KEY_FILE}" != "X" ]; then
     sudo chmod 600 /home/${USER_ID}/.ssh/authorized_keys 2>&1 | $LOGGER -t "$logTag"
     ret=${PIPESTATUS}
 fi
-if [ $(id -Z) ]; then
-	if [ -x /sbin/restorecon ]; then
-		sudo /sbin/restorecon -R /home/${USER_ID}
-		if [ $? -eq 0 ]; then
-			$LOGGER -t "$logTag" "SELinux context configured on /home/${USER_ID}"
-		else
-			$LOGGER -t "$logTag" "Failed to configure SELinux context."
-			exit 50
-		fi
-	else
-		$LOGGER -t "$logTag" "SELinux detected but couldn't run restorecon to configure SELinux context."
-	fi
+
+if [ -e /etc/selinux/ ]; then
+    if [ $(id -Z) ]; then
+        if [ -x /sbin/restorecon ]; then
+            sudo /sbin/restorecon -R /home/${USER_ID}
+            if [ $? -eq 0 ]; then
+                $LOGGER -t "$logTag" "SELinux context configured on /home/${USER_ID}"
+            else
+                $LOGGER -t "$logTag" "Failed to configure SELinux context."
+                exit 50
+            fi
+        else
+            $LOGGER -t "$logTag" "SELinux detected but couldn't run restorecon to configure SELinux context."
+        fi
+    fi
 fi
 
 if [ -x ${CUSTOM}-post ] ; then
