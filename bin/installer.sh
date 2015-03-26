@@ -240,10 +240,10 @@ function identify_platform() {
 
     major_version=`echo $distro_version | awk -F '.' '{ print $1 }'`
     minor_version=`echo $distro_version | awk -F '.' '{ print $2 }'`
-    if [ "$distro_name" == "ubuntu" ]; then
-        distro_version="$major_version"".""$minor_version"
-    else
+    if [ "X$minor_version" == "X" ]; then
         distro_version=$major_version
+    else
+        distro_version="$major_version"".""$minor_version"
     fi
 
     echo "determining architecture..."
