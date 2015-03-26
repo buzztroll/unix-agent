@@ -1,4 +1,4 @@
-# 0.9.12 (2015-3-10)
+# 0.9.13 (2015-3-25)
 
 Features:
 * Report an error if sudo is not found on the system.
@@ -8,11 +8,19 @@ Features:
 * Added support for DCM konami instances.
 * Added an omnibus builder for soft dependencies.  Currently puppet is
   the only package needed.
-* Added dditional logging.
+* Added switches to the installer to download and install the extras
+  packages.
+* Added additional logging.
 * Upgraded to SQLite 3.8
+* Upgraded builder to omnibus 4.0
 
 Bug Fixes
 * Updated the certs package for curl.
+* Fixed a bug prevent chef from running on RHEL
+* Cleared the environment before running the agent.  This eliminated a
+  problem when starting the agent with proxy variables set.
+* Fixed a bug in the test suite that caused occasional "read-only DB"
+  error.
 
 # 0.9.12 (2015-1-25)
 
