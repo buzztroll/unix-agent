@@ -1,5 +1,6 @@
 import threading
 import psutil
+import time
 
 from dcm.agent import exceptions
 import dcm.agent.utils as agent_util
@@ -57,10 +58,11 @@ class CpuIdleSystemStats(SystemStats):
 
     def wait(self):
         load = psutil.cpu_percent(self.interval)
-        self.add_value(load)
+        timestamp = time.time()
+        self.add_value({'idle': load, 'timestamp': timestamp})
 
     def get_stats_type(self):
-        return "float_array"
+        return "cpu_idle_stat_array"
 
 
 _g_stat_object_map = {
