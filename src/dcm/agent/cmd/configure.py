@@ -442,7 +442,9 @@ def enable_start_agent(opts):
         ans = sys.stdin.readline().strip()
         on_boot = ans == "" or ans.lower() == "y" or ans.lower() == "yes"
     if on_boot:
-        if os.path.exists("/usr/sbin/update-rc.d"):
+        if os.path.exists("/sbin/insserv"):
+            os.system("/sbin/insserv dcm-agent")
+        elif os.path.exists("/usr/sbin/update-rc.d"):
             os.system("update-rc.d dcm-agent defaults")
         elif os.path.exists("/sbin/chkconfig"):
             os.system("/sbin/chkconfig --add dcm-agent")
