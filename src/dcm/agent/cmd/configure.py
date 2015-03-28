@@ -180,6 +180,7 @@ def guess_default_cloud(conf_d):
     name = cloudmetadata.guess_effective_cloud(conf)
     if name is None:
         raise Exception("Cloud %s is not a known type." % cloud_name)
+    print "The detected cloud is " + name
     conf_d["cloud"]["type"] = (h, name)
 
 

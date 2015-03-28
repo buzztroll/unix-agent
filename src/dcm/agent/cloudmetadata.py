@@ -189,18 +189,14 @@ class JoyentMetaData(CloudMetaData):
 
     def get_cloud_metadata(self, key):
         _g_logger.debug("Get metadata %s" % key)
-        if platform.version().startswith("Sun"):
-            cmd = "/usr/sbin/mdata-get"
-        else:
-            cmd = "/lib/smartdc/mdata-get"
-
+        cmd = "/usr/sbin/mdata-get"
         cmd_args = ["/usr/bin/sudo", cmd, key]
         (stdout, stderr, rc) = utils.run_command(self.conf, cmd_args)
         if rc != 0:
-            result = None
+            result = stderr.strip()
         else:
             result = stdout.strip()
-        _g_logger.debug("Metadata value of %s is %s" % (key, result))
+        _g_logger.debug("Metadata value of %s is %s" % (key, str(result)))
         return result
 
     def get_instance_id(self):
@@ -259,7 +255,7 @@ class AzureMetaData(CloudMetaData):
         return "%s:%s:%s" % (ha[0], ha[0], ha[0])
 
     def is_effective_cloud(self):
-        pass
+        return os.path.exits("/etc/waagent.conf")
 
     def get_cloud_type(self):
         return CLOUD_TYPES.Azure
@@ -358,6 +354,7 @@ def guess_effective_cloud(conf):
     ]
     for md in ordered_list_of_clouds:
         if md.is_effective_cloud():
+            _g_logger.info("Using cloud " + md.get_cloud_type())
             return md.get_cloud_type()
     return CLOUD_TYPES.UNKNOWN
 
