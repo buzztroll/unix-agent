@@ -21,29 +21,12 @@ import dcm.agent.jobs.direct_pass as direct_pass
 _g_logger = logging.getLogger(__name__)
 
 
-def _is_valid_hostname(hostname):
-    if len(hostname) > 255:
-        return False
-    if hostname[-1] == ".":
-        hostname = hostname[:-1]
-    allowed = re.compile("(?!-)[A-Z\d-]{1,63}(?<!-)$", re.IGNORECASE)
-    return all(allowed.match(x) for x in hostname.split("."))
-
-
-def legalize(hostname):
-    new_hostname = []
-    for c in hostname:
-        if (c >= 'a' and c <= 'z') or\
-            (c >= 'A' and c <= 'Z') or\
-            (c >= '0' and c <= '9') or\
-                c == '-' or c == '.':
-            new_hostname.append(c)
-        elif c == ' ' or c == '_':
-            new_hostname.append('-')
-    if len(new_hostname) < 1:
-        return 'unknown'
-
-    return ''.join(new_hostname)
+def is_legal(proposed_name):
+    regex = "^(([a-zA-Z]|[a-zA-Z][a-zA-Z0-9\-]*[a-zA-Z0-9])\.)*([A-Za-z]|[A-Za-z][A-Za-z0-9\-]*[A-Za-z0-9])$"
+    allowed = re.compile(regex)
+    if allowed is None:
+        raise exceptions.AgentPluginMessageException(
+                "%s is an invalid hostname" % proposed_name)
 
 
 class Rename(direct_pass.DirectPass):
@@ -58,12 +41,8 @@ class Rename(direct_pass.DirectPass):
         super(Rename, self).__init__(
             conf, job_id, items_map, name, arguments)
 
-        hname = legalize(arguments["serverName"])
-        if not _is_valid_hostname(hname):
-            raise exceptions.AgentPluginMessageException(
-                "%s is an invalid hostname" % hname)
-
-        self.ordered_param_list = [hname]
+        is_legal(arguments["serverName"])
+        self.ordered_param_list = [arguments["serverName"]]
 
     def run(self):
         private_ips = self.conf.meta_data_object.get_ipv4_addresses(self.conf)
