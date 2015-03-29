@@ -626,8 +626,8 @@ class TestProtocolCommands(reply.ReplyObserverInterface):
         }
         req_reply = self._rpc_wait_reply(doc)
         r = req_reply.get_reply()
-        nose.tools.ok_(r["payload"]["return_code"] == 0)
-        nose.tools.eq_(socket.gethostname(), "unknown")
+        nose.tools.ok_(r["payload"]["return_code"] != 0)
+        nose.tools.eq_(socket.gethostname(), orig_hostname)
 
         doc = {
             "command": "rename",

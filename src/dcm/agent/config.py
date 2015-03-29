@@ -22,11 +22,9 @@ _g_logger = logging.getLogger(__name__)
 
 class PLATFORM_TYPES(object):
     PLATFORM_UBUNTU = "ubuntu"
-    PLATFORM_SUSE = "suse"
     PLATFORM_RHEL = "rhel"
     PLATFORM_CENTOS = "centos"
     PLATFORM_DEBIAN = "debian"
-    PLATFORM_FEDORE = "fedora_core"
 
 
 def get_all_platforms():
