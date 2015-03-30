@@ -538,7 +538,7 @@ class TestProtocolCommands(reply.ReplyObserverInterface):
         orig_hostname = socket.gethostname()
 
         new_hostname = ''.join(random.choice(
-            string.ascii_letters) for n in range(256))
+            string.ascii_letters) for n in range(512))
 
         doc = {
             "command": "rename",

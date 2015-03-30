@@ -192,8 +192,9 @@ class JoyentMetaData(CloudMetaData):
         cmd = "/usr/sbin/mdata-get"
         cmd_args = ["/usr/bin/sudo", cmd, key]
         (stdout, stderr, rc) = utils.run_command(self.conf, cmd_args)
+        _g_logger.debug("Joyent metadata %d %s %s" % (rc, stdout, stderr))
         if rc != 0:
-            result = stderr.strip()
+            result = None
         else:
             result = stdout.strip()
         _g_logger.debug("Metadata value of %s is %s" % (key, str(result)))

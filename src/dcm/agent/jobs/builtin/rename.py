@@ -22,6 +22,10 @@ _g_logger = logging.getLogger(__name__)
 
 
 def is_legal(proposed_name):
+    if len(proposed_name) > 255:
+        raise exceptions.AgentPluginMessageException(
+                "%s is an invalid hostname.  Too long" % proposed_name)
+
     regex = "^(([a-zA-Z]|[a-zA-Z][a-zA-Z0-9\-]*[a-zA-Z0-9])\.)*([A-Za-z]|[A-Za-z][A-Za-z0-9\-]*[A-Za-z0-9])$"
     allowed = re.compile(regex)
     if allowed is None:
