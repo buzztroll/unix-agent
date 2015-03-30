@@ -127,11 +127,15 @@ function identify_distro_version() {
         distro=$(echo $redhat_info | awk '{print $1}')
         case $distro in
             CentOS)
-                export DCM_AGENT_DISTRO_VERSION_FULL=$(echo $redhat_info | awk '{print $3}')
+                temp_name=$(echo $redhat_info | awk '{print $3}')
+                if [ "X$temp_name" == "Xrelease" ]; then
+                    temp_name=$(echo $redhat_info | awk '{print $4}')
+                fi
+                export DCM_AGENT_DISTRO_VERSION_FULL=$temp_name
                 export DCM_AGENT_DISTRO_NAME="centos"
             ;;
             Red)
-                export DCM_AGENT_DISTRO_VERSION_FULL=$(echo $redhat_info | awk '{print $4}')
+                export DCM_AGENT_DISTRO_VERSION_FULL=$(echo $redhat_info | awk '{print $7}')
                 export DCM_AGENT_DISTRO_NAME="rhel"
             ;;
             *)
