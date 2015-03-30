@@ -478,22 +478,36 @@ def install_extras(conf, package=None):
         else:
             arch = "x86_64"
 
+    while location.endswith('/'):
+        location = location[:-1]
     _g_logger.info("Installing extra packages from %s" % location)
+
     if not package:
+        major_only_pkg_version = conf.platform_version.split(".")[0]
         version = dcm.agent.g_version.split('-')[0]
         package = '%s-%s-%s-%s-%s.%s' %\
                   (_g_extras_pkgs_name,
                    conf.platform_name, pkg_version,
                    version, arch, pkg_suffix)
-    while location.endswith('/'):
-        location = location[:-1]
-
-    full_url = "%s/%s" % (location, package)
+        major_only_package = '%s-%s-%s-%s-%s.%s' %\
+                  (_g_extras_pkgs_name,
+                   conf.platform_name, major_only_pkg_version,
+                   version, arch, pkg_suffix)
+        try_packages = ["%s/%s" % (location, package),
+                        "%s/%s" % (location, major_only_package)]
+    else:
+        try_packages = ["%s/%s" % (location, package)]
 
     _, pkg_file = tempfile.mkstemp()
 
     _g_logger.debug("Downloading the extras package file")
-    http_get_to_file(full_url, pkg_file)
+    try:
+        http_get_to_file(try_packages[0], pkg_file)
+    except BaseException as ex:
+        _g_logger.warn("Failed to download the extras package %s.  Falling "
+                       "back to the major only version." % try_packages[0])
+        http_get_to_file(try_packages[1], pkg_file)
+
     install_command = _g_map_platform_installer[conf.platform_name][:]
     install_command.append(pkg_file)
     _g_logger.debug("Running: %s" % install_command)
