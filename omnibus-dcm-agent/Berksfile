@@ -8,6 +8,5 @@ cookbook 'omnibus'
 cookbook 'build-essential', :github => 'opscode-cookbooks/build-essential'
 cookbook 'git'
 
-cookbook 'build_dcm_pyagent', path: 'site-cookbooks/build_dcm_pyagent'
 # Uncomment to use the latest version of the Omnibus cookbook from GitHub
 # cookbook 'omnibus', github: 'opscode-cookbooks/omnibus'
