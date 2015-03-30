@@ -84,6 +84,7 @@ Optional Arguments:
 "
 }
 
+
 if [ $# -gt 0 ]; then
     if [[ "X$1" == "X--help" || "X$1" == "X-h" ]]; then
         print_help
@@ -91,11 +92,118 @@ if [ $# -gt 0 ]; then
     fi;
 fi
 
-which sudo
-if [ $? -ne 0 ]; then
-  echo 'sudo must be installed to continue...exiting now.'
-  exit 1
-fi
+# This will set:
+#   DCM_AGENT_DISTRO_NAME
+#   DCM_AGENT_DISTRO_VERSION_FULL
+#   DCM_AGENT_DISTRO_VERSION_X
+#   DCM_AGENT_DISTRO_VERSION_Y
+#   DCM_AGENT_DISTRO_VERSION_Z
+#   DCM_AGENT_DISTRO_VERSION_USED
+function identify_distro_version() {
+
+    if [ -x "/usr/bin/lsb_release" ]; then
+        lsb_info=$(/usr/bin/lsb_release -i | cut -f2)
+        DCM_AGENT_DISTRO_VERSION_FULL=$(/usr/bin/lsb_release -r | cut -f2)
+        case $lsb_info in
+            "Ubuntu")
+                export DCM_AGENT_DISTRO_NAME="ubuntu"
+                ;;
+            "Debian")
+                export DCM_AGENT_DISTRO_NAME="debian"
+                ;;
+            "CentOS")
+                export DCM_AGENT_DISTRO_NAME="centos"
+                ;;
+            "RedHatEnterpriseServer")
+                export DCM_AGENT_DISTRO_NAME="rhel"
+                ;;
+            "n/a")
+                echo "Sorry we could not detect your environment"
+                exit 1
+                ;;
+        esac
+    elif [ -f "/etc/redhat-release" ]; then
+        redhat_info=$(cat /etc/redhat-release)
+        distro=$(echo $redhat_info | awk '{print $1}')
+        case $distro in
+            CentOS)
+                export DCM_AGENT_DISTRO_VERSION_FULL=$(echo $redhat_info | awk '{print $3}')
+                export DCM_AGENT_DISTRO_NAME="centos"
+            ;;
+            Red)
+                export DCM_AGENT_DISTRO_VERSION_FULL=$(echo $redhat_info | awk '{print $4}')
+                export DCM_AGENT_DISTRO_NAME="rhel"
+            ;;
+            *)
+                echo "Sorry we could not detect your environment"
+                exit 1
+                ;;
+        esac
+    elif [ -f "/etc/debian_version" ]; then
+        export DCM_AGENT_DISTRO_VERSION_FULL=$(cat /etc/debian_version)
+        export DCM_AGENT_DISTRO_NAME="debian"
+    else
+        echo "[ERROR] Unable to identify platform."
+        exit 1
+    fi
+
+    export DCM_AGENT_DISTRO_VERSION_X=`echo $DCM_AGENT_DISTRO_VERSION_FULL | awk -F . '{ print $1 }'`
+    export DCM_AGENT_DISTRO_VERSION_Y=`echo $DCM_AGENT_DISTRO_VERSION_FULL | awk -F . '{ print $2 }'`
+    export DCM_AGENT_DISTRO_VERSION_Z=`echo $DCM_AGENT_DISTRO_VERSION_FULL | awk -F . '{ print $3 }'`
+
+    export DCM_AGENT_DISTRO_VERSION_USED="$DCM_AGENT_DISTRO_VERSION_X.$DCM_AGENT_DISTRO_VERSION_Y"
+}
+
+# DCM_AGENT_PKG_EXTENSION
+# DCM_AGENT_INSTALLER_CMD
+function identify_package_installer_extension() {
+    distro_name=$1
+
+    case $distro_name in
+        "ubuntu")
+            export DCM_AGENT_PKG_EXTENSION="deb"
+            export DCM_AGENT_INSTALLER_CMD="dpkg -i"
+            export DCM_AGENT_PACKAGE_MANAGER_INSTALL_CMD="apt-get install -y"
+            ;;
+        "debian")
+            export DCM_AGENT_PKG_EXTENSION="deb"
+            export DCM_AGENT_INSTALLER_CMD="dpkg -i"
+            export DCM_AGENT_PACKAGE_MANAGER_INSTALL_CMD="apt-get install -y"
+            ;;
+        "centos")
+            export DCM_AGENT_PKG_EXTENSION="rpm"
+            export DCM_AGENT_INSTALLER_CMD="rpm -Uvh"
+            export DCM_AGENT_PACKAGE_MANAGER_INSTALL_CMD="yum install -y"
+            ;;
+        "rhel")
+            export DCM_AGENT_PKG_EXTENSION="rpm"
+            export DCM_AGENT_INSTALLER_CMD="rpm -Uvh"
+            export DCM_AGENT_PACKAGE_MANAGER_INSTALL_CMD="yum install -y"
+            ;;
+        *)
+            echo "Sorry that is not a valid distribution"
+            exit 1
+            ;;
+    esac
+}
+
+# DCM_AGENT_ARCHITECTURE
+function identify_package_architecture() {
+    distro_name=$1
+
+    tmp_bits=`uname -m`
+    if [ "Xx86_64" == "X$tmp_bits" ]; then
+        d=`echo $distro | sed "s/-.*//"`
+        if [[ "$distro_name" == "centos" || "$distro_name" == "rhel" ]]; then
+            export DCM_AGENT_ARCHITECTURE="x86_64"
+        else
+            export DCM_AGENT_ARCHITECTURE="amd64"
+        fi
+    else
+        export DCM_AGENT_ARCHITECTURE="i386"
+    fi
+}
+
 
 # Read input from terminal even if stdin is pipe.
 # This function is to be used for interactive dialogue.
@@ -116,51 +224,51 @@ function read_terminal() {
     echo $input
 }
 
+
 # Install agent. It downloads a distro-specific agent.
-function install_agent(){
+function download_agent_package {
     base_url=$1
     filename=$2
     url="$base_url/$filename"
     echo "Downloading DCM Agent from $url"
     echo "This may take a few minutes."
 
+    export DCM_AGENT_SYSTEM_PACKAGE="/tmp/$filename"
     if [ "X$AGENT_LOCAL_PACKAGE" == "X" ]; then
         echo "Downloading $url ..."
-        curl -s -L $url > /tmp/$filename
+        curl --fail -s -L $url > $DCM_AGENT_SYSTEM_PACKAGE
     else
         if [[ $AGENT_LOCAL_PACKAGE == *://* ]] ; then
-            curl -s -L $AGENT_LOCAL_PACKAGE > /tmp/$filename
+            curl --fail -s -L $AGENT_LOCAL_PACKAGE > $DCM_AGENT_SYSTEM_PACKAGE
         else
-            cp $AGENT_LOCAL_PACKAGE /tmp/$filename
+            cp $AGENT_LOCAL_PACKAGE $DCM_AGENT_SYSTEM_PACKAGE
         fi
     fi
+}
 
-    if [ $? -ne 0 ]; then
-        echo "[ERROR] Download failed. Cannot install the agent."
-        echo "$url was not found."
-        echo "Your distribution may not be supported."
-        exit 1
-    fi
 
-    if [ ! -s /tmp/$filename ]; then
-        echo "[ERROR] Unable to retrieve a valid package!"
-        echo "URL: $url"
+# Install agent. It downloads a distro-specific agent.
+function install_agent(){
+
+    echo "Installing $DCM_AGENT_SYSTEM_PACKAGE"
+    if [ ! -s $DCM_AGENT_SYSTEM_PACKAGE ]; then
+        echo "[ERROR] There is no local package to install.  The download failed."
         exit 1
     fi
 
     echo "Installing DCM Agent."
     cd /tmp
 
-    $installer_cmd $filename
+    $DCM_AGENT_INSTALLER_CMD $DCM_AGENT_SYSTEM_PACKAGE
     if [ $? -ne 0 ]; then
         echo "[ERROR] Installation failed."
         exit 1
     fi
 
     cd ~
-    rm -f /tmp/${filename} 2>&1 > /dev/null
-    rm -rf /tmp/enstratus 2>&1 > /dev/null
+    rm -f $DCM_AGENT_SYSTEM_PACKAGE 2>&1 > /dev/null
 }
+
 
 # Install chef-client.
 function install_chef_client {
@@ -181,165 +289,86 @@ function install_chef_client {
 
     if [[ $chef_install == "yes" ]]; then
         echo "Installing chef-client."
-        curl -s -L https://www.opscode.com/chef/install.sh | bash
+        curl -L http://www.opscode.com/chef/install.sh | sudo bash -s -- -v 11.16.4
         echo "Done."
     fi
 }
 
-# Identify platform.
-function identify_platform() {
-    if [ -x "/usr/bin/lsb_release" ]; then
-        lsb_info=$(/usr/bin/lsb_release -i | cut -f2)
-        distro_version=$(/usr/bin/lsb_release -r | cut -f2)
-        case $lsb_info in
-            "Ubuntu")
-                distro_name="ubuntu"
-                ;;
-            "Debian")
-                distro_name="debian"
-                ;;
-            "CentOS")
-                distro_name="centos"
-                ;;
-            "RedHatEnterpriseServer")
-                distro_name="rhel"
-                ;;
-            *)
-                echo "Sorry we could not detect your environment"
-                exit 1
-                ;;
-        esac
-    elif [ -f "/etc/redhat-release" ]; then
-        redhat_info=$(cat /etc/redhat-release)
-        distro=$(echo $redhat_info | awk '{print $1}')
-        case $distro in
-            CentOS)
-                distro_version=$(echo $redhat_info | awk '{print $3}')
-                distro_name="centos"
-            ;;
-            Red)
-                distro_version=$(echo $redhat_info | awk '{print $4}')
-                distro_name="rhel"
-            ;;
-            Fedora)
-                distro_version=$(echo $redhat_info | awk '{print $3}')
-                distro_name="fedora"
-            ;;
-            *)
-                echo "Sorry we could not detect your environment via RHEL path"
-                exit 1
-                ;;
-        esac
-    elif [ -f "/etc/debian_version" ]; then
-        distro_version=$(cat /etc/debian_version)
-        distro_name="debian"
-    else
-        echo "[ERROR] Unable to identify platform."
-        exit 1
-    fi
 
-    major_version=`echo $distro_version | awk -F '.' '{ print $1 }'`
-    minor_version=`echo $distro_version | awk -F '.' '{ print $2 }'`
-    if [ "X$minor_version" == "X" ]; then
-        distro_version=$major_version
-    else
-        distro_version="$major_version"".""$minor_version"
-    fi
-
-    echo "determining architecture..."
-    tmp_bits=`uname -m`
-    if [ "Xx86_64" == "X$tmp_bits" ]; then
-        if [[ "X$distro_name" == "Xcentos" || "X$distro_name" == "Xrhel" || "X$distro_name" == "Xfedora" ]]; then
-             arch="-x86_64"
-        else
-             arch="-amd64"
-        fi
-    else
-        arch="-i386"
-    fi
-    echo "done"
-    export DCM_AGENT_FORCE_DISTRO_VERSION="$distro_name""-""$distro_version""$arch"
-}
-
-function set_installer() {
-    case $DCM_AGENT_FORCE_DISTRO_VERSION in
-        ubuntu*)
-            platform="ubuntu"
-            pkg_ext="deb"
-            installer_cmd="dpkg -i"
-            pkg_mgr_cmd="apt-get install -y"
-            ;;
-        debian*)
-            platform="debian"
-            pkg_ext="deb"
-            installer_cmd="dpkg -i"
-            pkg_mgr_cmd="apt-get install -y"
-            ;;
-        cent*)
-            platform="el"
-            pkg_ext="rpm"
-            installer_cmd="rpm -Uvh"
-            pkg_mgr_cmd="yum install -y"
-            ;;
-        rhel*)
-            platform="el"
-            pkg_ext="rpm"
-            installer_cmd="rpm -Uvh"
-            pkg_mgr_cmd="yum install -y"
-            ;;
-        *)
-            echo "Sorry we could not detect your environment"
+function handle_deps {
+    which curl > /dev/null
+    if [ $? -ne 0 ]; then
+        $DCM_AGENT_PACKAGE_MANAGER_INSTALL_CMD curl
+        if [ $? -ne 0 ]; then
+            echo "curl must be installed on your system to use this installer."
             exit 1
-            ;;
-    esac
+        fi
+    fi
+    which sudo > /dev/null
+    if [ $? -ne 0 ]; then
+        DCM_AGENT_PACKAGE_MANAGER_INSTALL_CMD sudo
+        if [ $? -ne 0 ]; then
+            echo "sudo must be installed on your system to use this installer."
+            exit 1
+        fi
+    fi
 }
 
-if [ "X$DCM_AGENT_FORCE_DISTRO_VERSION" == "X" ]; then
-    identify_platform
-fi
-echo $DCM_AGENT_FORCE_DISTRO_VERSION
-set_installer
 
-which curl > /dev/null
-if [ $? -ne 0 ]; then
-    $pkg_mgr_cmd curl
-    if [ $? -ne 0 ]; then
-        echo "curl must be installed on your system to use this installer."
-        exit 1
+function set_base_url {
+    if [[ "X$AGENT_BASE_URL" == "X" || "X$AGENT_BASE_URL" == "XNONE" ]]; then
+        if [ "X$AGENT_UNSTABLE" != "X" ]; then
+            export AGENT_BASE_URL="https://s3.amazonaws.com/dcmagentunstable"
+        else
+            export AGENT_BASE_URL="https://es-pyagent.s3.amazonaws.com"
+        fi
     fi
-fi
-which sudo > /dev/null
-if [ $? -ne 0 ]; then
-    $pkg_mgr_cmd sudo
-    if [ $? -ne 0 ]; then
-        echo "sudo must be installed on your system to use this installer."
-        exit 1
-    fi
-fi
+}
 
-if [[ "X$AGENT_BASE_URL" == "X" && "X$AGENT_BASE_URL" != "XNONE" ]]; then
-    if [ "X$AGENT_UNSTABLE" != "X" ]; then
-        base_url="https://s3.amazonaws.com/dcmagentunstable"
-    else
-        base_url="https://es-pyagent.s3.amazonaws.com"
-    fi
-else
-    base_url=$AGENT_BASE_URL
-fi
+
+set_base_url
+identify_distro_version
+identify_package_installer_extension $DCM_AGENT_DISTRO_NAME
+identify_package_architecture $DCM_AGENT_DISTRO_NAME
+handle_deps
 
 agent_version_ext=""
 if [ "X$AGENT_VERSION" != "X" ]; then
     agent_version_ext="-$AGENT_VERSION"
 fi
 
-fname="dcm-agent-$DCM_AGENT_FORCE_DISTRO_VERSION$agent_version_ext.$pkg_ext"
+# If the agent version is set we use only it
+if [ ! -z $DCM_AGENT_FORCE_DISTRO_VERSION ]; then
+    echo $DCM_AGENT_FORCE_DISTRO_VERSION
+    fname="dcm-agent-$DCM_AGENT_FORCE_DISTRO_VERSION$agent_version_ext.$DCM_AGENT_PKG_EXTENSION"
+    echo "Using the forced distro package $fname"
+    download_agent_package $AGENT_BASE_URL $fname
+else
+
+    # first try to get the major.minor package version
+    dcm_agent_distro_version=$DCM_AGENT_DISTRO_NAME-$DCM_AGENT_DISTRO_VERSION_X.$DCM_AGENT_DISTRO_VERSION_Y-$DCM_AGENT_ARCHITECTURE
+    echo "Attempting to download the version for $dcm_agent_distro_version"
+    fname="dcm-agent-$dcm_agent_distro_version$agent_version_ext.$DCM_AGENT_PKG_EXTENSION"
+    echo "    $fname"
+    download_agent_package $AGENT_BASE_URL $fname
+    if [ $? -ne 0 ]; then
+        echo "WARNING:  The specific version of your distribution has not been tested."
+        echo "WARNING:  We will try to install the by major version only.  In most cases this will work."
+
+        dcm_agent_distro_version=$DCM_AGENT_DISTRO_NAME-$DCM_AGENT_DISTRO_VERSION_X-$DCM_AGENT_ARCHITECTURE
+        echo "Attempting to download the version for $dcm_agent_distro_version"
+        fname="dcm-agent-$dcm_agent_distro_version$agent_version_ext.$DCM_AGENT_PKG_EXTENSION"
+        echo "    $fname"
+        download_agent_package $AGENT_BASE_URL $fname
+    fi
+fi
+if [ $? -ne 0 ]; then
+    echo "ERROR: We failed to find a package for your system"
+    exit 1
+fi
 
 echo "Starting the installation process..."
-
-# Detect an existing agent and kill it.
-
-# Install agent.
-install_agent $base_url $fname
+install_agent
 
 # Create configuration file and optionally install chef client(subject to change).
 if [ "X$1" == "X" ]; then
@@ -364,7 +393,6 @@ else
     env -i /opt/dcm-agent/embedded/bin/dcm-agent-configure $@
 fi
 
-
 # Notification for non-native packages.
 if [[ $platform != 'ubuntu' ]]; then
     echo "========================================================================================="
@@ -376,4 +404,3 @@ fi
 
 echo "To start the agent now please run:"
 echo " /etc/init.d/dcm-agent start"
-
