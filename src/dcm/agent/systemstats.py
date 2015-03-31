@@ -19,20 +19,24 @@ class SystemStats(object):
 
     def run(self):
         while not self._done:
-            self._cond.acquire()
-            try:
-                self.wait()
-            finally:
-                self._cond.release()
+            self.poll()
 
     # this should only be called from below wait(), and thus locked
     def add_value(self, v):
-        self._stat_values.append(v)
-        if len(self._stat_values) > self.hold_count:
-            self._stat_values = self._stat_values[-self.hold_count:]
+        self._cond.acquire()
+        try:
+            self._stat_values.append(v)
+            if len(self._stat_values) > self.hold_count:
+                self._stat_values = self._stat_values[-self.hold_count:]
+        finally:
+            self._cond.release()
 
-    def wait(self):
-        self._cond.wait(self.interval)
+    def poll(self):
+        self._cond.acquire()
+        try:
+            self._cond.wait(self.interval)
+        finally:
+            self._cond.release()
 
     def stop(self):
         self._cond.acquire()
@@ -56,7 +60,7 @@ class CpuIdleSystemStats(SystemStats):
         super(CpuIdleSystemStats, self).__init__(
             name, hold_count, check_interval)
 
-    def wait(self):
+    def poll(self):
         load = psutil.cpu_percent(self.interval)
         timestamp = time.time()
         self.add_value({'idle': load, 'timestamp': timestamp})
@@ -133,4 +137,3 @@ def clean_up_all():
             del _g_active_stats[name]
     finally:
         _g_lock.release()
-
