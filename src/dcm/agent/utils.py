@@ -403,14 +403,14 @@ def identify_platform(conf):
         with open("/etc/redhat-release") as fptr:
             redhat_info = fptr.readline().split()
         if redhat_info[0] == "CentOS":
-            distro_version = redhat_info[2]
+            if redhat_info[2] == "release":
+                distro_version = redhat_info[3]
+            else:
+                distro_version = redhat_info[2]
             distro_name = "centos"
         elif redhat_info[0] == "Red":
-            distro_version = redhat_info[3]
+            distro_version = redhat_info[6]
             distro_name = "rhel"
-        elif redhat_info[0] == "Fedora":
-            distro_version = redhat_info[2]
-            distro_name = "fedora"
         else:
             raise exceptions.AgentPlatformNotDetectedException()
         return distro_name.strip(), distro_version.strip()
