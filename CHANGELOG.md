@@ -1,3 +1,16 @@
+# 0.9.14 (2015-3-31)
+
+Features:
+* Added CentOS 7.0 packages.
+* Added major version only installation to the installer.  This allows
+  for example Debian 7.8 to find and install Debian 7.7 packages.
+* Throw a nicer error when a bad hostname is passed to rename.
+* No longer alter the hostname passed to rename.
+
+Bug Fixes:
+* Fixed version detection for RHEL/CentOS.
+* User insserv for starting on boot on debian systems.
+
 # 0.9.13 (2015-3-25)
 
 Features:
