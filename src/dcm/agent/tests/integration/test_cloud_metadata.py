@@ -62,6 +62,9 @@ class TestCloudMetadata(unittest.TestCase):
     def test_dhcp(self):
         ipaddr = cloudmetadata.get_dhcp_ip_address(self.conf)
         if platform.system().lower() == "linux":
+            if not ipaddr:
+                self.fail("We could not find the DHCP server address.  "
+                          "This will cause CloudStack to fail.")
             try:
                 socket.inet_aton(ipaddr)
                 self.assertTrue(True)

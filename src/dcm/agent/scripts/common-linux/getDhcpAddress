@@ -29,4 +29,9 @@ for n in $(seq 0 9); do
         break
     fi
 done
+
+if [ -z $DHCP_IP ]; then
+    # otherwise we look in /var/log/messages.  This is specifically here for RHEL 7.0
+    DHCP_IP=`grep  "server identifier" /var/log/messages | tail -n 1 | sed 's/.*server identifier//' | sed 's/ *//'`
+fi
 echo $DHCP_IP
