@@ -3,7 +3,7 @@ import urllib
 from dcm.agent import parent_receive_q
 
 
-def send_log_to_dcm_callback(conn=None, token=None, message=None):
+def send_log_to_dcm_callback(conn=None, token=None, message=None, level=None):
     max_size = 10*1024
     if len(message) > max_size:
         message = message[:max_size]
@@ -11,6 +11,7 @@ def send_log_to_dcm_callback(conn=None, token=None, message=None):
     msg = {
         "type": "LOG",
         "token": token,
+        "level": level,
         "message": message
     }
     conn.send(msg)
@@ -32,7 +33,8 @@ class dcmLogger(logging.Handler):
             parent_receive_q.register_user_callback(
                 send_log_to_dcm_callback, kwargs={"conn": self._conn,
                                                   "token": self._conf.token,
-                                                  "message": msg})
+                                                  "message": msg,
+                                                  "level": record.level})
 
     def set_conn(self, conf, conn):
         self._conn = conn
