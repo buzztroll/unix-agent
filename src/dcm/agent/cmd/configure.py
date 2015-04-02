@@ -480,7 +480,7 @@ def gather_values(opts):
 
 def cleanup_previous_install(conf_d):
     # delete old DB if it exists
-    db_file = conf_d['storage']['dbfile']
+    (_, db_file) = conf_d['storage']['dbfile']
     if db_file and os.path.exists(db_file):
         os.remove(db_file)
 
