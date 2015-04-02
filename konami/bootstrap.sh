@@ -19,8 +19,9 @@ echo "curl $AGENT_BASE_URL/installer.sh > /root/dcmagent/installer.sh"
 curl $AGENT_BASE_URL/installer.sh > /root/dcmagent/installer.sh
 
 echo "Executing installer."
-echo "/bin/bash /root/dcmagent/installer.sh -I"
-/bin/bash /root/dcmagent/installer.sh --url $DCM_AGENT_URL --cloud $DCM_AGENT_CLOUD
+cmd="/bin/bash /root/dcmagent/installer.sh --url $DCM_AGENT_URL --cloud $DCM_AGENT_CLOUD"
+echo $cmd
+$cmd
 
 # apt-get clean && rm -rf /var/lib/apt/lists/* /tmp/* /var/tmp/*
 

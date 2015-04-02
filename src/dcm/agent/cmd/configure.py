@@ -488,7 +488,8 @@ def main(argv=sys.argv[1:]):
         opts.loglevel = "INFO"
 
     conf_d = gather_values(opts)
-    guess_default_cloud(conf_d)
+    if not opts.initial:
+        guess_default_cloud(conf_d)
     do_interactive(opts, conf_d)
     normalize_cloud_name(conf_d)
     pick_meta_data(conf_d)
