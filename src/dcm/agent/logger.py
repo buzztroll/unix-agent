@@ -34,7 +34,7 @@ class dcmLogger(logging.Handler):
                 send_log_to_dcm_callback, kwargs={"conn": self._conn,
                                                   "token": self._conf.token,
                                                   "message": msg,
-                                                  "level": record.level})
+                                                  "level": record.levelname})
 
     def set_conn(self, conf, conn):
         self._conn = conn
