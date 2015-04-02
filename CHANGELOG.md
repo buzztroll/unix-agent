@@ -1,3 +1,13 @@
+# 0.9.15 (2015-4-2)
+
+Features:
+* Support for RHEL 7
+* Detect and reconfigure an existing agent when trying to install a new
+  agent.  This will help prevent the case of having multiple agents
+  running.
+* Send the log level when sending logs back to DCM.
+* Auto-detect Azure based on the existence of "/var/lib/waagent/ovf-env.xml"
+
 # 0.9.14 (2015-3-31)
 
 Features:
