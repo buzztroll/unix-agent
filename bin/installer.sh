@@ -92,6 +92,25 @@ if [ $# -gt 0 ]; then
     fi;
 fi
 
+function agent_exists() {
+    if [ -d "/dcm" ]; then
+        return 0
+    else
+        return 1
+    fi
+}
+
+function reconfig_prep() {
+   set +e
+   /etc/init.d/dcm-agent stop
+   pkill -9 dcm-agent
+   rm -f /dcm/etc/agentdb.sql
+   rm -f /dcm/logs/agent.log
+   rm -f /dcm/logs/agent.log.job_runner
+   set -e
+}
+
+
 # This will set:
 #   DCM_AGENT_DISTRO_NAME
 #   DCM_AGENT_DISTRO_VERSION_FULL
@@ -371,8 +390,18 @@ if [ $? -ne 0 ]; then
     exit 1
 fi
 
-echo "Starting the installation process..."
-install_agent
+
+if agent_exists; then
+    echo 'Python agent is already installed'
+    echo 'Deleting old db and files to prepare for new configuration'
+    reconfig_prep
+else
+    echo '**************************************'
+    echo 'Proceeding with installation of Agent'
+    echo '**************************************'
+    install_agent
+fi
+
 
 # Create configuration file and optionally install chef client(subject to change).
 if [ "X$1" == "X" ]; then
