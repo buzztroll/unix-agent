@@ -478,6 +478,13 @@ def gather_values(opts):
     return conf_d
 
 
+def cleanup_previous_install(conf_d):
+    # delete old DB if it exists
+    db_file = conf_d['storage']['dbfile']
+    if db_file and os.path.exists(db_file):
+        os.remove(db_file)
+
+
 def main(argv=sys.argv[1:]):
     parser = setup_command_line_parser()
     opts = parser.parse_args(args=argv)
@@ -509,6 +516,7 @@ def main(argv=sys.argv[1:]):
         copy_scripts(conf_d)
         do_plugin_and_logging_conf(conf_d, opts)
         (_, base_dir) = conf_d["storage"]["base_dir"]
+        cleanup_previous_install(conf_d)
         conf_file_name = os.path.join(base_dir, "etc", "agent.conf")
         write_conf_file(conf_file_name, conf_d)
         do_set_owner_and_perms(conf_d)
