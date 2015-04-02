@@ -93,7 +93,7 @@ if [ $# -gt 0 ]; then
 fi
 
 function agent_exists() {
-    if [ -f "/etc/init.d/dcm-agent" ]; then
+    if [ -f "/opt/dcm-agent/embedded/agentve/bin/dcm-agent" ]; then
         return 0
     else
         return 1
