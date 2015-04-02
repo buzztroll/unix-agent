@@ -4,7 +4,21 @@
 # after package is uninstalled.
 #
 
-rm -rf /dcm
+DCM_USERNAME="dcm"
+BASEDIRNAME="/dcm"
+
+rm -rf $BASEDIRNAME
+
+deluser $DCM_USERNAME
+delgroup $DCM_USERNAME
+
+if [ -e /etc/sudoers.d/$DCM_USERNAME ]; then
+    rm /etc/sudoers.d/$DCM_USERNAME
+else
+	sed -i "/$DCM_USERNAME/d" /etc/sudoers
+fi
+
+rm -f /etc/init.d/dcm-agent
 
 echo "dcm-agent has been uninstalled!"
 
