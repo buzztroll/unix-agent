@@ -14,7 +14,6 @@
 import json
 import logging
 import os
-import platform
 import socket
 import urllib2
 from dcm.agent import exceptions
@@ -256,7 +255,7 @@ class AzureMetaData(CloudMetaData):
         return "%s:%s:%s" % (ha[0], ha[0], ha[0])
 
     def is_effective_cloud(self):
-        return os.path.exits("/etc/waagent.conf")
+        return os.path.exits("/var/lib/waagent/ovf-env.xml")
 
     def get_cloud_type(self):
         return CLOUD_TYPES.Azure
