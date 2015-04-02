@@ -93,7 +93,7 @@ if [ $# -gt 0 ]; then
 fi
 
 function agent_exists() {
-    if [ -d "/dcm" ]; then
+    if [ -f "/etc/init.d/dcm-agent" ]; then
         return 0
     else
         return 1
@@ -101,13 +101,13 @@ function agent_exists() {
 }
 
 function reconfig_prep() {
-   set +e
+   echo "The existing version is"
+   /opt/dcm-agent/embedded/agentve/bin/dcm-agent --version
    /etc/init.d/dcm-agent stop
    pkill -9 dcm-agent
    rm -f /dcm/etc/agentdb.sql
    rm -f /dcm/logs/agent.log
    rm -f /dcm/logs/agent.log.job_runner
-   set -e
 }
 
 
