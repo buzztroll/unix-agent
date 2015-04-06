@@ -28,7 +28,5 @@ $cmd
 mv /etc/init.d/dcm-agent /root
 # killall 
 
-echo "Sleeping."
-echo sleep $DCM_AGENT_PRE_START_SLEEP
-sleep $DCM_AGENT_PRE_START_SLEEP
-
+echo "[docker]" >> /dcm/etc/agent.conf
+echo "base_url=$DCM_AGENT_DOCKER_URL" >> /dcm/etc/agent.conf
