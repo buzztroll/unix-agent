@@ -194,6 +194,12 @@ def _gather_info(conf):
     if os.path.isfile("/tmp/error.log"):
         tar.add("/tmp/error.log")
 
+    if os.path.isfile("/var/log/cloud-init.log"):
+        tar.add("/var/log/cloud-init.log")
+
+    if os.path.isfile("/var/log/boot.log"):
+        tar.add("/var/log/boot.log")
+
     if os.path.exists("/dcm"):
         tar.add("/dcm")
     try:
