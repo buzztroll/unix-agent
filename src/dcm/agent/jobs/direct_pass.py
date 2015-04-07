@@ -39,9 +39,6 @@ class DirectPass(jobs.Plugin):
             script_name = items_map["script_name"]
             self.exe_path = conf.get_script_location(script_name)
 
-            utils.log_to_dcm(logging.DEBUG,
-                             "script name: %s, exe: %s"
-                             % (script_name, self.exe_path))
             if not os.path.exists(self.exe_path):
                 raise exceptions.AgentPluginConfigException(
                     "The plugin %s points an add_user_exe_path that does not "
@@ -55,8 +52,12 @@ class DirectPass(jobs.Plugin):
         command_list.extend(self.ordered_param_list)
         _g_logger.debug("Plugin running the command %s" % str(command_list))
 
+        utils.log_to_dcm(logging.DEBUG,
+                         "Running the remote %s" % self.exe_path)
         (stdout, stderr, rc) = utils.run_command(
             self.conf, command_list, cwd=self.cwd)
+        utils.log_to_dcm(logging.DEBUG,
+                         "The script %s returned %d" % (self.exe_path, rc))
         _g_logger.debug("Command %s: stdout %s.  stderr: %s" %
                         (str(command_list), stdout, stderr))
         reply = {"return_code": rc, "message": stdout,

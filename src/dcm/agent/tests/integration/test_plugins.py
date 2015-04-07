@@ -25,7 +25,8 @@ class TestFetchExePlugin(unittest.TestCase):
             os.path.join(basedir, "etc", "agent.conf")
         cls.conf_obj = config.AgentConfig([cls.test_conf_path])
 
-        if test_utils.S3_ACCESS_KEY_ENV not in os.environ or test_utils.S3_SECRET_KEY_ENV not in os.environ:
+        if test_utils.S3_ACCESS_KEY_ENV not in os.environ\
+                or test_utils.S3_SECRET_KEY_ENV not in os.environ:
             return
 
         cls.bucket_name = "agentfetchtest" + str(uuid.uuid4()).split("-")[0]
@@ -37,7 +38,8 @@ class TestFetchExePlugin(unittest.TestCase):
 
     @classmethod
     def tearDownClass(cls):
-        if test_utils.S3_ACCESS_KEY_ENV not in os.environ or test_utils.S3_SECRET_KEY_ENV not in os.environ:
+        if test_utils.S3_ACCESS_KEY_ENV not in os.environ\
+                or test_utils.S3_SECRET_KEY_ENV not in os.environ:
             return
 
         try:
@@ -79,7 +81,6 @@ echo $1 > %s
             data = fptr.read().strip()
 
         self.assertEqual(data, msg)
-
 
     @test_utils.aws_access_needed
     def test_good_fetch_run(self):
@@ -176,8 +177,9 @@ print sys.executable
         sha256.update(py_script)
         actual_checksum = sha256.hexdigest()
 
-
-        arguments = {'b64script': b64_py, 'inpython': True, 'checksum': actual_checksum}
+        arguments = {'b64script': b64_py,
+                     'inpython': True,
+                     'checksum': actual_checksum}
         plugin = run_script_plugin.load_plugin(
             self.conf_obj, str(uuid.uuid4()),
             {}, "run_script", arguments)

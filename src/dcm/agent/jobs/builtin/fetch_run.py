@@ -42,7 +42,7 @@ class FetchRunScript(jobs.Plugin):
                       False, list, None),
         "ssl_cert": ("The expected cert for the source of the executable "
                      "script to be downloaded.", False,
-                      str, None),
+                     str, None),
     }
 
     def __init__(self, conf, job_id, items_map, name, arguments):

@@ -11,10 +11,12 @@
 #   this material is strictly forbidden unless prior written permission
 #   is obtained from Dell, Inc.
 #  ======================================================================
+import logging
 
 import os
 import dcm.agent.utils as utils
 import dcm.agent.jobs.direct_pass as direct_pass
+import dcm.agent.utils as agent_util
 
 
 class AddUser(direct_pass.DirectPass):
@@ -49,7 +51,14 @@ class AddUser(direct_pass.DirectPass):
                 with open(key_file, "w") as f:
                     f.write(self.ssh_public_key)
                 self.ordered_param_list.append(key_file)
-            return super(AddUser, self).run()
+            agent_util.log_to_dcm(
+                logging.INFO,
+                "Attempting to add the user %s." % self.args.userId)
+            rc = super(AddUser, self).run()
+            agent_util.log_to_dcm(
+                logging.INFO,
+                "The user %s was added." % self.args.userId)
+            return rc
         finally:
             if os.path.exists(key_file):
                 utils.secure_delete(self.conf, key_file)

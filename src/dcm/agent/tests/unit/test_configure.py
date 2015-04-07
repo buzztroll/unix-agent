@@ -88,7 +88,8 @@ class TestConfigure(unittest.TestCase):
                 mu = "http://169.254.169.254/1.0/meta-data/"
                 self.assertEqual(mu, cloud_from_file)
             elif cloud == "OpenStack":
-                mu = "http://169.254.169.254/openstack/2012-08-10/meta_data.json"
+                mu = ("http://169.254.169.254/openstack/2012-08-10/"
+                      "meta_data.json")
                 self.assertEqual(mu, cloud_from_file)
             elif cloud == "Google":
                 mu = "http://metadata.google.internal/computeMetadata/v1"

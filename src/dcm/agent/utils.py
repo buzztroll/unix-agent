@@ -33,7 +33,7 @@ _g_map_platform_installer = {
     "ubuntu": ["/usr/bin/dpkg", "-i"],
     "debian": ["/usr/bin/dpkg", "-i"],
     "centos": ["/bin/rpm", "-Uvh"],
-    "rhel": ["/bin/rpm" , "-Uvh"]
+    "rhel": ["/bin/rpm", "-Uvh"]
 }
 
 _g_map_platform_remove_package = {
@@ -460,7 +460,7 @@ def http_get_to_file(url, filename):
                 data = response.read(64*1024)
     except urllib2.URLError as ex:
         raise exceptions.AgentRuntimeException(
-           "There was a problem connecting to the URL " + url)
+            "There was a problem connecting to the URL " + url)
 
 
 def install_extras(conf, package=None):
@@ -490,9 +490,9 @@ def install_extras(conf, package=None):
                    conf.platform_name, pkg_version,
                    version, arch, pkg_suffix)
         major_only_package = '%s-%s-%s-%s-%s.%s' %\
-                  (_g_extras_pkgs_name,
-                   conf.platform_name, major_only_pkg_version,
-                   version, arch, pkg_suffix)
+            (_g_extras_pkgs_name,
+             conf.platform_name, major_only_pkg_version,
+             version, arch, pkg_suffix)
         try_packages = ["%s/%s" % (location, package),
                         "%s/%s" % (location, major_only_package)]
     else:
@@ -511,8 +511,9 @@ def install_extras(conf, package=None):
     install_command = _g_map_platform_installer[conf.platform_name][:]
     install_command.append(pkg_file)
     _g_logger.debug("Running: %s" % install_command)
-    (stdout, stderr, rc) = run_command(conf, install_command, in_env=os.environ)
-    if rc !=0:
+    (stdout, stderr, rc) = run_command(
+        conf, install_command, in_env=os.environ)
+    if rc != 0:
         raise exceptions.AgentExtrasNotInstalledException(stderr)
     _g_logger.debug(stdout)
     return True

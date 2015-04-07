@@ -184,7 +184,8 @@ class ConfigureServer(jobs.Plugin):
 
     def configure_server_with_puppet(self):
         try:
-            utils.install_extras(self.conf, package=self.conf.extra_package_name)
+            utils.install_extras(
+                self.conf, package=self.conf.extra_package_name)
         except exceptions.AgentExtrasNotInstalledException as ex:
             _g_logger.exception("An error occurred trying to install puppet.  "
                                 "We are continuing anyway for legacy server "
@@ -242,7 +243,7 @@ class ConfigureServer(jobs.Plugin):
                 "configType", "CHEF or PUPPET", self.args.configType)
 
         if self.name == "configure_server" or \
-            self.name == "configure_server_15":
+                self.name == "configure_server_15":
             (stdout, stderr, rc) = self.configure_server_legacy()
         elif self.name == "configure_server_16":
             (stdout, stderr, rc) = self.configure_server_legacy()

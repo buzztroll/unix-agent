@@ -130,11 +130,11 @@ class DCMAgent(object):
 
         self.conf.set_handshake(incoming_handshake_doc["handshake"])
         # clean the db if the agent_id doesnt match it
-        utils.log_to_dcm(
-            logging.INFO, "Clean up any bad residue in the db")
+        self.g_logger.debug("Clean up any bad residue in the db")
         self._db.check_agent_id(self.conf.agent_id)
         utils.log_to_dcm(
-            logging.INFO, "A handshake was successful, starting the workers")
+            logging.INFO,
+            "A handshake was successful, starting to process commands.")
         self.disp.start_workers(self.request_listener)
 
         return True
@@ -149,7 +149,8 @@ class DCMAgent(object):
             except Exception as ex:
                 utils.log_to_dcm(
                     logging.ERROR,
-                    "A top level exception occurred: %s" % ex.message)
+                    "An unexpected error occurred in the agent: %s"
+                    % ex.message)
                 self.g_logger.exception("A top level exception occurred")
 
     def cleanup_agent(self):
@@ -214,7 +215,7 @@ def _gather_info(conf):
 
     version = dcm.agent.g_version
     protocol_version = dcm.agent.g_protocol_version
-    message =  "Effective cloud is: " + effective_cloud + "\n"
+    message = "Effective cloud is: " + effective_cloud + "\n"
     message += "Platform is %s %s" % (platform[0], platform[1]) + "\n"
     message += "Version: " + version + "\n"
     message += "Protocol version: " + str(protocol_version)
@@ -230,9 +231,12 @@ def _gather_info(conf):
     tar.add("/tmp/meta_info.txt")
     tar.add("/tmp/startup_script.txt")
     tar.close()
-    print "***************************************************************************************"
-    print "To get all log and configuration file copy /tmp/agent_info.tar.gz to your local machine"
-    print "***************************************************************************************"
+    print """
+**********************************************************************
+To get all log and configuration file copy /tmp/agent_info.tar.gz to
+your local machine
+**********************************************************************
+"""
 
 
 def parse_command_line(argv):

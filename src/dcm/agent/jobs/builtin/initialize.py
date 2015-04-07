@@ -82,8 +82,6 @@ class InitializeJob(jobs.Plugin):
                 res_doc["message"] = res_doc["message"] + " : rename failed"
                 return res_doc
 
-            # make the temp directory
-            utils.log_to_dcm(logging.INFO, "Create the temporary directory")
             # add customer user
             utils.log_to_dcm(logging.INFO, "Adding the user")
             res_doc = self.add_user.run()
@@ -95,7 +93,7 @@ class InitializeJob(jobs.Plugin):
             return {"return_code": 0, "message": "",
                     "error_message": "", "reply_type": "void"}
         except Exception as ex:
-            _g_logger.exception("initialize faild: " + str(ex))
+            _g_logger.exception("initialize failed: " + str(ex))
             return {'return_code': 1, "message": ex.message}
 
 
