@@ -1,3 +1,16 @@
+# 0.9.16 (2015-4-7)
+
+Features:
+* Audited the logs that are sent back to DCM for clarity.
+* Including boot and cloud-init logs in the report tarball.
+* Added support for konami to set the docker host.
+
+Bug Fixes:
+* pep8 cleanup
+* Delete the pid file when the agent is shutdown to avoid mistaken pid
+  conflict on startup.
+* Properly report idle time in system statistic reporter.
+
 # 0.9.15 (2015-4-2)
 
 Features:
