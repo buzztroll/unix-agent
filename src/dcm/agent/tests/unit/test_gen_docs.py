@@ -73,8 +73,7 @@ class TestGenDocs(unittest.TestCase):
     - optional: True
     - type: Safe user name
     - default: None
-- administrator: A string that is either 'true' or 'false' which indicates
-                 if the new user should have ssh access
+- administrator: A string that is either 'true' or 'false' which indicates if the new user should have ssh access
     - optional: True
     - type: str
     - default: None
