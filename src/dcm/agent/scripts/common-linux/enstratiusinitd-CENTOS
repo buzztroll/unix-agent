@@ -37,6 +37,7 @@ stop() {
             echo "dcm-agent is not running"
             return 1;
         fi
+        rm -f $PIDFILE
     else
         echo "dcm-agent is not running"
         return 1
