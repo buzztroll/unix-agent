@@ -62,7 +62,8 @@ class AgentOptionValueAlreadySetException(AgentOptionException):
 
 class AgentOptionValueNotSetException(AgentOptionException):
     def __init__(self, opt_name, value, msg=None):
-        message = ("The value %(value)s for option %(opt_name)s has not been set." % locals())
+        message = ("The value %(value)s for option %(opt_name)s has "
+                   "not been set." % locals())
         if msg:
             message = message + " " + msg
         super(AgentOptionValueNotSetException, self).__init__(message)
@@ -248,5 +249,3 @@ class AgentPlatformNotDetectedException(Exception):
     def __init__(self):
         message = ("The platform was not detected")
         super(AgentPlatformNotDetectedException, self).__init__(message)
-
-

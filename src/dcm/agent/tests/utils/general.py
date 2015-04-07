@@ -96,7 +96,8 @@ def system_changing(func):
 
 def aws_access_needed(func):
     def inner(*args, **kwargs):
-        if S3_ACCESS_KEY_ENV not in os.environ or S3_SECRET_KEY_ENV not in os.environ:
+        if S3_ACCESS_KEY_ENV not in os.environ or \
+                S3_SECRET_KEY_ENV not in os.environ:
             raise skip.SkipTest(
                 "Test %s will change only run if the environment variables "
                 "%s and %s are set to the AWS access tokens" %

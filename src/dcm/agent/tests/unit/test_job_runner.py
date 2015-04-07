@@ -8,6 +8,7 @@ FakeConf = namedtuple('FakeConf', 'platform_name platform_version')
 
 g_fake_conf = FakeConf("ubuntu", "14.04")
 
+
 class TestJobRunner(unittest.TestCase):
 
     def setUp(self):
@@ -44,7 +45,8 @@ class TestJobRunner(unittest.TestCase):
     def test_many_overlap(self):
 
         def _func(tester_val):
-            (stdout, stderr, rc) = self.jr.run_command(["/bin/echo", tester_val])
+            (stdout, stderr, rc) = self.jr.run_command(
+                ["/bin/echo", tester_val])
             self.assertEqual(0, rc)
             self.assertEqual(tester_val, stdout.strip())
 

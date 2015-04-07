@@ -77,8 +77,7 @@ class Worker(threading.Thread):
 
     def run(self):
         try:
-            utils.log_to_dcm(
-                logging.INFO, "Worker %s thread starting." % self.getName())
+            _g_logger.info("Worker %s thread starting." % self.getName())
 
             done = False
             while not done:
@@ -107,9 +106,8 @@ class Worker(threading.Thread):
 
                         work_reply = WorkReply(workload.request_id, reply_doc)
                         self.reply_q.put(work_reply)
-                        utils.log_to_dcm(
-                            logging.INFO, "Reply message sent for command " +
-                                          workload.payload["command"])
+                        _g_logger.info("Reply message sent for command " +
+                                       workload.payload["command"])
                 except Queue.Empty:
                     pass
                 except:
@@ -132,8 +130,7 @@ class Dispatcher(object):
         self.request_listener = None
 
     def start_workers(self, request_listener):
-        utils.log_to_dcm(
-            logging.INFO, "Starting %d workers." % self._conf.workers_count)
+        _g_logger.info("Starting %d workers." % self._conf.workers_count)
         self.request_listener = request_listener
         for i in range(self._conf.workers_count):
             worker = Worker(self._conf, self.worker_q, self.reply_q)
@@ -142,7 +139,7 @@ class Dispatcher(object):
             self.workers.append(worker)
 
     def stop(self):
-        utils.log_to_dcm(logging.INFO, "Stopping workers.")
+        _g_logger.info("Stopping workers.")
 
         for _ in self.workers:
             workload = WorkLoad(None, None, None)

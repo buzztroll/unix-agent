@@ -145,7 +145,6 @@ class MountVolume(direct_pass.DirectPass):
                 "mount_volume",
                 "Invalid RAID level")
 
-
         cmd = [exe, raid_level, device_id]
 
         for d in self.args.devices:

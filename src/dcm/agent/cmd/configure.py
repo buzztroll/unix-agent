@@ -491,7 +491,8 @@ def main(argv=sys.argv[1:]):
 
     opts.loglevel = opts.loglevel.upper()
     if opts.loglevel not in ["ERROR", "WARN", "INFO", "DEBUG"]:
-        print "WARNING: %s is an invalid log level.  Using INFO" % opts.loglevel
+        print "WARNING: %s is an invalid log level.  Using INFO"\
+              % opts.loglevel
         opts.loglevel = "INFO"
 
     conf_d = gather_values(opts)

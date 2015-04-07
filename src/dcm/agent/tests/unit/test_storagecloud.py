@@ -72,7 +72,7 @@ class TestStorageCloud(unittest.TestCase):
             assert (cloud_driver.__class__.__name__ == self.region_map[key])
 
     def test_that_aws_driver_function_picks_default_region_on_bogus_region_id(
-           self):
+            self):
 
         cloud_driver = sc.get_cloud_driver(1,
                                            'whatever',

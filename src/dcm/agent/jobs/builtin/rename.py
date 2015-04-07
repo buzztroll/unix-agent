@@ -24,13 +24,14 @@ _g_logger = logging.getLogger(__name__)
 def is_legal(proposed_name):
     if len(proposed_name) > 255:
         raise exceptions.AgentPluginMessageException(
-                "%s is an invalid hostname.  Too long" % proposed_name)
+            "%s is an invalid hostname.  Too long" % proposed_name)
 
-    regex = "^(([a-zA-Z]|[a-zA-Z][a-zA-Z0-9\-]*[a-zA-Z0-9])\.)*([A-Za-z]|[A-Za-z][A-Za-z0-9\-]*[A-Za-z0-9])$"
+    regex = ("^(([a-zA-Z]|[a-zA-Z][a-zA-Z0-9\-]*[a-zA-Z0-9])\.)"
+             "*([A-Za-z]|[A-Za-z][A-Za-z0-9\-]*[A-Za-z0-9])$")
     allowed = re.compile(regex)
     if allowed is None:
         raise exceptions.AgentPluginMessageException(
-                "%s is an invalid hostname" % proposed_name)
+            "%s is an invalid hostname" % proposed_name)
 
 
 class Rename(direct_pass.DirectPass):
@@ -57,8 +58,11 @@ class Rename(direct_pass.DirectPass):
             }
             return reply_doc
 
-        utils.log_to_dcm(logging.DEBUG, "Acquired ip addr %s" % private_ips[0])
         self.ordered_param_list.append(private_ips[0])
+        utils.log_to_dcm(
+            logging.INFO,
+            "Renaming the server to %s with the local IP %s"
+            % (self.args.serverName, private_ips[0]))
 
         return super(Rename, self).run()
 

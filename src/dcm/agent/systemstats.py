@@ -128,6 +128,7 @@ def stop_stats(name):
     finally:
         _g_lock.release()
 
+
 def clean_up_all():
     _g_lock.acquire()
     try:

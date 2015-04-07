@@ -67,8 +67,8 @@ class Plugin(object):
         for arg in self.arguments:
             if arg not in self.protocol_arguments:
                 utils.log_to_dcm(logging.WARN,
-                                 "The argument %s was sent from the agent "
-                                 "manager but is not understood by this "
+                                 "The argument %s was sent from DCM "
+                                 "but is not understood by this "
                                  "command." % arg)
             else:
                 h, mandatory, t, default = self.protocol_arguments[arg]
