@@ -25,11 +25,13 @@ case "${1:-''}" in
   'stop')
     log_daemon_msg "Stopping the dcm-agent"
     start-stop-daemon --stop --quiet --oknodo --pidfile $PIDFILE
+    rm -f $PIDFILE
     ;;
     
   'restart')
     log_daemon_msg "Restarting the dcm-agent"
     start-stop-daemon --stop --quiet --oknodo --pidfile $PIDFILE
+    rm -f $PIDFILE
     start-stop-daemon -m -c $DCM_USER --start --quiet -b --oknodo --pidfile $PIDFILE --exec $EXE -- -c $CONF
     ;;
     
