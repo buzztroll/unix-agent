@@ -34,7 +34,7 @@ class DockerJob(jobs.Plugin):
 
 
 def parse_docker_options(conf):
-    if getattr(conf, "docker_host", None) is None:
+    if getattr(conf, "docker_base_url", None) is None:
         option_list = [
             config.ConfigOpt("docker", "base_url", str,
                              default="http+unix://var/run/docker.sock",
