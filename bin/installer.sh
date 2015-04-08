@@ -32,6 +32,10 @@ AGENT_VERSION
 DCM_AGENT_FORCE_DISTRO_VERSION
   - Instead of detecting the distribution version force it to this env string.
 
+DCM_AGENT_REMOVE_EXISTING
+  - If this program is run on a machine that already has an agent installed
+    we will first remove the existing agent.
+
 ###############################################################################
 
 Optional Arguments:
@@ -186,21 +190,25 @@ function identify_package_installer_extension() {
         "ubuntu")
             export DCM_AGENT_PKG_EXTENSION="deb"
             export DCM_AGENT_INSTALLER_CMD="dpkg -i"
+            export DCM_AGENT_REMOVE_CMD="dpkg -r"
             export DCM_AGENT_PACKAGE_MANAGER_INSTALL_CMD="apt-get install -y"
             ;;
         "debian")
             export DCM_AGENT_PKG_EXTENSION="deb"
             export DCM_AGENT_INSTALLER_CMD="dpkg -i"
+            export DCM_AGENT_REMOVE_CMD="dpkg -r"
             export DCM_AGENT_PACKAGE_MANAGER_INSTALL_CMD="apt-get install -y"
             ;;
         "centos")
             export DCM_AGENT_PKG_EXTENSION="rpm"
             export DCM_AGENT_INSTALLER_CMD="rpm -Uvh"
+            export DCM_AGENT_REMOVE_CMD="rpm -e"
             export DCM_AGENT_PACKAGE_MANAGER_INSTALL_CMD="yum install -y"
             ;;
         "rhel")
             export DCM_AGENT_PKG_EXTENSION="rpm"
             export DCM_AGENT_INSTALLER_CMD="rpm -Uvh"
+            export DCM_AGENT_REMOVE_CMD="rpm -e"
             export DCM_AGENT_PACKAGE_MANAGER_INSTALL_CMD="yum install -y"
             ;;
         *)
@@ -349,6 +357,15 @@ function set_base_url {
 }
 
 
+function remove_agent {
+    if [ -z $DCM_AGENT_REMOVE_EXISTING ]; then
+        return
+    fi
+    echo "Removing the existing agent"
+    $DCM_AGENT_REMOVE_CMD dcm-agent
+}
+
+
 set_base_url
 identify_distro_version
 identify_package_installer_extension $DCM_AGENT_DISTRO_NAME
@@ -390,6 +407,7 @@ if [ $? -ne 0 ]; then
     exit 1
 fi
 
+remove_agent
 
 if agent_exists; then
     echo 'Python agent is already installed'
