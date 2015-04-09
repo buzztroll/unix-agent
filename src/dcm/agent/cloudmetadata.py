@@ -185,10 +185,9 @@ class CloudStackMetaData(CloudMetaData):
 class JoyentMetaData(CloudMetaData):
     def __init__(self, conf):
         self.conf = conf
+        self.cmd_location = None
 
-    def get_cloud_metadata(self, key):
-        _g_logger.debug("Get metadata %s" % key)
-        cmd = "/usr/sbin/mdata-get"
+    def _run_command(self, cmd, key):
         cmd_args = ["/usr/bin/sudo", cmd, key]
         (stdout, stderr, rc) = utils.run_command(self.conf, cmd_args)
         _g_logger.debug("Joyent metadata %d %s %s" % (rc, stdout, stderr))
@@ -196,7 +195,23 @@ class JoyentMetaData(CloudMetaData):
             result = None
         else:
             result = stdout.strip()
-        _g_logger.debug("Metadata value of %s is %s" % (key, str(result)))
+        _g_logger.debug("Metadata value from cmd %s of %s is %s" %
+                        (cmd, key, str(result)))
+        return (rc, result)
+
+    def get_cloud_metadata(self, key):
+        _g_logger.debug("Get metadata %s" % key)
+
+        if self.cmd_location is not None:
+            (rc, result) = self._run_command(self.cmd_location, key)
+        else:
+            cmd_possible_locations = [
+                "/usr/sbin/mdata-get", "/lib/smartdc/mdata-get"]
+            for cmd in cmd_possible_locations:
+                (rc, result) = self._run_command(self.cmd_location, key)
+                if rc == 0:
+                    self.cmd_location = cmd
+                break
         return result
 
     def get_instance_id(self):
