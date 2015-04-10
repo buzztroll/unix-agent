@@ -208,10 +208,10 @@ class JoyentMetaData(CloudMetaData):
             cmd_possible_locations = [
                 "/usr/sbin/mdata-get", "/lib/smartdc/mdata-get"]
             for cmd in cmd_possible_locations:
-                (rc, result) = self._run_command(self.cmd_location, key)
+                (rc, result) = self._run_command(cmd, key)
                 if rc == 0:
                     self.cmd_location = cmd
-                break
+                    break
         return result
 
     def get_instance_id(self):
