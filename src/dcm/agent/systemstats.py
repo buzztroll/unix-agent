@@ -1,9 +1,13 @@
+import logging
 import threading
 import psutil
 import time
 
 from dcm.agent import exceptions
 import dcm.agent.utils as agent_util
+
+
+_g_logger = logging.getLogger(__name__)
 
 
 class SystemStats(object):
@@ -79,7 +83,16 @@ _g_active_stats = {}
 _g_lock = threading.Lock()
 
 
-def start_new_system_stat(name, stat_type, hold_count, check_interval):
+def add_system_stat(stat_type, obj):
+    _g_lock.acquire()
+    try:
+        _g_stat_object_map[stat_type] = obj
+    finally:
+        _g_lock.release()
+
+
+def start_new_system_stat(
+        name, stat_type, hold_count, check_interval, **kwvals):
     if stat_type not in _g_stat_object_map:
         raise exceptions.AgentOptionValueException(
             "stat_type", stat_type, str(_g_stat_object_map.keys()))
@@ -90,7 +103,7 @@ def start_new_system_stat(name, stat_type, hold_count, check_interval):
             raise exceptions.AgentOptionValueAlreadySetException(name)
 
         cls = _g_stat_object_map[stat_type]
-        stat_obj = cls(name, hold_count, check_interval)
+        stat_obj = cls(name, hold_count, check_interval, **kwvals)
         _g_active_stats[name] = stat_obj
     finally:
         _g_lock.release()
