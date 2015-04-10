@@ -12,6 +12,7 @@
 #   is obtained from Dell, Inc.
 #  ======================================================================
 import base64
+import json
 import os
 import subprocess
 import tempfile
@@ -350,6 +351,16 @@ def user_name(proposed_name):
     if re.match("^(?![_-])[a-zA-Z0-9_-]+(?<![_-])$", string_name):
         return proposed_name
     raise ValueError("bad user name")
+
+
+def json_param_type(json_str):
+    if json_str is None:
+        return None
+    if type(json_str) == dict:
+        return json_str
+    if json_str.lower().equals("null"):
+        return None
+    return json.loads(json_str)
 
 
 def identify_platform(conf):

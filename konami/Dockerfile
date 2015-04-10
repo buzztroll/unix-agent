@@ -16,6 +16,7 @@ RUN mkdir -p /root/dcmagent
 ADD env.sh /root/dcmagent/env.sh
 ADD bootstrap.sh /root/dcmagent/bootstrap.sh
 RUN /root/dcmagent/bootstrap.sh 
+ADD plugin.conf /dcm/etc/plugin.conf
 
 ADD rename /dcm/bin/rename
 

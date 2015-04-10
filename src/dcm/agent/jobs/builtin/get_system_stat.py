@@ -11,9 +11,13 @@
 #   this material is strictly forbidden unless prior written permission
 #   is obtained from Dell, Inc.
 #  ======================================================================
+import logging
 
 import dcm.agent.jobs as jobs
 import dcm.agent.systemstats as systemstats
+
+_g_logger = logging.getLogger(__name__)
+
 
 
 class GetSystemStat(jobs.Plugin):
