@@ -86,7 +86,7 @@ if [ -f /usr/sbin/update-rc.d ] ; then
 	echo "# Description:       Starts and stops the enStratus agent" >> $startup_fname
 	echo "### END INIT INFO" >> $startup_fname
 
-	echo "env -i $BASEDIRNAME/bin/enstratiusinitd " '$@' >> $startup_fname
+	echo "env -i PATH=$PATH $BASEDIRNAME/bin/enstratiusinitd " '$@' >> $startup_fname
 
 	chmod 755 $startup_fname
 
@@ -94,7 +94,7 @@ elif [ -x /sbin/chkconfig ] ; then
 
 	echo "# chkconfig: 2345 60 40" >> $startup_fname
 	echo "# description: Manages the enStratus agent." >> $startup_fname
-	echo "env -i $BASEDIRNAME/bin/enstratiusinitd-CENTOS " '$@' >> $startup_fname
+	echo "env -i PATH=$PATH $BASEDIRNAME/bin/enstratiusinitd-CENTOS " '$@' >> $startup_fname
 
     chmod 755 $startup_fname
 
