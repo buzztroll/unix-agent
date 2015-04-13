@@ -22,8 +22,13 @@ class SystemStats(object):
         self._t.start()
 
     def run(self):
-        while not self._done:
-            self.poll()
+        try:
+            while not self._done:
+                self.poll()
+        except Exception as ex:
+            _g_logger.exception(
+                "The system stat collector " + self.name + " failed with " +
+                ex.message)
 
     # this should only be called from below wait(), and thus locked
     def add_value(self, v):
