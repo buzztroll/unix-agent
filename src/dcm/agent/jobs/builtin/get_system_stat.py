@@ -19,7 +19,6 @@ import dcm.agent.systemstats as systemstats
 _g_logger = logging.getLogger(__name__)
 
 
-
 class GetSystemStat(jobs.Plugin):
 
     protocol_arguments = {

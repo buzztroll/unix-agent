@@ -31,13 +31,16 @@ class TesterCpuIdleSystemStats(systemstats.SystemStats):
             name, hold_count, check_interval)
 
     def poll(self):
-        with open(self.source_file_name, "r") as fptr:
-            line = fptr.readline()
-            while line:
-                la = line.split(":")
-                self.add_value({'timestamp': int(la[0]),
-                                'cpu-idle': float(la[1])})
+        try:
+            with open(self.source_file_name, "r") as fptr:
                 line = fptr.readline()
+                while line:
+                    la = line.split(":")
+                    self.add_value({'timestamp': float(la[0]),
+                                    'cpu-idle': float(la[1])})
+                    line = fptr.readline()
+        except BaseException as ex:
+            _g_logger.exception("The test stat failed: " + ex.message)
         super(TesterCpuIdleSystemStats, self).poll()
 
     def get_stats_type(self):
