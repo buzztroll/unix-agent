@@ -62,12 +62,15 @@ class TesterInitSystemStat(jobs.Plugin):
             conf, job_id, items_map, name, arguments)
 
     def run(self):
+        kwargs = self.args.kwargs
+        if kwargs is None:
+            kwargs = {}
         systemstats.start_new_system_stat(
             self.args.statName,
             self.args.statType,
             self.args.holdCount,
             self.args.checkInterval,
-            **self.args.kwargs)
+            **kwargs)
         reply_doc = {
             "return_code": 0,
             "reply_type": "void"
