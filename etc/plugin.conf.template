@@ -3,7 +3,6 @@
 [plugin:get_private_ip_address]
 type: python_module
 module_name: dcm.agent.jobs.builtin.get_private_ip_address
-script_name: getIpAddresses
 
 [plugin:get_agent_data]
 type: python_module

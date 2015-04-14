@@ -3,3 +3,4 @@ ws4py == 0.3.2
 apache-libcloud == 0.14.1
 psutil == 1.2.1
 clint == 0.3.7
+netifaces == 0.10.4

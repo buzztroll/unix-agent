@@ -23,6 +23,7 @@ import urllib2
 import dcm
 import exceptions
 import logging
+import netifaces
 import random
 import string
 import platform
@@ -546,3 +547,23 @@ def install_extras(conf, package=None):
         raise exceptions.AgentExtrasNotInstalledException(stderr)
     _g_logger.debug(stdout)
     return True
+
+
+def _get_ipvX_addresses(family):
+    ip_list = []
+    for iface in netifaces.interfaces():
+        try:
+            new_addrs = [ i['addr'] for i in netifaces.ifaddresses(iface)[family]]
+            ip_list.extend(new_addrs)
+        except KeyError:
+            # when there is a key error it means we have nothing to add
+            pass
+    return ip_list
+
+
+def get_ipv4_addresses():
+    return _get_ipvX_addresses(netifaces.AF_INET)
+
+
+def get_ipv6_addresses():
+    return _get_ipvX_addresses(netifaces.AF_INET6)
