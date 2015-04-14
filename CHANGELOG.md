@@ -1,3 +1,17 @@
+# 0.9.17 (2015-4-14)
+
+Features:
+* Added RHEL 7.1 to the supported packages.
+* Added a mock system stat collector for auto-scaling tests.
+* Added the python module netifaces which allows for the removal
+  of a legacy script.
+
+Bug Fixes:
+* Joyent auto-detection fixed on debian 6.
+* Correct the agent search extra packages search path.
+* Allow the PATH env to remain after scrubbing the environment.  This
+  allows the extra package to install from the agent on deb based systems.
+
 # 0.9.16 (2015-4-7)
 
 Features:

@@ -13,8 +13,8 @@
 #  ======================================================================
 import logging
 
-import dcm.agent.cloudmetadata as cloudmetadata
 import dcm.agent.jobs.direct_pass as direct_pass
+from dcm.agent import utils
 
 
 _g_logger = logging.getLogger(__name__)
@@ -31,7 +31,7 @@ class GetPrivateIpAddress(direct_pass.DirectPass):
     def run(self):
         _g_logger.debug("Running the handler %s" % __name__)
 
-        private_ips = self.conf.meta_data_object.get_ipv4_addresses(self.conf)
+        private_ips = utils.get_ipv4_addresses()
         if not private_ips:
             reply_doc = {
                 "return_code": 1,

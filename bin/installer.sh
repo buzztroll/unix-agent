@@ -337,7 +337,7 @@ function handle_deps {
     fi
     which sudo > /dev/null
     if [ $? -ne 0 ]; then
-        DCM_AGENT_PACKAGE_MANAGER_INSTALL_CMD sudo
+        $DCM_AGENT_PACKAGE_MANAGER_INSTALL_CMD sudo
         if [ $? -ne 0 ]; then
             echo "sudo must be installed on your system to use this installer."
             exit 1

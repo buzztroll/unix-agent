@@ -72,12 +72,7 @@ class CloudMetaData(object):
 
     def get_ipv4_addresses(self, conf):
         ip_list = []
-        (stdout, stderr, rc) = utils.run_script(conf, "getIpAddresses", [])
-        for line in stdout.split(os.linesep):
-            line = line.strip()
-            if line and line not in ip_list:
-                ip_list.append(line)
-        return ip_list
+        return utils.get_ipv4_addresses()
 
     def get_handshake_ip_address(self, conf):
         return self.get_ipv4_addresses(conf)
@@ -254,8 +249,7 @@ class GCEMetaData(CloudMetaData):
         return instance_id
 
     def get_handshake_ip_address(self, conf):
-        return [self.get_cloud_metadata(
-            "instance/attributes/es-dmcm-launch-id")]
+        return utils.get_ipv4_addresses()
 
     def get_cloud_type(self):
         return CLOUD_TYPES.Google
