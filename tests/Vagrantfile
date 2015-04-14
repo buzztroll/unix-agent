@@ -250,7 +250,7 @@ if PROV_SWITCH == "vb"
           if AGENT_DOCKER_INSTALL != "null"
             shell.inline = "sudo bash  /vagrant/agent_docker.sh"
           else
-            shell.inline = "sudo /vagrant/test-distro.sh $1 $2 $3"
+            shell.inline = "sudo /vagrant/test-distro.sh $1 $2 $3 $4"
             shell.args = ["#$ES_STORAGE_CREDS", "#$DCM_AGENT_PKG", "#$DCM_AGENT_VERSION", "#$DCM_AGENT_TEST_LOCAL"]
           end
 
