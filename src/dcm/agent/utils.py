@@ -499,13 +499,24 @@ def install_extras(conf, package=None):
         package = '%s-%s-%s-%s-%s.%s' %\
                   (_g_extras_pkgs_name,
                    conf.platform_name, pkg_version,
-                   version, arch, pkg_suffix)
+                   arch, version, pkg_suffix)
         major_only_package = '%s-%s-%s-%s-%s.%s' %\
             (_g_extras_pkgs_name,
              conf.platform_name, major_only_pkg_version,
-             version, arch, pkg_suffix)
+             arch, version, pkg_suffix)
         try_packages = ["%s/%s" % (location, package),
                         "%s/%s" % (location, major_only_package)]
+        # add without version names for latest
+        package = '%s-%s-%s-%s.%s' %\
+                  (_g_extras_pkgs_name,
+                   conf.platform_name, pkg_version,
+                   arch, pkg_suffix)
+        try_packages.append(package)
+        major_only_package = '%s-%s-%s-%s.%s' %\
+            (_g_extras_pkgs_name,
+             conf.platform_name, major_only_pkg_version,
+             arch, pkg_suffix)
+        try_packages.append(major_only_package)
     else:
         try_packages = ["%s/%s" % (location, package)]
 
