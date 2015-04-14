@@ -249,8 +249,7 @@ class GCEMetaData(CloudMetaData):
         return instance_id
 
     def get_handshake_ip_address(self, conf):
-        return [self.get_cloud_metadata(
-            "instance/attributes/es-dmcm-launch-id")]
+        return utils.get_ipv4_addresses()
 
     def get_cloud_type(self):
         return CLOUD_TYPES.Google
