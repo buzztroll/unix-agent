@@ -3,6 +3,8 @@
 Features:
 * Added RHEL 7.1 to the supported packages.
 * Added a mock system stat collector for auto-scaling tests.
+* Added the python module netifaces which allows for the removal
+  of a legacy script.
 
 Bug Fixes:
 * Joyent auto-detection fixed on debian 6.
