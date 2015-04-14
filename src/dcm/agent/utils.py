@@ -511,24 +511,31 @@ def install_extras(conf, package=None):
                   (_g_extras_pkgs_name,
                    conf.platform_name, pkg_version,
                    arch, pkg_suffix)
-        try_packages.append(package)
+        try_packages.append("%s/%s" % (location, package))
         major_only_package = '%s-%s-%s-%s.%s' %\
             (_g_extras_pkgs_name,
              conf.platform_name, major_only_pkg_version,
              arch, pkg_suffix)
-        try_packages.append(major_only_package)
+        try_packages.append("%s/%s" % (location, major_only_package))
     else:
         try_packages = ["%s/%s" % (location, package)]
 
     _, pkg_file = tempfile.mkstemp()
 
+    found = False
     _g_logger.debug("Downloading the extras package file")
-    try:
-        http_get_to_file(try_packages[0], pkg_file)
-    except BaseException as ex:
-        _g_logger.warn("Failed to download the extras package %s.  Falling "
-                       "back to the major only version." % try_packages[0])
-        http_get_to_file(try_packages[1], pkg_file)
+    for pkg in try_packages:
+        try:
+            http_get_to_file(pkg, pkg_file)
+            found = True
+            break
+        except BaseException as ex:
+            _g_logger.warn("Failed to download the extras package %s.  Falling "
+                           "back to the major only version." % try_packages[0])
+
+    if not found:
+        raise exceptions.AgentRuntimeException(
+            "No extras package was found.  Tried " + str(try_packages))
 
     install_command = _g_map_platform_installer[conf.platform_name][:]
     install_command.append(pkg_file)
