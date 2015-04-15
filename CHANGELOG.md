@@ -1,3 +1,10 @@
+# 0.9.18 (2015-4-15)
+
+Bug Fixes:
+* Remove stale latest links in package repositories.
+* Normalize the cpu stats to a value between 0 and 100.
+* Run apt-get update in the installer where appropriate.
+
 # 0.9.17 (2015-4-14)
 
 Features:
