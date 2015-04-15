@@ -192,12 +192,14 @@ function identify_package_installer_extension() {
             export DCM_AGENT_INSTALLER_CMD="dpkg -i"
             export DCM_AGENT_REMOVE_CMD="dpkg -r"
             export DCM_AGENT_PACKAGE_MANAGER_INSTALL_CMD="apt-get install -y"
+            apt-get update
             ;;
         "debian")
             export DCM_AGENT_PKG_EXTENSION="deb"
             export DCM_AGENT_INSTALLER_CMD="dpkg -i"
             export DCM_AGENT_REMOVE_CMD="dpkg -r"
             export DCM_AGENT_PACKAGE_MANAGER_INSTALL_CMD="apt-get install -y"
+            apt-get update
             ;;
         "centos")
             export DCM_AGENT_PKG_EXTENSION="rpm"
