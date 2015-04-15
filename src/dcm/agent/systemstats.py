@@ -70,7 +70,7 @@ class CpuIdleSystemStats(SystemStats):
             name, hold_count, check_interval)
 
     def poll(self):
-        load = psutil.cpu_percent(self.interval)
+        load = psutil.cpu_percent(self.interval) / 100.0
         timestamp = time.time()
         self.add_value({'timestamp': timestamp,
                         'cpu-idle': 1.0 - load})
