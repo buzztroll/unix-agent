@@ -52,6 +52,7 @@ class TestWsConnection(object):
         conf.connection_max_backoff = 100
         conf.connection_backoff = 100
         test_run_time = 5000
+        expected_connections = test_run_time / conf.connection_max_backoff
 
         serversocket = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
         serversocket.listen(100)
@@ -90,5 +91,6 @@ class TestWsConnection(object):
             serversocket.close()
             agent.shutdown_main_loop()
             t1.join()
-        nose.tools.ok_(10 < connect_count < 50,
+        nose.tools.ok_(expected_connections *.9 - 1 < connect_count
+                       < expected_connections * 1.1 + 1,
                        "connect_count is %d" % connect_count)
