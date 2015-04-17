@@ -32,17 +32,17 @@ import re
 _g_logger = logging.getLogger(__name__)
 
 _g_map_platform_installer = {
-    "ubuntu": ["/usr/bin/dpkg", "-i"],
-    "debian": ["/usr/bin/dpkg", "-i"],
-    "centos": ["/bin/rpm", "-Uvh"],
-    "rhel": ["/bin/rpm", "-Uvh"]
+    "ubuntu": ["sudo", "/usr/bin/dpkg", "-i"],
+    "debian": ["sudo", "/usr/bin/dpkg", "-i"],
+    "centos": ["sudo", "/bin/rpm", "-Uvh"],
+    "rhel": ["sudo", "/bin/rpm", "-Uvh"]
 }
 
 _g_map_platform_remove_package = {
-    "ubuntu": ["/usr/bin/dpkg", "--purge"],
-    "debian": ["/usr/bin/dpkg", "--purge"],
-    "centos": ["/bin/rpm", "-e"],
-    "rhel": ["/bin/rpm", "-e"]
+    "ubuntu": ["sudo", "/usr/bin/dpkg", "--purge"],
+    "debian": ["sudo", "/usr/bin/dpkg", "--purge"],
+    "centos": ["sudo", "/bin/rpm", "-e"],
+    "rhel": ["sudo", "/bin/rpm", "-e"]
 }
 
 _g_extras_pkgs_name = "dcm-agent-extras"
