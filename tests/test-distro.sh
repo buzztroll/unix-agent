@@ -27,6 +27,8 @@ apt-get -y update
 apt-get -y install curl
 yum -y update
 yum -y install curl
+apt-get -y install git
+yum -y install git
 
 /agent/bin/installer.sh --cloud Amazon --url ws://enstratius.com:16309/ws --base-path /dcm
 
