@@ -11,14 +11,27 @@
 # Authorized licensees may copy this software onto any machine images
 # and/or virtual hosts being managed by the Enstratius system as needed.
 
-PATH=/bin:${PATH}
+PATH=/usr/sbin:/bin:${PATH}
 
 set -u
 
 DCM_USERNAME="dcm"
 BASEDIRNAME="/dcm"
 
-mkdir $BASEDIRNAME
+needed_directories="$BASEDIRNAME $BASEDIRNAME/etc $BASEDIRNAME/bin $BASEDIRNAME/logs $BASEDIRNAME/home"
+for d in $needed_directories
+do
+    echo "Creating directory at $d..."
+    if [ ! -d $d ] ; then
+	    mkdir -p $d
+	    if [ $? != 0 ] ; then
+		    echo "Could not create $d directory. Are you running this as root?"
+            exit 30
+	    fi
+    fi
+    echo "Done."
+done
+
 echo "Creating user and group..."
 # Create user/group group.
 grep -q "^$DCM_USERNAME:" /etc/group

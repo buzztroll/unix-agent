@@ -9,8 +9,7 @@ BASEDIRNAME="/dcm"
 
 rm -rf $BASEDIRNAME
 
-deluser $DCM_USERNAME
-delgroup $DCM_USERNAME
+userdel $DCM_USERNAME
 
 if [ -e /etc/sudoers.d/$DCM_USERNAME ]; then
     rm /etc/sudoers.d/$DCM_USERNAME
