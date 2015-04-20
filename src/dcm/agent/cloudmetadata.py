@@ -264,7 +264,7 @@ class AzureMetaData(CloudMetaData):
         return "%s:%s:%s" % (ha[0], ha[0], ha[0])
 
     def is_effective_cloud(self):
-        return os.path.exits("/var/lib/waagent/ovf-env.xml")
+        return os.path.exists("/var/lib/waagent/ovf-env.xml")
 
     def get_cloud_type(self):
         return CLOUD_TYPES.Azure
@@ -359,6 +359,7 @@ def guess_effective_cloud(conf):
         CloudStackMetaData(conf),
         AWSMetaData(),
         GCEMetaData(),
+        AzureMetaData(),
         UnknownMetaData()
     ]
     for md in ordered_list_of_clouds:
