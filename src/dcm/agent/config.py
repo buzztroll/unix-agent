@@ -412,7 +412,12 @@ def build_options_list():
                   help_msg="Location of extra packages"),
 
         ConfigOpt("extra", "package_name", str, default=None,
-                  help_msg="Name of extra package to be installed")
+                  help_msg="Name of extra package to be installed"),
+
+        ConfigOpt("extra", "base_path", str, default="/opt/dcm-agent-extras",
+                  help_msg="The location where the extras package will be "
+                           "installed.  This should only change in conjunction"
+                           " with the extras omnibus installer.")
     ]
 
     return option_list

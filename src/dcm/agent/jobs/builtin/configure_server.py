@@ -15,6 +15,7 @@ import ConfigParser
 import json
 import logging
 import os
+import urlparse
 from dcm.agent import exceptions, utils
 import dcm.agent.jobs as jobs
 from dcm.agent import config
@@ -161,46 +162,51 @@ class ConfigureServer(jobs.Plugin):
             utils.safe_delete(run_list_file_name)
             utils.safe_delete(token_file_path)
 
-    def _edit_puppet_conf(self, path):
-        puppet_conf_temp = self.conf.get_temp_file("puppet.conf")
-
-        with open(path, "r") as inf, open(puppet_conf_temp, "w") as outf:
-            outf.writelines([l.strip() + os.linesep for l in inf.readlines()])
-
+    def _edit_puppet_conf(self, template_path, new_location, endpoint):
         parser = ConfigParser.SafeConfigParser()
-        parser.read(puppet_conf_temp)
-
+        parser.read(template_path)
         if not parser.has_section("agent"):
             parser.add_section("agent")
-        parser.set("agent", "certname", "ES_NODE_NAME")
-        parser.set("agent", "server", "ES_PUPPET_MASTER")
-        if not parser.has_section("main"):
-            parser.add_section("main")
-        parser.set("main", "pluginsync", "true")
-
-        with open(puppet_conf_temp, "w") as fptr:
+        parser.set("agent", "certname", self.args.configClientName)
+        parser.set("agent", "server", endpoint)
+        with open(new_location, "w") as fptr:
             parser.write(fptr)
-        return puppet_conf_temp
 
     def configure_server_with_puppet(self):
+
+        if self.args.endpoint is None:
+            raise exceptions.AgentOptionValueNotSetException("endpoint")
+
+        # XXX it will only work with the default port.  There is no way for
+        # the user to configure anything else in the console
+        endpoint = urlparse.urlparse(self.args.endpoint).hostname
+
+        puppet_extras_base_path = os.path.join(self.conf.extra_base_path,
+                                               "puppetconf")
+        puppet_extras_bin = os.path.join(self.conf.extra_base_path,
+                                         "bin/puppet")
+
         try:
             utils.install_extras(
                 self.conf, package=self.conf.extra_package_name)
         except exceptions.AgentExtrasNotInstalledException as ex:
             _g_logger.exception("An error occurred trying to install puppet.  "
-                                "We are continuing anyway for legacy server "
-                                "images")
-            _g_logger.exception("Exception message is %s" % ex.message)
+                                "Exception message is %s" % ex.message)
+            raise
 
-        puppet_conf_file_list = ["/etc/puppet/puppet.conf",
-                                 "/etc/puppetlabs/puppet/puppet.conf"]
-        new_puppet_conf = None
-        for puppet_conf_file in puppet_conf_file_list:
-            if os.path.exists(puppet_conf_file):
-                new_puppet_conf = self._edit_puppet_conf(puppet_conf_file)
-                break
+        template_puppet_conf_path = os.path.join(puppet_extras_base_path,
+                                                 "puppet.conf.template")
+        if not os.path.exists(template_puppet_conf_path):
+            raise exceptions.AgentExtrasNotInstalledException(
+                "The puppet.conf template did not install properly.")
+        if not os.path.exists(puppet_extras_bin):
+            raise exceptions.AgentExtrasNotInstalledException(
+                "The puppet binary did not install properly.")
 
-        puppet_dir = self.conf.get_temp_file("puppetconf", isdir=True)
+        puppet_conf_path = self.conf.get_temp_file("puppet.conf")
+        self._edit_puppet_conf(template_puppet_conf_path,
+                               puppet_conf_path,
+                               endpoint)
         cert_file_path = self.conf.get_temp_file("cert.pem")
         key_file_path = self.conf.get_temp_file("key.pem")
 
@@ -210,25 +216,20 @@ class ConfigureServer(jobs.Plugin):
             with open(key_file_path, "w") as fptr:
                 fptr.write(self.args.configKey)
 
-            endpoint = self.args.endpoint
-            if endpoint is None:
-                endpoint = "NULL"
-
             exe = self.conf.get_script_location(
                 "runConfigurationManagement-PUPPET")
             cmd = [exe,
-                   self.args.runAsUser,
-                   self.args.configClientName,
                    endpoint,
                    cert_file_path,
-                   key_file_path]
-            if new_puppet_conf:
-                cmd.append(new_puppet_conf)
+                   key_file_path,
+                   self.args.configClientName,
+                   self.conf.extra_base_path,
+                   puppet_conf_path]
             return utils.run_command(self.conf, cmd)
         finally:
-            utils.safe_delete(puppet_dir)
             utils.safe_delete(cert_file_path)
             utils.safe_delete(key_file_path)
+            utils.safe_delete(puppet_conf_path)
 
     def run(self):
         if self.conf.is_imaging():

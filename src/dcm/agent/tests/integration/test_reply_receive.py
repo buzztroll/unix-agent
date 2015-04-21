@@ -932,40 +932,56 @@ class TestProtocolCommands(reply.ReplyObserverInterface):
         chef_script_path = os.path.join(
             self.test_base_path, "bin", "runConfigurationManagement-PUPPET")
 
-        with open(chef_script_path, "w") as fptr:
-            fptr.write(fake_chef_script)
-        os.chmod(chef_script_path, 0x755)
+        old_extra_path = self.conf_obj.extra_base_path
+        try:
+            self.conf_obj.extra_base_path = tempfile.mkdtemp()
+            os.mkdir(os.path.join(self.conf_obj.extra_base_path, "puppetconf"))
+            os.mkdir(os.path.join(self.conf_obj.extra_base_path, "bin"))
+            with open(os.path.join(self.conf_obj.extra_base_path, "bin/puppet"), "w") as fptr:
+                fptr.write("x")
 
-        confClientName = "confname"
-        configCert = base64.b64encode(bytearray(str(uuid.uuid4())))
-        configKey = base64.b64encode(bytearray(str(uuid.uuid4())))
+            with open(os.path.join(self.conf_obj.extra_base_path,
+                                   "puppetconf/puppet.conf.template"), "w") as fptr:
+                fptr.write("[agent]" + os.linesep)
+                fptr.write("fake=stuff")
 
-        arguments = {
-            "configType": "PUPPET",
-            "configClientName": confClientName,
-            "configCert": configCert,
-            "configKey": configKey
-        }
-        doc = {
-            "command": "configure_server_17",
-            "arguments": arguments
-        }
-        req_reply = self._rpc_wait_reply(doc)
-        r = req_reply.get_reply()
-        nose.tools.eq_(r["payload"]["return_code"], 0)
-        nose.tools.eq_(r["payload"]["reply_type"], "job_description")
+            with open(chef_script_path, "w") as fptr:
+                fptr.write(fake_chef_script)
+            os.chmod(chef_script_path, 0x755)
 
-        jd = r["payload"]["reply_object"]
-        while jd["job_status"] in ["WAITING", "RUNNING"]:
-            jd = self._get_job_description(jd["job_id"])
-        nose.tools.eq_(jd["job_status"], "COMPLETE")
+            confClientName = "confname"
+            configCert = base64.b64encode(bytearray(str(uuid.uuid4())))
+            configKey = base64.b64encode(bytearray(str(uuid.uuid4())))
 
-        with open(tmpfname, "r") as fptr:
-            lines = fptr.readlines()
-        nose.tools.ok_(len(lines) >= 1)
+            arguments = {
+                "endpoint": "http://notreal.com",
+                "configType": "PUPPET",
+                "configClientName": confClientName,
+                "configCert": configCert,
+                "configKey": configKey
+            }
+            doc = {
+                "command": "configure_server_17",
+                "arguments": arguments
+            }
+            req_reply = self._rpc_wait_reply(doc)
+            r = req_reply.get_reply()
+            nose.tools.eq_(r["payload"]["return_code"], 0)
+            nose.tools.eq_(r["payload"]["reply_type"], "job_description")
 
-        line1_a = lines[0].split()
-        nose.tools.eq_(line1_a[1], confClientName)
+            jd = r["payload"]["reply_object"]
+            while jd["job_status"] in ["WAITING", "RUNNING"]:
+                jd = self._get_job_description(jd["job_id"])
+            nose.tools.eq_(jd["job_status"], "COMPLETE")
+
+            with open(tmpfname, "r") as fptr:
+                lines = fptr.readlines()
+            nose.tools.ok_(len(lines) >= 1)
+
+            line1_a = lines[0].split()
+            nose.tools.eq_(line1_a[3], confClientName)
+        finally:
+            self.conf_obj.extra_base_path = old_extra_path
 
     def test_bad_arguments(self):
         orig_hostname = socket.gethostname()
