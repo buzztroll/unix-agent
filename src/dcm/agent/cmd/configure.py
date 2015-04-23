@@ -121,6 +121,17 @@ def setup_command_line_parser():
                         default=False,
                         help="This is just a placeholder for now.")
 
+    parser.add_argument("--allow-unknown-certs", "-Z",
+                        dest="allow_unknown_certs",
+                        action='store_true',
+                        default=False,
+                        help="Disable cert validation.  In general this is a"
+                             "bad idea but is very useful for testing.")
+
+    parser.add_argument("--cacert-file", "-A", dest="cacert_file",
+                        default="/opt/dcm-agent/embedded/ssl/certs/cacert.pem")
+
+
     return parser
 
 
@@ -339,7 +350,9 @@ def merge_opts(conf_d, opts):
         "con_type": ("connection", "type"),
         "mount_path": ("storage", "mountpoint"),
         "extra_package_location": ("extra", "location"),
-        "package_name": ("extra", "package_name")
+        "package_name": ("extra", "package_name"),
+        "allow_unknown_certs": ("connection", "allow_unknown_certs"),
+        "cacert_file": ("connection", "ca_cert")
     }
     for opts_name in map_opts_to_conf:
         (s, i) = map_opts_to_conf[opts_name]

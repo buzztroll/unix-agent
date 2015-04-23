@@ -69,7 +69,9 @@ def get_connection_object(conf):
             conf.connection_agentmanager_url,
             backoff_amount=conf.connection_backoff,
             max_backoff=conf.connection_max_backoff,
-            heartbeat=conf.connection_heartbeat_frequency)
+            heartbeat=conf.connection_heartbeat_frequency,
+            allow_unknown_certs=conf.connection_allow_unknown_certs,
+            ca_certs=conf.connection_ca_cert)
     else:
         raise exceptions.AgentOptionValueException(
             "[connection]type", con_type, "ws,success_tester,dummy")
@@ -350,9 +352,17 @@ def build_options_list():
         ConfigOpt("connection", "heartbeat_frequency", int, default=30,
                   help_msg="The maximum number of milliseconds to wait before "
                            "retrying a failed connection."),
+        ConfigOpt("connection", "allow_unknown_certs", bool, default=False,
+                  help_msg="A flag to disable DCM certificate verification. "
+                           "When disabled certificates will be ignored. This "
+                           "is useful for testing but should otherwise be "
+                           "set to False."),
+        FilenameOpt("connection", "ca_cert", default=None,
+                    help_msg="A path to the location of the CA certificate to"
+                             "be used when authenticating with DCM."),
+
         FilenameOpt("logging", "configfile", default=None,
                     help_msg="The location of the log configuration file"),
-
         FilenameOpt("plugin", "configfile",
                     help_msg="The location of the plugin configuration file"),
 

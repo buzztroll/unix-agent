@@ -19,6 +19,7 @@ import Queue
 import socket
 import threading
 import datetime
+import ssl
 
 import ws4py.client.threadedclient as ws4py_client
 from dcm.agent import exceptions
@@ -163,7 +164,7 @@ class _WebSocketClient(ws4py_client.WebSocketClient):
 class WebSocketConnection(threading.Thread):
 
     def __init__(self, server_url, backoff_amount=5000, max_backoff=300000,
-                 heartbeat=None):
+                 heartbeat=None, allow_unknown_certs=False, ca_certs=None):
         super(WebSocketConnection, self).__init__()
         self._send_queue = RepeatQueue()
         self._ws_manager = None
@@ -180,6 +181,11 @@ class WebSocketConnection(threading.Thread):
         self.handshake_observer = None
         self._next_connect_time = datetime.datetime.now()
         self._heartbeat_freq = heartbeat
+        if allow_unknown_certs:
+            cert_reqs = ssl.CERT_NONE
+        else:
+            cert_reqs = ssl.CERT_REQUIRED
+        self._ssl_options = {'cert_reqs': cert_reqs, 'ca_certs': ca_certs}
 
     @utils.class_method_sync
     def connect(self, receive_object, handshake_observer, handshake_producer):
@@ -285,7 +291,8 @@ class WebSocketConnection(threading.Thread):
         try:
             self._ws = _WebSocketClient(
                 self, self._server_url, self._receive_queue,
-                protocols=['dcm'], heartbeat_freq=self._heartbeat_freq)
+                protocols=['dcm'], heartbeat_freq=self._heartbeat_freq,
+                ssl_options=self._ssl_options)
             self._ws.connect()
             hs_doc = self.handshake_producer()
             self._ws.send_handshake(json.dumps(hs_doc))
