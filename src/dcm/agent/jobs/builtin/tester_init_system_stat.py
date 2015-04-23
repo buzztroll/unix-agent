@@ -31,6 +31,7 @@ class TesterCpuIdleSystemStats(systemstats.SystemStats):
             name, hold_count, check_interval)
 
     def poll(self):
+        self.cond.acquire()
         try:
             with open(self.source_file_name, "r") as fptr:
                 line = fptr.readline()
@@ -41,6 +42,8 @@ class TesterCpuIdleSystemStats(systemstats.SystemStats):
                     line = fptr.readline()
         except BaseException as ex:
             _g_logger.exception("The test stat failed: " + ex.message)
+        finally:
+            self.cond.release()
         super(TesterCpuIdleSystemStats, self).poll()
 
     def get_stats_type(self):

@@ -17,7 +17,7 @@ class SystemStats(object):
         self.name = name
         self._done = False
         self._stat_values = []
-        self._cond = threading.Condition()
+        self.cond = threading.Condition()
         self._t = threading.Thread(target=self.run)
         self._t.start()
 
@@ -32,28 +32,28 @@ class SystemStats(object):
 
     # this should only be called from below wait(), and thus locked
     def add_value(self, v):
-        self._cond.acquire()
+        self.cond.acquire()
         try:
             self._stat_values.append(v)
             if len(self._stat_values) > self.hold_count:
                 self._stat_values = self._stat_values[-self.hold_count:]
         finally:
-            self._cond.release()
+            self.cond.release()
 
     def poll(self):
-        self._cond.acquire()
+        self.cond.acquire()
         try:
-            self._cond.wait(self.interval)
+            self.cond.wait(self.interval)
         finally:
-            self._cond.release()
+            self.cond.release()
 
     def stop(self):
-        self._cond.acquire()
+        self.cond.acquire()
         try:
             self._done = True
-            self._cond.notify()
+            self.cond.notify()
         finally:
-            self._cond.release()
+            self.cond.release()
         self._t.join()
 
     def get_stats(self):
