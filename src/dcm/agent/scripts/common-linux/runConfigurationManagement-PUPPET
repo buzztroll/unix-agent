@@ -9,66 +9,23 @@ BASENAME=`basename $0`
 logTag="runConfigurationManagement-PUPPET"
 LOGGER=$DIRNAME/log
 
-# If we're running open source
-# use this directory structure.
-# Default to enterprise.
-if [ -d "/var/lib/puppet" ]; then
-  CERT_DIR=/var/lib/puppet/ssl/certs/
-  KEY_DIR=/var/lib/puppet/ssl/private_keys/
-  PUPPET_CONF=/etc/puppet/puppet.conf
-else
-  CERT_DIR=/etc/puppetlabs/puppet/ssl/certs/
-  KEY_DIR=/etc/puppetlabs/puppet/ssl/private_keys/
-  PUPPET_CONF=/etc/puppetlabs/puppet/puppet.conf
-fi
-
-$LOGGER -t "$logTag" runConfigurationManagement-PUPPET "$@"
-
-if [ $# -lt 5 ] ; then
-   $LOGGER -t "$logTag" "Syntax: runConfigurationManagement-PUPPET RUN_AS_USER NODE_NAME PUPPET_MASTER CERT_FILE_PATH KEY_FILE_PATH"
-   exit 1
-fi
-
+PUPPET_MASTER=$1
+CERT_FILE_PATH=$2
+KEY_FILE_PATH=$3
+NODE_NAME=$4
+EXTRAS_PATH=$5
+PUPPET_TEMP_CONF_PATH=$6
+PUPPET_CONF_DIR=$EXTRAS_PATH/puppetconf
+PUPPET_BIN=$EXTRAS_PATH/bin/puppet
+CERT_DIR=$PUPPET_CONF_DIR/ssl/certs/
+KEY_DIR=$PUPPET_CONF_DIR/ssl/private_keys/
 $LOGGER -t "$logTag" "Running configuration management for Puppet..."
 
-# Create the cert and key dirs if missing
-if [ ! -d ${CERT_DIR} ]; then
-  $LOGGER -t "$logTag" "Puppet cert dir missing. Creating cert and key dirs now."
-
-  sudo mkdir -p ${CERT_DIR} > /dev/null 2>&1
-  sudo chown puppet:puppet ${CERT_DIR}
-
-  sudo mkdir -p ${KEY_DIR} > /dev/null 2>&1
-  sudo chown puppet:puppet ${KEY_DIR}
-fi
-
-RUN_AS_USER=$1
-NODE_NAME=$2
-PUPPET_MASTER_URL=$3
-PUPPET_MASTER=`echo ${PUPPET_MASTER_URL} | sed -e "s/[^/]*\/\/\([^@]*@\)\?\([^:/]*\).*/\2/"`
-CERT_FILE_PATH=$4
-KEY_FILE_PATH=$5
-SRC_PUPPET_CONF_PATH=$6
-
-if [ ! -z $SRC_PUPPET_CONF_PATH ]; then
-    $REAL_SUDO cp -f $SRC_PUPPET_CONF_PATH $PUPPET_CONF
-fi
-
-# check for puppet client
-PUPPET_BIN=/opt/dcm-agent-extras/bin/puppet
-if [ -x "$PUPPET_BIN" ]; then
-  $LOGGER -t "$logTag" "Found puppet in `echo ${PUPPET_BIN}`"
-else
-  $LOGGER -t "$logTag" "No puppet installation found"
-  exit 99
-fi
-
-$LOGGER -t "$logTag" "Using puppet in `echo ${PUPPET_BIN}`"
+puppet_stdfile=`mktemp -q /tmp/dcmagentpuppetrun.XXXXXX`
 
 # we need to test if the passed puppetmaster is an IP or hostname
 echo "$PUPPET_MASTER" | grep -E '\b((25[0-5]|2[0-4][0-9]|[01]?[0-9][0-9]?)(\.|$)){4}\b'
 IS_IP=$?
-
 if [[ $IS_IP == 0 ]]; then
   $LOGGER -t "$logTag" "Detected $PUPPET_MASTER as an IP address. Adding hosts file entry"
   # This should be changed before release
@@ -79,49 +36,48 @@ if [[ $IS_IP == 0 ]]; then
   PUPPET_MASTER="puppet"
 fi
 
-# debug to check hosts file
-$LOGGER -t "$logTag" "Checking hosts file again"
-while read line;do $LOGGER -t "$logTag" "$line"; done </etc/hosts
-
-# Replace the node name in the configuration file
-sudo sed -i "s#ES_NODE_NAME#$NODE_NAME#" ${PUPPET_CONF} > /dev/null 2>&1
-
-# Replace the puppet master in the configuration file
-sudo sed -i "s#ES_PUPPET_MASTER#$PUPPET_MASTER#" ${PUPPET_CONF} > /dev/null 2>&1
-
-# Replace the puppet master in the PE2.5 facts file
-if [ -f /etc/puppetlabs/facter/facts.d/puppet_enterprise_installer.txt ]; then
-        sudo sed -i "s#ES_PUPPET_MASTER#$PUPPET_MASTER#" /etc/puppetlabs/facter/facts.d/puppet_enterprise_installer.txt > /dev/null 2>&1
+if [ ! -d ${CERT_DIR} ]; then
+  $REAL_SUDO mkdir -p ${CERT_DIR} > /dev/null 2>&1
+fi
+if [ ! -d ${KEY_DIR} ]; then
+  $REAL_SUDO mkdir -p ${KEY_DIR} > /dev/null 2>&1
 fi
 
 # Copy the client cert into place
-sudo cp ${CERT_FILE_PATH} ${CERT_DIR}/${NODE_NAME}.pem > /dev/null 2>&1
-
-# Copy the client key into place
-sudo cp ${KEY_FILE_PATH} ${KEY_DIR}/${NODE_NAME}.pem > /dev/null 2>&1
-
+$REAL_SUDO cp ${CERT_FILE_PATH} ${CERT_DIR}/${NODE_NAME}.pem > /dev/null 2>&1
 EXIT=$?
-
 if [[ $EXIT != 0 ]]; then
-        $LOGGER -t "$logTag" "Failed to configure puppet environment: $EXIT"
-        exit 99
+    $LOGGER -t "$logTag" "Failed to copy the cert file: $EXIT"
+    exit 90
 fi
 
-puppet_stdfile=`mktemp -q /tmp/dcmagentpuppetrun.XXXXXX`
-$REAL_SUDO -i ${PUPPET_BIN} agent --onetime --no-daemonize --detailed-exitcodes --logdest=$DCM_TMP_DIR/es-puppet-firstrun.log > $puppet_stdfile 2>&1
+# Copy the client key into place
+$REAL_SUDO cp ${KEY_FILE_PATH} ${KEY_DIR}/${NODE_NAME}.pem > /dev/null 2>&1
+EXIT=$?
+if [[ $EXIT != 0 ]]; then
+    $LOGGER -t "$logTag" "Failed to copy the key file: $EXIT"
+    exit 91
+fi
 
+$REAL_SUDO cp ${PUPPET_TEMP_CONF_PATH} ${PUPPET_CONF_DIR} > /dev/null 2>&1
+EXIT=$?
+if [[ $EXIT != 0 ]]; then
+    $LOGGER -t "$logTag" "Failed to copy the key file: $EXIT"
+    exit 92
+fi
+
+$REAL_SUDO -i ${PUPPET_BIN} agent --confdir $PUPPET_CONF_DIR --onetime --no-daemonize --detailed-exitcodes --logdest=$DCM_TMP_DIR/es-puppet-firstrun.log > $puppet_stdfile 2>&1
 EXIT=$?
 
 if [ -s $puppet_stdfile ]; then
     while read line; do $LOGGER -t "$logTag" "$line"; done <$puppet_stdfile
 fi
 if [[ $EXIT == 4 || $EXIT == 6 || $EXIT == 1 ]]; then
-        $LOGGER -t "$logTag" "Initial puppet run failed: $EXIT"
-
+  $LOGGER -t "$logTag" "Initial puppet run failed: $EXIT"
   if [ -e $DCM_TMP_DIR/es-puppet-firstrun.log ]; then
     while read line; do $LOGGER -t "$logTag" "$line"; done <$DCM_TMP_DIR/es-puppet-firstrun.log
   fi
-        exit 99
+  exit 99
 fi
 
 if [ -e $DCM_TMP_DIR/es-puppet-firstrun.log ]; then

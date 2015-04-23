@@ -118,7 +118,7 @@ def get_stats(name):
     _g_lock.acquire()
     try:
         if name not in _g_active_stats:
-            raise exceptions.AgentOptionValueNotSetException("name", name)
+            raise exceptions.AgentOptionValueNotSetException("name")
         stat_obj = _g_active_stats[name]
         return stat_obj.get_stats()
     finally:
@@ -129,7 +129,7 @@ def get_stats_type(name):
     _g_lock.acquire()
     try:
         if name not in _g_active_stats:
-            raise exceptions.AgentOptionValueNotSetException("name", name)
+            raise exceptions.AgentOptionValueNotSetException("name")
         stat_obj = _g_active_stats[name]
         return stat_obj.get_stats_type()
     finally:
@@ -140,7 +140,7 @@ def stop_stats(name):
     _g_lock.acquire()
     try:
         if name not in _g_active_stats:
-            raise exceptions.AgentOptionValueNotSetException("name", name)
+            raise exceptions.AgentOptionValueNotSetException("name")
         stat_obj = _g_active_stats[name]
         stat_obj.stop()
         del _g_active_stats[name]
