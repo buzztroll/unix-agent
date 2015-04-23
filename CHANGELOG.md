@@ -2,6 +2,7 @@
 
 Features:
 * Provisioning vagrant boxes with git during local testing runs.
+* Enabled CA Cert verification for agent communications.
 
 Bug Fixes:
 * Execute extras package installer method as superuser.
