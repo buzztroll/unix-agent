@@ -1,3 +1,16 @@
+# 0.9.19 (2015-4-23)
+
+Features:
+* Provisioning vagrant boxes with git during local testing runs.
+
+Bug Fixes:
+* Execute extras package installer method as superuser.
+* Updated cloud meta data to guess correctly for Azure.
+* Locked the polling condition for the stat tester.
+* Pinned puppet to use only known extras installation and associated configuration file.
+* Make needed directories and set username in post install step.
+* Remove DCM base directory and dcm user on post removal step.
+
 # 0.9.18 (2015-4-15)
 
 Bug Fixes:
