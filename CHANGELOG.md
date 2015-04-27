@@ -1,3 +1,14 @@
+# 0.9.20 (2015-4-27)
+
+Features:
+* Added reporting of process information to the --report tool.
+* Removed the konami test directory.  It is now in the DCM code base.
+
+Bug Fixes:
+* The agent_docker.sh script will no longer kill the agent for
+  reconfigure if it is properly configured.  This will prevent
+  the agent from restarting while in the middle of processing commands.
+
 # 0.9.19 (2015-4-23)
 
 Features:
