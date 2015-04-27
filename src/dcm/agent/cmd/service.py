@@ -227,10 +227,10 @@ def _gather_info(conf):
         for p in [x for x in psutil.process_iter()
                   if x.username == conf.system_user]:
             pi.write(p.name + " : " + str(p.pid) + os.linesep)
-            pi.write("\tstarted at: " + str(p.create_time))
-            pi.write("\t: " + str(p.cmdline))
-            pi.write("\t" + str(p.get_cpu_times()))
-            pi.write("\t" + str(p.get_memory_info()))
+            pi.write("\tstarted at: " + str(p.create_time) + os.linesep)
+            pi.write("\t: " + str(p.cmdline) + os.linesep)
+            pi.write("\t" + str(p.get_cpu_times()) + os.linesep)
+            pi.write("\t" + str(p.get_memory_info()) + os.linesep)
 
     files_to_collect = ["/tmp/boot.log",
                         "/tmp/error.log",
