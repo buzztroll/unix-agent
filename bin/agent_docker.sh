@@ -67,12 +67,12 @@ function agent_properly_configured() {
         return 1
     fi
 
-    if !docker_exists; then
+    if ! docker_exists; then
         return 1
     fi
 
     proc_count=`ps -u dcm | grep dcm-agent | wc -l`
-    if [ $proc_count -ne 2 ];
+    if [ $proc_count -ne 2 ]; then
         return 1
     fi
     return 0
@@ -92,7 +92,7 @@ function install_agent() {
     chmod 755 installer.sh
 
     echo 'Agent being installed with dcm host: ' $DCM_URL
-    ./installer.sh --base-path /dcm --url $DCM_URL -B
+    ./installer.sh --base-path /dcm --url $DCM_URL -B $AGENT_UNVERIFIED
 }
 
 function identify_platform() {
@@ -254,6 +254,7 @@ function help() {
          **************************************************"
 }
 
+AGENT_UNVERIFIED=""
 ################# main ###################
 if [ $# -lt 1 ]; then
     echo
@@ -281,8 +282,11 @@ else
             -u=*|--unstable=*)
               AGENT_UNSTABLE="${arg#*=}"
               ;;
+            -Z)
+              AGENT_UNVERIFIED="-Z"
+              ;;
             *)
-              echo 'You passed an unknow option:' $arg
+              echo 'You passed an unknown option:' $arg
               echo 'run agent_docker.sh --help for more info'
               exit
         esac
@@ -292,7 +296,6 @@ fi
 url='https://get.docker.io/'
 
 identify_platform
-update
 
 case "$(uname -m)" in
     *64)
@@ -313,10 +316,12 @@ if agent_exists; then
         echo 'Reconfiguring with the new values'
         reconfigure_agent
     fi
+    update
 else
     echo '**************************************'
     echo 'Proceeding with installation of Agent'
     echo '**************************************'
+    update
     install_agent
 fi
 
