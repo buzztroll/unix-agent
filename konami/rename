@@ -1,7 +1,0 @@
-#!/bin/bash
-
-# For docker we are just skipping the naming of the host.  It likely only
-# matters for advanced configuration management which should be handling
-# most of this step itself.
-
-exit 0
