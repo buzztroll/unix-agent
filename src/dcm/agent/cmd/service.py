@@ -188,18 +188,6 @@ def console_log(cli_args, level, msg, **kwargs):
 def _gather_info(conf):
     tar = tarfile.open("/tmp/agent_info.tar.gz", "w:gz")
 
-    if os.path.isfile("/tmp/boot.log"):
-        tar.add("/tmp/boot.log")
-
-    if os.path.isfile("/tmp/error.log"):
-        tar.add("/tmp/error.log")
-
-    if os.path.isfile("/var/log/cloud-init.log"):
-        tar.add("/var/log/cloud-init.log")
-
-    if os.path.isfile("/var/log/boot.log"):
-        tar.add("/var/log/boot.log")
-
     if os.path.exists("/dcm"):
         tar.add("/dcm")
     try:
@@ -234,9 +222,31 @@ def _gather_info(conf):
         mi.write(message)
     mi.close()
 
-    tar.add("/tmp/meta_info.txt")
-    tar.add("/tmp/startup_script.txt")
+    # gather processes
+    with open("/tmp/process_info.txt", "w") as pi:
+        for p in [x for x in psutil.process_iter()
+                  if x.username == conf.system_user]:
+            pi.write(p.name + " : " + str(p.pid) + os.linesep)
+            pi.write("\tstarted at: " + str(p.create_time))
+            pi.write("\t: " + str(p.cmdline))
+            pi.write("\t" + str(p.get_cpu_times()))
+            pi.write("\t" + str(p.get_memory_info()))
+
+    files_to_collect = ["/tmp/boot.log",
+                        "/tmp/error.log",
+                        "/var/log/cloud-init-output.log",
+                        "/var/log/cloud-init.log",
+                        "/var/log/boot.log",
+                        "/tmp/meta_info.txt",
+                        "/tmp/startup_script.txt",
+                        "/tmp/process_info.txt"]
+
+    for f in files_to_collect:
+        if os.path.isfile(f):
+            tar.add(f)
+
     tar.close()
+
     print """
 **********************************************************************
 To get all log and configuration file copy /tmp/agent_info.tar.gz to

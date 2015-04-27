@@ -12,7 +12,6 @@
 #  or if running on older installation
 #DCM_URL="wss://<hostname>:16433/ws"
 #
-#DCM_CLOUD=Amazon
 #DCM_DOCKER_PULL_REPOS=ubuntu
 #DCM_DOCKER_VERSION=1.2.0
 #************************
@@ -61,44 +60,24 @@ function agent_exists() {
     fi
 }
 
-function agent_guess_cloud() {
-    if [ "X$DCM_CLOUD" != "X" ]; then
-        return 0
+
+function agent_properly_configured() {
+    OLD_DCM_URL=`grep agentmanager_url /dcm/etc/agent.conf | awk -F= '{ print $2 }'`
+    if [ "X$OLD_DCM_URL" != "X$DCM_URL" ]; then
+        return 1
     fi
 
-    if [ -x "/usr/sbin/mdata-get" ]; then
-        DCM_CLOUD="Joyent"
-        return 0
-    fi
-    if [ -x "/lib/smartdc/mdata-get" ]; then
-        DCM_CLOUD="Joyent"
-        return 0
+    if ! docker_exists; then
+        return 1
     fi
 
-    metadata_url="http://metadata.google.internal/computeMetadata/v1/instance/attributes/es-dmcm-launch-id"
-    http_code=`curl -H "Metadata-Flavor: Google"  -s -o /dev/null -w "%{http_code}" $metadata_url`
-    if [[ $? -eq 0  && "X$http_code" == "X200" ]]; then
-        DCM_CLOUD="Google"
-        return 0
+    proc_count=`ps -u dcm | grep dcm-agent | wc -l`
+    if [ $proc_count -ne 2 ]; then
+        return 1
     fi
-
-    metadata_url="http://169.254.169.254/openstack/2012-08-10/meta_data.json"
-    http_code=`curl -s -o /dev/null -w "%{http_code}" $metadata_url`
-    if [[ $? -eq 0  && "X$http_code" == "X200" ]]; then
-        DCM_CLOUD="OpenStack"
-        return 0
-    fi
-
-    metadata_url="http://169.254.169.254/latest/meta-data/instance-id"
-    http_code=`curl -s -o /dev/null -w "%{http_code}" $metadata_url`
-    if [[ $? -eq 0  && "X$http_code" == "X200" ]]; then
-        DCM_CLOUD="Amazon"
-        return 0
-    fi
-
-    echo "UNKNOWN CLOUD!"
-    return 1
+    return 0
 }
+
 
 function install_agent() {
     cd /tmp
@@ -112,20 +91,8 @@ function install_agent() {
     curl $installer_url > installer.sh
     chmod 755 installer.sh
 
-    # agent_guess_cloud works by seeing if curl succeeds or fails so we
-    # must disable strict error checking while calling it
-    set +e
-    agent_guess_cloud
-    set -e
-    if [ "X$DCM_CLOUD" != "X" ]; then
-        echo 'Agent being installed with cloud parameter: ' $DCM_CLOUD
-        echo 'Agent being installed with dcm host: ' $DCM_URL
-        ./installer.sh --base-path /dcm --cloud $DCM_CLOUD --url $DCM_URL -B
-    else
-        echo "WARNING: The DCM cloud was not provided"
-        echo "This is ok for making baked in images"
-        ./installer.sh --base-path /dcm
-    fi
+    echo 'Agent being installed with dcm host: ' $DCM_URL
+    ./installer.sh --base-path /dcm --url $DCM_URL -B $AGENT_UNVERIFIED
 }
 
 function identify_platform() {
@@ -194,10 +161,8 @@ function reconfigure_agent() {
    /etc/init.d/dcm-agent stop
    pkill -9 dcm-agent
    rm -f /dcm/etc/agentdb.sql
-   rm -f /dcm/logs/agent.log
-   agent_guess_cloud
    set -e
-   /opt/dcm-agent/embedded/agentve/bin/dcm-agent-configure --base-path /dcm --cloud $DCM_CLOUD --url $DCM_URL -B
+   /opt/dcm-agent/embedded/agentve/bin/dcm-agent-configure --base-path /dcm --url $DCM_URL -B
 }
 
 function install_docker() {
@@ -285,11 +250,11 @@ function help() {
          -d/--dcm          sets DCM_URL
          -a/--agenturl     sets AGENT_BASE_URL default=https://s3.amazonaws.com/dcmagentnigthly
          -v/--version      sets AGENT_VERSION
-         -c/--cloud        sets DCM_CLOUD
          -u/--unstable     sets AGENT_UNSTABLE
          **************************************************"
 }
 
+AGENT_UNVERIFIED=""
 ################# main ###################
 if [ $# -lt 1 ]; then
     echo
@@ -314,14 +279,14 @@ else
             -v=*|--version=*)
               AGENT_VERSION="${arg#*=}"
               ;;
-            -c=*|--cloud=*)
-              DCM_CLOUD="${arg#*=}"
-              ;;
             -u=*|--unstable=*)
               AGENT_UNSTABLE="${arg#*=}"
               ;;
+            -Z)
+              AGENT_UNVERIFIED="-Z"
+              ;;
             *)
-              echo 'You passed an unknow option:' $arg
+              echo 'You passed an unknown option:' $arg
               echo 'run agent_docker.sh --help for more info'
               exit
         esac
@@ -331,7 +296,6 @@ fi
 url='https://get.docker.io/'
 
 identify_platform
-update
 
 case "$(uname -m)" in
     *64)
@@ -345,13 +309,19 @@ case "$(uname -m)" in
 esac
 
 if agent_exists; then
-    echo 'python agent is already installed'
-    echo 'Reconfiguring with the new values'
-    reconfigure_agent
+    if agent_properly_configured; then
+        echo "The agent is installed properly and running"
+        exit 0
+    else
+        echo 'Reconfiguring with the new values'
+        reconfigure_agent
+    fi
+    update
 else
     echo '**************************************'
     echo 'Proceeding with installation of Agent'
     echo '**************************************'
+    update
     install_agent
 fi
 
