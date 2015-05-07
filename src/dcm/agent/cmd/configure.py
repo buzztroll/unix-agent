@@ -14,7 +14,6 @@ import dcm.agent.utils as agent_utils
 import ConfigParser
 
 import dcm.agent
-from dcm.agent.cmd.service import get_config_files
 
 
 # below are the variables with no defaults that must be determined

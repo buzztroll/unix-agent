@@ -22,7 +22,7 @@ import dcm.agent.utils as utils
 
 
 _g_logger = logging.getLogger(__name__)
-
+ENV_INJECTED_ID_KEY = "DCM_AGENT_INJECTED_ID"
 
 class CLOUD_TYPES:
     Amazon = "Amazon"
@@ -58,6 +58,12 @@ def normalize_cloud_name(cloud_name):
             return name
     return None
 
+def get_env_injected_id(self):
+    try:
+        return os.environ[ENV_INJECTED_ID_KEY]
+    except KeyError:
+        return None
+
 
 class CloudMetaData(object):
     def get_cloud_metadata(self, key):
@@ -67,11 +73,13 @@ class CloudMetaData(object):
         _g_logger.debug("Get instance ID called")
         return None
 
+    def get_injected_id(self):
+        return None
+
     def get_startup_script(self):
         raise exceptions.AgentNotImplementedException("get_startup_script")
 
     def get_ipv4_addresses(self, conf):
-        ip_list = []
         return utils.get_ipv4_addresses()
 
     def get_handshake_ip_address(self, conf):
@@ -124,6 +132,11 @@ class AWSMetaData(CloudMetaData):
         _g_logger.debug("Instance ID is %s" % str(instance_id))
         return instance_id
 
+    def get_injected_id(self):
+        injected_id = self.get_cloud_metadata("es:dmcm-launch-id")
+        _g_logger.debug("AWS injected ID is %s" % str(injected_id))
+        return injected_id
+
     def get_ipv4_addresses(self, conf):
         # do caching
         ip_list = []
@@ -173,6 +186,8 @@ class CloudStackMetaData(CloudMetaData):
         _g_logger.debug("Instance ID is %s" % str(instance_id))
         return instance_id
 
+    # TODO implement injected ID
+
     def get_cloud_type(self):
         return CLOUD_TYPES.CloudStack
 
@@ -210,10 +225,16 @@ class JoyentMetaData(CloudMetaData):
         return result
 
     def get_instance_id(self):
+        # XXX TODO check to instance id, this is injected
         instance_id = self.get_cloud_metadata("es:dmcm-launch-id")
         super(JoyentMetaData, self).get_instance_id()
         _g_logger.debug("Instance ID is %s" % str(instance_id))
         return instance_id
+
+    def get_injected_id(self):
+        injected_id = self.get_cloud_metadata("es:dmcm-launch-id")
+        _g_logger.debug("Injected ID is %s" % str(injected_id))
+        return injected_id
 
     def get_startup_script(self):
         return self.get_cloud_metadata("user-script")
@@ -242,11 +263,18 @@ class GCEMetaData(CloudMetaData):
         return self.get_cloud_metadata("instance/attributes/startup-script")
 
     def get_instance_id(self):
+        # XXX TODO check to instance id, this is injected
         instance_id = self.get_cloud_metadata(
             "instance/attributes/es-dmcm-launch-id")
         super(GCEMetaData, self).get_instance_id()
         _g_logger.debug("Instance ID is %s" % str(instance_id))
         return instance_id
+
+    def get_injected_id(self):
+        injected_id = self.get_cloud_metadata(
+            "instance/attributes/es-dmcm-launch-id")
+        _g_logger.debug("Instance ID is %s" % str(injected_id))
+        return injected_id
 
     def get_handshake_ip_address(self, conf):
         return utils.get_ipv4_addresses()
@@ -296,6 +324,8 @@ class OpenStackMetaData(CloudMetaData):
     def get_instance_id(self):
         return self.get_cloud_metadata("uuid")
 
+    # TODO implement injected ID
+
     def get_cloud_type(self):
         return CLOUD_TYPES.OpenStack
 
@@ -310,6 +340,9 @@ class KonamiMetaData(CloudMetaData):
 
     def get_instance_id(self):
         return self.get_cloud_metadata("INSTANCE_ID")
+
+    def get_injected_id(self):
+        return self.get_cloud_metadata("INJECTED_ID")
 
     def get_handshake_ip_address(self, conf):
         private = self.get_cloud_metadata("PRIVATE_IP")
