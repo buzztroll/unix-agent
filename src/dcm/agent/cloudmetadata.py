@@ -58,7 +58,7 @@ def normalize_cloud_name(cloud_name):
             return name
     return None
 
-def get_env_injected_id(self):
+def get_env_injected_id():
     try:
         return os.environ[ENV_INJECTED_ID_KEY]
     except KeyError:
