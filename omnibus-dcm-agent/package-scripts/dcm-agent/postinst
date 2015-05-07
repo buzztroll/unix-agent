@@ -99,11 +99,13 @@ if [ -f /usr/sbin/update-rc.d ] ; then
 	echo "# Description:       Starts and stops the enStratus agent" >> $startup_fname
 	echo "### END INIT INFO" >> $startup_fname
 
-    cp $BASEDIRNAME/bin/enstratiusinitd-DEB $BASEDIRNAME/bin/enstratiusinitd
+    ln -s $BASEDIRNAME/bin/enstratiusinitd-DEB $BASEDIRNAME/bin/enstratiusinitd
 elif [ -x /sbin/chkconfig ] ; then
 
 	echo "# chkconfig: 2345 60 40" >> $startup_fname
 	echo "# description: Manages the enStratus agent." >> $startup_fname
+
+	ln -s $BASEDIRNAME/bin/enstratiusinitd-CENTOS $BASEDIRNAME/bin/enstratiusinitd
 else
 	echo "Could not identify startup protocols. Contact enStratus support at support@enstratus.com."
 	exit 90

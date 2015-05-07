@@ -10,7 +10,7 @@ homepage "https://enstratius.com"
 
 install_dir "/opt/#{name}"
 
-build_version "0.2.1" # SEARCH_TOKEN do not delete
+build_version "0.3.1" # SEARCH_TOKEN do not delete
 #build_version Omnibus::BuildVersion.semver
 build_iteration 1
 
@@ -19,6 +19,7 @@ dependency "preparation"
 
 # dcm-agent-extras dependencies/components
 dependency "puppet-gem"
+dependency "ec2-ami-tools"
 
 # Version manifest file
 dependency "version-manifest"
