@@ -32,19 +32,10 @@ fi
 $LOGGER -t "$logTag" rename "$@"
 
 BASENAME=`basename $0`
-CUSTOM="$DCM_BASEDIR/custom/bin/$BASENAME"
+
 
 SCALE=0
 
-if [ -x ${CUSTOM} ] ; then
-	${CUSTOM} "$@" 2>&1 | $LOGGER -t "$logTag"
-	exit_with_pipe_value
-fi
-
-if [ -x ${CUSTOM}-pre ] ; then
-	${CUSTOM}-pre "$@" 2>&1 | $LOGGER -t "$logTag"
-	exit_if_pipe_false
-fi
 IPADDRESS=$2
 
 validatehostname() {
@@ -110,12 +101,4 @@ if [ -s /etc/init.d/ossec ] ; then
 fi
 
 STATUS=$?
-
-if [ ${STATUS} == 0 ] ; then
-	if [ -x ${CUSTOM}-post ] ; then
-		${CUSTOM}-post "$@" 2>&1 | $LOGGER -t "$logTag"
-		STATUS=${PIPESTATUS}
-	fi
-fi
-
 exit ${STATUS}

@@ -61,12 +61,6 @@ else
 fi
 
 BASENAME=`basename $0`
-CUSTOM=$DCM_BASEDIR/custom/bin/${BASENAME}
-
-if [ -x ${CUSTOM} ] ; then
-	${CUSTOM} "$@" 2>&1 | $LOGGER -t "$logTag"
-	exit_with_pipe_value
-fi
 
 CUST_ID=${1}
 USER_ID=${2}
@@ -78,11 +72,6 @@ if [ $# -gt 5 ] ; then
     SSH_KEY_FILE=${6}
 else
     SSH_KEY_FILE=""
-fi
-
-if [ -x ${CUSTOM}-pre ] ; then
-	${CUSTOM}-pre "$@" 2>&1 | $LOGGER -t "$logTag"
-	exit_if_pipe_false "${CUSTOM}-pre $@ failed."
 fi
 
 id ${USER_ID} 2> /dev/null
@@ -149,12 +138,6 @@ if [ -e /etc/selinux/ ]; then
             $LOGGER -t "$logTag" "SELinux detected but couldn't run restorecon to configure SELinux context."
         fi
     fi
-fi
-
-if [ -x ${CUSTOM}-post ] ; then
-	${CUSTOM}-post "$@" 2>&1 | $LOGGER -t "$logTag"
-	exit_if_pipe_false "${CUSTOM}-post failed."
-	ret=0
 fi
 
 exit $ret
