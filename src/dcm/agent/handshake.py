@@ -11,6 +11,7 @@
 #   this material is strictly forbidden unless prior written permission
 #   is obtained from Dell, Inc.
 #  ======================================================================
+import logging
 import os
 
 from dcm.agent import cloudmetadata, jobs
@@ -18,6 +19,8 @@ import dcm.agent
 
 
 FOR_TEST_AGENT_ID_ENV = "FOR_TEST_AGENT_ID_ENV"
+
+_g_logger = logging.getLogger(__name__)
 
 
 def get_handshake(conf):
@@ -47,7 +50,11 @@ def get_handshake(conf):
 
     ipv4s = conf.meta_data_object.get_handshake_ip_address(conf)
     ipv6s = []
-    injected_id = None
+    injected_id = cloudmetadata.get_env_injected_id()
+    if not injected_id:
+        _g_logger.debug("No ENV ID set, check the cloud specific "
+                        "metadata object")
+        injected_id = conf.meta_data_object.get_injected_id()
     agent_id = conf.agent_id
     if FOR_TEST_AGENT_ID_ENV in os.environ:
         agent_id = os.environ[FOR_TEST_AGENT_ID_ENV]

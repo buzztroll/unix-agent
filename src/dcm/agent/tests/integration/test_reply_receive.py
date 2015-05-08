@@ -270,15 +270,6 @@ class TestProtocolCommands(reply.ReplyObserverInterface):
         self.req_conn.close()
         test_utils.test_thread_shutdown()
 
-    def test_get_private_ip(self):
-        doc = {
-            "command": "get_private_ip_address",
-            "arguments": {"agent_token": None}
-        }
-        req_reply = self._rpc_wait_reply(doc)
-        print req_reply.get_reply()
-        # TODO verify that this matches the output of the command
-
     def test_heartbeat(self):
         doc = {
             "command": "heartbeat",

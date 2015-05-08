@@ -99,24 +99,21 @@ if [ -f /usr/sbin/update-rc.d ] ; then
 	echo "# Description:       Starts and stops the enStratus agent" >> $startup_fname
 	echo "### END INIT INFO" >> $startup_fname
 
-	echo "env -i PATH=$PATH $BASEDIRNAME/bin/enstratiusinitd " '$@' >> $startup_fname
-
-	chmod 755 $startup_fname
-
+    ln -s $BASEDIRNAME/bin/enstratiusinitd-DEB $BASEDIRNAME/bin/enstratiusinitd
 elif [ -x /sbin/chkconfig ] ; then
 
 	echo "# chkconfig: 2345 60 40" >> $startup_fname
 	echo "# description: Manages the enStratus agent." >> $startup_fname
-	echo "env -i PATH=$PATH $BASEDIRNAME/bin/enstratiusinitd-CENTOS " '$@' >> $startup_fname
 
-    chmod 755 $startup_fname
-
+	ln -s $BASEDIRNAME/bin/enstratiusinitd-CENTOS $BASEDIRNAME/bin/enstratiusinitd
 else
 	echo "Could not identify startup protocols. Contact enStratus support at support@enstratus.com."
 	exit 90
 fi
 echo "Done."
 
+echo "env -i PATH=$PATH $BASEDIRNAME/bin/enstratiusinitd " '$@' >> $startup_fname
+chmod 755 $startup_fname
 
 echo "Create the configuration file"
 /opt/dcm-agent/embedded/agentve/bin/dcm-agent-configure -v -I -U $DCM_USERNAME -p $BASEDIRNAME
