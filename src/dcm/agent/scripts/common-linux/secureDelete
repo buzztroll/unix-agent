@@ -15,17 +15,6 @@ if [ $# -lt 1 ] ; then
 fi
 
 BASENAME=`basename $0`
-CUSTOM="$DCM_BASEDIR/custom/bin/$BASENAME"
-
-if [ -x ${CUSTOM} ] ; then
-	${CUSTOM} "$@" 2>&1 | $LOGGER -t "$logTag"
-	exit_with_pipe_value
-fi
-
-if [ -x ${CUSTOM}-pre ] ; then
-	${CUSTOM}-pre "$@" 2>&1 | $LOGGER -t "$logTag"
-	exit_if_pipe_false
-fi
 
 if [ -x /usr/bin/srm ] ; then
 	/usr/bin/srm -f -z "$1"
@@ -42,11 +31,6 @@ else
 	if [ $? != 0 ] ; then
 		$LOGGER -t "$logTag" Secure delete is not installed on this server. $1 was deleted, but not securely deleted.
 	fi
-fi
-
-if [ -x ${CUSTOM}-post ] ; then
-	${CUSTOM}-post "$@" 2>&1 | $LOGGER -t "$logTag"
-	exit_with_pipe_value
 fi
 
 exit $EXIT_CODE

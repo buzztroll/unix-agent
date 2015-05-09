@@ -11,7 +11,6 @@ LOGGER=$DCM_BASEDIR/bin/log
 logTag="assembleRaid"
 
 BASENAME=`basename $0`
-CUSTOM="$DCM_BASEDIR/custom/bin/$BASENAME"
 
 $LOGGER -t "$logTag" assembleRaid "$@"
 
@@ -21,16 +20,6 @@ devices=${args[@]:1}
 
 deviceArray=($devices)
 deviceCount=${#deviceArray[*]}
-
-if [ -x ${CUSTOM} ] ; then
-	${CUSTOM} "$@" 2>&1 | $LOGGER -t "$logTag"
-	exit_with_pipe_value
-fi
-
-if [ -x ${CUSTOM}-pre ] ; then
-	${CUSTOM}-pre "$@" 2>&1 | $LOGGER -t "$logTag"
-	exit_if_pipe_false
-fi
 
 sudo modprobe raid0
 
@@ -68,11 +57,6 @@ elif [ -f /etc/mdadm.conf ] ; then
     sudo mdadm --detail --scan | sudo tee -a /etc/mdadm.conf
 else
     sudo mdadm --detail --scan | sudo tee /etc/mdadm.conf
-fi
-
-if [ -x ${CUSTOM}-post ] ; then
-	${CUSTOM}-post "$@" 2>&1 | $LOGGER -t "$logTag"
-	exit_if_pipe_false
 fi
 
 exit 0

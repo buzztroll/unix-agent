@@ -12,7 +12,6 @@ logTag="setupEncryption"
 LOGGER=$DCM_BASEDIR/bin/log
 
 BASENAME=`basename $0`
-CUSTOM="$DCM_BASEDIR/custom/bin/$BASENAME"
 
 if [ $# -lt 2 ] ; then
    $LOGGER -t "$logTag" Syntax: setupEncryption RAW_DEVICE KEY_FILE
@@ -33,16 +32,6 @@ $LOGGER -t "$logTag" setupEncryption "$@"
 if [ ! -f "$keyFile" ] ; then
 	$LOGGER -t "$logTag" Unable to ready key file
 	exit 10
-fi
-
-if [ -x ${CUSTOM} ] ; then
-	${CUSTOM} "$@" 2>&1 | $LOGGER -t "$logTag"
-	exit_with_pipe_value
-fi
-
-if [ -x ${CUSTOM}-pre ] ; then
-	${CUSTOM}-pre "$@" 2>&1 | $LOGGER -t "$logTag"
-	exit_if_pipe_false
 fi
 
 sudo modprobe dm_crypt
@@ -76,11 +65,6 @@ sudo cryptsetup -q luksFormat --cipher aes-cbc-essiv:sha256 "/dev/$rawDevice" "$
 if [ $? != 0 ] ; then
 	$LOGGER -t "$logTag" Unable to setup encryption.
 	exit 11
-fi
-
-if [ -x ${CUSTOM}-post ] ; then
-	${CUSTOM}-post "$@" 2>&1 | $LOGGER -t "$logTag"
-	exit_with_pipe_value
 fi
 
 exit 0

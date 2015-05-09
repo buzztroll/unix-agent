@@ -40,19 +40,8 @@ else
 fi
 
 BASENAME=`basename $0`
-CUSTOM="$DCM_BASEDIR/custom/bin/$BASENAME"
-
-if [ -x ${CUSTOM} ] ; then
-	${CUSTOM} "$@" 2>&1 | $LOGGER -t "$logTag"
-	exit_with_pipe_value
-fi
 
 USER_ID=${1}
-
-if [ -x ${CUSTOM}-pre ] ; then
-	${CUSTOM}-pre "$@" 2>&1 | $LOGGER -t "$logTag"
-	exit_if_pipe_false
-fi
 
 id "$USER_ID" 2> /dev/null
 if [ $? != 0 ] ; then
@@ -70,11 +59,6 @@ fi
 
 sudo "$USERDEL" -f -r "$USER_ID" 2>&1 | $LOGGER -t "$logTag"
 ret=${PIPESTATUS}
-
-if [ -x ${CUSTOM}-post ] ; then
-	${CUSTOM}-post "$@" 2>&1 | $LOGGER -t "$logTag"
-	ret=${PIPESTATUS}
-fi
 
 # After running 'userdel -f -r' command, code 12 is normally returned. That's because /var/mail/USER_ID does not exist.
 # Since it is not a fatal error but a warning, exit code 12 can be replaced with exit code 0.

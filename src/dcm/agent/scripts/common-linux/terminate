@@ -22,12 +22,6 @@ logTag="terminate"
 LOGGER=$DIRNAME/log
 
 BASENAME=`basename $0`
-CUSTOM=$DCM_BASEDIR/custom/bin/${BASENAME}
-
-if [ -x ${CUSTOM}-pre ] ; then
-	${CUSTOM}-pre "$@" 2>&1 | $LOGGER -t "$logTag"
-	exit_if_pipe_false
-fi
 
 $LOGGER -t "$logTag" Enstratius is now shutting down the agent.
 # XXX TODO fork this out with a delay?

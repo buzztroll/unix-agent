@@ -11,7 +11,6 @@ logTag="unmount"
 LOGGER=$DIRNAME/log
 
 BASENAME=`basename $0`
-CUSTOM="$DCM_BASEDIR/custom/bin/$BASENAME"
 
 if [ $# -lt 1 ] ; then
    $LOGGER -t "$logTag" Syntax: unmount MOUNT_POINT
@@ -22,24 +21,9 @@ mountPoint=$1
 
 $LOGGER -t "$logTag" unmount "$@" 
 
-if [ -x ${CUSTOM} ] ; then
-	${CUSTOM} "$@" 2>&1 | $LOGGER -t "$logTag"
-	exit_with_pipe_value
-fi
-
-if [ -x ${CUSTOM}-pre ] ; then
-	${CUSTOM}-pre "$@" 2>&1 | $LOGGER -t "$logTag"
-	exit_if_pipe_false
-fi
-
 sudo umount $mountPoint 2>&1 | $LOGGER -t "$logTag"
 				
 mp=${mountPoint//\//\\\/}
 sudo sed -i "/\s$mp\s/d" /etc/fstab
 				
-if [ -x ${CUSTOM}-post ] ; then
-	${CUSTOM}-post "$@" 2>&1 | $LOGGER -t "$logTag"
-	exit_if_pipe_false
-fi
-
 exit 0

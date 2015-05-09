@@ -10,7 +10,6 @@ logTag="format"
 LOGGER=$DCM_BASEDIR/bin/log
 
 BASENAME=`basename $0`
-CUSTOM="$DCM_BASEDIR/custom/bin/$BASENAME"
 
 if [ $# -lt 4 ] ; then
    $LOGGER -t "$logTag" Syntax: format DEVICE_ID FILE_SYSTEM MOUNT_POINT ENCRYPTED
@@ -43,16 +42,6 @@ else
 	exit 1
 fi
 
-if [ -x ${CUSTOM} ] ; then
-	${CUSTOM} "$@" 2>&1 | $LOGGER -t "$logTag"
-	exit_with_pipe_value
-fi
-
-if [ -x ${CUSTOM}-pre ] ; then
-	${CUSTOM}-pre "$@" 2>&1 | $LOGGER -t "$logTag"
-	exit_if_pipe_false
-fi
-
 [ -f /sbin/mkfs.${fileSystem} ] || ( $LOGGER -t "$logTag" "${fileSystem} not supported ; exit 24" )
 case "$fileSystem" in
 reiserfs)	yes | sudo /sbin/mkfs.${fileSystem} -f $device
@@ -80,11 +69,6 @@ else
 	else
 		echo "$device $mountPoint $fileSystem defaults 0 0" | sudo tee -a /etc/fstab
 	fi
-fi
-
-if [ -x ${CUSTOM}-post ] ; then
-	${CUSTOM}-post "$@" 2>&1 | $LOGGER -t "$logTag"
-	exit_if_pipe_false
 fi
 
 exit 0

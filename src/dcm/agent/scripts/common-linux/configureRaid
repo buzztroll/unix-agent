@@ -12,7 +12,6 @@ LOGGER=$DIRNAME/log
 logTag="configureRaid"
 
 BASENAME=`basename $0`
-CUSTOM=$DCM_BASEDIR/custom/bin/${BASENAME}
 
 $LOGGER -t "$logTag" configureRaid "$@"
 
@@ -23,16 +22,6 @@ devices=${args[@]:2}
 
 deviceArray=($devices)
 deviceCount=${#deviceArray[*]}
-
-if [ -x ${CUSTOM} ] ; then
-	${CUSTOM} "$@" 2>&1 | $LOGGER -t "$logTag"
-	exit_with_pipe_value
-fi
-
-if [ -x ${CUSTOM}-pre ] ; then
-	${CUSTOM}-pre "$@" 2>&1 | $LOGGER -t "$logTag"
-	exit_if_pipe_false
-fi
 
 map=""
 el_ver=0
@@ -73,11 +62,6 @@ elif [ -f /etc/mdadm.conf ] ; then
 else    
         echo "DEVICE" $map | sudo tee -a /etc/mdadm.conf > /dev/null 2>&1
         sudo mdadm --detail --scan | sudo tee -a /etc/mdadm.conf > /dev/null 2>&1
-fi
-
-if [ -x ${CUSTOM}-post ] ; then
-	${CUSTOM}-post "$@" 2>&1 | $LOGGER -t "$logTag"
-	exit_if_pipe_false
 fi
 
 exit 0

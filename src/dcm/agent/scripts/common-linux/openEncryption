@@ -12,7 +12,6 @@ LOGGER=$DIRNAME/log
 PATH=/usr/local/sbin:/usr/local/bin:/sbin:/bin:/usr/sbin:/usr/bin:$DCM_BASEDIR/bin
 
 BASENAME=`basename $0`
-CUSTOM="$DCM_BASEDIR/custom/bin/$BASENAME"
 
 if [ $# -lt 3 ] ; then
    $LOGGER -t "$logTag" Syntax: openEncryption RAW_DEVICE ENCRYPTED_DEVICE KEY_FILE
@@ -39,16 +38,6 @@ if [ ! -f "$keyFile" ] ; then
         exit 10
 fi
 
-if [ -x ${CUSTOM} ] ; then
-        ${CUSTOM} "$@" 2>&1 | $LOGGER -t "$logTag"
-	exit_with_pipe_value
-fi
-
-if [ -x ${CUSTOM}-pre ] ; then
-        ${CUSTOM}-pre "$@" 2>&1 | $LOGGER -t "$logTag"
-	exit_if_pipe_false
-fi
-
 # 1. Some kernels may detect sdX devices as xvdX
 # 2. sdh is identified as xvdl since RHEL/CentOS 6.1
 el_ver=0
@@ -73,11 +62,6 @@ sudo cryptsetup --key-file $keyFile -q luksOpen "/dev/$rawDevice" $encryptedDevi
 if [ $? != 0 ] ; then
         $LOGGER -t "$logTag" Unable to open encrypted device.
         exit 11
-fi
-
-if [ -x ${CUSTOM}-post ] ; then
-        ${CUSTOM}-post "$@" 2>&1 | $LOGGER -t "$logTag"
-	exit_if_pipe_false
 fi
 
 exit 0

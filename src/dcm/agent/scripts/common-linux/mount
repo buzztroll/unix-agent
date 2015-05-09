@@ -11,7 +11,6 @@ logTag="mount"
 LOGGER=$DIRNAME/log
 
 BASENAME=`basename $0`
-CUSTOM="$DCM_BASEDIR/custom/bin/$BASENAME"
 
 if [ $# -lt 3 ] ; then
    $LOGGER -t "$logTag" Syntax: mount DEVICE_ID FILE_SYSTEM MOUNT_POINT
@@ -23,16 +22,6 @@ fileSystem=$2
 mountPoint=$3
 
 $LOGGER -t "$logTag mount $@"
-
-if [ -x ${CUSTOM} ] ; then
-	${CUSTOM} "$@"  2>&1 | $LOGGER -t "$logTag"
-	exit_with_pipe_value
-fi
-
-if [ -x ${CUSTOM}-pre ] ; then
-	${CUSTOM}-pre "$@"  2>&1 | $LOGGER -t "$logTag"
-	exit_if_pipe_false
-fi
 
 if [ ! -d "$mountPoint" ] ; then
 	sudo mkdir "$mountPoint"
@@ -74,9 +63,4 @@ sudo chown $DCM_USER:$DCM_USER "$mountPoint"  2>&1 | $LOGGER -t "$logTag"
 sudo chmod 775 "$mountPoint" 2>&1 | $LOGGER -t "$logTag"
 ret=${PIPESTATUS}
 				
-if [ -x ${CUSTOM}-post ] ; then
-	${CUSTOM}-post "$@" 2>&1 | $LOGGER -t "$logTag"
-	ret=${PIPESTATUS}
-fi
-
 exit $ret
