@@ -38,9 +38,6 @@ class FetchRunScript(jobs.Plugin):
                      False, bool, False),
         "runUnderSudo": ("Run this script as the root use with sudo.",
                      False, bool, False),
-        "gzipped": ("A boolean to determine of the incoming executable "
-                    "was compressed.",
-                     False, bool, False),
         "arguments": ("The list of arguments to be passed to the "
                       "downloaded script",
                       False, list, None),
@@ -117,7 +114,6 @@ class FetchRunScript(jobs.Plugin):
             command_list = []
             if self.args.runUnderSudo:
                 command_list.append(self.conf.system_sudo)
-            command_list.append(exe_file)
             if self.args.inpython:
                 command_list.append(sys.executable)
             command_list.append(exe_file)
