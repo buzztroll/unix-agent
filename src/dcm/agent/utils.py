@@ -32,17 +32,17 @@ import re
 _g_logger = logging.getLogger(__name__)
 
 _g_map_platform_installer = {
-    "ubuntu": ["/usr/bin/sudo", "/usr/bin/dpkg", "-i"],
-    "debian": ["/usr/bin/sudo", "/usr/bin/dpkg", "-i"],
-    "centos": ["/usr/bin/sudo", "/bin/rpm", "-Uvh"],
-    "rhel": ["/usr/bin/sudo", "/bin/rpm", "-Uvh"]
+    "ubuntu": ["/usr/bin/dpkg", "-i"],
+    "debian": ["/usr/bin/dpkg", "-i"],
+    "centos": ["/bin/rpm", "-Uvh"],
+    "rhel": ["/bin/rpm", "-Uvh"]
 }
 
 _g_map_platform_remove_package = {
-    "ubuntu": ["/usr/bin/sudo", "/usr/bin/dpkg", "--purge"],
-    "debian": ["/usr/bin/sudo", "/usr/bin/dpkg", "--purge"],
-    "centos": ["/usr/bin/sudo", "/bin/rpm", "-e"],
-    "rhel": ["/usr/bin/sudo", "/bin/rpm", "-e"]
+    "ubuntu": ["/usr/bin/dpkg", "--purge"],
+    "debian": ["/usr/bin/dpkg", "--purge"],
+    "centos": ["/bin/rpm", "-e"],
+    "rhel": ["/bin/rpm", "-e"]
 }
 
 _g_extras_pkgs_name = "dcm-agent-extras"
@@ -539,6 +539,7 @@ def install_extras(conf, package=None):
             "No extras package was found.  Tried " + str(try_packages))
 
     install_command = _g_map_platform_installer[conf.platform_name][:]
+    install_command.insert(0, conf.system_sudo)
     install_command.append(pkg_file)
     _g_logger.debug("Running: %s" % install_command)
     (stdout, stderr, rc) = run_command(

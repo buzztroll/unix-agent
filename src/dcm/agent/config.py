@@ -381,6 +381,7 @@ def build_options_list():
         ConfigOpt("storage", "default_filesystem", str, default="ext3"),
 
         ConfigOpt("system", "user", str, default="dcm"),
+        ConfigOpt("system", "sudo", str, default="/usr/bin/sudo"),
 
         ConfigOpt("cloud", "type", str, default=CLOUD_TYPES.UNKNOWN,
                   help_msg="The type of cloud on which this agent is running"),

@@ -54,17 +54,17 @@ if [ $? != 0 ] ; then
 	exit 24
 fi
 
-distro=$($DCM_BASEDIR/bin/getUnixOs)
+distro=$DCM_AGENT_PLATFORM_NAME
 mp=${mountPoint//\//\\\/}
 sudo sed -i "/\s$mp\s/d" /etc/fstab
 if [[ $encrypted == "true" ]] ; then
-	if [ $distro == "UBUNTU" ]; then
+	if [ $distro == "ubuntu" ]; then
 		echo "$device $mountPoint $fileSystem noatime,nobootwait 0 0" | sudo tee -a /etc/fstab
 	else
 		echo "$device $mountPoint $fileSystem noatime 0 0" | sudo tee -a /etc/fstab
 	fi
 else
-	if [ $distro == "UBUNTU" ]; then
+	if [ $distro == "ubuntu" ]; then
 		echo "$device $mountPoint $fileSystem defaults,nobootwait 0 0" | sudo tee -a /etc/fstab
 	else
 		echo "$device $mountPoint $fileSystem defaults 0 0" | sudo tee -a /etc/fstab

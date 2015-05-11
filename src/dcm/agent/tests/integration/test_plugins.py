@@ -7,6 +7,7 @@ import boto
 import uuid
 import logging
 import sys
+import zlib
 
 from dcm.agent import config
 import dcm.agent.jobs.builtin.fetch_run as fetch_plugin
@@ -165,6 +166,29 @@ class TestRunScriptPlugin(unittest.TestCase):
         cls.test_conf_path = \
             os.path.join(basedir, "etc", "agent.conf")
         cls.conf_obj = config.AgentConfig([cls.test_conf_path])
+
+    def test_zipped_python_run(self):
+        py_script = """import sys
+print sys.executable
+"""
+        compressed_script = zlib.compress(py_script)
+        b64_py = base64.b64encode(compressed_script)
+
+        sha256 = hashlib.sha256()
+        # fake a checksum for failure
+        sha256.update(py_script)
+        actual_checksum = sha256.hexdigest()
+
+        arguments = {'b64script': b64_py,
+                     'inpython': True,
+                     'compression': 'gzip',
+                     'checksum': actual_checksum}
+        plugin = run_script_plugin.load_plugin(
+            self.conf_obj, str(uuid.uuid4()),
+            {}, "run_script", arguments)
+        result = plugin.run()
+        self.assertEqual(result['return_code'], 0)
+        self.assertEqual(sys.executable, result['message'].strip())
 
     def test_python_run(self):
         py_script = """import sys

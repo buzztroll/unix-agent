@@ -30,7 +30,7 @@ fi
 # 1. Some kernels may detect sdX devices as xvdX
 # 2. sdh is identified as xvdl since RHEL/CentOS 6.1
 el_ver=0
-distro=$($DCM_BASEDIR/bin/getUnixOs)
+distro=$DCM_AGENT_PLATFORM_NAME
 if [ -f /etc/redhat-release ]; then
 	el_ver=$(grep -o -E '[0-9]\.[0-9]' /etc/redhat-release)
 fi
@@ -50,7 +50,7 @@ fi
 exists=$(grep " $mountPoint " /etc/fstab)
 
 # nobootwait option is only needed in Ubuntu.
-if [[ $exists == "" ]] && [[ $distro == "UBUNTU" ]]; then
+if [[ $exists == "" ]] && [[ $distro == "ubuntu" ]]; then
 	echo "/dev/$deviceId $mountPoint $fileSystem defaults,nobootwait 0 0" | sudo tee -a /etc/fstab
 elif [[ $exists == "" ]]; then
 	echo "/dev/$deviceId $mountPoint $fileSystem defaults 0 0" | sudo tee -a /etc/fstab

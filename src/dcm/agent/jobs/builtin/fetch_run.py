@@ -36,7 +36,8 @@ class FetchRunScript(jobs.Plugin):
         "inpython": ("Run the downloaded script with the current python "
                      "environment.",
                      False, bool, False),
-
+        "runUnderSudo": ("Run this script as the root use with sudo.",
+                     False, bool, False),
         "arguments": ("The list of arguments to be passed to the "
                       "downloaded script",
                       False, list, None),
@@ -111,6 +112,8 @@ class FetchRunScript(jobs.Plugin):
             os.chmod(exe_file, 0x755)
 
             command_list = []
+            if self.args.runUnderSudo:
+                command_list.append(self.conf.system_sudo)
             if self.args.inpython:
                 command_list.append(sys.executable)
             command_list.append(exe_file)

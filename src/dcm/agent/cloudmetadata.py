@@ -198,7 +198,7 @@ class JoyentMetaData(CloudMetaData):
         self.cmd_location = None
 
     def _run_command(self, cmd, key):
-        cmd_args = ["/usr/bin/sudo", cmd, key]
+        cmd_args = [self.conf.system_sudo, cmd, key]
         (stdout, stderr, rc) = utils.run_command(self.conf, cmd_args)
         _g_logger.debug("Joyent metadata %d %s %s" % (rc, stdout, stderr))
         if rc != 0:
