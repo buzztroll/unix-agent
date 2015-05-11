@@ -1,4 +1,4 @@
-    #  ========= CONFIDENTIAL =========
+#  ========= CONFIDENTIAL =========
 #
 #  Copyright (C) 2010-2014 Dell, Inc. - ALL RIGHTS RESERVED
 #
@@ -32,6 +32,11 @@ class RunScript(jobs.Plugin):
         "checksum": ("The checksum of the script.", True, str, None),
         "inpython": ("Run this script with the current python environment.",
                      False, bool, False),
+        "runUnderSudo": ("Run this script as the root use with sudo.",
+                     False, bool, False),
+        "gzipped": ("A boolean to determine of the incoming executable "
+                    "was compressed.",
+                     False, bool, False),
         "arguments": ("The list of arguments to be passed to the script",
                       False, list, None)
     }
@@ -54,6 +59,8 @@ class RunScript(jobs.Plugin):
             os.chmod(script_file, 0x755)
 
             command_list = []
+            if self.args.runUnderSudo:
+                command_list.append(self.conf.system_sudo)
             if self.args.inpython:
                 command_list.append(sys.executable)
             command_list.append(script_file)
