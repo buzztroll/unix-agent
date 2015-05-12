@@ -1022,9 +1022,10 @@ class TestProtocolCommands(reply.ReplyObserverInterface):
             for name in user_list: # delete and clean up user
                 pw_ent = pwd.getpwnam(name)
                 if pw_ent is not None:
-                    os.system('userdel -r %s' % user_name)
+                    os.system('userdel -r %s' % name)
         except KeyError:
             print "The name doesn't exist"
+
 
     @test_utils.system_changing
     def test_delete_private_keys(self):
@@ -1059,12 +1060,64 @@ class TestProtocolCommands(reply.ReplyObserverInterface):
         req_rpc = self._rpc_wait_reply(doctwo)
         r = req_rpc.get_reply()
         nose.tools.eq_(r["payload"]["return_code"], 0)
+
+        for user in user_list:
+            keyfile_path = '/home/%s/.ssh/key' % user
+            nose.tools.eq_(os.path.isfile(keyfile_path), False)
+
         try:
             for name in user_list: # delete and clean up user and homedir
                 pw_ent = pwd.getpwnam(name)
                 if pw_ent is not None:
-                    os.system('userdel -r %s' % user_name)
-                    os.system('rm -rf /home/%s' % user_name)
+                    os.system('userdel -r %s' % name)
+                    os.system('rm -rf /home/%s' % name)
+        except KeyError:
+            print "The name doesn't exist"
+
+    @test_utils.system_changing
+    def test_delete_history(self):
+        user_list = []
+        for i in range(5):
+            user_name = "dcm" + str(random.randint(10, 99))
+
+            doc = {
+                "command": "add_user",
+                "arguments": {"customerId": self.customer_id,
+                              "userId": user_name,
+                              "firstName": "buzz",
+                              "lastName": "troll",
+                              "authentication": "public key data",
+                              "administrator": False}}
+            user_list.append(user_name)
+            req_rpc = self._rpc_wait_reply(doc)
+            r = req_rpc.get_reply()
+            print r["payload"]["return_code"]
+            nose.tools.eq_(r["payload"]["return_code"], 0)
+
+            pw_ent = pwd.getpwnam(user_name)
+            nose.tools.eq_(pw_ent.pw_name, user_name)
+            history_file = '/home/%s/.fake_history' % user_name
+            kf = open(history_file, "w")
+            kf.write('this is fake stuff')
+            kf.close()
+        doctwo = {
+            "command": "clean_image",
+            "arguments": {}}
+
+        req_rpc = self._rpc_wait_reply(doctwo)
+        r = req_rpc.get_reply()
+        nose.tools.eq_(r["payload"]["return_code"], 0)
+
+        for user in user_list:
+            history_path = '/home/%s/.fake_history' % user
+            nose.tools.eq_(os.path.isfile(history_path), False)
+
+        try:
+            for name in user_list: # delete and clean up user and homedir
+                pw_ent = pwd.getpwnam(name)
+                if pw_ent is not None:
+                    os.system('userdel -r %s' % name)
+                    os.system('rm -rf /home/%s' % name)
         except KeyError:
             print "The name doesn't exist"
 

@@ -1,4 +1,4 @@
-import os
+import os, sys
 
 
 def is_privatekey(keyfile):
@@ -8,14 +8,17 @@ def is_privatekey(keyfile):
     return False
 
 
-def main():
+def main(bin_path):
     for (dirpath, dirname, filename) in os.walk('/home'):
         if dirpath.endswith('.ssh'):
             for file in filename:
                 filepath = os.path.join(dirpath, file)
                 if is_privatekey(filepath):
-                    cmd = 'rm %s' % filepath
+                    cmd = '%s %s' % \
+                        (os.path.join(bin_path, 'secureDelete'),
+                         filepath)
                     os.system(cmd)
 
 if __name__ == "__main__":
-    main()
+    bin_path = os.path.dirname(os.path.abspath(__file__))
+    main(bin_path)

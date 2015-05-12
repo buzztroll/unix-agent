@@ -12,6 +12,9 @@ class CleanImage(jobs.Plugin):
         False, list, None),
         "delKeys":
         ("Flag to delete private keys in users home directories",
+        False, bool, False),
+        "sshConf":
+        ("Flag to set ssh config with safe options",
         False, bool, False)
     }
 
@@ -27,7 +30,8 @@ class CleanImage(jobs.Plugin):
 
         exe = self.conf.get_script_location("delete_keys.py")
         cmd = [
-            '/usr/bin/sudo',
+            self.conf.system_sudo,
+            '-E',
             sys.executable,
             exe
         ]
@@ -38,6 +42,27 @@ class CleanImage(jobs.Plugin):
             res_doc["message"] = stdout
             res_doc["error_message"] = stderr
         return res_doc
+
+    def delete_history(self):
+         res_doc = {"return_code": 0,
+                    "message": "History deleted successfully",
+                    "error_message": "",
+                    "reply_type": "void"}
+
+         exe = self.conf.get_script_location("delete_history.py")
+         cmd = [
+             self.conf.system_sudo,
+             '-E',
+             sys.executable,
+             exe
+         ]
+
+         (stdout, stderr, rc) = utils.run_command(self.conf, cmd)
+         if rc != 0:
+             res_doc["return_code"] = rc
+             res_doc["message"] = stdout
+             res_doc["error_message"] = stderr
+         return res_doc
 
     def run(self, res_doc={}):
         if self.args.delUser:
@@ -56,6 +81,10 @@ class CleanImage(jobs.Plugin):
             res_doc = self.delete_private_keys()
             if res_doc['return_code'] != 0:
                 return res_doc
+
+        res_doc = self.delete_history()
+        if res_doc['return_code'] != 0:
+            return res_doc
 
         self.conf.state = "RUNNING"
         return {"return_code": 0,

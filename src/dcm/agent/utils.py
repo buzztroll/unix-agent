@@ -190,7 +190,7 @@ def secure_delete(conf, file_name):
         fptr.write("*" * 100)
     if os.path.exists(file_name):
         os.remove(file_name)
-    return (stdout, stderr, rc)
+
 
 class DeviceTypes(object):
     ROOT = "ROOT"
