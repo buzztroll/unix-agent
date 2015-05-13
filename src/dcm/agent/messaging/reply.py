@@ -6,7 +6,7 @@ import sys
 
 import dcm.agent.exceptions as exceptions
 import dcm.agent.messaging.states as states
-import dcm.agent.messaging.types as types
+import dcm.agent.messaging.types as message_types
 import dcm.agent.messaging.utils as utils
 import dcm.agent.parent_receive_q as parent_receive_q
 import dcm.agent.utils as agent_util
@@ -132,12 +132,16 @@ class ReplyRPC(object):
     def incoming_message(self, json_doc):
         with tracer.RequestTracer(self._request_id):
             type_to_event = {
-                types.MessageTypes.ACK: states.ReplyEvents.REPLY_ACK_RECEIVED,
-                types.MessageTypes.NACK:
+                message_types.MessageTypes.ACK:
+                    states.ReplyEvents.REPLY_ACK_RECEIVED,
+                message_types.MessageTypes.NACK:
                 states.ReplyEvents.REPLY_NACK_RECEIVED,
-                types.MessageTypes.CANCEL: states.ReplyEvents.CANCEL_RECEIVED,
-                types.MessageTypes.STATUS: states.ReplyEvents.STATUS_RECEIVED,
-                types.MessageTypes.REQUEST: states.ReplyEvents.REQUEST_RECEIVED
+                message_types.MessageTypes.CANCEL:
+                    states.ReplyEvents.CANCEL_RECEIVED,
+                message_types.MessageTypes.STATUS:
+                    states.ReplyEvents.STATUS_RECEIVED,
+                message_types.MessageTypes.REQUEST:
+                    states.ReplyEvents.REQUEST_RECEIVED
             }
             if 'type' not in json_doc:
                 raise exceptions.MissingMessageParameterException('type')
@@ -196,7 +200,7 @@ class ReplyRPC(object):
                             states.ReplyStates.ACKED,
                             self._agent_id)
 
-        ack_doc = {'type': types.MessageTypes.ACK,
+        ack_doc = {'type': message_types.MessageTypes.ACK,
                    'message_id': utils.new_message_id(),
                    'request_id': self._request_id,
                    'entity': "user_accepts",
@@ -214,7 +218,7 @@ class ReplyRPC(object):
                                states.ReplyStates.REPLY,
                                reply_doc=self._response_doc)
 
-        reply_doc = {'type': types.MessageTypes.REPLY,
+        reply_doc = {'type': message_types.MessageTypes.REPLY,
                      'message_id': utils.new_message_id(),
                      'request_id': self._request_id,
                      'payload': self._response_doc,
@@ -237,7 +241,7 @@ class ReplyRPC(object):
                             states.ReplyStates.ACKED,
                             self._agent_id)
 
-        nack_doc = {'type': types.MessageTypes.NACK,
+        nack_doc = {'type': message_types.MessageTypes.NACK,
                     'message_id': utils.new_message_id(),
                     'request_id': self._request_id,
                     'entity': "user_rejects",
@@ -251,7 +255,7 @@ class ReplyRPC(object):
         acknowledged the message.  Here we resend the ack.
         """
         # reply using the latest message id
-        ack_doc = {'type': types.MessageTypes.ACK,
+        ack_doc = {'type': message_types.MessageTypes.ACK,
                    'message_id': utils.new_message_id(),
                    'request_id': self._request_id,
                    'entity': "request_received",
@@ -279,7 +283,7 @@ class ReplyRPC(object):
                                states.ReplyStates.REPLY,
                                reply_doc=self._response_doc)
 
-        reply_doc = {'type': types.MessageTypes.REPLY,
+        reply_doc = {'type': message_types.MessageTypes.REPLY,
                      'message_id': utils.new_message_id(),
                      'request_id': self._request_id,
                      'payload': self._response_doc,
@@ -296,7 +300,7 @@ class ReplyRPC(object):
                                states.ReplyStates.REPLY,
                                reply_doc=self._response_doc)
 
-        reply_doc = {'type': types.MessageTypes.REPLY,
+        reply_doc = {'type': message_types.MessageTypes.REPLY,
                      'message_id': utils.new_message_id(),
                      'request_id': self._request_id,
                      'payload': self._response_doc,
@@ -315,7 +319,7 @@ class ReplyRPC(object):
         an ack and the reply message is either lost or delayed.  Here we
         retransmit the reply.
         """
-        reply_doc = {'type': types.MessageTypes.REPLY,
+        reply_doc = {'type': message_types.MessageTypes.REPLY,
                      'message_id': utils.new_message_id(),
                      'request_id': self._request_id,
                      'payload': self._response_doc,
@@ -385,7 +389,7 @@ class ReplyRPC(object):
         This will occur if the first nack is lost or delayed.  We retransmit
         the nack
         """
-        nack_doc = {'type': types.MessageTypes.NACK,
+        nack_doc = {'type': message_types.MessageTypes.NACK,
                     'message_id': utils.new_message_id(),
                     'request_id': self._request_id,
                     'entity': "request_received",
@@ -407,7 +411,7 @@ class ReplyRPC(object):
             self._cancel_callback_kwargs)
 
     def _sm_send_status(self):
-        status_doc = {'type': types.MessageTypes.STATUS,
+        status_doc = {'type': message_types.MessageTypes.STATUS,
                       'message_id': utils.new_message_id(),
                       'request_id': self._request_id,
                       'entity': "status send",
@@ -716,13 +720,13 @@ class RequestListener(object):
 
             # if the agent is misbehaving the AM might tell it to kill itself.
             # cold.
-            if incoming_doc["type"] == types.MessageTypes.HEMLOCK:
+            if incoming_doc["type"] == message_types.MessageTypes.HEMLOCK:
                 _g_logger.error("HEMLOCK: DCM told me to kill myself.")
                 os.killpg(0, signal.SIGKILL)
                 sys.exit(10)
 
             # if it is a alert message short circuit
-            if incoming_doc["type"] == types.MessageTypes.ALERT_ACK:
+            if incoming_doc["type"] == message_types.MessageTypes.ALERT_ACK:
                 if self._id_system:
                     self._id_system.incoming_message(incoming_doc)
                 return
@@ -759,7 +763,7 @@ class RequestListener(object):
                 req.incoming_message(incoming_doc)
                 return
 
-            if incoming_doc["type"] == types.MessageTypes.REQUEST:
+            if incoming_doc["type"] == message_types.MessageTypes.REQUEST:
                 if len(self._requests.keys()) >=\
                         self._conf.messaging_max_at_once > -1:
 
@@ -769,7 +773,7 @@ class RequestListener(object):
                                        "because the agent has too many "
                                        "outstanding requests.")
                     nack_doc = {
-                        'type': types.MessageTypes.NACK,
+                        'type': message_types.MessageTypes.NACK,
                         'message_id': utils.new_message_id(),
                         'request_id': request_id,
                         'agent_id': self._conf.agent_id,
@@ -808,7 +812,7 @@ class RequestListener(object):
                 # request we return a courtesy error
                 _g_logger.debug("Unknown message ID sending a NACK")
 
-                nack_doc = {'type': types.MessageTypes.NACK,
+                nack_doc = {'type': message_types.MessageTypes.NACK,
                             'message_id': utils.new_message_id(),
                             'request_id': request_id,
                             'agent_id': self._conf.agent_id,
@@ -831,7 +835,7 @@ class RequestListener(object):
         except KeyError:
             request_id = ReplyRPC.MISSING_VALUE_STRING
 
-        nack_doc = {'type': types.MessageTypes.NACK,
+        nack_doc = {'type': message_types.MessageTypes.NACK,
                     'message_id': utils.new_message_id(),
                     'request_id': request_id,
                     'error_message': message,

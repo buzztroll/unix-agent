@@ -4,7 +4,7 @@ import threading
 
 import dcm.agent.connection.connection_interface as conniface
 import dcm.agent.messaging.utils as utils
-import dcm.agent.messaging.types as types
+import dcm.agent.messaging.types as message_types
 import dcm.agent.parent_receive_q as parent_receive_q
 import dcm.agent.tests.utils.test_exceptions as test_exceptions
 
@@ -16,10 +16,10 @@ class RequestRetransmission(object):
     def __init__(self):
         self.request_doc = None
         self._event_retrans_map = {
-            types.MessageTypes.REQUEST: 0,
-            types.MessageTypes.ACK: 0,
-            types.MessageTypes.NACK: 0,
-            types.MessageTypes.REPLY: 0}
+            message_types.MessageTypes.REQUEST: 0,
+            message_types.MessageTypes.ACK: 0,
+            message_types.MessageTypes.NACK: 0,
+            message_types.MessageTypes.REPLY: 0}
 
     def set_retrans_event(self, event, count):
         if event not in self._event_retrans_map:
@@ -67,7 +67,7 @@ class TestConnection(conniface.ConnectionInterface):
         message_id = utils.new_message_id()
         request_id = utils.new_message_id()
         request_doc = {
-            'type': types.MessageTypes.REQUEST,
+            'type': message_types.MessageTypes.REQUEST,
             'request_id': request_id,
             'message_id': message_id,
             'payload': {'command': command, 'arguments': arguments}
@@ -80,7 +80,7 @@ class TestConnection(conniface.ConnectionInterface):
             rt.set_request_doc(request_doc)
         self._request_number += 1
 
-        self._check_retrans(request_id, types.MessageTypes.REQUEST)
+        self._check_retrans(request_id, message_types.MessageTypes.REQUEST)
         self._readq.put(request_doc)
 
     def set_receiver(self, receive_object):
@@ -115,13 +115,13 @@ class TestConnection(conniface.ConnectionInterface):
             request_id = doc['request_id']
             _g_logger.debug("Fake conn sending " + t)
             self._check_retrans(request_id, t)
-            if t == types.MessageTypes.ACK:
+            if t == message_types.MessageTypes.ACK:
                 # no reply required here
                 return
-            elif t == types.MessageTypes.NACK:
+            elif t == message_types.MessageTypes.NACK:
                 # no reply required here
                 return
-            elif t == types.MessageTypes.REPLY:
+            elif t == message_types.MessageTypes.REPLY:
                 payload = doc['payload']
                 self._writer.write(json.dumps(payload))
                 self._writer.flush()
@@ -129,7 +129,7 @@ class TestConnection(conniface.ConnectionInterface):
                 if self._reply_ignore_count == 0:
                     # we must ACK the reply
                     reply_ack = {
-                        "type": types.MessageTypes.ACK,
+                        "type": message_types.MessageTypes.ACK,
                         "request_id": doc["request_id"],
                         "message_id": doc["message_id"],
                     }
