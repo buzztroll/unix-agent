@@ -14,8 +14,9 @@
 
 import multiprocessing
 import platform
-import dcm.agent.jobs as jobs
 import psutil
+
+import dcm.agent.jobs as jobs
 
 
 class GetAgentData(jobs.Plugin):

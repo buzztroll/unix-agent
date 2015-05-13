@@ -11,10 +11,9 @@
 #   this material is strictly forbidden unless prior written permission
 #   is obtained from Dell, Inc.
 #  ======================================================================
-from dcm.agent import exceptions
-
-import dcm.agent.utils as utils
+import dcm.agent.exceptions as exceptions
 import dcm.agent.jobs as jobs
+import dcm.agent.utils as utils
 
 
 class GetDeviceMappings(jobs.Plugin):

@@ -13,11 +13,11 @@
 #  ======================================================================
 
 import logging
-from dcm.agent import utils
-from dcm.agent.jobs.builtin.add_user import AddUser
-from dcm.agent.jobs.builtin.rename import Rename
 
 import dcm.agent.jobs as jobs
+from dcm.agent.jobs.builtin.add_user import AddUser
+from dcm.agent.jobs.builtin.rename import Rename
+import dcm.agent.utils as utils
 
 
 _g_logger = logging.getLogger(__name__)

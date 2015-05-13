@@ -11,14 +11,14 @@
 #   this material is strictly forbidden unless prior written permission
 #   is obtained from Dell, Inc.
 #  ======================================================================
-import urllib2
-import urlparse
-import sys
-from dcm.agent import exceptions
 import hashlib
 import logging
 import os
+import sys
+import urllib2
+import urlparse
 
+import dcm.agent.exceptions as exceptions
 import dcm.agent.jobs as jobs
 import dcm.agent.utils as utils
 

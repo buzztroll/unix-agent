@@ -11,12 +11,12 @@
 #   this material is strictly forbidden unless prior written permission
 #   is obtained from Dell, Inc.
 #  ======================================================================
-
 import json
 import logging
 import socket
-from dcm.agent import utils
+
 import dcm.agent.jobs as jobs
+import dcm.agent.utils as utils
 
 
 _g_logger = logging.getLogger(__name__)

@@ -16,7 +16,7 @@ import os
 import urllib2
 
 import dcm.agent
-from dcm.agent import config
+import dcm.agent.config as config
 import dcm.agent.jobs as jobs
 import dcm.agent.utils as utils
 

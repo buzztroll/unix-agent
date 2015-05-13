@@ -11,13 +11,13 @@
 #   this material is strictly forbidden unless prior written permission
 #   is obtained from Dell, Inc.
 #  ======================================================================
-import sys
-import zlib
-from dcm.agent import exceptions
 import hashlib
 import logging
 import os
+import sys
+import zlib
 
+import dcm.agent.exceptions as exceptions
 import dcm.agent.jobs as jobs
 import dcm.agent.utils as utils
 

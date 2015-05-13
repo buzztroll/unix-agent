@@ -16,8 +16,10 @@ import json
 import logging
 import os
 import urlparse
-from dcm.agent import exceptions, utils
+
+import dcm.agent.exceptions as exceptions
 import dcm.agent.jobs as jobs
+import dcm.agent.utils as utils
 
 
 _g_logger = logging.getLogger(__name__)

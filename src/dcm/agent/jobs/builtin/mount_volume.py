@@ -11,14 +11,14 @@
 #   this material is strictly forbidden unless prior written permission
 #   is obtained from Dell, Inc.
 #  ======================================================================
-
 import logging
 import os
-from dcm.agent import exceptions
-import dcm.agent.utils as utils
-import dcm.agent.config as config
-import dcm.agent.jobs.direct_pass as direct_pass
+
 from dcm.agent.cloudmetadata import CLOUD_TYPES
+import dcm.agent.config as config
+import dcm.agent.exceptions as exceptions
+import dcm.agent.jobs.direct_pass as direct_pass
+import dcm.agent.utils as utils
 
 
 _cloud_stack_map = {
