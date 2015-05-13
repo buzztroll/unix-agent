@@ -1,9 +1,9 @@
 import logging
-import threading
 import psutil
+import threading
 import time
 
-from dcm.agent import exceptions
+import dcm.agent.exceptions as exceptions
 import dcm.agent.utils as agent_util
 
 

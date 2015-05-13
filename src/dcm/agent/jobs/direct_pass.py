@@ -14,9 +14,11 @@
 
 import logging
 import os
-import dcm.agent.utils as utils
+
 import dcm.agent.exceptions as exceptions
 import dcm.agent.jobs as jobs
+import dcm.agent.utils as utils
+
 
 _g_logger = logging.getLogger(__name__)
 

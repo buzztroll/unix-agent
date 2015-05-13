@@ -13,9 +13,9 @@
 #  ======================================================================
 import logging
 
-from dcm.agent import utils
 import dcm.agent.jobs as jobs
 import dcm.agent.systemstats as systemstats
+import dcm.agent.utils as utils
 
 
 _g_logger = logging.getLogger(__name__)

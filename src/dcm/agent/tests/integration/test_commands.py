@@ -1,14 +1,17 @@
 import json
 import os
 import shutil
+import StringIO
 import tempfile
 import unittest
-import StringIO
-from dcm.agent import dispatcher, parent_receive_q, logger
 
 import dcm.agent.config as config
-from dcm.agent.messaging import types, persistence
+import dcm.agent.dispatcher as dispatcher
+import dcm.agent.logger as logger
+import dcm.agent.messaging.persistence as persistence
 import dcm.agent.messaging.reply as reply
+import dcm.agent.messaging.types as types
+import dcm.agent.parent_receive_q as parent_receive_q
 import dcm.agent.tests.utils.test_connection as test_conn
 import dcm.agent.tests.utils.general as test_utils
 
@@ -233,12 +236,10 @@ class TestRetransmission(unittest.TestCase):
     def test_retrans_after_ack_long(self):
         retrans = test_conn.RequestRetransmission()
         retrans.set_retrans_event(types.MessageTypes.ACK, 1)
-        to = self._many_message(0, ["sleep 0.5"], [retrans])
 
     def test_retrans_after_reply_long(self):
         retrans = test_conn.RequestRetransmission()
         retrans.set_retrans_event(types.MessageTypes.REPLY, 1)
-        to = self._many_message(0, ["sleep 0.5"], [retrans])
 
     def test_retrans_overlap(self):
         events = [

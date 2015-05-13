@@ -11,13 +11,13 @@
 #   this material is strictly forbidden unless prior written permission
 #   is obtained from Dell, Inc.
 #  ======================================================================
-import sys
-import zlib
-from dcm.agent import exceptions
 import hashlib
 import logging
 import os
+import sys
+import zlib
 
+import dcm.agent.exceptions as exceptions
 import dcm.agent.jobs as jobs
 import dcm.agent.utils as utils
 
@@ -39,10 +39,10 @@ class RunScript(jobs.Plugin):
         "inpython": ("Run this script with the current python environment.",
                      False, bool, False),
         "runUnderSudo": ("Run this script as the root use with sudo.",
-                     False, bool, False),
+                         False, bool, False),
         "compression": ("A string to determine what type of compression was"
                         "used on the incoming script.",
-                     False, str, None),
+                        False, str, None),
         "arguments": ("The list of arguments to be passed to the script",
                       False, list, None)
     }
@@ -59,7 +59,7 @@ class RunScript(jobs.Plugin):
                 raise exceptions.AgentPluginBadParameterException(
                     'compression',
                     "The value % is not a supported compression module")
-            data =_g_compression_map[self.args.compression](data)
+            data = _g_compression_map[self.args.compression](data)
         sha256 = hashlib.sha256()
         sha256.update(data)
         actual_checksum = sha256.hexdigest()

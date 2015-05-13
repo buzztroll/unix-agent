@@ -1,15 +1,17 @@
 import ConfigParser
 import os
 import shutil
+import sys
 import tempfile
 import unittest
-from dcm.agent import config, cloudmetadata
-import mock
-from mock import patch, Mock
-import sys
-import dcm
 
+import mock
+from mock import patch
+
+import dcm
+import dcm.agent.cloudmetadata as cloudmetadata
 import dcm.agent.cmd.configure as configure
+import dcm.agent.config as config
 from dcm.agent.cmd.service import get_config_files
 import dcm.agent.tests.utils.general as test_utils
 import dcm.agent.utils as agent_utils

@@ -1,8 +1,8 @@
 import getpass
+import nose
 import os
 import shutil
 import tempfile
-import nose
 
 import dcm.agent.cmd.service as service
 import dcm.agent.cmd.configure as configure

@@ -4,9 +4,9 @@ import Queue
 import threading
 import time
 import urllib
-from dcm.agent import parent_receive_q
 
 import dcm.agent.jobs as jobs
+import dcm.agent.parent_receive_q as parent_receive_q
 
 
 _g_logger = logging.getLogger(__name__)
@@ -187,7 +187,7 @@ class LongRunner(parent_receive_q.ParentReceiveQObserver):
         with self._lock:
             try:
                 return self._job_table[job_id]
-            except Exception as ex:
+            except Exception:
                 return None
 
     def incoming_parent_q_message(self, job_reply):

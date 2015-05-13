@@ -1,7 +1,0 @@
-#!/usr/bin/env bash
-
-fname="/tmp/service_stop"
-
-date +%s > $fname
-
-exit 0

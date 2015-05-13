@@ -3,10 +3,11 @@ import os
 import shutil
 import tempfile
 import unittest
+
 from nose.plugins import skip
-from dcm.agent import config
 
 import dcm.agent.cmd.configure as configure
+import dcm.agent.config as config
 import dcm.agent.tests.utils.general as test_utils
 import dcm.agent.utils as agent_utils
 
@@ -25,7 +26,7 @@ class TestExtraConfigure(unittest.TestCase):
             return
         try:
             agent_utils.extras_remove(self.conf)
-        except Exception as ex:
+        except Exception:
             logging.exception("Failed to remove extras package, NBD")
 
     def tearDown(self):
@@ -35,7 +36,7 @@ class TestExtraConfigure(unittest.TestCase):
             return
         try:
             agent_utils.extras_remove(self.conf)
-        except Exception as ex:
+        except Exception:
             logging.exception("Failed to remove extras package, NBD")
 
     @test_utils.system_changing

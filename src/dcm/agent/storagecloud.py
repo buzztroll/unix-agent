@@ -12,12 +12,13 @@
 #   is obtained from Dell, Inc.
 #  ======================================================================
 import logging
-from libcloud.common.types import LibcloudError
 
+from libcloud.common.types import LibcloudError
 from libcloud.storage.types import Provider, ContainerDoesNotExistError
 import libcloud.storage.providers as libcloud_providers
+
 from dcm.agent.cloudmetadata import CLOUD_TYPES
-from dcm.agent import exceptions
+import dcm.agent.exceptions as exceptions
 
 
 _g_logger = logging.getLogger(__name__)
@@ -286,7 +287,7 @@ def upload(cloud_id,
 
     try:
         container = driver.get_container(container_name)
-    except ContainerDoesNotExistError as libCloudEx:
+    except ContainerDoesNotExistError:
         container = driver.create_container(container_name=container_name)
 
     driver.upload_object(source_path, container, object_name)

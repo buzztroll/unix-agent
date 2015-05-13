@@ -1,11 +1,13 @@
 import os
+import signal
+import sys
+import time
 import traceback
 import warnings
+
 import nose.plugins.skip as skip
-import sys
-import signal
-import time
-from dcm.agent import utils
+
+import dcm.agent.utils as utils
 
 
 SYSTEM_CHANGING_TEST_ENV = "SYSTEM_CHANGING_TEST"

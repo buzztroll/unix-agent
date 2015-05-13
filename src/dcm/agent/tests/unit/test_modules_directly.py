@@ -1,7 +1,7 @@
 from collections import namedtuple
 import unittest
 
-from dcm.agent import jobs
+import dcm.agent.jobs as jobs
 
 
 class TestHandshake(unittest.TestCase):

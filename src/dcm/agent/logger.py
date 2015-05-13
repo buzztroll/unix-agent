@@ -1,6 +1,7 @@
 import logging
 import urllib
-from dcm.agent import parent_receive_q
+
+import dcm.agent.parent_receive_q as parent_receive_q
 
 
 def send_log_to_dcm_callback(conn=None, token=None, message=None, level=None):

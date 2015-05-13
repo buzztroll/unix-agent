@@ -1,6 +1,7 @@
-import unittest
-import dcm.agent.cmd.gen_docs as gen_docs
 from types import DictType, ModuleType
+import unittest
+
+import dcm.agent.cmd.gen_docs as gen_docs
 
 
 class TestGenDocs(unittest.TestCase):

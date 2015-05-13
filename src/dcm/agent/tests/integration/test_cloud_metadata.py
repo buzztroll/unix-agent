@@ -5,11 +5,13 @@ import shutil
 import socket
 import tempfile
 import unittest
+
 from mock import patch
 import nose.plugins.skip as skip
 
-from dcm.agent import cloudmetadata, config
-from dcm.agent.cmd import configure
+import dcm.agent.cloudmetadata as cloudmetadata
+import dcm.agent.config as config
+import dcm.agent.cmd.configure as configure
 import dcm.agent.tests.utils.general as test_utils
 
 

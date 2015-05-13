@@ -1,5 +1,7 @@
 import threading
-from dcm.agent.messaging import states, utils
+
+import dcm.agent.messaging.states as states
+import dcm.agent.messaging.utils as utils
 
 
 class States:

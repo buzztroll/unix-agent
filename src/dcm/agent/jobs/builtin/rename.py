@@ -13,9 +13,10 @@
 #  ======================================================================
 import logging
 import re
-from dcm.agent import exceptions, utils
 
 import dcm.agent.jobs.direct_pass as direct_pass
+import dcm.agent.exceptions as exceptions
+import dcm.agent.utils as utils
 
 
 _g_logger = logging.getLogger(__name__)

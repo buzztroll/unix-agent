@@ -1,4 +1,4 @@
-    #  ========= CONFIDENTIAL =========
+#  ========= CONFIDENTIAL =========
 #
 #  Copyright (C) 2010-2014 Dell, Inc. - ALL RIGHTS RESERVED
 #
@@ -11,14 +11,14 @@
 #   this material is strictly forbidden unless prior written permission
 #   is obtained from Dell, Inc.
 #  ======================================================================
-import urllib2
-import urlparse
-import sys
-from dcm.agent import exceptions
 import hashlib
 import logging
 import os
+import sys
+import urllib2
+import urlparse
 
+import dcm.agent.exceptions as exceptions
 import dcm.agent.jobs as jobs
 import dcm.agent.utils as utils
 
@@ -37,7 +37,7 @@ class FetchRunScript(jobs.Plugin):
                      "environment.",
                      False, bool, False),
         "runUnderSudo": ("Run this script as the root use with sudo.",
-                     False, bool, False),
+                         False, bool, False),
         "arguments": ("The list of arguments to be passed to the "
                       "downloaded script",
                       False, list, None),

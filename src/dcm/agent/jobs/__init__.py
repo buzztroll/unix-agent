@@ -4,7 +4,9 @@ import logging
 import os
 import re
 import subprocess
-from dcm.agent import exceptions, utils
+
+import dcm.agent.exceptions as exceptions
+import dcm.agent.utils as utils
 
 
 _g_logger = logging.getLogger(__name__)
@@ -125,8 +127,8 @@ class ExePlugin(Plugin):
         args = [self.exe]
         args.extend(self.arguments)
         self.logger.info("Forking the command " + str(args))
-        args = ' '.join(args)  # for some reason i cannot just pass the array.
-                               # at least should do a shell join
+        args = ' '.join(args)  #  for some reason i cannot just pass the array
+                               #  at least should do a shell join
         process = subprocess.Popen(args,
                                    shell=True,
                                    stdout=subprocess.PIPE,

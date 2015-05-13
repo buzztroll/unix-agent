@@ -11,12 +11,12 @@
 #   this material is strictly forbidden unless prior written permission
 #   is obtained from Dell, Inc.
 #  ======================================================================
-
 import json
 import logging
 import socket
-from dcm.agent import utils
+
 import dcm.agent.jobs as jobs
+import dcm.agent.utils as utils
 
 
 _g_logger = logging.getLogger(__name__)
@@ -65,7 +65,7 @@ class RemoteTester(jobs.Plugin):
             rc = json.loads(msg)
             _g_logger.info("Tester plugin sending back " + str(rc))
             return rc
-        except Exception as ex:
+        except Exception:
             _g_logger.exception("Something went wrong here")
             return {'return_code': 1}
         except:

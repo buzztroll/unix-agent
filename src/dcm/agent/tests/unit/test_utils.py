@@ -3,8 +3,8 @@ import os
 import tempfile
 import unittest
 
-import dcm.agent.utils as utils
 import dcm.agent.cmd.service as service
+import dcm.agent.utils as utils
 
 
 class TestUtils(unittest.TestCase):

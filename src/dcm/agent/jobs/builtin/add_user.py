@@ -12,9 +12,8 @@
 #   is obtained from Dell, Inc.
 #  ======================================================================
 import logging
-
 import os
-import dcm.agent.utils as utils
+
 import dcm.agent.jobs.direct_pass as direct_pass
 import dcm.agent.utils as agent_util
 
@@ -23,7 +22,7 @@ class AddUser(direct_pass.DirectPass):
 
     protocol_arguments = {
         "userId": ("The new unix account name to be created", True,
-                   utils.user_name, None),
+                   agent_util.user_name, None),
         "firstName": ("The user's first name", True, str, None),
         "lastName": ("The user's last name", True, str, None),
         "authentication": ("The user's ssh public key", True, str, None),
@@ -61,7 +60,7 @@ class AddUser(direct_pass.DirectPass):
             return rc
         finally:
             if os.path.exists(key_file):
-                utils.secure_delete(self.conf, key_file)
+                agent_util.secure_delete(self.conf, key_file)
 
 
 def load_plugin(conf, job_id, items_map, name, arguments):

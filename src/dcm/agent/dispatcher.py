@@ -1,12 +1,14 @@
 import logging
-import urllib
-from dcm.agent import longrunners, utils
 import Queue
 import threading
+import urllib
+
+import dcm.agent.longrunners as longrunners
+import dcm.agent.utils as utils
 
 import dcm.agent.jobs as jobs
-import dcm.eventlog.tracer as tracer
 import dcm.agent.parent_receive_q as parent_receive_q
+import dcm.eventlog.tracer as tracer
 
 
 _g_logger = logging.getLogger(__name__)

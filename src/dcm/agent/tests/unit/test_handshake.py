@@ -3,8 +3,8 @@ import tempfile
 import unittest
 
 import dcm.agent
-from dcm.agent import handshake
 import dcm.agent.config as config
+import dcm.agent.handshake as handshake
 
 
 class TestHandshake(unittest.TestCase):

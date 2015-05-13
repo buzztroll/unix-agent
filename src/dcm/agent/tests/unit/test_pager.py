@@ -1,9 +1,9 @@
 import json
-import unittest
 import time
-from dcm.agent import exceptions
+import unittest
 
-from dcm.agent.jobs import pages
+import dcm.agent.exceptions as exceptions
+import dcm.agent.jobs.pages as pages
 
 
 class TestPager(unittest.TestCase):

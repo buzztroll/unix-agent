@@ -1,9 +1,9 @@
+import time
 import unittest
 import uuid
-import time
 
-from dcm.agent import exceptions
-from dcm.agent import systemstats
+import dcm.agent.exceptions as exceptions
+import dcm.agent.systemstats as systemstats
 
 
 class TestSystemStats(unittest.TestCase):

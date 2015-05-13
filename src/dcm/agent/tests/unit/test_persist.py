@@ -1,15 +1,16 @@
+import datetime
 import json
 import os
 import tempfile
+import time
 import threading
 import unittest
 import uuid
-import datetime
-import nose
-import time
 
-from dcm.agent import exceptions
-from dcm.agent.messaging import persistence
+import nose
+
+import dcm.agent.exceptions as exceptions
+import dcm.agent.messaging.persistence as persistence
 import dcm.agent.messaging.states as messaging_states
 
 

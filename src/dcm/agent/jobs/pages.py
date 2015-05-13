@@ -14,7 +14,8 @@
 import datetime
 import json
 import threading
-from dcm.agent import exceptions
+
+import dcm.agent.exceptions as exceptions
 import dcm.agent.messaging.utils as utils
 
 

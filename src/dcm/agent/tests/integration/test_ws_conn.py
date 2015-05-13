@@ -1,12 +1,14 @@
+import datetime
 import getpass
 import os
 import socket
 import tempfile
 import threading
-import datetime
+
 import nose
 
-from dcm.agent.cmd import service, configure
+import dcm.agent.cmd.configure as configure
+import dcm.agent.cmd.service as service
 import dcm.agent.config as config
 import dcm.agent.tests.utils.general as test_utils
 
@@ -91,6 +93,6 @@ class TestWsConnection(object):
             serversocket.close()
             agent.shutdown_main_loop()
             t1.join()
-        nose.tools.ok_(expected_connections *.9 - 1 < connect_count
+        nose.tools.ok_(expected_connections * .9 - 1 < connect_count
                        < expected_connections * 1.1 + 1,
                        "connect_count is %d" % connect_count)
