@@ -1,4 +1,5 @@
-import os, sys
+import os
+import pwd
 
 
 def is_privatekey(keyfile):
@@ -9,14 +10,18 @@ def is_privatekey(keyfile):
 
 
 def main(bin_path):
-    for (dirpath, dirname, filename) in os.walk('/home'):
-        if dirpath.endswith('.ssh'):
-            for file in filename:
+    all_users = pwd.getpwall()
+    user_homes = [user_home[5] for user_home in all_users]
+    ssh_dirs = [os.path.join(home_dir, '.ssh') for home_dir in user_homes
+                if os.path.isdir(os.path.join(home_dir, '.ssh'))]
+    for ssh_dir in ssh_dirs:
+        for (dirpath, dirname, filenames) in os.walk(ssh_dir):
+            for file in filenames:
                 filepath = os.path.join(dirpath, file)
                 if is_privatekey(filepath):
                     cmd = '%s %s' % \
                         (os.path.join(bin_path, 'secureDelete'),
-                         filepath)
+                        filepath)
                     os.system(cmd)
 
 if __name__ == "__main__":

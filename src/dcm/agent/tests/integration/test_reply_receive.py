@@ -1075,7 +1075,7 @@ class TestProtocolCommands(reply.ReplyObserverInterface):
             print "The name doesn't exist"
 
     @test_utils.system_changing
-    def test_delete_history(self):
+    def test_general_cleanup(self):
         user_list = []
         for i in range(5):
             user_name = "dcm" + str(random.randint(10, 99))
@@ -1111,6 +1111,9 @@ class TestProtocolCommands(reply.ReplyObserverInterface):
         for user in user_list:
             history_path = '/home/%s/.fake_history' % user
             nose.tools.eq_(os.path.isfile(history_path), False)
+
+        log_dir = os.path.join(self.test_base_path, 'logs')
+        nose.tools.eq_(os.listdir(log_dir), [])
 
         try:
             for name in user_list: # delete and clean up user and homedir
