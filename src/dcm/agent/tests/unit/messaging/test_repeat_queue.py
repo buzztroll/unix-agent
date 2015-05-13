@@ -1,6 +1,6 @@
 import unittest
 
-from dcm.agent.connection import websocket
+import dcm.agent.connection.websocket as websocket
 
 
 class TestRequesterStandardPath(unittest.TestCase):

@@ -1,11 +1,11 @@
 import json
 import logging
 import threading
-from dcm.agent import parent_receive_q
 
 import dcm.agent.connection.connection_interface as conniface
 import dcm.agent.messaging.utils as utils
 import dcm.agent.messaging.types as types
+import dcm.agent.parent_receive_q as parent_receive_q
 import dcm.agent.tests.utils.test_exceptions as test_exceptions
 
 

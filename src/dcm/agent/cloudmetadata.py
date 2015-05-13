@@ -16,8 +16,8 @@ import logging
 import os
 import socket
 import urllib2
-from dcm.agent import exceptions
 
+import dcm.agent.exceptions as exceptions
 import dcm.agent.utils as utils
 
 

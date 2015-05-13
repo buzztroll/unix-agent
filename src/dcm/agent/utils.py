@@ -12,22 +12,24 @@
 #   is obtained from Dell, Inc.
 #  ======================================================================
 import base64
-import json
-import os
-import subprocess
-import tempfile
 import datetime
-import traceback
-import sys
-import urllib2
-import dcm
 import exceptions
+import json
 import logging
 import netifaces
-import random
-import string
+import os
 import platform
+import random
 import re
+import subprocess
+import string
+import sys
+import tempfile
+import traceback
+import urllib2
+
+import dcm
+
 
 _g_logger = logging.getLogger(__name__)
 

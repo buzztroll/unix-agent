@@ -1,20 +1,20 @@
 import ConfigParser
+import libcloud.security
 import logging
 import logging.config
 import os
 import tempfile
 import threading
 import yaml
-import dcm
-import libcloud.security
-from dcm.agent import utils
 
+import dcm
 from dcm.agent.cloudmetadata import CLOUD_TYPES, set_metadata_object
 import dcm.agent.connection.websocket as websocket
 import dcm.agent.exceptions as exceptions
+import dcm.agent.jobs.pages as pages
 import dcm.agent.job_runner as job_runner
-import dcm.agent.tests.utils.test_connection as test_connection
-from dcm.agent.jobs import pages
+import dcm.agent.tests.utils.test_connection as test_connection  # TODO
+import dcm.agent.utils as utils
 
 
 _g_logger = logging.getLogger(__name__)

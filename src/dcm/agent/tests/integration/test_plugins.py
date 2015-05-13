@@ -1,19 +1,19 @@
 import base64
+import boto
 import hashlib
+import logging
 import os
+import sys
 import tempfile
 import unittest
-import boto
 import uuid
-import logging
-import sys
 import zlib
 
-from dcm.agent import config
+import dcm.agent.config as config
+import dcm.agent.exceptions as exceptions
 import dcm.agent.jobs.builtin.fetch_run as fetch_plugin
 import dcm.agent.jobs.builtin.run_script as run_script_plugin
 import dcm.agent.tests.utils.general as test_utils
-from dcm.agent import exceptions
 
 
 class TestFetchExePlugin(unittest.TestCase):

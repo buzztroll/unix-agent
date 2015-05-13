@@ -1,4 +1,4 @@
-from dcm.agent import utils
+import dcm.agent.utils as utils
 
 
 class AgentIntrusionDetection(object):

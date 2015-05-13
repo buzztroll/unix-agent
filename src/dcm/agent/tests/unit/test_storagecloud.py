@@ -1,9 +1,9 @@
 import unittest
 
-from dcm.agent import storagecloud as sc
-from dcm.agent.exceptions import AgentUnsupportedCloudFeature
 import libcloud.security
-from libcloud.storage.types import Provider
+
+import dcm.agent.exceptions as exceptions
+import dcm.agent.storagecloud as sc
 
 # ok to bypass for testing purposes since passing nonsense creds
 libcloud.security.VERIFY_SSL_CERT = False
@@ -45,7 +45,7 @@ class TestStorageCloud(unittest.TestCase):
 
     def test_get_cloud_driver_raises_exception_for_wrong_id(self):
 
-        self.assertRaises(AgentUnsupportedCloudFeature,
+        self.assertRaises(exceptions.AgentUnsupportedCloudFeature,
                           sc.get_cloud_driver,
                           468,
                           'whatever',
@@ -53,7 +53,7 @@ class TestStorageCloud(unittest.TestCase):
 
     def test_get_cloud_driver_raises_exception_type_not_in_map(self):
 
-        self.assertRaises(AgentUnsupportedCloudFeature,
+        self.assertRaises(exceptions.AgentUnsupportedCloudFeature,
                           sc.get_cloud_driver,
                           10,
                           'whatever',

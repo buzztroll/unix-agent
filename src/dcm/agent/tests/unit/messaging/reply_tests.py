@@ -1,9 +1,10 @@
-import mock
 import time
+
+import mock
 import nose
 
 import dcm.agent.exceptions as exceptions
-from dcm.agent.messaging import persistence
+import dcm.agent.messaging.persistence as persistence
 import dcm.agent.messaging.reply as reply
 import dcm.agent.messaging.types as types
 import dcm.agent.tests.utils.general as test_utils

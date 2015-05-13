@@ -14,8 +14,9 @@
 import logging
 import os
 
-from dcm.agent import cloudmetadata, jobs
 import dcm.agent
+import dcm.agent.cloudmetadata as cloudmetadata
+import dcm.agent.jobs as jobs
 
 
 FOR_TEST_AGENT_ID_ENV = "FOR_TEST_AGENT_ID_ENV"

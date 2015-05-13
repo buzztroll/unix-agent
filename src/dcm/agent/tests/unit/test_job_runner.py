@@ -2,7 +2,9 @@ from collections import namedtuple
 import os
 import threading
 import unittest
-from dcm.agent import exceptions, job_runner
+
+import dcm.agent.job_runner as job_runner
+
 
 FakeConf = namedtuple('FakeConf', 'platform_name platform_version')
 

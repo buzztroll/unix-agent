@@ -1,5 +1,5 @@
-import Queue
 import logging
+import Queue
 import threading
 
 import dcm.agent.utils as agent_util

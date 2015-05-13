@@ -1,6 +1,7 @@
 import logging
 import unittest
-from dcm.eventlog import tracer
+
+import dcm.eventlog.tracer as tracer
 
 
 class TestEventTracer(unittest.TestCase):

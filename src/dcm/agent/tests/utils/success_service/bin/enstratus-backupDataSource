@@ -1,8 +1,0 @@
-#!/usr/bin/env bash
-
-serviceId=$1
-dataSourceName=$2
-configFile=$3
-backupFile=$4
-
-echo "$@" > $backupFile

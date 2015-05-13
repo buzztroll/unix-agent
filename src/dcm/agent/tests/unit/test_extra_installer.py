@@ -3,10 +3,11 @@ import os
 import shutil
 import tempfile
 import unittest
+
 from nose.plugins import skip
-from dcm.agent import config
 
 import dcm.agent.cmd.configure as configure
+import dcm.agent.config as config
 import dcm.agent.tests.utils.general as test_utils
 import dcm.agent.utils as agent_utils
 

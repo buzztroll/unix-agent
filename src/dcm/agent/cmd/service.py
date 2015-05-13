@@ -1,27 +1,27 @@
-import json
-import datetime
 import argparse
+import datetime
+import clint
+import json
 import logging
 import os
+import psutil
 import signal
 import sys
-import clint
-import psutil
 import tarfile
 
 import dcm.agent
-import dcm.agent.messaging as messaging
+import dcm.agent.cloudmetadata as cm
 import dcm.agent.config as config
 import dcm.agent.dispatcher as dispatcher
 import dcm.agent.exceptions as exceptions
-import dcm.agent.logger as logger
-from dcm.agent.messaging import persistence
 import dcm.agent.handshake as handshake
+import dcm.agent.intrusion_detection as intrusion_detect
+import dcm.agent.logger as logger
+import dcm.agent.messaging as messaging
+import dcm.agent.messaging.persistence as persistence
 import dcm.agent.messaging.reply as reply
 import dcm.agent.parent_receive_q as parent_receive_q
 import dcm.agent.utils as utils
-import dcm.agent.intrusion_detection as intrusion_detect
-import dcm.agent.cloudmetadata as cm
 
 _g_conf_file_env = "DCM_AGENT_CONF"
 

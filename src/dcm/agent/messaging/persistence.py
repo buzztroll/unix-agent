@@ -18,7 +18,7 @@ import os
 import sqlite3
 import threading
 
-from dcm.agent import exceptions
+import dcm.agent.exceptions as exceptions
 import dcm.agent.messaging.states as messaging_states
 import dcm.agent.messaging.utils as messaging_utils
 

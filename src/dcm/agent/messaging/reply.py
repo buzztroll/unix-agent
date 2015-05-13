@@ -3,12 +3,12 @@ import os
 import threading
 import signal
 import sys
-from dcm.agent import parent_receive_q
 
 import dcm.agent.exceptions as exceptions
 import dcm.agent.messaging.states as states
 import dcm.agent.messaging.types as types
 import dcm.agent.messaging.utils as utils
+import dcm.agent.parent_receive_q as parent_receive_q
 import dcm.agent.utils as agent_util
 import dcm.eventlog.tracer as tracer
 

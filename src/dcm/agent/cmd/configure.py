@@ -3,17 +3,18 @@
 # the proper permissions
 
 import argparse
+import ConfigParser
 import os
 import shutil
 import subprocess
 import sys
 import textwrap
 import urlparse
-from dcm.agent import config, cloudmetadata
-import dcm.agent.utils as agent_utils
-import ConfigParser
 
 import dcm.agent
+import dcm.agent.cloudmetadata as cloudmetadata
+import dcm.agent.config as config
+import dcm.agent.utils as agent_utils
 
 
 # below are the variables with no defaults that must be determined

@@ -1,12 +1,13 @@
+import time
 import unittest
 
 import mock
-import time
-from dcm.agent import parent_receive_q, logger
 
-import dcm.agent.messaging.types as types
+import dcm.agent.logger as logger
+import dcm.agent.messaging.request as request
 import dcm.agent.messaging.states as states
-from dcm.agent.messaging import request
+import dcm.agent.messaging.types as types
+import dcm.agent.parent_receive_q as parent_receive_q
 
 
 class TestRequesterStandardPath(unittest.TestCase):

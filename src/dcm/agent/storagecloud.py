@@ -12,12 +12,13 @@
 #   is obtained from Dell, Inc.
 #  ======================================================================
 import logging
-from libcloud.common.types import LibcloudError
 
+from libcloud.common.types import LibcloudError
 from libcloud.storage.types import Provider, ContainerDoesNotExistError
 import libcloud.storage.providers as libcloud_providers
+
 from dcm.agent.cloudmetadata import CLOUD_TYPES
-from dcm.agent import exceptions
+import dcm.agent.exceptions as exceptions
 
 
 _g_logger = logging.getLogger(__name__)

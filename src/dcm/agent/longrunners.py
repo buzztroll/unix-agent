@@ -4,9 +4,9 @@ import Queue
 import threading
 import time
 import urllib
-from dcm.agent import parent_receive_q
 
 import dcm.agent.jobs as jobs
+import dcm.agent.parent_receive_q as parent_receive_q
 
 
 _g_logger = logging.getLogger(__name__)

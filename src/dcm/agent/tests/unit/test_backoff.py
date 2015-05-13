@@ -3,9 +3,9 @@ import math
 import mock
 import unittest
 
-import dcm.agent.tests.utils.general as test_utils
 import dcm.agent.connection.websocket as websocket
 import dcm.agent.parent_receive_q as parent_receive_q
+import dcm.agent.tests.utils.general as test_utils
 
 
 class FakeMsgHandle(object):
