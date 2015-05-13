@@ -14,9 +14,6 @@ class CleanImage(jobs.Plugin):
              False, list, None),
         "delKeys":
             ("Flag to delete private keys in users home directories",
-             False, bool, False),
-        "sshConf":
-            ("Flag to set ssh config with safe options",
              False, bool, False)
     }
 
@@ -108,13 +105,13 @@ class CleanImage(jobs.Plugin):
                 if res_doc['return_code'] != 0:
                     return res_doc
 
-            res_doc = self.delete_history()
             utils.log_to_dcm(logging.INFO, 'Deleting history files.')
+            res_doc = self.delete_history()
             if res_doc['return_code'] != 0:
                 return res_doc
 
-            res_doc = self.general_cleanup()
             utils.log_to_dcm(logging.INFO, 'Starting general cleanup.')
+            res_doc = self.general_cleanup()
             if res_doc['return_code'] != 0:
                 return res_doc
 
