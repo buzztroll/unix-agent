@@ -4,6 +4,7 @@ import mock
 import unittest
 
 import dcm.agent.connection.websocket as websocket
+import dcm.agent.handshake as handshake
 import dcm.agent.parent_receive_q as parent_receive_q
 import dcm.agent.tests.utils.general as test_utils
 
@@ -35,6 +36,15 @@ class TestBackoff(unittest.TestCase):
             ws.throw_error(Exception("just for tests"))
             return {}
 
+        class FakeHS(object):
+            def get_send_document(self):
+                ws.throw_error(Exception("just for tests"))
+                return {}
+
+            def incoming_document(self, incoming_doc):
+                return handshake.HandshakeIncomingReply(
+                    handshake.HandshakeIncomingReply.REPLY_CODE_SUCCESS)
+
         m = mock.Mock()
         conn_obj.return_value = m
 
@@ -46,7 +56,7 @@ class TestBackoff(unittest.TestCase):
             backoff_amount=int(backoff_seconds*1000),
             max_backoff=int(max_backoff_seconds*1000))
 
-        ws.connect(fm, incoming_handshake, make_handshake)
+        ws.connect(fm, FakeHS())
 
         nw = datetime.datetime.now()
         done_time = nw + datetime.timedelta(seconds=run_time_seconds)
@@ -139,17 +149,32 @@ class TestBackoff(unittest.TestCase):
             max_backoff=int(max_backoff_seconds*1000))
 
         def send_in_handshake():
-            ws.event_handshake_received(
-                {websocket.g_dcm_backoff_key: force_time})
+            ws.event_incoming_message(
+                {handshake.HandshakeIncomingReply.REPLY_KEY_FORCE_BACKOFF:
+                     force_time,
+                 'return_code':
+                     handshake.HandshakeIncomingReply.REPLY_CODE_FORCE_BACKOFF})
 
         def incoming_handshake(incoming_handshake_doc):
             return False
 
         def make_handshake():
-            parent_receive_q.register_user_callback(send_in_handshake)
             return {}
 
-        ws.connect(fm, incoming_handshake, make_handshake)
+
+        class FakeHS(object):
+            def get_send_document(self):
+                parent_receive_q.register_user_callback(send_in_handshake)
+                return {}
+
+            def incoming_document(self, incoming_doc):
+                hs =  handshake.HandshakeIncomingReply(
+                    handshake.HandshakeIncomingReply.REPLY_CODE_FORCE_BACKOFF,
+                    force_backoff=force_time)
+                return hs
+
+
+        ws.connect(fm, FakeHS())
 
         nw = datetime.datetime.now()
         done_time = nw + datetime.timedelta(seconds=run_time_seconds)

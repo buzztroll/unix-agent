@@ -51,7 +51,7 @@ class Rename(direct_pass.DirectPass):
         self.ordered_param_list = [arguments["serverName"]]
 
     def run(self):
-        private_ips = self.conf.meta_data_object.get_ipv4_addresses(self.conf)
+        private_ips = self.conf.meta_data_object.get_ipv4_addresses()
         if not private_ips:
             reply_doc = {
                 "return_code": 1,

@@ -13,12 +13,12 @@
 #  ======================================================================
 import base64
 import datetime
-import exceptions
 import json
 import logging
 import netifaces
 import os
 import platform
+import pwd
 import random
 import re
 import subprocess
@@ -29,6 +29,9 @@ import traceback
 import urllib2
 
 import dcm
+
+import dcm.agent
+import dcm.agent.exceptions as exceptions
 
 
 _g_logger = logging.getLogger(__name__)
@@ -327,13 +330,6 @@ def build_assertion_exception(logger, msg):
     logger.error(msg)
 
 
-def generate_token():
-    l = 30 + random.randint(0, 29)
-    token = ''.join(random.choice(string.ascii_letters + string.digits +
-                                  "-_!@#^(),.=+") for x in range(l))
-    return token
-
-
 def base64type_convertor(b64str):
     """base 64 decoded string"""
     return base64.b64decode(b64str).decode("utf-8")
@@ -572,3 +568,16 @@ def get_ipv4_addresses():
 
 def get_ipv6_addresses():
     return _get_ipvX_addresses(netifaces.AF_INET6)
+
+
+def validate_file_permissions(file_path, username=None, permissions=None):
+    stat_info = os.stat(file_path)
+    if permissions is not None:
+        if (stat_info.st_mode & 0777) != permissions:
+            raise exceptions.AgentFilePermissionsException(
+                "The path %s does not have the proper permissions" % file_path)
+
+    if username is not None:
+        if pwd.getpwuid(stat_info.st_uid).pw_name != username:
+            raise exceptions.AgentFilePermissionsException(
+                "The path %s is not owned by %s" % (file_path, username))

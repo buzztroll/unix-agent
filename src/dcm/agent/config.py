@@ -204,7 +204,6 @@ class AgentConfig(object):
         self._normalize_options()
 
         setup_logging(self.logging_configfile)
-        self.token = utils.generate_token()
         self.page_monitor = pages.PageMonitor()
 
     def _normalize_options(self):
@@ -227,16 +226,6 @@ class AgentConfig(object):
             distro_name, distro_version = utils.identify_platform(self)
             self.platform_name = distro_name
             self.platform_version = distro_version
-
-    def set_handshake(self, handshake_doc):
-        self.state = "WAITING"
-        self.agent_id = handshake_doc["agentID"]
-        self.cloud_id = handshake_doc["cloudId"]
-        self.customer_id = handshake_doc["customerId"]
-        self.region_id = handshake_doc["regionId"]
-        self.zone_id = handshake_doc["zoneId"]
-        self.server_id = handshake_doc["serverId"]
-        self.server_name = handshake_doc["serverName"]
 
     def get_script_location(self, name):
         if self.storage_script_dir is not None:

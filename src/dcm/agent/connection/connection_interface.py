@@ -11,15 +11,12 @@ class ConnectionInterface(object):
         pass
 
     @agent_util.not_implemented_decorator
-    def connect(self, receive_object, incoming_handshake_object,
-                handshake_producer):
+    def connect(self, receive_object, handshake_manager):
         """
         Start the connection object.  The incoming data will be sent to the
         receive_object which should implement ParentReceiveQObserver.  In
         response to the connection the agent manager will send a handshake
-        document.  When this happens methods on incoming_handshake_object
-        will be called.  It can be called more than once but the data should
-        always be the same.
+        document.
         """
         pass
 

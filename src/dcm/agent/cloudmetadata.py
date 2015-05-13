@@ -81,11 +81,11 @@ class CloudMetaData(object):
     def get_startup_script(self):
         raise exceptions.AgentNotImplementedException("get_startup_script")
 
-    def get_ipv4_addresses(self, conf):
+    def get_ipv4_addresses(self):
         return utils.get_ipv4_addresses()
 
-    def get_handshake_ip_address(self, conf):
-        return self.get_ipv4_addresses(conf)
+    def get_handshake_ip_address(self):
+        return self.get_ipv4_addresses()
 
     def is_effective_cloud(self):
         try:
@@ -139,7 +139,7 @@ class AWSMetaData(CloudMetaData):
         _g_logger.debug("AWS injected ID is %s" % str(injected_id))
         return injected_id
 
-    def get_ipv4_addresses(self, conf):
+    def get_ipv4_addresses(self):
         # do caching
         ip_list = []
         private_ip = self.get_cloud_metadata("local-ipv4")
@@ -148,13 +148,13 @@ class AWSMetaData(CloudMetaData):
             ip_list.append(private_ip)
 
         ip_list_from_base =\
-            super(AWSMetaData, self).get_ipv4_addresses(conf)
+            super(AWSMetaData, self).get_ipv4_addresses()
         for ip in ip_list_from_base:
             ip_list.append(ip)
 
         return ip_list
 
-    def get_handshake_ip_address(self, conf):
+    def get_handshake_ip_address(self):
         return [self.get_cloud_metadata("local-ipv4")]
 
     def get_cloud_type(self):
@@ -278,7 +278,7 @@ class GCEMetaData(CloudMetaData):
         _g_logger.debug("Instance ID is %s" % str(injected_id))
         return injected_id
 
-    def get_handshake_ip_address(self, conf):
+    def get_handshake_ip_address(self):
         return utils.get_ipv4_addresses()
 
     def get_cloud_type(self):
@@ -346,7 +346,7 @@ class KonamiMetaData(CloudMetaData):
     def get_injected_id(self):
         return self.get_cloud_metadata("INJECTED_ID")
 
-    def get_handshake_ip_address(self, conf):
+    def get_handshake_ip_address(self):
         private = self.get_cloud_metadata("PRIVATE_IP")
         public = self.get_cloud_metadata("PUBLIC_IP")
         return [private, public]

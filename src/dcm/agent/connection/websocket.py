@@ -20,6 +20,7 @@ import Queue
 import socket
 import ssl
 import threading
+from dcm.agent import handshake
 
 import ws4py.client.threadedclient as ws4py_client
 
@@ -36,7 +37,7 @@ _g_logger = logging.getLogger(__name__)
 class WsConnEvents:
     POLL = "POLL"
     CONNECT_TIMEOUT = "CONNECT_TIMEOUT"
-    GOT_HANDSHAKE = "GOT_HANDSHAKE"
+    INCOMING_MESSAGE = "INCOMING_MESSAGE"
     ERROR = "ERROR"
     CLOSE = "CLOSE"
 
@@ -158,7 +159,7 @@ class RepeatQueue(object):
 
 class _WebSocketClient(ws4py_client.WebSocketClient):
 
-    def __init__(self, manager, url, receive_queue, protocols=None,
+    def __init__(self, manager, url, protocols=None,
                  extensions=None,
                  heartbeat_freq=None, ssl_options=None, headers=None):
         ws4py_client.WebSocketClient.__init__(
@@ -167,16 +168,9 @@ class _WebSocketClient(ws4py_client.WebSocketClient):
             headers=headers)
         _g_logger.info("Attempting to connect to %s" % url)
 
-        self.receive_queue = receive_queue
         self.manager = manager
         self._url = url
-        self._complete_handshake = False
-        self._handshake_reply = None
         self._dcm_closed_called = False
-
-    def send_handshake(self, handshake):
-        _g_logger.debug("Sending handshake")
-        self.send(handshake)
 
     def opened(self):
         _g_logger.debug("Web socket %s has been opened" % self._url)
@@ -195,22 +189,14 @@ class _WebSocketClient(ws4py_client.WebSocketClient):
 
     def received_message(self, m):
         _g_logger.debug("WS message received " + m.data)
-        if not self._complete_handshake:
-            _g_logger.debug("Handshake received")
-            self._complete_handshake = True
-            json_doc = json.loads(m.data)
-            self._handshake_reply = json_doc
-            self.manager.event_handshake_received(json_doc)
-        else:
-            _g_logger.debug("New message received")
-            json_doc = json.loads(m.data)
-            self.receive_queue.put(json_doc)
-            self.manager.activity()
+        json_doc = json.loads(m.data)
+        self.manager.event_incoming_message(json_doc)
 
 
 class WebSocketConnection(threading.Thread):
 
-    def __init__(self, server_url, backoff_amount=5000, max_backoff=300000,
+    def __init__(self, server_url,
+                 backoff_amount=5000, max_backoff=300000,
                  heartbeat=None, allow_unknown_certs=False, ca_certs=None):
         super(WebSocketConnection, self).__init__()
         self._send_queue = RepeatQueue()
@@ -226,7 +212,7 @@ class WebSocketConnection(threading.Thread):
 
         self._sm = states.StateMachine(WsConnStates.WAITING)
         self._setup_states()
-        self.handshake_observer = None
+        self._handshake_manager = None
         self._heartbeat_freq = heartbeat
         if allow_unknown_certs:
             cert_reqs = ssl.CERT_NONE
@@ -235,15 +221,14 @@ class WebSocketConnection(threading.Thread):
         self._ssl_options = {'cert_reqs': cert_reqs, 'ca_certs': ca_certs}
 
     @utils.class_method_sync
-    def activity_event(self):
-        self._backoff.activity()
+    def set_backoff(self, backoff_seconds):
+        self._backoff.force_backoff_time(backoff_seconds)
 
     @utils.class_method_sync
-    def connect(self, receive_object, handshake_observer, handshake_producer):
+    def connect(self, receive_object, handshake_manager):
         self._receive_queue = parent_receive_q.get_master_receive_queue(
             receive_object, str(self))
-        self.handshake_observer = handshake_observer
-        self.handshake_producer = handshake_producer
+        self._handshake_manager = handshake_manager
         self.start()
 
     def _register_connect(self):
@@ -291,9 +276,9 @@ class WebSocketConnection(threading.Thread):
         self._sm.event_occurred(WsConnEvents.CLOSE)
 
     @utils.class_method_sync
-    def event_handshake_received(self, incoming_handshake):
-        self._sm.event_occurred(WsConnEvents.GOT_HANDSHAKE,
-                                incoming_handshake=incoming_handshake)
+    def event_incoming_message(self, incoming_data):
+        self._sm.event_occurred(WsConnEvents.INCOMING_MESSAGE,
+                                incoming_data=incoming_data)
 
     @utils.class_method_sync
     def event_error(self, exception=None):
@@ -331,35 +316,39 @@ class WebSocketConnection(threading.Thread):
     def _sm_connect(self):
         try:
             self._ws = _WebSocketClient(
-                self, self._server_url, self._receive_queue,
+                self, self._server_url,
                 protocols=['dcm'], heartbeat_freq=self._heartbeat_freq,
                 ssl_options=self._ssl_options)
             self._ws.connect()
-            hs_doc = self.handshake_producer()
-            self._ws.send_handshake(json.dumps(hs_doc))
+            hs_doc = self._handshake_manager.get_send_document()
+            _g_logger.debug("Sending handshake")
+            self._ws.send(json.dumps(hs_doc))
         except Exception as ex:
             _g_logger.exception("Failed to connect to %s" % self._server_url)
             self._throw_error(ex, notify=False)
             self._cond.notify()
 
-    def _sm_received_hs(self, incoming_handshake=None):
+    def _sm_received_hs(self, incoming_data=None):
         """
         The handshake has arrived
         """
         try:
-            rc = self.handshake_observer(incoming_handshake)
-            if not rc:
-                if g_dcm_backoff_key in incoming_handshake:
-                    self._backoff.force_backoff_time(
-                        float(incoming_handshake[g_dcm_backoff_key]))
-
-                # this means the the AM rejected the handshake.  This is an
-                # error and the connection returns to the waiting state
-                ex = exceptions.AgentHandshakeException(incoming_handshake)
+            # if the handshake is rejected an exception will be thrown
+            hs = self._handshake_manager.incoming_document(incoming_data)
+            if hs.reply_type != handshake.HandshakeIncomingReply.REPLY_CODE_SUCCESS:
+                if hs.reply_type == handshake.HandshakeIncomingReply.REPLY_CODE_FORCE_BACKOFF:
+                    self._backoff.force_backoff_time(hs.force_backoff)
+                self._ws.close()
+                ex = exceptions.AgentHandshakeException(hs.reply_type)
                 self._throw_error(ex)
             self._cond.notify()
         except Exception as ex:
             self._throw_error(ex)
+
+    def _sm_open_incoming_message(self, incoming_data=None):
+        _g_logger.debug("New message received")
+        self._receive_queue.put(incoming_data)
+        self._backoff.activity()
 
     def _sm_hs_failed(self):
         """
@@ -470,7 +459,7 @@ class WebSocketConnection(threading.Thread):
                                 self._sm_not_open_close)
 
         self._sm.add_transition(WsConnStates.HANDSHAKING,
-                                WsConnEvents.GOT_HANDSHAKE,
+                                WsConnEvents.INCOMING_MESSAGE,
                                 WsConnStates.OPEN,
                                 self._sm_received_hs)
         self._sm.add_transition(WsConnStates.HANDSHAKING,
@@ -499,6 +488,10 @@ class WebSocketConnection(threading.Thread):
                                 WsConnStates.OPEN,
                                 self._sm_open_poll)
         self._sm.add_transition(WsConnStates.OPEN,
+                                WsConnEvents.INCOMING_MESSAGE,
+                                WsConnStates.OPEN,
+                                self._sm_open_incoming_message)
+        self._sm.add_transition(WsConnStates.OPEN,
                                 WsConnEvents.ERROR,
                                 WsConnStates.WAITING,
                                 self._sm_open_error)
@@ -516,6 +509,6 @@ class WebSocketConnection(threading.Thread):
                                 WsConnStates.DONE,
                                 None)
         self._sm.add_transition(WsConnStates.DONE,
-                                WsConnEvents.GOT_HANDSHAKE,
+                                WsConnEvents.INCOMING_MESSAGE,
                                 WsConnStates.DONE,
                                 None)
