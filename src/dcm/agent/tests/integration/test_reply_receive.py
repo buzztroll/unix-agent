@@ -160,7 +160,7 @@ class TestProtocolCommands(reply.ReplyObserverInterface):
         try:
             cls._setup_storage_clouds()
             cls._setup_buckets()
-        except Exception as ex:
+        except Exception:
             raise
 
     @classmethod
@@ -448,7 +448,6 @@ class TestProtocolCommands(reply.ReplyObserverInterface):
     @test_utils.system_changing
     def test_initialize(self):
         cust = 10l
-        orig_hostname = socket.gethostname()
         new_hostname = "testdcmagent"
         doc = {
             "command": "initialize",
@@ -572,8 +571,6 @@ class TestProtocolCommands(reply.ReplyObserverInterface):
         if not self.storage_clouds:
             raise skip.SkipTest("No storage clouds are configured")
         primary = self.storage_clouds[0]
-
-        files_uuids = []
 
         arguments = {
             "configType": "NOReal",
@@ -932,11 +929,13 @@ class TestProtocolCommands(reply.ReplyObserverInterface):
             self.conf_obj.extra_base_path = tempfile.mkdtemp()
             os.mkdir(os.path.join(self.conf_obj.extra_base_path, "puppetconf"))
             os.mkdir(os.path.join(self.conf_obj.extra_base_path, "bin"))
-            with open(os.path.join(self.conf_obj.extra_base_path, "bin/puppet"), "w") as fptr:
+            with open(os.path.join(self.conf_obj.extra_base_path,
+                                   "bin/puppet"), "w") as fptr:
                 fptr.write("x")
 
             with open(os.path.join(self.conf_obj.extra_base_path,
-                                   "puppetconf/puppet.conf.template"), "w") as fptr:
+                                   "puppetconf/puppet.conf.template"),
+                      "w") as fptr:
                 fptr.write("[agent]" + os.linesep)
                 fptr.write("fake=stuff")
 

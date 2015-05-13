@@ -18,8 +18,6 @@ import os
 import urlparse
 from dcm.agent import exceptions, utils
 import dcm.agent.jobs as jobs
-from dcm.agent import config
-from dcm.agent.cmd import configure as cfg
 
 
 _g_logger = logging.getLogger(__name__)

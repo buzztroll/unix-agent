@@ -21,7 +21,6 @@ class SyncJob(object):
             tempfile.mkstemp(prefix="dcmagentoutput")
 
         self._process = subprocess.Popen(cmd,
-                                         #shell=True,
                                          stdout=self._stdout,
                                          stderr=self._stderr,
                                          cwd=cwd,
@@ -129,7 +128,7 @@ class JobRunnerWorker(multiprocessing.Process):
                             "An unknown work type was received %s" % wrk[0])
                         continue
                     self._pipe.send(reply)
-        except EOFError as eofEx:
+        except EOFError:
             _g_logger.error(
                 "The pipe to the processes runner was disconnected")
         except Exception as ex:

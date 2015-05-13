@@ -230,7 +230,6 @@ class AgentConfig(object):
 
     def set_handshake(self, handshake_doc):
         self.state = "WAITING"
-        #if handshake_doc["version"] == dcm.agent.g_version:
         self.agent_id = handshake_doc["agentID"]
         self.cloud_id = handshake_doc["cloudId"]
         self.customer_id = handshake_doc["customerId"]
@@ -313,7 +312,7 @@ class AgentConfig(object):
                     v = opt.get_value(parser, relative_path=relative_path,
                                       default=getattr(self, oname))
                     setattr(self, oname, v)
-                except ConfigParser.NoSectionError as nse:
+                except ConfigParser.NoSectionError:
                     raise exceptions.AgentOptionSectionNotFoundException(
                         opt.name)
 

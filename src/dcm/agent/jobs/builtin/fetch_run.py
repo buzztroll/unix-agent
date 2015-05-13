@@ -1,4 +1,4 @@
-    #  ========= CONFIDENTIAL =========
+#  ========= CONFIDENTIAL =========
 #
 #  Copyright (C) 2010-2014 Dell, Inc. - ALL RIGHTS RESERVED
 #
@@ -37,7 +37,7 @@ class FetchRunScript(jobs.Plugin):
                      "environment.",
                      False, bool, False),
         "runUnderSudo": ("Run this script as the root use with sudo.",
-                     False, bool, False),
+                         False, bool, False),
         "arguments": ("The list of arguments to be passed to the "
                       "downloaded script",
                       False, list, None),

@@ -6,7 +6,7 @@ import tempfile
 import unittest
 
 import mock
-from mock import patch, Mock
+from mock import patch
 
 import dcm
 import dcm.agent.cloudmetadata as cloudmetadata

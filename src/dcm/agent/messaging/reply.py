@@ -250,8 +250,6 @@ class ReplyRPC(object):
         In this case a retransmission of the request comes in after the user
         acknowledged the message.  Here we resend the ack.
         """
-        message = kwargs['message']
-
         # reply using the latest message id
         ack_doc = {'type': types.MessageTypes.ACK,
                    'message_id': utils.new_message_id(),
@@ -797,7 +795,7 @@ class RequestListener(object):
                 self._requests[request_id] = req
                 try:
                     self._dispatcher.incoming_request(req)
-                except Exception as ex:
+                except Exception:
                     _g_logger.exception("The dispatcher could not handle a "
                                         "message.")
                     del self._requests[request_id]
@@ -867,9 +865,9 @@ class RequestListener(object):
         Stop accepting new requests but allow for outstanding messages to
         complete.
         """
-        self._shutdown = True  # XXX danger will robinson.  Lets not have
-                               # too many flags like this before we have
-                               # a state machine
+        self._shutdown = True  #  XXX danger will robinson.  Lets not have
+                               #  too many flags like this before we have
+                               #  a state machine
         for req in self._requests.values():
             req.kill()
 

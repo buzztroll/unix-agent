@@ -23,7 +23,7 @@ class TestRequesterStandardPath(unittest.TestCase):
             try:
                 q.get(block=False)
                 count_back += 1
-            except Exception as ex:
+            except Exception:
                 break
         self.assertEqual(count_back, 1)
 
@@ -40,7 +40,7 @@ class TestRequesterStandardPath(unittest.TestCase):
             try:
                 q.get(block=False)
                 count_back += 1
-            except Exception as ex:
+            except Exception:
                 break
 
         self.assertEqual(count_back, max_id)

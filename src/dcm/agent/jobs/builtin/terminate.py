@@ -11,7 +11,6 @@
 #   this material is strictly forbidden unless prior written permission
 #   is obtained from Dell, Inc.
 #  ======================================================================
-from dcm.agent import exceptions
 import dcm.agent.jobs.direct_pass as direct_pass
 
 

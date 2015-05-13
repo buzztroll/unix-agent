@@ -1,4 +1,4 @@
-    #  ========= CONFIDENTIAL =========
+#  ========= CONFIDENTIAL =========
 #
 #  Copyright (C) 2010-2014 Dell, Inc. - ALL RIGHTS RESERVED
 #
@@ -11,7 +11,6 @@
 #   this material is strictly forbidden unless prior written permission
 #   is obtained from Dell, Inc.
 #  ======================================================================
-import json
 import logging
 import os
 import urllib2

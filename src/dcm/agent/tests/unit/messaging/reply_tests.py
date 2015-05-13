@@ -165,7 +165,6 @@ class TestRequesterStandardPath(object):
         reply_listener = mock.Mock()
 
         request_id = "requestID"
-        message_id = "messageID"
         reply_payload = {"reply": "payload"}
 
         reply_rpc = reply.ReplyRPC(

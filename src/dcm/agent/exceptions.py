@@ -202,10 +202,6 @@ class AgentRuntimeException(Exception):
     pass
 
 
-class AgentHandshakeException(Exception):
-    pass
-
-
 class AgentConnectionDriverException(Exception):
     pass
 

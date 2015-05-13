@@ -47,7 +47,7 @@ class TestFetchExePlugin(unittest.TestCase):
             all_keys = cls.bucket.get_all_keys()
             cls.bucket.delete_keys([k.name for k in all_keys])
             cls.bucket.delete()
-        except Exception as ex:
+        except Exception:
             logging.exception("failed to clean up")
             raise
 

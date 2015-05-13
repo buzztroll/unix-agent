@@ -472,7 +472,7 @@ def http_get_to_file(url, filename):
             while data:
                 fptr.write(data)
                 data = response.read(64*1024)
-    except urllib2.URLError as ex:
+    except urllib2.URLError:
         raise exceptions.AgentRuntimeException(
             "There was a problem connecting to the URL " + url)
 
@@ -532,9 +532,10 @@ def install_extras(conf, package=None):
             http_get_to_file(pkg, pkg_file)
             found = True
             break
-        except BaseException as ex:
-            _g_logger.warn("Failed to download the extras package %s.  Falling "
-                           "back to the major only version." % try_packages[0])
+        except BaseException:
+            _g_logger.warn("Failed to download the extras package %s.  "
+                           "Falling back to the major only version."
+                           % try_packages[0])
 
     if not found:
         raise exceptions.AgentRuntimeException(
@@ -556,7 +557,8 @@ def _get_ipvX_addresses(family):
     ip_list = []
     for iface in netifaces.interfaces():
         try:
-            new_addrs = [ i['addr'] for i in netifaces.ifaddresses(iface)[family]]
+            new_addrs = [i['addr']
+                         for i in netifaces.ifaddresses(iface)[family]]
             ip_list.extend(new_addrs)
         except KeyError:
             # when there is a key error it means we have nothing to add

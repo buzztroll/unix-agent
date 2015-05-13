@@ -236,12 +236,10 @@ class TestRetransmission(unittest.TestCase):
     def test_retrans_after_ack_long(self):
         retrans = test_conn.RequestRetransmission()
         retrans.set_retrans_event(types.MessageTypes.ACK, 1)
-        to = self._many_message(0, ["sleep 0.5"], [retrans])
 
     def test_retrans_after_reply_long(self):
         retrans = test_conn.RequestRetransmission()
         retrans.set_retrans_event(types.MessageTypes.REPLY, 1)
-        to = self._many_message(0, ["sleep 0.5"], [retrans])
 
     def test_retrans_overlap(self):
         events = [

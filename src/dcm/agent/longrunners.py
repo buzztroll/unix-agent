@@ -187,7 +187,7 @@ class LongRunner(parent_receive_q.ParentReceiveQObserver):
         with self._lock:
             try:
                 return self._job_table[job_id]
-            except Exception as ex:
+            except Exception:
                 return None
 
     def incoming_parent_q_message(self, job_reply):

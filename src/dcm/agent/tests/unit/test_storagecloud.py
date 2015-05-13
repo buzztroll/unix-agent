@@ -19,8 +19,8 @@ class TestStorageCloud(unittest.TestCase):
             35: 'libcloud.storage.drivers.cloudfiles'
         }
 
+        # maps from regions to actual class names in s3.py
         self.region_map = {
-            #maps from regions to actual class names in s3.py
             "default": 'S3StorageDriver',
             "us_west": 'S3USWestStorageDriver',
             "us_west_oregon": 'S3USWestOregonStorageDriver',

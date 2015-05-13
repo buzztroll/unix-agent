@@ -333,7 +333,7 @@ class RequestRPC(object):
         """
         pass
 
-    ### XXX TODO FIGURE OUT THIS CASE
+    # XXX TODO FIGURE OUT THIS CASE
     def _sm_acksent_reply_received(self, **kwargs):
         """
         In this case a retransmission of a reply was received after an

@@ -287,7 +287,7 @@ def upload(cloud_id,
 
     try:
         container = driver.get_container(container_name)
-    except ContainerDoesNotExistError as libCloudEx:
+    except ContainerDoesNotExistError:
         container = driver.create_container(container_name=container_name)
 
     driver.upload_object(source_path, container, object_name)

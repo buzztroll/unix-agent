@@ -24,6 +24,7 @@ import dcm.agent.utils as utils
 _g_logger = logging.getLogger(__name__)
 ENV_INJECTED_ID_KEY = "DCM_AGENT_INJECTED_ID"
 
+
 class CLOUD_TYPES:
     Amazon = "Amazon"
 #    Atmos = "Atmos"
@@ -57,6 +58,7 @@ def normalize_cloud_name(cloud_name):
         if name.lower() == cloud_name.lower():
             return name
     return None
+
 
 def get_env_injected_id():
     try:

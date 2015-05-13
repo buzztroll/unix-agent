@@ -26,7 +26,7 @@ class TestExtraConfigure(unittest.TestCase):
             return
         try:
             agent_utils.extras_remove(self.conf)
-        except Exception as ex:
+        except Exception:
             logging.exception("Failed to remove extras package, NBD")
 
     def tearDown(self):
@@ -36,7 +36,7 @@ class TestExtraConfigure(unittest.TestCase):
             return
         try:
             agent_utils.extras_remove(self.conf)
-        except Exception as ex:
+        except Exception:
             logging.exception("Failed to remove extras package, NBD")
 
     @test_utils.system_changing

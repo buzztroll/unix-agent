@@ -165,11 +165,11 @@ class ReqRepQHolder(object):
         def close(self):
             try:
                 parent_receive_q.unregister_put_queue(self._recv_q)
-            except Exception as ex:
+            except Exception:
                 pass
             try:
                 parent_receive_q.unregister_put_queue(self._send_q)
-            except Exception as ex:
+            except Exception:
                 pass
 
     def get_req_conn(self):

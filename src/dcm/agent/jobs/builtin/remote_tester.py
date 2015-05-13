@@ -65,7 +65,7 @@ class RemoteTester(jobs.Plugin):
             rc = json.loads(msg)
             _g_logger.info("Tester plugin sending back " + str(rc))
             return rc
-        except Exception as ex:
+        except Exception:
             _g_logger.exception("Something went wrong here")
             return {'return_code': 1}
         except:

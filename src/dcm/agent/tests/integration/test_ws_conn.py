@@ -93,6 +93,6 @@ class TestWsConnection(object):
             serversocket.close()
             agent.shutdown_main_loop()
             t1.join()
-        nose.tools.ok_(expected_connections *.9 - 1 < connect_count
+        nose.tools.ok_(expected_connections * .9 - 1 < connect_count
                        < expected_connections * 1.1 + 1,
                        "connect_count is %d" % connect_count)

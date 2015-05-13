@@ -131,7 +131,6 @@ def setup_command_line_parser():
     parser.add_argument("--cacert-file", "-A", dest="cacert_file",
                         default="/opt/dcm-agent/embedded/ssl/certs/cacert.pem")
 
-
     return parser
 
 
