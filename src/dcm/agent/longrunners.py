@@ -5,8 +5,9 @@ import threading
 import time
 import urllib
 
+from dcm.agent import parent_receive_q
 import dcm.agent.jobs as jobs
-import dcm.agent.parent_receive_q as parent_receive_q
+from dcm.agent.events import global_space as dcm_events
 
 
 _g_logger = logging.getLogger(__name__)
@@ -128,7 +129,6 @@ class LongRunner(parent_receive_q.ParentReceiveQObserver):
             jr = JobRunner(conf, self._run_queue, self._reply_queue)
             self._runner_list.append(jr)
             jr.start()
-        self._timers = []
 
     def shutdown(self):
         # IF we want to make sure the queue is empty we must call
@@ -144,12 +144,6 @@ class LongRunner(parent_receive_q.ParentReceiveQObserver):
             r.join()
             _g_logger.debug("Runner %s is done" % str(r))
         _g_logger.info("The dispatcher is closed.")
-        for t in self._timers:
-            try:
-                t.cancel()
-            except:
-                pass
-            t.join()
 
     def start_new_job(self, conf, request_id, items_map,
                       name, arguments):
@@ -173,10 +167,9 @@ class LongRunner(parent_receive_q.ParentReceiveQObserver):
     def job_complete(self, job_id):
         if self._conf.jobs_retain_job_time == 0:
             return
-        t = threading.Timer(self._conf.jobs_retain_job_time,
-                            self._job_cleanup, job_id)
-        self._timers.append(t)
-        t.start()
+        dcm_events.register_callback(self._job_cleanup,
+                                     args=[job_id],
+                                     delay=self._conf.jobs_retain_job_time)
 
     def _job_cleanup(self, job_id):
         with self._lock:

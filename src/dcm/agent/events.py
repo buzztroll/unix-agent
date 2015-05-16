@@ -175,4 +175,4 @@ class EventSpace(object):
             done = end_time < now
 
 
-
+global_space = EventSpace()

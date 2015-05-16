@@ -5,6 +5,9 @@ import uuid
 import dcm.agent.utils as agent_utils
 
 
+from dcm.agent.events import global_space as dcm_events
+
+
 _g_logger = logging.getLogger(__name__)
 _g_message_uuid = str(uuid.uuid4()).split("-")[0]
 _g_message_id_count = 0
@@ -42,31 +45,29 @@ class MessageTimer(object):
     @agent_utils.class_method_sync
     def send(self, conn):
         _g_logger.info("Resending reply to %s" % self._send_doc["request_id"])
-        self._timer = threading.Timer(self._timeout,
-                                      self._cb,
-                                      args=[self])
         self._send_doc['entity'] = "timer"
         conn.send(self._send_doc)
-        self._timer.start()
+        self._timer = dcm_events.register_callback(self._cb, args=[self], delay=self._timeout)
 
     @agent_utils.class_method_sync
     def cancel(self):
         if self._timer is None:
             return
-        self._timer.cancel()
+        dcm_events.cancel(self._timer)
         self._timer = None
 
 
 class AckCleanupTimer(object):
     def __init__(self, timeout, func):
         self._func = func
-        self._timer = threading.Timer(timeout, self.timeout_wrapper)
+        self._timeout = timeout
 
     def start(self):
-        return self._timer.start()
+        self._timer = dcm_events.register_callback(
+            self.timeout_wrapper, delay=self._timeout)
 
     def cancel(self):
-        return self._timer.cancel()
+        return dcm_events.cancel(self._timer)
 
     def timeout_wrapper(self, *args, **kwargs):
         self._func(self, *args, **kwargs)

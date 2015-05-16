@@ -29,6 +29,7 @@ import dcm.agent.parent_receive_q as parent_receive_q
 import dcm.agent.state_machine as state_machine
 import dcm.agent.utils as agent_utils
 
+from dcm.agent.events import global_space as dcm_events
 
 _g_logger = logging.getLogger(__name__)
 _g_wire_logger = agent_utils.get_wire_logger()
@@ -239,9 +240,8 @@ class WebSocketConnection(threading.Thread):
         if self._connect_timer is not None:
             raise exceptions.AgentRuntimeException(
                 "There is already a connection registered")
-        self._connect_timer = threading.Timer(
-            self._backoff.seconds_until_ready(), self.event_connect_timeout)
-        self._connect_timer.start()
+        self._connect_timer = dcm_events.register_callback(
+            self.event_connect_timeout, delay=self._connect_timer.start())
 
     @agent_utils.class_method_sync
     def event_connect_timeout(self):

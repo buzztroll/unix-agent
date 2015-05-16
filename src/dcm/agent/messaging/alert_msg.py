@@ -3,6 +3,8 @@ import threading
 import dcm.agent.utils as utils
 import dcm.agent.state_machine as state_machine
 
+from dcm.agent.events import global_space as dcm_events
+
 
 class States:
     NEW = "NEW"
@@ -46,7 +48,8 @@ class AlertAckMsg(object):
         self._sm.event_occurred(Events.SEND, message={})
 
     def _send_timeout(self):
-        self._timer = threading.Timer(self._timeout, self.timeout)
+        self._timer = dcm_events.register_callback(
+            self.timeout, delay=self._timeout)
         self._conn.send(self._doc)
 
     def _sm_send_message(self):

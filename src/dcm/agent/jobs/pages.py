@@ -18,6 +18,8 @@ import threading
 import dcm.agent.exceptions as exceptions
 import dcm.agent.utils as utils
 
+from dcm.agent.events import global_space as dcm_events
+
 
 class BasePage(object):
     def __init__(self, page_size):
@@ -74,16 +76,19 @@ class PageMonitor(object):
         self._stopped = False
         self._sweep_time = sweep_time
 
+    @utils.class_method_sync
     def start(self):
         if self._stopped:
             return
-        self._timer = threading.Timer(self._sweep_time, self.clean_sweep)
-        self._timer.start()
+        self._timer = dcm_events.register_callback(
+            self.clean_sweep, delay=self._sweep_time)
 
+    @utils.class_method_sync
     def stop(self):
         self._stopped = True
         if self._timer is not None:
             self._timer.cancel()
+            self._timer = None
 
     @utils.class_method_sync
     def get_next_page(self, token):

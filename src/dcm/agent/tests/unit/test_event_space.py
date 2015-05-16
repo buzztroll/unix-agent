@@ -1,4 +1,6 @@
 import datetime
+import threading
+import time
 import unittest
 import uuid
 
@@ -153,3 +155,48 @@ class TestEventSpace(unittest.TestCase):
         self.assertIsNone(ub.get_rc())
         self.assertTrue(ub.has_run())
         self.assertEqual(exception_message, ub.get_exception().message)
+
+    def test_wakeup_on_register(self):
+        # test that callback happens when it is registered after the poll
+        event_space = events.EventSpace()
+        param = []
+        start_time = []
+        delay = 0.1
+
+        def test_callback(param):
+            param.append(datetime.datetime.now())
+
+        def register_new_callback():
+            time.sleep(delay)
+            start_time.append(datetime.datetime.now())
+            event_space.register_callback(test_callback, args=[param])
+
+        t = threading.Thread(target=register_new_callback)
+        t.start()
+        poll_time = datetime.datetime.now()
+        event_space.poll(timeblock=delay * 2)
+        self.assertEqual(len(param), 1)
+        self.assertGreater(start_time[0], poll_time)
+        t.join()
+
+    def register_events_in_callback(self):
+        event_space = events.EventSpace()
+        param = []
+
+        def test_callback1(param):
+            param.append(1)
+
+        def test_callback2(param):
+            param.append(2)
+
+        def test_callback3(param):
+            event_space.register_callback(test_callback1, args=[param])
+            event_space.register_callback(test_callback2, args=[param])
+
+        event_space.register_callback(test_callback3, args=[param])
+
+        event_space.poll(0.1)
+
+        self.assertEqual(len(param), 2)
+        self.assertIn(1, param)
+        self.assertIn(2, param)
