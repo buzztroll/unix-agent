@@ -170,6 +170,7 @@ class HandshakeManager(object):
 
             # this next line should be a noop all but the first time
             self._db.check_agent_id(self.agent_id)
+            self.conf.agent_id = self.agent_id
 
             hs = HandshakeIncomingReply(
                 reply_type=HandshakeIncomingReply.REPLY_CODE_SUCCESS,
