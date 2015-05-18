@@ -591,3 +591,7 @@ def validate_file_permissions(file_path, username=None, permissions=None):
         if pwd.getpwuid(stat_info.st_uid).pw_name != username:
             raise exceptions.AgentFilePermissionsException(
                 "The path %s is not owned by %s" % (file_path, username))
+
+
+def get_wire_logger():
+    return logging.getLogger("DCM_AGENT_WIRE")

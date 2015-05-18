@@ -56,7 +56,6 @@ class DCMAgent(object):
         self.disp = None
         self.request_listener = None
         self.g_logger = logging.getLogger(__name__)
-        self.g_logger.info("Using DB %s" % conf.storage_dbfile)
         self._db = persistence.SQLiteAgentDB(conf.storage_dbfile)
         self._intrusion_detection = None
         self.db_cleaner = None
@@ -103,7 +102,6 @@ class DCMAgent(object):
                     self.conf, self.conn)
             if self._intrusion_detection:
                 self._intrusion_detection.start()
-            self.conf.page_monitor.start()
 
             logger.set_dcm_connection(self.conf, self.conn)
 
@@ -146,9 +144,6 @@ class DCMAgent(object):
         if self.conn:
             self.g_logger.debug("Closing the connection")
             self.conn.close()
-
-        self.g_logger.debug("Stopping the pager service")
-        self.conf.page_monitor.stop()
         self.g_logger.debug("Service closed")
 
 

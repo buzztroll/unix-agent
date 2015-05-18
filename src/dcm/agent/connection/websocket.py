@@ -25,13 +25,13 @@ from dcm.agent import handshake
 import ws4py.client.threadedclient as ws4py_client
 
 import dcm.agent.exceptions as exceptions
-import dcm.agent.messaging.utils as utils
 import dcm.agent.parent_receive_q as parent_receive_q
 import dcm.agent.state_machine as state_machine
 import dcm.agent.utils as agent_utils
 
 
 _g_logger = logging.getLogger(__name__)
+_g_wire_logger = agent_utils.get_wire_logger()
 
 
 class WsConnEvents:
@@ -188,9 +188,13 @@ class _WebSocketClient(ws4py_client.WebSocketClient):
             self, code=code, reason=reason)
 
     def received_message(self, m):
-        _g_logger.debug("WS message received " + m.data)
+        _g_wire_logger.debug("INCOMING\n--------\n%s--------" % str(m.data))
         json_doc = json.loads(m.data)
         self.manager.event_incoming_message(json_doc)
+
+    def send(self, payload, binary=False):
+        _g_wire_logger.debug("OUTGOING\n--------\n%s--------" % str(payload))
+        super(_WebSocketClient, self).send(payload, binary=binary)
 
 
 class WebSocketConnection(threading.Thread):
@@ -394,7 +398,6 @@ class WebSocketConnection(threading.Thread):
                 self._send_queue.task_done()
 
                 msg = json.dumps(doc)
-                _g_logger.debug("sending the message " + msg)
                 self._ws.send(msg)
             except socket.error as er:
                 if er.errno == errno.EPIPE:

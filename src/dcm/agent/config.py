@@ -202,7 +202,7 @@ class AgentConfig(object):
     def _normalize_options(self):
         if self.storage_dbfile is None:
             self.storage_dbfile = \
-                os.path.join(self.storage_base_dir, "etc", "agentdb.sql")
+                os.path.join(self.storage_base_dir, "secure", "agentdb.sql")
         if self.storage_script_dir is None:
             self.storage_script_dir = \
                 os.path.join(self.storage_base_dir, "bin")

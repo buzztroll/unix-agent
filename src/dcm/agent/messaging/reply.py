@@ -716,8 +716,7 @@ class RequestListener(object):
 
         with tracer.RequestTracer(incoming_doc['request_id']):
             self._call_reply_observers("incoming_message", incoming_doc)
-            _g_logger.debug("New message type %s :: %s" %
-                            (incoming_doc['type'], incoming_doc))
+            _g_logger.debug("New message type %s" % incoming_doc['type'])
 
             # if the agent is misbehaving the AM might tell it to kill itself.
             # cold.

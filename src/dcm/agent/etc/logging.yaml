@@ -6,6 +6,8 @@ formatters:
         format: "%(levelname)s %(asctime)s [%(name)s] %(filename)s:%(lineno)d [(REQUEST=%(dcm_request_id)s)] %(message)s"
     todcm:
         format: "%(asctime)s [%(name)s] %(filename)s:%(lineno)d [(REQUEST=%(dcm_request_id)s)] %(message)s"
+    wire:
+        format: "[%(asctime)s] %(message)s"
 
 
 filters:
@@ -23,6 +25,15 @@ handlers:
         backupCount: 20
         encoding: utf8
         filters: [add_request]
+
+    wire_handler:
+        class: logging.handlers.RotatingFileHandler
+        level: INFO
+        formatter: wire
+        filename: @LOGFILE_PATH@.wire
+        maxBytes: 10485760
+        backupCount: 20
+        encoding: utf8
 
     job_runner_file_handler:
         class: logging.handlers.RotatingFileHandler
@@ -68,7 +79,10 @@ loggers:
         handlers: [dcm_logger, file_handler]
         propagate: no
 
-
+    DCM_AGENT_WIRE:
+        level: INFO
+        handlers: [wire_handler]
+        propagate: no
 root:
     level: @LOG_LEVEL@
     handlers: [file_handler]
