@@ -115,10 +115,12 @@ class HandshakeManager(object):
             payload = incoming_doc["handshake"]
             self._incoming_handshake_payload = payload
             self.agent_id = payload.get('agentID')
+            customer_id = payload.get('customerId')
 
             # this next line should be a noop all but the first time
             self._db.check_agent_id(self.agent_id)
             self.conf.agent_id = self.agent_id
+            self.conf.customer_id = customer_id
 
             hs = HandshakeIncomingReply(
                 reply_type=HandshakeIncomingReply.REPLY_CODE_SUCCESS,
@@ -128,7 +130,7 @@ class HandshakeManager(object):
                 cloud_delegate=payload.get('cloudDelegate'),
                 agent_id=self.agent_id,
                 cloud_id=payload.get('cloudId'),
-                customer_id=payload.get('customerId'),
+                customer_id=customer_id,
                 region_id=payload.get('regionId'),
                 zone_id=payload.get('zoneId'),
                 server_id=payload.get('serverId'),

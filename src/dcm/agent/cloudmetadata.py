@@ -405,16 +405,13 @@ def guess_effective_cloud(conf):
 
 
 def get_dhcp_ip_address(conf):
-    if conf.dhcp_address is not None:
-        return conf.dhcp_address
-
     (stdout, stderr, rc) = utils.run_script(conf, "getDhcpAddress", [])
     if rc != 0:
         raise exceptions.AgentExecutableException(
             "getDhcpAddress", rc, stdout, stderr)
 
-    conf.dhcp_address = stdout.strip()
-    return conf.dhcp_address
+    dhcp_address = stdout.strip()
+    return dhcp_address
 
 
 def _get_metadata_server_url_data(url, timeout=10, headers=None):

@@ -20,7 +20,7 @@ import threading
 
 import dcm.agent.exceptions as exceptions
 import dcm.agent.messaging.states as messaging_states
-import dcm.agent.messaging.utils as messaging_utils
+import dcm.agent.utils as agent_utils
 
 
 _g_logger = logging.getLogger(__name__)
@@ -147,7 +147,7 @@ class SQLiteAgentDB(object):
             self._log_db_info()
             raise
 
-    @messaging_utils.class_method_sync
+    @agent_utils.class_method_sync
     def starting_agent(self):
         r = {
             'Exception':
@@ -164,7 +164,7 @@ class SQLiteAgentDB(object):
                             messaging_states.ReplyStates.ACKED))
         self._execute(do_it)
 
-    @messaging_utils.class_method_sync
+    @agent_utils.class_method_sync
     def check_agent_id(self, agent_id):
         stmt = 'DELETE FROM requests where agent_id <> ?'
 
@@ -184,27 +184,27 @@ class SQLiteAgentDB(object):
             return [SQLiteRequestObject(i) for i in rows]
         return self._execute(do_it)
 
-    @messaging_utils.class_method_sync
+    @agent_utils.class_method_sync
     def get_all_complete(self):
         return self._get_all_state(messaging_states.ReplyStates.REPLY_ACKED)
 
-    @messaging_utils.class_method_sync
+    @agent_utils.class_method_sync
     def get_all_rejected(self, session=None):
         return self._get_all_state(messaging_states.ReplyStates.NACKED)
 
-    @messaging_utils.class_method_sync
+    @agent_utils.class_method_sync
     def get_all_reply_nacked(self, session=None):
         return self._get_all_state(messaging_states.ReplyStates.REPLY_NACKED)
 
-    @messaging_utils.class_method_sync
+    @agent_utils.class_method_sync
     def get_all_ack(self):
         return self._get_all_state(messaging_states.ReplyStates.ACKED)
 
-    @messaging_utils.class_method_sync
+    @agent_utils.class_method_sync
     def get_all_reply(self):
         return self._get_all_state(messaging_states.ReplyStates.REPLY)
 
-    @messaging_utils.class_method_sync
+    @agent_utils.class_method_sync
     def lookup_req(self, request_id):
         stmt = ("SELECT " + ", ".join(_get_column_order()) + " FROM "
                 'requests where request_id=?')
@@ -217,7 +217,7 @@ class SQLiteAgentDB(object):
             return SQLiteRequestObject(row)
         return self._execute(do_it)
 
-    @messaging_utils.class_method_sync
+    @agent_utils.class_method_sync
     def new_record(self, request_id, request_doc, reply_doc, state,
                    agent_id):
         stmt = ("INSERT INTO requests(request_id, creation_time, request_doc, "
@@ -240,7 +240,7 @@ class SQLiteAgentDB(object):
             cursor.execute(stmt, parms)
         self._execute(do_it)
 
-    @messaging_utils.class_method_sync
+    @agent_utils.class_method_sync
     def update_record(self, request_id, state, reply_doc=None):
         stmt = ("UPDATE requests SET state=?, reply_doc=?, last_update_time=? "
                 "WHERE request_id=?")
@@ -259,7 +259,7 @@ class SQLiteAgentDB(object):
         except Exception as ex:
             raise exceptions.PersistenceException(ex)
 
-    @messaging_utils.class_method_sync
+    @agent_utils.class_method_sync
     def clean_all_expired(self, cut_off_time):
         stmt = ("DELETE FROM requests WHERE request_id in (SELECT request_id "
                 "FROM requests WHERE last_update_time < ?)")

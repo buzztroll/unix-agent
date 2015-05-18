@@ -73,6 +73,16 @@ def not_implemented_decorator(func):
     return call
 
 
+def class_method_sync(func):
+    def wrapper(self, *args, **kwargs):
+        self.lock()
+        try:
+            return func(self, *args, **kwargs)
+        finally:
+            self.unlock()
+    return wrapper
+
+
 def verify_config_file(opts):
     must_haves = ["connection_type", "cloud_type", "platform_name",
                   "connection_agentmanager_url"]

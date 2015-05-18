@@ -232,10 +232,6 @@ class ConfigureServer(jobs.Plugin):
             utils.safe_delete(puppet_conf_path)
 
     def run(self):
-        if self.conf.is_imaging():
-            raise exceptions.AgentPluginOperationIsImagingException(
-                operation_name=self.name)
-
         _g_logger.info("Running configuration management of type " +
                        self.args.configType)
 

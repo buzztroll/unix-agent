@@ -6,6 +6,7 @@ import dcm.agent.messaging.states as states
 import dcm.agent.messaging.types as types
 import dcm.agent.messaging.utils as utils
 import dcm.agent.parent_receive_q as parent_receive_q
+import dcm.agent.state_machine as state_machine
 
 
 _g_logger = logging.getLogger(__name__)
@@ -18,7 +19,7 @@ class RequestRPC(object):
                  reply_callback=None, reply_args=None, reply_kwargs=None):
         self._doc = document
         self._request_id = str(uuid.uuid4())
-        self._sm = states.StateMachine(states.RequesterStates.REQUEST_NEW)
+        self._sm = state_machine.StateMachine(states.RequesterStates.REQUEST_NEW)
         self._timeout = timeout
         self._reply_callback = reply_callback
         self._reply_args = reply_args

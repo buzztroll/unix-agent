@@ -9,6 +9,7 @@ import dcm.agent.messaging.states as states
 import dcm.agent.messaging.types as message_types
 import dcm.agent.messaging.utils as utils
 import dcm.agent.parent_receive_q as parent_receive_q
+import dcm.agent.state_machine as state_machine
 import dcm.agent.utils as agent_util
 import dcm.eventlog.tracer as tracer
 
@@ -45,7 +46,7 @@ class ReplyRPC(object):
         self._lock = threading.RLock()
 
         self._response_doc = reply_doc
-        self._sm = states.StateMachine(start_state)
+        self._sm = state_machine.StateMachine(start_state)
         self._setup_states()
         self._db = db
 
@@ -79,7 +80,7 @@ class ReplyRPC(object):
                     _g_logger.info("an exception occurred when trying to "
                                    "cancel the timer: " + ex.message)
 
-    @utils.class_method_sync
+    @agent_util.class_method_sync
     def ack(self,
             cancel_callback, cancel_callback_args, cancel_callback_kwargs):
         """
@@ -97,7 +98,7 @@ class ReplyRPC(object):
             self._sm.event_occurred(states.ReplyEvents.USER_ACCEPTS_REQUEST,
                                     message={})
 
-    @utils.class_method_sync
+    @agent_util.class_method_sync
     def nak(self, response_document):
         """
         This function is called to out right reject the message.  The user
@@ -110,7 +111,7 @@ class ReplyRPC(object):
             self._sm.event_occurred(states.ReplyEvents.USER_REJECTS_REQUEST,
                                     message=response_document)
 
-    @utils.class_method_sync
+    @agent_util.class_method_sync
     def reply(self, response_document):
         """
         Send a reply to this request.  This signifies that the user is
@@ -121,14 +122,14 @@ class ReplyRPC(object):
             self._sm.event_occurred(states.ReplyEvents.USER_REPLIES,
                                     message=response_document)
 
-    @utils.class_method_sync
+    @agent_util.class_method_sync
     def reply_timeout(self, message_timer):
         with tracer.RequestTracer(self._request_id):
             _g_logger.debug("reply timeout occurred, resending.")
             self._sm.event_occurred(states.RequesterEvents.TIMEOUT,
                                     message_timer=message_timer)
 
-    @utils.class_method_sync
+    @agent_util.class_method_sync
     def incoming_message(self, json_doc):
         with tracer.RequestTracer(self._request_id):
             type_to_event = {

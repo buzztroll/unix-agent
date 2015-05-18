@@ -1,7 +1,7 @@
 import threading
 
-import dcm.agent.messaging.states as states
-import dcm.agent.messaging.utils as utils
+import dcm.agent.utils as utils
+import dcm.agent.state_machine as state_machine
 
 
 class States:
@@ -22,7 +22,7 @@ class AlertAckMsg(object):
     def __init__(self, timeout, doc, conn):
         self._timeout = timeout
         self._doc = doc
-        self._sm = states.StateMachine(States.NEW)
+        self._sm = state_machine.StateMachine(States.NEW)
         self._timer = None
         self._lock = threading.RLock()
         self._conn = conn

@@ -16,7 +16,7 @@ import json
 import threading
 
 import dcm.agent.exceptions as exceptions
-import dcm.agent.messaging.utils as utils
+import dcm.agent.utils as utils
 
 
 class BasePage(object):

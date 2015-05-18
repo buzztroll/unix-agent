@@ -2,21 +2,13 @@ import logging
 import threading
 import uuid
 
+import dcm.agent.utils as agent_utils
+
 
 _g_logger = logging.getLogger(__name__)
 _g_message_uuid = str(uuid.uuid4()).split("-")[0]
 _g_message_id_count = 0
 _g_guid_lock = threading.RLock()
-
-
-def class_method_sync(func):
-    def wrapper(self, *args, **kwargs):
-        self.lock()
-        try:
-            return func(self, *args, **kwargs)
-        finally:
-            self.unlock()
-    return wrapper
 
 
 def new_message_id():
@@ -47,7 +39,7 @@ class MessageTimer(object):
     def unlock(self):
         self._lock.release()
 
-    @class_method_sync
+    @agent_utils.class_method_sync
     def send(self, conn):
         _g_logger.info("Resending reply to %s" % self._send_doc["request_id"])
         self._timer = threading.Timer(self._timeout,
@@ -57,7 +49,7 @@ class MessageTimer(object):
         conn.send(self._send_doc)
         self._timer.start()
 
-    @class_method_sync
+    @agent_utils.class_method_sync
     def cancel(self):
         if self._timer is None:
             return

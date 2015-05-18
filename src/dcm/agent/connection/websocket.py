@@ -25,9 +25,9 @@ from dcm.agent import handshake
 import ws4py.client.threadedclient as ws4py_client
 
 import dcm.agent.exceptions as exceptions
-import dcm.agent.messaging.states as states
 import dcm.agent.messaging.utils as utils
 import dcm.agent.parent_receive_q as parent_receive_q
+import dcm.agent.state_machine as state_machine
 import dcm.agent.utils as agent_utils
 
 
@@ -210,7 +210,7 @@ class WebSocketConnection(threading.Thread):
         self._backoff = Backoff(float(max_backoff) / 1000.0,
                                 float(backoff_amount) / 1000.0)
 
-        self._sm = states.StateMachine(WsConnStates.WAITING)
+        self._sm = state_machine.StateMachine(WsConnStates.WAITING)
         self._setup_states()
         self._handshake_manager = None
         self._heartbeat_freq = heartbeat
@@ -220,11 +220,11 @@ class WebSocketConnection(threading.Thread):
             cert_reqs = ssl.CERT_REQUIRED
         self._ssl_options = {'cert_reqs': cert_reqs, 'ca_certs': ca_certs}
 
-    @utils.class_method_sync
+    @agent_utils.class_method_sync
     def set_backoff(self, backoff_seconds):
         self._backoff.force_backoff_time(backoff_seconds)
 
-    @utils.class_method_sync
+    @agent_utils.class_method_sync
     def connect(self, receive_object, handshake_manager):
         self._receive_queue = parent_receive_q.get_master_receive_queue(
             receive_object, str(self))
@@ -239,23 +239,23 @@ class WebSocketConnection(threading.Thread):
             self._backoff.seconds_until_ready(), self.event_connect_timeout)
         self._connect_timer.start()
 
-    @utils.class_method_sync
+    @agent_utils.class_method_sync
     def event_connect_timeout(self):
         self._connect_timer = None
         self._sm.event_occurred(WsConnEvents.CONNECT_TIMEOUT)
 
-    @utils.class_method_sync
+    @agent_utils.class_method_sync
     def send(self, doc):
         _g_logger.debug("Adding a message to the send queue")
         self._send_queue.put(doc)
         self._cond.notify()
 
-    @utils.class_method_sync
+    @agent_utils.class_method_sync
     def close(self):
         _g_logger.debug("Websocket connection closed.")
         self.event_close()
 
-    @utils.class_method_sync
+    @agent_utils.class_method_sync
     def run(self):
         self._register_connect()
         while not self._done_event.is_set():
@@ -270,17 +270,17 @@ class WebSocketConnection(threading.Thread):
     #########
     # incoming events
     #########
-    @utils.class_method_sync
+    @agent_utils.class_method_sync
     def event_close(self):
         self._backoff.closed()
         self._sm.event_occurred(WsConnEvents.CLOSE)
 
-    @utils.class_method_sync
+    @agent_utils.class_method_sync
     def event_incoming_message(self, incoming_data):
         self._sm.event_occurred(WsConnEvents.INCOMING_MESSAGE,
                                 incoming_data=incoming_data)
 
-    @utils.class_method_sync
+    @agent_utils.class_method_sync
     def event_error(self, exception=None):
         self._sm.event_occurred(WsConnEvents.ERROR)
         _g_logger.error(

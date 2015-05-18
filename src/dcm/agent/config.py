@@ -4,14 +4,13 @@ import logging
 import logging.config
 import os
 import tempfile
-import threading
 import yaml
 
 import dcm
-from dcm.agent.cloudmetadata import CLOUD_TYPES, set_metadata_object
+import dcm.agent.cloudmetadata as cloudmetadata
+from dcm.agent.cloudmetadata import CLOUD_TYPES
 import dcm.agent.connection.websocket as websocket
 import dcm.agent.exceptions as exceptions
-import dcm.agent.jobs.pages as pages
 import dcm.agent.job_runner as job_runner
 import dcm.agent.tests.utils.test_connection as test_connection  # TODO
 import dcm.agent.utils as utils
@@ -182,29 +181,23 @@ class AgentConfig(object):
         self.features = {}
 
         self.agent_id = None
-        self.cloud_id = None
         self.customer_id = None
-        self.region_id = None
-        self.zone_id = None
+
         self.server_id = None
         self.server_name = None
         self.storage_dbfile = None
-        self.dhcp_address = None
         self.meta_data_object = None  # until we call set_metadata_object
-
-        self.imaging_event = threading.Event()
 
         self.config_files = conf_files
 
         self.parse_config_files(build_options_list(), add_features="features")
 
         #  here is where we set which Meta object to use from cloudmetadata.py
-        set_metadata_object(self)
+        cloudmetadata.set_metadata_object(self)
 
         self._normalize_options()
 
         setup_logging(self.logging_configfile)
-        self.page_monitor = pages.PageMonitor()
 
     def _normalize_options(self):
         if self.storage_dbfile is None:
@@ -248,15 +241,6 @@ class AgentConfig(object):
 
     def is_upgrading(self):
         return False
-
-    def is_imaging(self):
-        return self.imaging_event.is_set()
-
-    def set_imaging(self, b):
-        if b:
-            self.imaging_event.set()
-        else:
-            self.imaging_event.clear()
 
     def start_job_runner(self):
         self.jr = job_runner.JobRunner(self)

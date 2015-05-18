@@ -174,10 +174,8 @@ def _gather_info(conf):
     except Exception as ex:
         platform = "Not able to determine platform: " + str(ex)
 
-    meta_data_obj = conf.meta_data_object
-
     try:
-        startup_script = meta_data_obj.get_startup_script()
+        startup_script = conf.meta_data_object.get_startup_script()
     except Exception as ex:
         startup_script = "Not able to retrieve startup script: " + str(ex)
 
