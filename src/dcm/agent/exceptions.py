@@ -90,6 +90,10 @@ class AgentPluginMessageException(Exception):
     pass
 
 
+class AgentHandshakeUnknownTypeException(Exception):
+    pass
+
+
 class AgentPluginParameterException(Exception):
     def __init__(self, command_name, argument_name):
         message = ("The command %(command_name)s requires the arguments "
@@ -199,6 +203,10 @@ class PerminateConnectionException(MessagingException):
 
 
 class AgentRuntimeException(Exception):
+    pass
+
+
+class AgentFilePermissionsException(Exception):
     pass
 
 

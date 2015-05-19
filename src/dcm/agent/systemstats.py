@@ -151,7 +151,7 @@ def stop_stats(name):
 def clean_up_all():
     _g_lock.acquire()
     try:
-        for name in _g_active_stats:
+        for name in _g_active_stats.keys():
             stat_obj = _g_active_stats[name]
             stat_obj.stop()
             del _g_active_stats[name]

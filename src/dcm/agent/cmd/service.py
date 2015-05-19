@@ -55,12 +55,11 @@ class DCMAgent(object):
         self.conf = conf
         self.disp = None
         self.request_listener = None
-        self.incoming_handshake_doc = None
         self.g_logger = logging.getLogger(__name__)
-        self.g_logger.info("Using DB %s" % conf.storage_dbfile)
         self._db = persistence.SQLiteAgentDB(conf.storage_dbfile)
         self._intrusion_detection = None
         self.db_cleaner = None
+        self.handshaker = handshake.HandshakeManager(self.conf, self._db)
 
     def kill_handler(self, signum, frame):
         self.shutdown_main_loop()
@@ -103,44 +102,17 @@ class DCMAgent(object):
                     self.conf, self.conn)
             if self._intrusion_detection:
                 self._intrusion_detection.start()
-            self.conf.page_monitor.start()
 
-            handshake_doc = handshake.get_handshake(self.conf)
-            self.g_logger.debug("Using outgoing handshake document %s"
-                                % str(handshake_doc))
             logger.set_dcm_connection(self.conf, self.conn)
-            self.conn.connect(self.request_listener, self.incoming_handshake,
-                              self.get_outgoing_handshake)
+
+            self.conn.connect(self.request_listener,
+                              self.handshaker)
+            self.disp.start_workers(self.request_listener)
 
             rc = self.agent_main_loop()
             return rc
         finally:
             self.cleanup_agent()
-
-    def incoming_handshake(self, incoming_handshake_doc):
-        self.g_logger.info(
-            "Incoming handshake %s" % str(incoming_handshake_doc))
-        if self.incoming_handshake_doc is not None:
-            # we already received a handshake, just return
-            return True
-
-        self.incoming_handshake_doc = incoming_handshake_doc
-        if incoming_handshake_doc["return_code"] != 200:
-            return False
-
-        self.conf.set_handshake(incoming_handshake_doc["handshake"])
-        # clean the db if the agent_id doesnt match it
-        self.g_logger.debug("Clean up any bad residue in the db")
-        self._db.check_agent_id(self.conf.agent_id)
-        utils.log_to_dcm(
-            logging.INFO,
-            "A handshake was successful, starting to process commands.")
-        self.disp.start_workers(self.request_listener)
-
-        return True
-
-    def get_outgoing_handshake(self):
-        return handshake.get_handshake(self.conf)
 
     def agent_main_loop(self):
         while not self.shutting_down:
@@ -172,9 +144,6 @@ class DCMAgent(object):
         if self.conn:
             self.g_logger.debug("Closing the connection")
             self.conn.close()
-
-        self.g_logger.debug("Stopping the pager service")
-        self.conf.page_monitor.stop()
         self.g_logger.debug("Service closed")
 
 
@@ -200,10 +169,8 @@ def _gather_info(conf):
     except Exception as ex:
         platform = "Not able to determine platform: " + str(ex)
 
-    meta_data_obj = conf.meta_data_object
-
     try:
-        startup_script = meta_data_obj.get_startup_script()
+        startup_script = conf.meta_data_object.get_startup_script()
     except Exception as ex:
         startup_script = "Not able to retrieve startup script: " + str(ex)
 

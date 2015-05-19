@@ -57,7 +57,7 @@ class TestConfigure(unittest.TestCase):
         rc = configure.main(conf_args)
         self.assertEqual(rc, 0)
 
-        subdirs_to_check = ["custom", "etc", "home", "logs", "bin",
+        subdirs_to_check = ["secure", "etc", "home", "logs", "bin",
                             "etc/agent.conf", "etc/logging.yaml",
                             "etc/plugin.conf"]
 

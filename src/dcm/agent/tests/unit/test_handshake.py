@@ -2,6 +2,8 @@ import os
 import tempfile
 import unittest
 
+import mock
+
 import dcm.agent
 import dcm.agent.config as config
 import dcm.agent.handshake as handshake
@@ -42,7 +44,8 @@ test=2
 
     def test_get_conf_files(self):
         conf = config.AgentConfig([self.conf_path])
-        handshake_doc = handshake.get_handshake(conf)
+        hs = handshake.HandshakeManager(conf, mock.Mock())
+        handshake_doc = hs.get_send_document()
         features = handshake_doc['features']
         self.assertIsNotNone(features['plugins'])
         self.assertIn("add_user", features['plugins'])

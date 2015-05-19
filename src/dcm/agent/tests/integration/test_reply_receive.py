@@ -230,8 +230,8 @@ class TestProtocolCommands(reply.ReplyObserverInterface):
         self.svc.disp = self.disp
         self.svc.request_listener = self.request_listener
 
-        self.svc.incoming_handshake({"handshake": handshake_doc,
-                                     "return_code": 200})
+        self.svc.handshaker.incoming_document({"handshake": handshake_doc,
+                                               "return_code": 200})
 
         self.disp.start_workers(self.request_listener)
 
@@ -1126,4 +1126,3 @@ class TestProtocolCommands(reply.ReplyObserverInterface):
                     os.system('rm -rf /home/%s' % name)
         except KeyError:
             print "The name doesn't exist"
-

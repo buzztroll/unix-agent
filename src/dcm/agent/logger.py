@@ -33,7 +33,7 @@ class dcmLogger(logging.Handler):
         else:
             parent_receive_q.register_user_callback(
                 send_log_to_dcm_callback, kwargs={"conn": self._conn,
-                                                  "token": self._conf.token,
+                                                  "token": "",
                                                   "message": msg,
                                                   "level": record.levelname})
 

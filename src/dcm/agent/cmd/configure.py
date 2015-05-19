@@ -295,12 +295,10 @@ def make_dirs(conf_d):
         (base_path, 0755),
         (os.path.join(base_path, "bin"), 0750),
         (conf_d["storage"]["script_dir"][1], 0750),
-        (os.path.join(base_path, "custom"), 0755),
-        (os.path.join(base_path, "custom", "bin"), 0755),
-        (os.path.join(base_path, "etc"), 0755),
-        (os.path.join(base_path, "logs"), 0755),
+        (os.path.join(base_path, "etc"), 0700),
+        (os.path.join(base_path, "logs"), 0700),
         (os.path.join(base_path, "home"), 0750),
-        (os.path.join(base_path, "cfg"), 0750),
+        (os.path.join(base_path, "secure"), 0700),
         (conf_d["storage"]["temppath"][1], 01777),
     ]
 
@@ -323,9 +321,6 @@ def do_set_owner_and_perms(conf_d):
 
     for f in os.listdir(script_dir):
         os.chmod(os.path.join(script_dir, f), 0550)
-    cfg_dir = os.path.join(base_path, "cfg")
-    for f in os.listdir(cfg_dir):
-        os.chmod(os.path.join(cfg_dir, f), 0640)
 
     with open(os.path.join(script_dir, "variables.sh"), "w") as fptr:
         fptr.write("DCM_USER=%s" % user)

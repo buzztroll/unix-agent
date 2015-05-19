@@ -45,7 +45,7 @@ class TestSystemStats(unittest.TestCase):
             "cpu-idle",
             hold_count,
             interval)
-        time.sleep((hold_count + 1) * interval)
+        time.sleep((hold_count + 2) * interval)
         stats_d = systemstats.get_stats(name)
         self.assertEqual(len(stats_d['status']), hold_count)
         systemstats.stop_stats(name)
@@ -69,11 +69,11 @@ class TestSystemStats(unittest.TestCase):
             hold_count2,
             interval2)
 
-        time.sleep((hold_count1 + 1) * interval1)
+        time.sleep((hold_count1 + 2) * interval1)
         stats_d = systemstats.get_stats(name1)
         self.assertEqual(len(stats_d['status']), hold_count1)
 
-        time.sleep((hold_count2 + 1) * interval2)
+        time.sleep((hold_count2 + 2) * interval2)
         stats_d = systemstats.get_stats(name2)
         self.assertEqual(len(stats_d['status']), hold_count2)
 
