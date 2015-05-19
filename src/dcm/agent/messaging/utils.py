@@ -53,7 +53,7 @@ class MessageTimer(object):
     def cancel(self):
         if self._timer is None:
             return
-        dcm_events.cancel(self._timer)
+        dcm_events.cancel_callback(self._timer)
         self._timer = None
 
 
@@ -67,7 +67,7 @@ class AckCleanupTimer(object):
             self.timeout_wrapper, delay=self._timeout)
 
     def cancel(self):
-        return dcm_events.cancel(self._timer)
+        return dcm_events.cancel_callback(self._timer)
 
     def timeout_wrapper(self, *args, **kwargs):
         self._func(self, *args, **kwargs)

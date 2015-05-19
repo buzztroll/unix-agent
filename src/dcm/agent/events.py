@@ -148,6 +148,7 @@ class EventSpace(object):
         now = datetime.datetime.now()
         end_time = now + datetime.timedelta(seconds=timeblock)
         done = False
+        any_called = False
         while not done:
             self._cond.acquire()
             try:
@@ -168,11 +169,24 @@ class EventSpace(object):
             finally:
                 self._cond.release()
 
-            if ready_ub is not None:
-                ready_ub.call()
-
+            # we decide if we will iterate again based:
+            # 1) Nothing is ready right now (prior to the callback and this
+            #    before new callbacks be added
+            # 2) Time has elapsed prior to the callback call
+            # 3) The system has been shutdown.  This is called at the top
+            #    of the loop to allow callbacks to shutdown the system
             now = datetime.datetime.now()
             done = end_time < now
+
+            if ready_ub is not None:
+                any_called = True
+                ready_ub.call()
+        return any_called
+
+    def flush(self):
+        rc = False
+        while not rc:
+            rc = self.poll(timeblock=0.0)
 
 
 global_space = EventSpace()

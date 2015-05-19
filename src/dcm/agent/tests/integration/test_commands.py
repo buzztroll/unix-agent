@@ -11,9 +11,9 @@ import dcm.agent.logger as logger
 import dcm.agent.messaging.persistence as persistence
 import dcm.agent.messaging.reply as reply
 import dcm.agent.messaging.types as types
-import dcm.agent.parent_receive_q as parent_receive_q
 import dcm.agent.tests.utils.test_connection as test_conn
 import dcm.agent.tests.utils.general as test_utils
+from dcm.agent.events import global_space as dcm_events
 
 
 class TestSingleCommands(unittest.TestCase):
@@ -47,7 +47,7 @@ class TestSingleCommands(unittest.TestCase):
 
             # wait until the request is done
             while request_listener.get_messages_processed() != 1:
-                parent_receive_q.poll()
+                dcm_events.poll()
             output = json.loads(outfile.buflist[0])
             self.assertEquals(stdout, output['stdout'].strip())
             self.assertEquals(stderr, output['stderr'])
@@ -123,7 +123,7 @@ class TestSerialCommands(unittest.TestCase):
 
         # wait until the request is done
         while request_listener.get_messages_processed() != count:
-            parent_receive_q.poll()
+            dcm_events.poll()
 
         for i in range(count):
             output = json.loads(outfile.buflist[i])
@@ -195,9 +195,10 @@ class TestRetransmission(unittest.TestCase):
             rol.insert(0, to)
             disp.start_workers(request_listener)
 
-            # wait until the request is done
-            while request_listener.get_messages_processed() != count:
-                parent_receive_q.poll()
+            # wait until the request is done.  in the case of reply
+            # retransmissions this value could be greater than count
+            while request_listener.get_messages_processed() > count:
+                dcm_events.poll()
 
             for i in range(count):
                 output = json.loads(outfile.buflist[i])

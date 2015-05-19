@@ -29,11 +29,12 @@ import dcm.agent.logger as logger
 import dcm.agent.messaging.persistence as persistence
 import dcm.agent.messaging.reply as reply
 import dcm.agent.messaging.request as request
-import dcm.agent.parent_receive_q as parent_receive_q
 import dcm.agent.storagecloud as storagecloud
 import dcm.agent.tests.utils.general as test_utils
 import dcm.agent.tests.utils.test_connection as test_conn
 import dcm.agent.utils as utils
+
+from dcm.agent.events import global_space as dcm_events
 
 
 class CloudT(object):
@@ -200,16 +201,17 @@ class TestProtocolCommands(reply.ReplyObserverInterface):
         self.conf_obj.start_job_runner()
 
         self.disp = dispatcher.Dispatcher(self.conf_obj)
-        self.test_con = test_conn.ReqRepQHolder()
-        self.req_conn = self.test_con.get_req_conn()
-        self.reply_conn = self.test_con.get_reply_conn()
+
+        self.req_conn = test_conn.RequestConnection()
+        self.reply_conn = test_conn.ReplyConnection()
+
         self.db = persistence.SQLiteAgentDB(
             os.path.join(self.test_base_path, "etc", "agentdb.sql"))
         self.request_listener = reply.RequestListener(
             self.conf_obj, self.reply_conn, self.disp, self.db)
         observers = self.request_listener.get_reply_observers()
         observers.append(self)
-        self.reply_conn.set_receiver(self.request_listener)
+        self.req_conn.set_request_listener(self.request_listener)
 
         self.agent_id = "theAgentID" + str(uuid.uuid4())
         self.customer_id = 50
@@ -240,26 +242,18 @@ class TestProtocolCommands(reply.ReplyObserverInterface):
 
     def _rpc_wait_reply(self, doc):
 
-        class TestRequestReceiver(parent_receive_q.ParentReceiveQObserver):
-            def __init__(self, req):
-                self.req = req
-
-            def incoming_parent_q_message(self, obj):
-                self.req.incoming_message(obj)
-
         def reply_callback():
-            parent_receive_q.wakeup()
+            pass
 
         reqRPC = request.RequestRPC(doc, self.req_conn, self.agent_id,
                                     reply_callback=reply_callback)
-        req_receiver = TestRequestReceiver(reqRPC)
-        self.req_conn.set_receiver(req_receiver)
 
+        self.reply_conn.set_request_side(reqRPC)
         reqRPC.send()
 
         # wait for message completion:
         while not self._event.isSet():
-            parent_receive_q.poll()
+            dcm_events.poll()
         self._event.clear()
 
         reqRPC.cleanup()

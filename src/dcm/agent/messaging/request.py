@@ -5,8 +5,9 @@ import dcm.agent.exceptions as exceptions
 import dcm.agent.messaging.states as states
 import dcm.agent.messaging.types as types
 import dcm.agent.messaging.utils as utils
-import dcm.agent.parent_receive_q as parent_receive_q
 import dcm.agent.state_machine as state_machine
+
+from dcm.agent.events import global_space as dcm_events
 
 
 _g_logger = logging.getLogger(__name__)
@@ -228,14 +229,6 @@ class RequestRPC(object):
         else:
             pass
 
-        if self._reply_callback is not None:
-            args = [message]
-            if self._reply_args:
-                args.extend(self._reply_args)
-
-            parent_receive_q.UserCallback(
-                self._user_reply_callback, None, None)
-
     def _sm_requested_reply_received(self, **kwargs):
         """
         This is the standard case.  After a request is made, and it receives an
@@ -261,9 +254,9 @@ class RequestRPC(object):
             args = [message]
             if self._reply_args:
                 args.extend(self._reply_args)
-            parent_receive_q.register_user_callback(
+            dcm_events.register_callback(
                 self._user_reply_callback,
-                self._reply_args, self._reply_kwargs)
+                args=self._reply_args, kwargs=self._reply_kwargs)
 
     def _sm_user_cb_returned(self, **kwargs):
         """

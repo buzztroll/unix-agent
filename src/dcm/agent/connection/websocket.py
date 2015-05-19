@@ -25,8 +25,8 @@ from dcm.agent import handshake
 import ws4py.client.threadedclient as ws4py_client
 
 import dcm.agent.exceptions as exceptions
-import dcm.agent.parent_receive_q as parent_receive_q
 import dcm.agent.state_machine as state_machine
+import dcm.agent.messaging.utils as utils
 import dcm.agent.utils as agent_utils
 
 from dcm.agent.events import global_space as dcm_events
@@ -160,7 +160,7 @@ class RepeatQueue(object):
 
 class _WebSocketClient(ws4py_client.WebSocketClient):
 
-    def __init__(self, manager, url, protocols=None,
+    def __init__(self, manager, url, _receive_object, protocols=None,
                  extensions=None,
                  heartbeat_freq=None, ssl_options=None, headers=None):
         ws4py_client.WebSocketClient.__init__(
@@ -169,6 +169,7 @@ class _WebSocketClient(ws4py_client.WebSocketClient):
             headers=headers)
         _g_logger.info("Attempting to connect to %s" % url)
 
+        self._receive_object = _receive_object
         self.manager = manager
         self._url = url
         self._dcm_closed_called = False
@@ -231,8 +232,7 @@ class WebSocketConnection(threading.Thread):
 
     @agent_utils.class_method_sync
     def connect(self, receive_object, handshake_manager):
-        self._receive_queue = parent_receive_q.get_master_receive_queue(
-            receive_object, str(self))
+        self._receive_object = receive_object
         self._handshake_manager = handshake_manager
         self.start()
 
@@ -241,7 +241,8 @@ class WebSocketConnection(threading.Thread):
             raise exceptions.AgentRuntimeException(
                 "There is already a connection registered")
         self._connect_timer = dcm_events.register_callback(
-            self.event_connect_timeout, delay=self._connect_timer.start())
+            self.event_connect_timeout,
+            delay=self._backoff.seconds_until_ready())
 
     @agent_utils.class_method_sync
     def event_connect_timeout(self):
@@ -293,8 +294,8 @@ class WebSocketConnection(threading.Thread):
     def _throw_error(self, exception, notify=True):
         _g_logger.warning("throwing error %s" % str(exception))
         self._backoff.error()
-        parent_receive_q.register_user_callback(self.event_error,
-                                                {"exception": exception})
+        dcm_events.register_callback(self.event_error,
+                                     kwargs={"exception": exception})
         if notify:
             self._cond.notify()
 
@@ -320,7 +321,7 @@ class WebSocketConnection(threading.Thread):
     def _sm_connect(self):
         try:
             self._ws = _WebSocketClient(
-                self, self._server_url,
+                self, self._server_url, self._receive_object,
                 protocols=['dcm'], heartbeat_freq=self._heartbeat_freq,
                 ssl_options=self._ssl_options)
             self._ws.connect()
@@ -351,7 +352,7 @@ class WebSocketConnection(threading.Thread):
 
     def _sm_open_incoming_message(self, incoming_data=None):
         _g_logger.debug("New message received")
-        self._receive_queue.put(incoming_data)
+        dcm_events.register_callback(self._receive_object, args=[incoming_data])
         self._backoff.activity()
 
     def _sm_hs_failed(self):

@@ -1,5 +1,3 @@
-import time
-
 import mock
 import nose
 
@@ -8,6 +6,8 @@ import dcm.agent.messaging.persistence as persistence
 import dcm.agent.messaging.reply as reply
 import dcm.agent.messaging.types as types
 import dcm.agent.tests.utils.general as test_utils
+
+from dcm.agent.events import global_space as dcm_events
 
 
 class TestRequesterStandardPath(object):
@@ -192,7 +192,7 @@ class TestRequesterStandardPath(object):
                      "message_id": message_id,
                      "payload": reply_payload
                      }
-        time.sleep(1.1)
+        dcm_events.poll(timeblock=1.1)
         reply_rpc.incoming_message(reply_doc)
         reply_listener.message_done.assert_called_once_with(reply_rpc)
         nose.tools.eq_(conn.send.call_count, 2)

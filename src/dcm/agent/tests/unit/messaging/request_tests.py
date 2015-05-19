@@ -7,7 +7,8 @@ import dcm.agent.logger as logger
 import dcm.agent.messaging.request as request
 import dcm.agent.messaging.states as states
 import dcm.agent.messaging.types as types
-import dcm.agent.parent_receive_q as parent_receive_q
+
+from dcm.agent.events import global_space as dcm_events
 
 
 class TestRequesterStandardPath(unittest.TestCase):
@@ -148,7 +149,7 @@ class TestRequesterStandardPath(unittest.TestCase):
 
             while requester._sm._current_state !=\
                     states.RequesterStates.ACK_SENT:
-                parent_receive_q.poll()
+                dcm_events.poll()
 
             self.assertEqual(states.RequesterStates.ACK_SENT,
                              requester._sm._current_state)
@@ -182,7 +183,7 @@ class TestRequesterRetransmissionCases(unittest.TestCase):
 
         requester = request.RequestRPC(doc, conn, "XYZ", timeout=1)
         requester.send()
-        time.sleep(1.5)
+        dcm_events.poll(timeblock=1.5)
 
         self.assertGreater(conn.send.call_count, 1)
 

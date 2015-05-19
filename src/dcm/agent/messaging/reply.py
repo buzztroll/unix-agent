@@ -8,10 +8,11 @@ import dcm.agent.exceptions as exceptions
 import dcm.agent.messaging.states as states
 import dcm.agent.messaging.types as message_types
 import dcm.agent.messaging.utils as utils
-import dcm.agent.parent_receive_q as parent_receive_q
 import dcm.agent.state_machine as state_machine
 import dcm.agent.utils as agent_util
 import dcm.eventlog.tracer as tracer
+
+from dcm.agent.events import global_space as dcm_events
 
 
 _g_logger = logging.getLogger(__name__)
@@ -186,10 +187,10 @@ class ReplyRPC(object):
         cancel.  It is important that the cancel notification comes after
         the message received notification.
         """
-        parent_receive_q.register_user_callback(
+        dcm_events.register_callback(
             self._cancel_callback,
-            self._cancel_callback_args,
-            self._cancel_callback_kwargs)
+            args=self._cancel_callback_args,
+            kwargs=self._cancel_callback_kwargs)
 
     def _sm_requesting_user_accepts(self, **kwargs):
         """
@@ -268,10 +269,10 @@ class ReplyRPC(object):
         A cancel is received from the remote end.  We simply notify the user
         of the request and allow the user to act upon it.
         """
-        parent_receive_q.register_user_callback(
+        dcm_events.register_callback(
             self._cancel_callback,
-            self._cancel_callback_args,
-            self._cancel_callback_kwargs)
+            args=self._cancel_callback_args,
+            kwargs=self._cancel_callback_kwargs)
 
     def _sm_acked_reply(self, **kwargs):
         """
@@ -406,10 +407,10 @@ class ReplyRPC(object):
         after a cancel has arrived.  Here we just register a cancel callback
         and let the user react to it how they will.
         """
-        parent_receive_q.register_user_callback(
+        dcm_events.register_user_callback(
             self._cancel_callback,
-            self._cancel_callback_args,
-            self._cancel_callback_kwargs)
+            args=self._cancel_callback_args,
+            kwargs=self._cancel_callback_kwargs)
 
     def _sm_send_status(self):
         status_doc = {'type': message_types.MessageTypes.STATUS,
@@ -854,10 +855,6 @@ class RequestListener(object):
             self._lock.release()
         self._call_reply_observers("message_done", reply_message)
 
-    def register_user_callback(self, user_callback):
-        parent_receive_q.register_user_callback(
-            user_callback)
-
     def get_messages_processed(self):
         return self._messages_processed
 
@@ -876,8 +873,9 @@ class RequestListener(object):
             req.kill()
 
     def wait_for_all_nicely(self):
+        # XXX TODO how long should this block? do we need this?  looks like just for tests
         while self._requests:
-            parent_receive_q.poll()
+            dcm_events.poll()
 
     def reply(self, request_id, reply_doc):
         reply_req = self._requests[request_id]

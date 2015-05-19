@@ -1,7 +1,7 @@
 import logging
 import urllib
 
-import dcm.agent.parent_receive_q as parent_receive_q
+from dcm.agent.events import global_space as dcm_events
 
 
 def send_log_to_dcm_callback(conn=None, token=None, message=None, level=None):
@@ -31,7 +31,7 @@ class dcmLogger(logging.Handler):
         if self._conn is None:
             self._unsent_msgs.append(msg)
         else:
-            parent_receive_q.register_user_callback(
+            dcm_events.register_callback(
                 send_log_to_dcm_callback, kwargs={"conn": self._conn,
                                                   "token": "",
                                                   "message": msg,
@@ -43,7 +43,7 @@ class dcmLogger(logging.Handler):
         if conn is None:
             return
         for msg in self._unsent_msgs:
-            parent_receive_q.register_user_callback(
+            dcm_events.register_callback(
                 send_log_to_dcm_callback, kwargs={"conn": self._conn,
                                                   "message": msg})
             self._unsent_msgs = []

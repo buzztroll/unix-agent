@@ -5,8 +5,10 @@ import unittest
 
 import dcm.agent.connection.websocket as websocket
 import dcm.agent.handshake as handshake
-import dcm.agent.parent_receive_q as parent_receive_q
 import dcm.agent.tests.utils.general as test_utils
+
+from dcm.agent.events import global_space as dcm_events
+
 
 
 class FakeMsgHandle(object):
@@ -62,8 +64,7 @@ class TestBackoff(unittest.TestCase):
         done_time = nw + datetime.timedelta(seconds=run_time_seconds)
         while done_time > nw:
             remaining = done_time - nw
-            parent_receive_q.poll(
-                blocking=True, timeblock=remaining.total_seconds())
+            dcm_events.poll(timeblock=remaining.total_seconds())
             nw = datetime.datetime.now()
 
         ws.close()
@@ -164,7 +165,7 @@ class TestBackoff(unittest.TestCase):
 
         class FakeHS(object):
             def get_send_document(self):
-                parent_receive_q.register_user_callback(send_in_handshake)
+                dcm_events.register_callback(send_in_handshake)
                 return {}
 
             def incoming_document(self, incoming_doc):
@@ -180,8 +181,7 @@ class TestBackoff(unittest.TestCase):
         done_time = nw + datetime.timedelta(seconds=run_time_seconds)
         while done_time > nw:
             remaining = done_time - nw
-            parent_receive_q.poll(blocking=True,
-                                  timeblock=remaining.total_seconds())
+            dcm_events.poll(timeblock=remaining.total_seconds())
             nw = datetime.datetime.now()
 
         ws.close()

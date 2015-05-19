@@ -87,7 +87,7 @@ class PageMonitor(object):
     def stop(self):
         self._stopped = True
         if self._timer is not None:
-            self._timer.cancel()
+            dcm_events.cancel_callback(self._timer)
             self._timer = None
 
     @utils.class_method_sync

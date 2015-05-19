@@ -7,8 +7,9 @@ import dcm.agent.longrunners as longrunners
 import dcm.agent.utils as utils
 
 import dcm.agent.jobs as jobs
-import dcm.agent.parent_receive_q as parent_receive_q
 import dcm.eventlog.tracer as tracer
+
+from dcm.agent.events import global_space as dcm_events
 
 
 _g_logger = logging.getLogger(__name__)
@@ -63,13 +64,13 @@ def _run_plugin(conf, items_map, request_id, command, arguments):
 
 class Worker(threading.Thread):
 
-    def __init__(self, conf, worker_queue, reply_q):
+    def __init__(self, conf, worker_queue, reply_callback):
         super(Worker, self).__init__()
         self.worker_queue = worker_queue
-        self.reply_q = reply_q
         self._exit = threading.Event()
         self._conf = conf
         self._is_done = False
+        self._reply_callback = reply_callback
 
     # It should be safe to call done without a lock
     def done(self):
@@ -107,7 +108,9 @@ class Worker(threading.Thread):
                             "queue " + str(reply_doc))
 
                         work_reply = WorkReply(workload.request_id, reply_doc)
-                        self.reply_q.put(work_reply)
+                        dcm_events.register_callback(
+                            self._reply_callback, args=[work_reply])
+
                         _g_logger.info("Reply message sent for command " +
                                        workload.payload["command"])
                 except Queue.Empty:
@@ -126,8 +129,6 @@ class Dispatcher(object):
         self._conf = conf
         self.workers = []
         self.worker_q = Queue.Queue()
-        self.reply_q = parent_receive_q.get_master_receive_queue(
-            self, str(self))
         self._long_runner = longrunners.LongRunner(conf)
         self.request_listener = None
 
@@ -135,7 +136,8 @@ class Dispatcher(object):
         _g_logger.info("Starting %d workers." % self._conf.workers_count)
         self.request_listener = request_listener
         for i in range(self._conf.workers_count):
-            worker = Worker(self._conf, self.worker_q, self.reply_q)
+            worker = Worker(self._conf, self.worker_q,
+                            self.work_complete_callback)
             _g_logger.debug("Starting worker %d : %s" % (i, str(worker)))
             worker.start()
             self.workers.append(worker)
@@ -200,7 +202,8 @@ class Dispatcher(object):
                     "reply_object": payload_doc
                 }
             wr = WorkReply(request_id, reply_doc)
-            self.reply_q.put(wr)
+            dcm_events.register_callback(
+                self.work_complete_callback, args=[wr])
         elif immediate:
             items_map["long_runner"] = self._long_runner
             reply_doc = _run_plugin(self._conf,
@@ -209,7 +212,8 @@ class Dispatcher(object):
                                     payload["command"],
                                     payload["arguments"])
             wr = WorkReply(request_id, reply_doc)
-            self.reply_q.put(wr)
+            dcm_events.register_callback(
+                self.work_complete_callback, args=[wr])
         else:
             workload = WorkLoad(request_id, payload, items_map)
             self.worker_q.put(workload)
@@ -217,6 +221,6 @@ class Dispatcher(object):
         _g_logger.debug(
             "The request %s has been set to send an ACK" % request_id)
 
-    def incoming_parent_q_message(self, work_reply):
+    def work_complete_callback(self, work_reply):
         self.request_listener.reply(work_reply.request_id,
                                     work_reply.reply_doc)

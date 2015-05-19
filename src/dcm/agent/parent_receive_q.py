@@ -109,7 +109,7 @@ class _MainQueue(ParentReceiveQObserver):
                 handler = self._targets[msg_type]
             finally:
                 self._q.task_done()
-        handler.incoming_parent_q_message(msg_obj)
+        handler.work_complete_callback(msg_obj)
         return True
 
     def flush(self):
