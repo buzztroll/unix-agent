@@ -188,12 +188,12 @@ class _WebSocketClient(ws4py_client.WebSocketClient):
             self, code=code, reason=reason)
 
     def received_message(self, m):
-        _g_wire_logger.debug("INCOMING\n--------\n%s--------" % str(m.data))
+        _g_wire_logger.debug("INCOMING\n--------\n%s\n--------" % str(m.data))
         json_doc = json.loads(m.data)
         self.manager.event_incoming_message(json_doc)
 
     def send(self, payload, binary=False):
-        _g_wire_logger.debug("OUTGOING\n--------\n%s--------" % str(payload))
+        _g_wire_logger.debug("OUTGOING\n--------\n%s\n--------" % str(payload))
         super(_WebSocketClient, self).send(payload, binary=binary)
 
 
