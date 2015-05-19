@@ -154,6 +154,9 @@ class ReplyConnection(object):
     def set_request_side(self, request):
         self._request = request
 
+    def close(self):
+        pass
+
 
 class RequestConnection(object):
 
@@ -165,3 +168,6 @@ class RequestConnection(object):
 
     def set_request_listener(self, rl):
         self._rl = rl
+
+    def close(self):
+        pass

@@ -10,7 +10,6 @@ import dcm.agent.tests.utils.general as test_utils
 from dcm.agent.events import global_space as dcm_events
 
 
-
 class FakeMsgHandle(object):
     def incoming_parent_q_message(self, incoming_doc):
         pass
@@ -28,15 +27,6 @@ class TestBackoff(unittest.TestCase):
             max_backoff_seconds,
             run_time_seconds,
             conn_obj):
-
-        def incoming_handshake(incoming_handshake_doc):
-            return True
-
-        def make_handshake():
-            # This is just a good place after the connection to throw an
-            # error
-            ws.throw_error(Exception("just for tests"))
-            return {}
 
         class FakeHS(object):
             def get_send_document(self):
@@ -126,7 +116,7 @@ class TestBackoff(unittest.TestCase):
             run_time_seconds,
             conn_obj)
 
-        self.assertGreaterEqual(m.connect.call_count, 2)
+        self.assertGreaterEqual(expected_backoff_count, m.connect.call_count)
 
     @mock.patch('dcm.agent.connection.websocket._WebSocketClient')
     def test_force_backoff(self, conn_obj):

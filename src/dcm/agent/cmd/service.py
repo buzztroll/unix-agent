@@ -70,7 +70,7 @@ class DCMAgent(object):
 
     def shutdown_main_loop(self):
         self.shutting_down = True
-        dcm_events.stop()
+        dcm_events.wakeup(cancel_all=True)
 
     def pre_threads(self):
         signal.signal(signal.SIGINT, self.kill_handler)
@@ -127,7 +127,6 @@ class DCMAgent(object):
                 self.g_logger.exception("A top level exception occurred")
 
     def cleanup_agent(self):
-        dcm_events.flush()
         if self.db_cleaner:
             self.g_logger.debug("Shutting down the db cleaner runner")
             self.db_cleaner.done()

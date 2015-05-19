@@ -122,7 +122,7 @@ class TestSerialCommands(unittest.TestCase):
         self.disp.start_workers(request_listener)
 
         # wait until the request is done
-        while request_listener.get_messages_processed() != count:
+        while request_listener.get_messages_processed() < count:
             dcm_events.poll()
 
         for i in range(count):
@@ -197,7 +197,7 @@ class TestRetransmission(unittest.TestCase):
 
             # wait until the request is done.  in the case of reply
             # retransmissions this value could be greater than count
-            while request_listener.get_messages_processed() > count:
+            while request_listener.get_messages_processed() < count:
                 dcm_events.poll()
 
             for i in range(count):

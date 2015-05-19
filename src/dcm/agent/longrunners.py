@@ -73,7 +73,7 @@ class JobRunner(threading.Thread):
 
                     job_reply = JobReply(work.job_id)
                     dcm_events.register_callback(
-                        self._job_update_callback, job_reply)
+                        self._job_update_callback, args=[job_reply])
 
                     plugin = jobs.load_python_module(
                         work.items_map["module_name"],
@@ -99,7 +99,7 @@ class JobRunner(threading.Thread):
                 finally:
                     job_reply.end_date = calendar.timegm(time.gmtime())
                     dcm_events.register_callback(
-                        self._job_update_callback, job_reply)
+                        self._job_update_callback, args=[job_reply])
                     _g_logger.debug("Completed the long job %s:%s "
                                     "STATUS=%s" % (work.name, work.request_id,
                                                    job_reply.job_status))

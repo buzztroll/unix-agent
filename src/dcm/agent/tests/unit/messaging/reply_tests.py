@@ -192,7 +192,7 @@ class TestRequesterStandardPath(object):
                      "message_id": message_id,
                      "payload": reply_payload
                      }
-        dcm_events.poll(timeblock=1.1)
+        dcm_events.poll(timeblock=1.2)
         reply_rpc.incoming_message(reply_doc)
         reply_listener.message_done.assert_called_once_with(reply_rpc)
         nose.tools.eq_(conn.send.call_count, 2)

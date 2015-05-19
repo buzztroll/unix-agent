@@ -26,7 +26,6 @@ import ws4py.client.threadedclient as ws4py_client
 
 import dcm.agent.exceptions as exceptions
 import dcm.agent.state_machine as state_machine
-import dcm.agent.messaging.utils as utils
 import dcm.agent.utils as agent_utils
 
 from dcm.agent.events import global_space as dcm_events
@@ -37,6 +36,7 @@ _g_wire_logger = agent_utils.get_wire_logger()
 
 class WsConnEvents:
     POLL = "POLL"
+    CONNECTING_FINISHED = "CONNECTING_FINISHED"
     CONNECT_TIMEOUT = "CONNECT_TIMEOUT"
     INCOMING_MESSAGE = "INCOMING_MESSAGE"
     ERROR = "ERROR"
@@ -45,6 +45,7 @@ class WsConnEvents:
 
 class WsConnStates:
     WAITING = "WAITING"
+    CONNECTING = "CONNECTING"
     HANDSHAKING = "HANDSHAKING"
     OPEN = "OPEN"
     DONE = "DONE"
@@ -60,6 +61,8 @@ class Backoff(object):
                  idle_modifier=0.25):
         self._backoff_seconds = initial_backoff_second
         self._max_backoff = max_backoff_seconds
+        if self._backoff_seconds > self._max_backoff:
+            self._backoff_seconds = self._max_backoff
         self._idle_modifier = idle_modifier
         self._ready_time = datetime.datetime.now()
         self._last_activity = self._ready_time
@@ -259,6 +262,7 @@ class WebSocketConnection(threading.Thread):
     def close(self):
         _g_logger.debug("Websocket connection closed.")
         self.event_close()
+        self._cond.notifyAll()
 
     @agent_utils.class_method_sync
     def run(self):
@@ -308,6 +312,17 @@ class WebSocketConnection(threading.Thread):
     def unlock(self):
         self._cond.release()
 
+    def forming_connection_thread(self):
+        try:
+            self._ws.connect()
+            self.lock()
+            try:
+                self._sm.event_occurred(WsConnEvents.CONNECTING_FINISHED)
+            finally:
+                self.unlock()
+        except BaseException as ex:
+            self.event_error(exception=ex)
+
     #########
     # state transitions
     #########
@@ -324,14 +339,39 @@ class WebSocketConnection(threading.Thread):
                 self, self._server_url, self._receive_object,
                 protocols=['dcm'], heartbeat_freq=self._heartbeat_freq,
                 ssl_options=self._ssl_options)
-            self._ws.connect()
-            hs_doc = self._handshake_manager.get_send_document()
-            _g_logger.debug("Sending handshake")
-            self._ws.send(json.dumps(hs_doc))
+            dcm_events.register_callback(
+                self.forming_connection_thread, in_thread=True)
         except Exception as ex:
             _g_logger.exception("Failed to connect to %s" % self._server_url)
             self._throw_error(ex, notify=False)
             self._cond.notify()
+
+    def _sm_start_handshake(self):
+        try:
+            hs_doc = self._handshake_manager.get_send_document()
+            _g_logger.debug("Sending handshake")
+            self._ws.send(json.dumps(hs_doc))
+        except Exception as ex:
+            _g_logger.exception("Failed to send handshake")
+            self._throw_error(ex, notify=False)
+            self._cond.notify()
+
+    def _sm_close_while_connecting(self):
+        try:
+            self._ws.close()
+        except Exception as ex:
+            _g_logger.warn("Error closing the connection " + ex.message)
+        self._cond.notify()
+
+    def _sm_error_while_connecting(self):
+        try:
+            self._ws.close()
+        except Exception as ex:
+            _g_logger.warn("Error closing the connection " + ex.message)
+        self._backoff.error()
+        self._cond.notify()
+        self._register_connect()
+
 
     def _sm_received_hs(self, incoming_data=None):
         """
@@ -359,6 +399,12 @@ class WebSocketConnection(threading.Thread):
         """
         An error occurred while waiting for the handshake
         """
+        _g_logger.debug("close called while handshaking")
+
+        try:
+            self._ws.close()
+        except Exception as ex:
+            _g_logger.exception("Got an error while closing in handshake state")
         self._cond.notify()
         self._register_connect()
 
@@ -369,6 +415,7 @@ class WebSocketConnection(threading.Thread):
         _g_logger.debug("close called when open")
 
         self._done_event.set()
+        self._ws.close()
         self._cond.notify()
 
     def _sm_hs_close(self):
@@ -391,6 +438,8 @@ class WebSocketConnection(threading.Thread):
         """
         A poll event occurred in the open state.  Check the send queue
         """
+
+        # TODO XXXX find a way to send the data not in a lock
         # check the send queue
         done = False
         while not done:
@@ -455,12 +504,33 @@ class WebSocketConnection(threading.Thread):
                                 self._sm_waiting_error)
         self._sm.add_transition(WsConnStates.WAITING,
                                 WsConnEvents.CONNECT_TIMEOUT,
-                                WsConnStates.HANDSHAKING,
+                                WsConnStates.CONNECTING,
                                 self._sm_connect)
         self._sm.add_transition(WsConnStates.WAITING,
                                 WsConnEvents.CLOSE,
                                 WsConnStates.DONE,
                                 self._sm_not_open_close)
+
+        self._sm.add_transition(WsConnStates.CONNECTING,
+                                WsConnEvents.CLOSE,
+                                WsConnStates.DONE,
+                                self._sm_close_while_connecting)
+        self._sm.add_transition(WsConnStates.CONNECTING,
+                                WsConnEvents.ERROR,
+                                WsConnStates.WAITING,
+                                self._sm_error_while_connecting)
+        self._sm.add_transition(WsConnStates.CONNECTING,
+                                WsConnEvents.CONNECTING_FINISHED,
+                                WsConnStates.HANDSHAKING,
+                                self._sm_start_handshake)
+        self._sm.add_transition(WsConnStates.CONNECTING,
+                                WsConnEvents.CONNECT_TIMEOUT,
+                                WsConnStates.CONNECTING,
+                                None)
+        self._sm.add_transition(WsConnStates.CONNECTING,
+                                WsConnEvents.POLL,
+                                WsConnStates.CONNECTING,
+                                None)
 
         self._sm.add_transition(WsConnStates.HANDSHAKING,
                                 WsConnEvents.INCOMING_MESSAGE,

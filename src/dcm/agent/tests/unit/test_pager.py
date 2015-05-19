@@ -5,6 +5,8 @@ import unittest
 import dcm.agent.exceptions as exceptions
 import dcm.agent.jobs.pages as pages
 
+from dcm.agent.events import global_space as dcm_events
+
 
 class TestPager(unittest.TestCase):
 
@@ -57,7 +59,7 @@ class TestPager(unittest.TestCase):
             pager = pages.JsonPage(page_size, json_list)
             page_monitor.new_pager(pager, token)
 
-            time.sleep(3)
+            dcm_events.poll(timeblock=3.0)
 
             self.assertRaises(exceptions.AgentPageNotFoundException,
                               page_monitor.get_next_page,

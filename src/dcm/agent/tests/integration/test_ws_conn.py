@@ -51,8 +51,8 @@ class TestWsConnection(object):
         test_base = self._write_conf()
         agent_conf_path = os.path.join(test_base, "etc", "agent.conf")
         conf = config.AgentConfig([agent_conf_path])
-        conf.connection_max_backoff = 100
-        conf.connection_backoff = 100
+        conf.connection_max_backoff = 200
+        conf.connection_backoff = 200
         test_run_time = 5000
         expected_connections = test_run_time / conf.connection_max_backoff
 
@@ -73,7 +73,6 @@ class TestWsConnection(object):
 
         # run for time after the first connect.  that way we know it is up
         try:
-
             print "getting the first one"
             (clientsocket, address) = serversocket.accept()
             clientsocket.close()
@@ -95,4 +94,5 @@ class TestWsConnection(object):
             t1.join()
         nose.tools.ok_(expected_connections * .9 - 1 < connect_count
                        < expected_connections * 1.1 + 1,
-                       "connect_count is %d" % connect_count)
+                       "connect_count is %d, expected %d" %
+                       (connect_count, expected_connections))
