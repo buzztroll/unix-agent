@@ -3,7 +3,7 @@ import pkg_resources
 
 
 g_version = pkg_resources.require("dcm-agent")[0].version
-g_protocol_version = 103
+g_protocol_version = 104
 
 
 def get_root_location():
