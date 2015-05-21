@@ -312,7 +312,7 @@ class WebSocketConnection(threading.Thread):
     def unlock(self):
         self._cond.release()
 
-    def forming_connection_thread(self):
+    def _forming_connection_thread(self):
         try:
             self._ws.connect()
             self.lock()
@@ -340,7 +340,7 @@ class WebSocketConnection(threading.Thread):
                 protocols=['dcm'], heartbeat_freq=self._heartbeat_freq,
                 ssl_options=self._ssl_options)
             dcm_events.register_callback(
-                self.forming_connection_thread, in_thread=True)
+                self._forming_connection_thread, in_thread=True)
         except Exception as ex:
             _g_logger.exception("Failed to connect to %s" % self._server_url)
             self._throw_error(ex, notify=False)
@@ -493,6 +493,32 @@ class WebSocketConnection(threading.Thread):
         """
         pass
 
+    def _sm_connection_finished_right_after_error(self):
+        """
+        This case occurs if the connection is registered and finished but
+        an error occurs that gets the lock before the connection can
+        report in successfully.  In this case we should have a websocket
+        to clean up
+        :return:
+        """
+        try:
+            self._ws.close()
+        except Exception as ex:
+            _g_logger.exception("Got an error while closing in handshake state")
+
+    def _sm_connection_finished_right_after_done(self):
+        """
+        This case occurs if the connection is registered and finishes but
+        a close is called that gets the lock before the connection can
+        report in successfully.  In this case we should have a websocket
+        to clean up
+        :return:
+        """
+        try:
+            self._ws.close()
+        except Exception as ex:
+            _g_logger.exception("Got an error while closing in handshake state")
+
     def _setup_states(self):
         self._sm.add_transition(WsConnStates.WAITING,
                                 WsConnEvents.POLL,
@@ -510,6 +536,10 @@ class WebSocketConnection(threading.Thread):
                                 WsConnEvents.CLOSE,
                                 WsConnStates.DONE,
                                 self._sm_not_open_close)
+        self._sm.add_transition(WsConnStates.WAITING,
+                                WsConnEvents.CONNECTING_FINISHED,
+                                WsConnStates.WAITING,
+                                self._sm_connection_finished_right_after_error)
 
         self._sm.add_transition(WsConnStates.CONNECTING,
                                 WsConnEvents.CLOSE,
@@ -586,3 +616,7 @@ class WebSocketConnection(threading.Thread):
                                 WsConnEvents.INCOMING_MESSAGE,
                                 WsConnStates.DONE,
                                 None)
+        self._sm.add_transition(WsConnStates.DONE,
+                                WsConnEvents.CONNECTING_FINISHED,
+                                WsConnStates.DONE,
+                                self._sm_connection_finished_right_after_done)
