@@ -123,7 +123,7 @@ class TestConnection(conniface.ConnectionInterface):
                 return
             elif t == message_types.MessageTypes.REPLY:
                 payload = doc['payload']
-                self._writer.write(json.dumps(payload))
+                self._writer.write(json.dumps(payload) + '\n')
                 self._writer.flush()
 
                 if self._reply_ignore_count == 0:

@@ -16,7 +16,7 @@ import datetime
 import errno
 import json
 import logging
-import Queue
+import queue
 import socket
 import ssl
 import threading
@@ -102,7 +102,7 @@ class Backoff(object):
 class RepeatQueue(object):
 
     def __init__(self, max_req_id=500):
-        self._q = Queue.Queue()
+        self._q = queue.Queue()
         self._lock = threading.RLock()
         self._message_id_set = set()
         self._request_id_count = {}
@@ -137,7 +137,7 @@ class RepeatQueue(object):
                         return
             except Exception as ex:
                 _g_logger.warn("Exception checking if message is a retrans "
-                               "%s" % ex.message)
+                               "%s" % str(ex))
             return self._q.put(item, block=block, timeout=timeout)
         finally:
             self._lock.release()
@@ -152,7 +152,7 @@ class RepeatQueue(object):
                         self._message_id_set.remove(item['message_id'])
             except Exception as ex:
                 _g_logger.info("Exception checking if message has an id "
-                               "%s" % ex.message)
+                               "%s" % str(ex))
             return item
         finally:
             self._lock.release()
@@ -359,7 +359,7 @@ class WebSocketConnection(threading.Thread):
         try:
             self._ws.close()
         except Exception as ex:
-            _g_logger.warn("Error closing the connection " + ex.message)
+            _g_logger.warn("Error closing the connection " + str(ex))
         self._done_event.set()
         self._cond.notify_all()
 
@@ -367,7 +367,7 @@ class WebSocketConnection(threading.Thread):
         try:
             self._ws.close()
         except Exception as ex:
-            _g_logger.warn("Error closing the connection " + ex.message)
+            _g_logger.warn("Error closing the connection " + str(ex))
         self._backoff.error()
         self._cond.notify_all()
         self._register_connect()
@@ -458,7 +458,7 @@ class WebSocketConnection(threading.Thread):
                         "A WS socket error occurred %s" % self._server_url)
                 self._throw_error(er)
                 done = True
-            except Queue.Empty:
+            except queue.Empty:
                 done = True
             except Exception as ex:
                 _g_logger.exception(str(ex))

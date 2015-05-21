@@ -154,7 +154,7 @@ class TestEventSpace(unittest.TestCase):
         event_space.poll(timeblock=0.0)
         self.assertIsNone(ub.get_rc())
         self.assertTrue(ub.has_run())
-        self.assertEqual(exception_message, ub.get_exception().message)
+        self.assertEqual(exception_message, str(ub.get_exception()))
 
     def test_wakeup_on_register(self):
         # test that callback happens when it is registered after the poll

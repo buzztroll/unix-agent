@@ -45,8 +45,8 @@ class UserCallback(object):
     def __repr__(self):
         return str(self._func)
 
-    def __cmp__(self, other):
-        return cmp(self._time_ready, other.get_time_ready())
+    def __lt__(self, other):
+        return self._time_ready < other.get_time_ready()
 
     def call(self):
         try:

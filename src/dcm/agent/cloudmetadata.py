@@ -15,7 +15,9 @@ import json
 import logging
 import os
 import socket
-import urllib2
+import urllib.error
+import urllib.parse
+import urllib.request
 
 import dcm.agent.exceptions as exceptions
 import dcm.agent.utils as utils
@@ -466,7 +468,7 @@ def _get_metadata_server_url_data(url, timeout=10, headers=None):
         return None
 
     _g_logger.debug("Attempting to get metadata at %s" % url)
-    u_req = urllib2.Request(url)
+    u_req = urllib.request.Request(url)
     u_req.add_header("Content-Type", "application/x-www-form-urlencoded")
     u_req.add_header("Connection", "Keep-Alive")
     u_req.add_header("Cache-Control", "no-cache")
@@ -475,9 +477,9 @@ def _get_metadata_server_url_data(url, timeout=10, headers=None):
             u_req.add_header(h, v)
 
     try:
-        response = urllib2.urlopen(u_req, timeout=timeout)
-    except urllib2.URLError:
-        _g_logger.debug("URL error message is %s" % urllib2.URLError.message)
+        response = urllib.request.urlopen(u_req, timeout=timeout)
+    except urllib.error.URLError as ex:
+        _g_logger.debug("URL error message is %s" % ex.reason)
         return None
     if response.code != 200:
         _g_logger.debug("URL response code is %s" % str(response.code))

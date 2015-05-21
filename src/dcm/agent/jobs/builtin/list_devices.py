@@ -33,7 +33,7 @@ class GetDeviceMappings(jobs.Plugin):
         except exceptions.AgentExecutableException as ex:
             reply_doc = {
                 "return_code": 1,
-                "message": ex.message
+                "message": str(ex)
             }
             return reply_doc
 

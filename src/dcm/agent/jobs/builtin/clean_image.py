@@ -121,7 +121,7 @@ class CleanImage(jobs.Plugin):
                     "reply_type": "job_description"}
         except Exception as ex:
             _g_logger.exception("clean_image failed: " + str(ex))
-            return {'return_code': 1, "message": ex.message}
+            return {'return_code': 1, "message": str(ex)}
 
 
 def load_plugin(conf, job_id, items_map, name, arguments):

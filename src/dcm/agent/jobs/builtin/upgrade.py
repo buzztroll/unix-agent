@@ -13,7 +13,9 @@
 #  ======================================================================
 import logging
 import os
-import urllib2
+import urllib.error
+import urllib.parse
+import urllib.request
 
 import dcm.agent
 import dcm.agent.config as config
@@ -40,7 +42,7 @@ class Upgrade(jobs.Plugin):
             conf, job_id, items_map, name, arguments)
 
     def run(self):
-        response = urllib2.urlopen(self.args.url)
+        response = urllib.request.urlopen(self.args.url)
         data = response.read()
 
         script_file = self.conf.get_temp_file("upgradescript")

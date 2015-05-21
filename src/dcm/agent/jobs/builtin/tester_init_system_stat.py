@@ -41,7 +41,7 @@ class TesterCpuIdleSystemStats(systemstats.SystemStats):
                                     'cpu-idle': float(la[1])})
                     line = fptr.readline()
         except BaseException as ex:
-            _g_logger.exception("The test stat failed: " + ex.message)
+            _g_logger.exception("The test stat failed: " + str(ex))
         finally:
             self.cond.release()
         super(TesterCpuIdleSystemStats, self).poll()

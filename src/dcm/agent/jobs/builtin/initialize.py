@@ -32,7 +32,7 @@ class InitializeJob(jobs.Plugin):
         "customerId":
         ("The ID of the customer running this server.  A new user will be "
          "created with the name c<customerId>.",
-         True, long, None),
+         True, int, None),
         "regionId":
         ("Sets the default region that will be used by this agent in "
          "future cloud related operations",
@@ -94,7 +94,7 @@ class InitializeJob(jobs.Plugin):
                     "error_message": "", "reply_type": "void"}
         except Exception as ex:
             _g_logger.exception("initialize failed: " + str(ex))
-            return {'return_code': 1, "message": ex.message}
+            return {'return_code': 1, "message": str(ex)}
 
 
 def load_plugin(conf, job_id, items_map, name, arguments):

@@ -1,4 +1,4 @@
-import ConfigParser
+import configparser
 import libcloud.security
 import logging
 import logging.config
@@ -107,10 +107,10 @@ class ConfigOpt(object):
         if default is None:
             default = self.default
         try:
-            v = parser.get(self.section, self.name, default)
-        except ConfigParser.NoOptionError:
+            v = parser.get(self.section, self.name, fallback=default)
+        except configparser.NoOptionError:
             v = default
-        except ConfigParser.NoSectionError:
+        except configparser.NoSectionError:
             v = default
         if v is None:
             return v
@@ -268,7 +268,7 @@ class AgentConfig(object):
 
             relative_path = os.path.dirname(config_file)
 
-            parser = ConfigParser.SafeConfigParser()
+            parser = configparser.SafeConfigParser()
             parser.read(config_file)
 
             if add_features is not None:
@@ -276,7 +276,7 @@ class AgentConfig(object):
                     features = parser.items(add_features)
                     for k, v in features:
                         self.features[k] = v
-                except ConfigParser.NoSectionError:
+                except configparser.NoSectionError:
                     pass
 
             for opt in option_list:
@@ -285,7 +285,7 @@ class AgentConfig(object):
                     v = opt.get_value(parser, relative_path=relative_path,
                                       default=getattr(self, oname))
                     setattr(self, oname, v)
-                except ConfigParser.NoSectionError:
+                except configparser.NoSectionError:
                     raise exceptions.AgentOptionSectionNotFoundException(
                         opt.name)
 

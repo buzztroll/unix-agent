@@ -1,5 +1,7 @@
 import logging
-import urllib
+import urllib.parse
+import urllib.error
+import urllib.request
 
 from dcm.agent.events import global_space as dcm_events
 
@@ -8,7 +10,7 @@ def send_log_to_dcm_callback(conn=None, token=None, message=None, level=None):
     max_size = 10*1024
     if len(message) > max_size:
         message = message[:max_size]
-    message = urllib.quote(message)
+    message = urllib.parse.quote(message)
     msg = {
         "type": "LOG",
         "token": token,

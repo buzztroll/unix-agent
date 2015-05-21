@@ -22,7 +22,7 @@ _debugger_connected = False
 
 def _signal_thread_dump(signum, frame):
     msg = build_assertion_exception("SIGNAL DUMP")
-    print msg
+    print(msg)
     with open("/tmp/stack_dump", "w") as fptr:
         fptr.write(msg)
 
@@ -45,7 +45,7 @@ def connect_to_debugger():
 
 def build_assertion_exception(msg):
     details_out = " === Stack trace Begin === " + os.linesep
-    for threadId, stack in sys._current_frames().items():
+    for threadId, stack in list(sys._current_frames().items()):
         details_out = details_out + os.linesep + \
             "##### Thread %s #####" % threadId + os.linesep
         for filename, lineno, name, line in traceback.extract_stack(stack):
@@ -63,7 +63,7 @@ def test_thread_shutdown():
     # check no threads are running
     n = 0
     while n < 10:
-        cnt = len(sys._current_frames().items())
+        cnt = len(list(sys._current_frames().items()))
         time.sleep(0.01)
         n += 1
         if cnt < 2:
@@ -71,8 +71,8 @@ def test_thread_shutdown():
 
     if cnt > 1:
         msg = "THE THREAD COUNT IS %d" % cnt
-        print msg
-        print build_assertion_exception(msg)
+        print(msg)
+        print(build_assertion_exception(msg))
         warnings.warn("The thread count was expected to be 1 but it is "
                       "%d" % cnt)
 

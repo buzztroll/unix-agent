@@ -1,9 +1,11 @@
 import calendar
 import logging
-import Queue
+import queue
 import threading
 import time
-import urllib
+import urllib.parse
+import urllib.error
+import urllib.request
 
 import dcm.agent.jobs as jobs
 from dcm.agent.events import global_space as dcm_events
@@ -86,7 +88,7 @@ class JobRunner(threading.Thread):
                     job_reply.reply_doc = plugin.run()
                 except Exception as ex:
                     _g_logger.exception("An error occurred")
-                    job_reply.error = ex.message
+                    job_reply.error = str(ex)
                     job_reply.job_status = JobStatus.ERROR
                 else:
                     if job_reply.reply_doc is None:
@@ -104,7 +106,7 @@ class JobRunner(threading.Thread):
                                     "STATUS=%s" % (work.name, work.request_id,
                                                    job_reply.job_status))
 
-            except Queue.Empty:
+            except queue.Empty:
                 _g_logger.exception("The queue was empty.  This shouldn't "
                                     "happen often")
             except Exception as ex:
@@ -122,7 +124,7 @@ class LongRunner(object):
         self._job_id = 0
         self._lock = threading.RLock()
         self._conf = conf
-        self._run_queue = Queue.Queue()
+        self._run_queue = queue.Queue()
         self._runner_list = []
         for i in range(conf.workers_long_runner_threads):
             jr = JobRunner(conf, self._run_queue, self.job_update_callback)
@@ -224,9 +226,9 @@ class DetachedJob(object):
         self._end_date = work_reply.end_date
         self._error = work_reply.error
         if message:
-            self._message = urllib.quote(message)
+            self._message = urllib.parse.quote(message)
         if self._message is None and self._error is not None:
-            self._message = urllib.quote(str(self._error))
+            self._message = urllib.parse.quote(str(self._error))
 
     def get_job_id(self):
         return self._job_id

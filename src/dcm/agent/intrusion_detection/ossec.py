@@ -24,7 +24,7 @@ class OssecIntrusion(id_iface.AgentIntrusionDetection):
             if ft > self._file_time:
                 self._send_alerts()
         except Exception as ex:
-            _g_logger.exception(ex.message)
+            _g_logger.exception(str(ex))
 
     def close(self):
         pass

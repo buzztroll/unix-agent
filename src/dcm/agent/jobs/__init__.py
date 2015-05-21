@@ -1,4 +1,4 @@
-import ConfigParser
+import configparser
 import importlib
 import logging
 import os
@@ -55,7 +55,7 @@ class Plugin(object):
             raise
         except Exception as ex:
             raise exceptions.AgentPluginBadParameterException(
-                self.name, ex.message)
+                self.name, str(ex))
 
     def _validate_arguments(self):
         # validate that all of the required arguments were sent
@@ -79,7 +79,7 @@ class Plugin(object):
                     try:
                         a = t(a)
                     except Exception as ex:
-                        _g_logger.exception(ex.message)
+                        _g_logger.exception(str(ex))
                         raise exceptions.AgentPluginBadParameterException(
                             self.name, "Parameter %s has an invalid "
                                        "value %s" % (arg, a))
@@ -138,9 +138,17 @@ class ExePlugin(Plugin):
         # TODO iterate over the output so that it does not all come just at
         # the end
         stdout, stderr = process.communicate()
+        if stdout is not None:
+            stdout = stdout.decode()
+        else:
+            stdout = ""
+        if stderr is not None:
+            stderr = stdout.decode()
+        else:
+            stderr = ""
 
-        self.logger.info("STDOUT: " + str(stdout))
-        self.logger.info("STDERR: " + str(stderr))
+        self.logger.info("STDOUT: " + stdout)
+        self.logger.info("STDERR: " + stderr)
         self.logger.info("Return code: " + str(process.returncode))
         return {"stdout": stdout,
                 "stderr": stderr,
@@ -209,7 +217,7 @@ def get_all_plugins(conf):
         raise exceptions.AgentPluginConfigException(
             "The plugin configuration file %s could not be found" % conffile)
 
-    parser = ConfigParser.SafeConfigParser()
+    parser = configparser.SafeConfigParser()
     parser.read([conffile])
     section = parser.sections()
 
@@ -230,8 +238,8 @@ def get_all_plugins(conf):
                     _g_logger.warn(
                         "The module type %s is not valid." % atype)
                 all_plugins[s[7:]] = items_map
-            except ConfigParser.NoOptionError as conf_ex:
-                raise exceptions.AgentPluginConfigException(conf_ex.message)
+            except configparser.NoOptionError as conf_ex:
+                raise exceptions.AgentPluginConfigException(str(conf_ex))
     return all_plugins
 
 
@@ -243,7 +251,7 @@ def parse_plugin_doc(conf, name):
         raise exceptions.AgentPluginConfigException(
             "The plugin configuration file %s could not be found" % conffile)
 
-    parser = ConfigParser.SafeConfigParser()
+    parser = configparser.SafeConfigParser()
     parser.read([conffile])
     section = parser.sections()
 
@@ -270,8 +278,8 @@ def parse_plugin_doc(conf, name):
                         "The module type %s is not valid." % atype)
 
                 return items_map
-            except ConfigParser.NoOptionError as conf_ex:
-                raise exceptions.AgentPluginConfigException(conf_ex.message)
+            except configparser.NoOptionError as conf_ex:
+                raise exceptions.AgentPluginConfigException(str(conf_ex))
 
     raise exceptions.AgentPluginConfigException(
         "Plugin %s was not found." % name)

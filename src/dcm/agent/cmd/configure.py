@@ -1,15 +1,16 @@
 # this program simply creates the configuration file needed by the agent
 # it is assumed that all of the directories have already been created with
 # the proper permissions
+from __future__ import print_function
 
 import argparse
-import ConfigParser
+import configparser
 import os
 import shutil
 import subprocess
 import sys
 import textwrap
-import urlparse
+import urllib.parse
 
 import dcm.agent
 import dcm.agent.cloudmetadata as cloudmetadata
@@ -148,12 +149,12 @@ def run_command(cmd):
     except Exception as ex:
         rc = 1
         stdout = None
-        stderr = ex.message
+        stderr = str(ex)
     return rc, stdout, stderr
 
 
 def _get_input(prompt):
-    return raw_input(prompt)
+    return input(prompt)
 
 
 def select_cloud(default=cloudmetadata.CLOUD_TYPES.Amazon):
@@ -164,7 +165,7 @@ def select_cloud(default=cloudmetadata.CLOUD_TYPES.Amazon):
 
     for i, cloud_name in enumerate(cloud_choices):
         col = "%2d) %-13s" % (i, cloud_name)
-        print col
+        print(col)
 
     cloud = None
     while cloud is None:
@@ -178,7 +179,7 @@ def select_cloud(default=cloudmetadata.CLOUD_TYPES.Amazon):
             ndx = int(input_str)
             cloud = cloud_choices[ndx]
         except:
-            print "%s is not a valid choice." % input_str
+            print("%s is not a valid choice." % input_str)
     return cloud
 
 
@@ -190,7 +191,7 @@ def guess_default_cloud(conf_d):
     name = cloudmetadata.guess_effective_cloud(conf)
     if name is None:
         raise Exception("Cloud %s is not a known type." % cloud_name)
-    print "The detected cloud is " + name
+    print("The detected cloud is " + name)
     conf_d["cloud"]["type"] = (h, name)
 
 
@@ -243,7 +244,7 @@ def get_default_conf_dict():
 
 def update_from_config_file(conf_file, conf_dict):
     # pull from the existing config file
-    parser = ConfigParser.SafeConfigParser()
+    parser = configparser.SafeConfigParser()
     parser.read([conf_file])
 
     for s in parser.sections():
@@ -287,31 +288,31 @@ def write_conf_file(dest_filename, conf_dict):
 
 
 def make_dirs(conf_d):
-    print "Making the needed directories..."
+    print("Making the needed directories...")
 
     (_, base_path) = conf_d["storage"]["base_dir"]
 
     dirs_to_make = [
-        (base_path, 0755),
-        (os.path.join(base_path, "bin"), 0750),
-        (conf_d["storage"]["script_dir"][1], 0750),
-        (os.path.join(base_path, "etc"), 0700),
-        (os.path.join(base_path, "logs"), 0700),
-        (os.path.join(base_path, "home"), 0750),
-        (os.path.join(base_path, "secure"), 0700),
-        (conf_d["storage"]["temppath"][1], 01777),
+        (base_path, 0o755),
+        (os.path.join(base_path, "bin"), 0o750),
+        (conf_d["storage"]["script_dir"][1], 0o750),
+        (os.path.join(base_path, "etc"), 0o700),
+        (os.path.join(base_path, "logs"), 0o700),
+        (os.path.join(base_path, "home"), 0o750),
+        (os.path.join(base_path, "secure"), 0o700),
+        (conf_d["storage"]["temppath"][1], 0o1777),
     ]
 
     for (directory, mod) in dirs_to_make:
         try:
-            print "    %s" % directory
+            print("    %s" % directory)
             os.mkdir(directory)
         except OSError as ex:
             if ex.errno != 17:
                 raise
         os.chmod(directory, mod)
 
-    print "...Done."
+    print("...Done.")
 
 
 def do_set_owner_and_perms(conf_d):
@@ -320,7 +321,7 @@ def do_set_owner_and_perms(conf_d):
     (_, user) = conf_d["system"]["user"]
 
     for f in os.listdir(script_dir):
-        os.chmod(os.path.join(script_dir, f), 0550)
+        os.chmod(os.path.join(script_dir, f), 0o550)
 
     with open(os.path.join(script_dir, "variables.sh"), "w") as fptr:
         fptr.write("DCM_USER=%s" % user)
@@ -329,7 +330,7 @@ def do_set_owner_and_perms(conf_d):
         fptr.write(os.linesep)
         fptr.write(os.linesep)
 
-    print "Changing ownership to %s:%s" % (user, user)
+    print("Changing ownership to %s:%s" % (user, user))
     os.system("chown -R %s:%s %s" % (user, user, base_path))
 
 
@@ -418,14 +419,15 @@ def update_relative_paths(conf_d):
 def get_url(default=None):
     if not default:
         default = "wss://dcm.enstratius.com/agentManager"
-    print "Please enter the contact string of the agent manager (%s)" % default
+    print("Please enter the contact string of the agent manager (%s)"
+          % default)
     url = sys.stdin.readline().strip()
     if not url:
         return default
 
     # validate
     try:
-        up = urlparse.urlparse(url)
+        up = urllib.parse.urlparse(url)
         if up.port is not None:
             int(up.port)
     except Exception:
@@ -446,7 +448,7 @@ def enable_start_agent(opts):
         ask = False
 
     if ask:
-        print "Would you like to start the agent on boot? (Y/n)"
+        print("Would you like to start the agent on boot? (Y/n)")
         ans = sys.stdin.readline().strip()
         on_boot = ans == "" or ans.lower() == "y" or ans.lower() == "yes"
     if on_boot:
@@ -498,8 +500,8 @@ def main(argv=sys.argv[1:]):
 
     opts.loglevel = opts.loglevel.upper()
     if opts.loglevel not in ["ERROR", "WARN", "INFO", "DEBUG"]:
-        print "WARNING: %s is an invalid log level.  Using INFO"\
-              % opts.loglevel
+        print("WARNING: %s is an invalid log level.  Using INFO"
+              % opts.loglevel)
         opts.loglevel = "INFO"
 
     conf_d = gather_values(opts)
@@ -539,7 +541,7 @@ def main(argv=sys.argv[1:]):
                 agent_utils.install_extras(conf)
 
     except Exception as ex:
-        print >> sys.stderr, ex.message
+        print(str(ex), file=sys.stderr)
         if opts.verbose:
             raise
         return 1

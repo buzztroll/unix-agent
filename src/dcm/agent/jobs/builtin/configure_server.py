@@ -11,11 +11,11 @@
 #   this material is strictly forbidden unless prior written permission
 #   is obtained from Dell, Inc.
 #  ======================================================================
-import ConfigParser
+import configparser
 import json
 import logging
 import os
-import urlparse
+import urllib.parse
 
 import dcm.agent.exceptions as exceptions
 import dcm.agent.jobs as jobs
@@ -163,7 +163,7 @@ class ConfigureServer(jobs.Plugin):
             utils.safe_delete(token_file_path)
 
     def _edit_puppet_conf(self, template_path, new_location, endpoint):
-        parser = ConfigParser.SafeConfigParser()
+        parser = configparser.SafeConfigParser()
         parser.read(template_path)
         if not parser.has_section("agent"):
             parser.add_section("agent")
@@ -179,7 +179,7 @@ class ConfigureServer(jobs.Plugin):
 
         # XXX it will only work with the default port.  There is no way for
         # the user to configure anything else in the console
-        endpoint = urlparse.urlparse(self.args.endpoint).hostname
+        endpoint = urllib.parse.urlparse(self.args.endpoint).hostname
 
         puppet_extras_base_path = os.path.join(self.conf.extra_base_path,
                                                "puppetconf")
@@ -191,7 +191,7 @@ class ConfigureServer(jobs.Plugin):
                 self.conf, package=self.conf.extra_package_name)
         except exceptions.AgentExtrasNotInstalledException as ex:
             _g_logger.exception("An error occurred trying to install puppet.  "
-                                "Exception message is %s" % ex.message)
+                                "Exception message is %s" % str(ex))
             raise
 
         template_puppet_conf_path = os.path.join(puppet_extras_base_path,

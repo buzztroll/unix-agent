@@ -1,3 +1,5 @@
+from __future__ import print_function
+
 import argparse
 import datetime
 import clint
@@ -23,6 +25,7 @@ import dcm.agent.messaging.reply as reply
 import dcm.agent.utils as utils
 
 from dcm.agent.events import global_space as dcm_events
+
 
 _g_conf_file_env = "DCM_AGENT_CONF"
 
@@ -123,7 +126,7 @@ class DCMAgent(object):
                 utils.log_to_dcm(
                     logging.ERROR,
                     "An unexpected error occurred in the agent: %s"
-                    % ex.message)
+                    % str(ex))
                 self.g_logger.exception("A top level exception occurred")
 
     def cleanup_agent(self):
@@ -148,8 +151,8 @@ class DCMAgent(object):
         self.g_logger.debug("Waiting for all threads and callbacks in the "
                             "event system.")
         dcm_events.reset()
-        print utils.build_assertion_exception(
-            self.g_logger, "from service cleanup")
+        print(utils.build_assertion_exception(
+                self.g_logger, "from service cleanup"))
         self.g_logger.debug("Service closed")
 
 
@@ -157,7 +160,7 @@ def console_log(cli_args, level, msg, **kwargs):
     vb_level = getattr(cli_args, "verbose", 0)
     if level > vb_level:
         return
-    print >> sys.stderr, msg % kwargs
+    print(msg % kwargs, file=sys.stderr)
 
 
 def _gather_info(conf):
@@ -220,12 +223,12 @@ def _gather_info(conf):
 
     tar.close()
 
-    print """
+    print("""
 **********************************************************************
 To get all log and configuration file copy /tmp/agent_info.tar.gz to
 your local machine
 **********************************************************************
-"""
+""")
 
 
 def parse_command_line(argv):
@@ -256,7 +259,7 @@ def start_main_service(cli_args):
         agent = DCMAgent(conf)
         agent.pre_threads()
         if cli_args.version:
-            print "Version %s" % dcm.agent.g_version
+            print("Version %s" % dcm.agent.g_version)
             return 0
 
         if cli_args.report:
@@ -273,7 +276,7 @@ def start_main_service(cli_args):
     except exceptions.AgentOptionException as aoex:
         console_log(cli_args, 0, "The agent is not configured properly. "
                     "please check the config file.")
-        console_log(cli_args, 0, aoex.message)
+        console_log(cli_args, 0, str(aoex))
         if agent:
             agent.shutdown_main_loop()
         if getattr(cli_args, "verbose", 0) > 2:
@@ -390,7 +393,7 @@ def get_status(cli_args):
         run_status = "NOT RUNNING"
         run_reason = "The PID %d was not found" % pid
     except Exception as ex:
-        run_reason = ex.message
+        run_reason = str(ex)
         run_status = "UNKNOWN"
 
     clint.textui.puts(clint.textui.colored.red(run_status))

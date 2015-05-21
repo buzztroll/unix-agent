@@ -172,7 +172,7 @@ class MountVolume(direct_pass.DirectPass):
                 raise exceptions.AgentPluginBadParameterException(
                     "mount_volume",
                     "When using cloud stack the device must be one of: %s" %
-                    str(_cloud_stack_map.keys()))
+                    str(list(_cloud_stack_map.keys())))
             modified_device_list.append(_cloud_stack_map[target_device])
         return modified_device_list
 

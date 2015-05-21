@@ -29,7 +29,6 @@ import dcm.agent.messaging.persistence as persistence
 import dcm.agent.messaging.reply as reply
 import dcm.agent.messaging.request as request
 import dcm.agent.tests.utils.general as test_utils
-import dcm.agent.tests.utils.general as test_utils
 import dcm.agent.tests.utils.test_connection as test_conn
 import dcm.agent.utils as utils
 
@@ -249,7 +248,7 @@ class TestProtocolCommands(reply.ReplyObserverInterface):
                           "administrator": False}}
         req_rpc = self._rpc_wait_reply(doc)
         r = req_rpc.get_reply()
-        print r["payload"]["return_code"]
+        print(r["payload"]["return_code"])
         nose.tools.eq_(r["payload"]["return_code"], 0)
 
         pw_ent = pwd.getpwnam(user_name)
@@ -292,8 +291,8 @@ class TestProtocolCommands(reply.ReplyObserverInterface):
                 pw_ent = pwd.getpwnam(user_name)
                 if pw_ent is not None:
                     os.system('userdel -r %s' % user_name)
-            except Exception, e:  # show exception
-                print e
+            except Exception as e:  # show exception
+                print(e)
 
     def test_add_underscore_dash_username_fails(self):
         """
@@ -333,7 +332,7 @@ class TestProtocolCommands(reply.ReplyObserverInterface):
                 if pw_ent is not None:
                     os.system('userdel -r %s' % user_name)
             except Exception as e:  # show exception
-                print e
+                print(e)
 
     def test_add_special_char_username_fails(self):
         """
@@ -387,7 +386,7 @@ class TestProtocolCommands(reply.ReplyObserverInterface):
     @test_utils.skip_docker
     @test_utils.system_changing
     def test_initialize(self):
-        cust = 10l
+        cust = 10
         new_hostname = "testdcmagent"
         doc = {
             "command": "initialize",
@@ -483,7 +482,7 @@ class TestProtocolCommands(reply.ReplyObserverInterface):
         }
         req_reply = self._rpc_wait_reply(doc)
         r = req_reply.get_reply()
-        print socket.gethostname()
+        print(socket.gethostname())
         nose.tools.ok_(r["payload"]["return_code"] != 0)
         nose.tools.eq_(socket.gethostname(), orig_hostname)
 
@@ -546,7 +545,7 @@ class TestProtocolCommands(reply.ReplyObserverInterface):
     @test_utils.skip_docker
     @test_utils.system_changing
     def test_initialize_rename_error(self):
-        cust = 10l
+        cust = 10
         orig_hostname = socket.gethostname()
         new_hostname = "....."
         doc = {
@@ -579,7 +578,7 @@ class TestProtocolCommands(reply.ReplyObserverInterface):
             if dm['device_id'] == device_id:
                 os.system("umount " + dm['mount_point'])
 
-        print device_id
+        print(device_id)
         mappings = utils.get_device_mappings(self.conf_obj)
         for dm in mappings:
             if dm['device_id'] == device_id:
@@ -594,14 +593,14 @@ class TestProtocolCommands(reply.ReplyObserverInterface):
                           "encryptedFsEncryptionKey": None,
                           "mountPoint": mount_point,
                           "devices": [device_id]}}
-        print "trying to mount"
+        print("trying to mount")
         req_rpc = self._rpc_wait_reply(doc)
         r = req_rpc.get_reply()
         jd = r["payload"]["reply_object"]
         while jd["job_status"] in ["WAITING", "RUNNING"]:
             jd = self._get_job_description(jd["job_id"])
         nose.tools.eq_(jd["job_status"], "COMPLETE")
-        print "done mount"
+        print("done mount")
 
         found = False
         mappings = utils.get_device_mappings(self.conf_obj)
@@ -637,7 +636,7 @@ class TestProtocolCommands(reply.ReplyObserverInterface):
         while jd["job_status"] in ["WAITING", "RUNNING"]:
             jd = self._get_job_description(jd["job_id"])
         nose.tools.eq_(jd["job_status"], "COMPLETE")
-        print "done format"
+        print("done format")
 
         arguments = {
             "deviceId": device_id,
@@ -697,7 +696,7 @@ class TestProtocolCommands(reply.ReplyObserverInterface):
 
     def test_upgrade(self):
         try:
-            print "starting upgrade"
+            print("starting upgrade")
             _, tmpfname = tempfile.mkstemp()
             _, exefname = tempfile.mkstemp()
             exe_data = """#!/bin/bash
@@ -715,12 +714,12 @@ class TestProtocolCommands(reply.ReplyObserverInterface):
                               "newVersion": newVersion,
                               "args": ["arg1", "arg2"]}
             }
-            print "sending upgrade"
+            print("sending upgrade")
             req_reply = self._rpc_wait_reply(doc)
             r = req_reply.get_reply()
             nose.tools.eq_(r["payload"]["return_code"], 0)
 
-            print "verify upgrade"
+            print("verify upgrade")
             with open(tmpfname, "r") as fptr:
                 line = fptr.readline()
             nose.tools.ok_(line)
@@ -736,16 +735,16 @@ class TestProtocolCommands(reply.ReplyObserverInterface):
                     exc_type, exc_value, exc_traceback = sys.exc_info()
                     traceback.print_tb(exc_traceback, file=fptr)
                 except Exception as ex2:
-                    fptr.write(str(ex2.message))
+                    fptr.write(str(ex2))
                     fptr.write(os.linesep)
                 fptr.write(str(ex))
                 fptr.write(os.linesep)
-                fptr.write(ex.message)
+                fptr.write(str(ex))
                 fptr.write(os.linesep)
                 fptr.write(test_utils.build_assertion_exception("tester"))
-            print ex
-            print test_utils.build_assertion_exception("tester")
-            nose.tools.ok_(False, ex.message)
+            print(ex)
+            print(test_utils.build_assertion_exception("tester"))
+            nose.tools.ok_(False, str(ex))
 
     def test_run_script(self):
         _, tmpfname = tempfile.mkstemp()
@@ -917,7 +916,7 @@ class TestProtocolCommands(reply.ReplyObserverInterface):
             user_list.append(user_name)
             req_rpc = self._rpc_wait_reply(doc)
             r = req_rpc.get_reply()
-            print r["payload"]["return_code"]
+            print(r["payload"]["return_code"])
             nose.tools.eq_(r["payload"]["return_code"], 0)
 
             pw_ent = pwd.getpwnam(user_name)
@@ -936,7 +935,7 @@ class TestProtocolCommands(reply.ReplyObserverInterface):
                 if pw_ent is not None:
                     os.system('userdel -r %s' % name)
         except KeyError:
-            print "The name doesn't exist"
+            print("The name doesn't exist")
 
 
     @test_utils.system_changing
@@ -956,7 +955,7 @@ class TestProtocolCommands(reply.ReplyObserverInterface):
             user_list.append(user_name)
             req_rpc = self._rpc_wait_reply(doc)
             r = req_rpc.get_reply()
-            print r["payload"]["return_code"]
+            print(r["payload"]["return_code"])
             nose.tools.eq_(r["payload"]["return_code"], 0)
 
             pw_ent = pwd.getpwnam(user_name)
@@ -984,7 +983,7 @@ class TestProtocolCommands(reply.ReplyObserverInterface):
                     os.system('userdel -r %s' % name)
                     os.system('rm -rf /home/%s' % name)
         except KeyError:
-            print "The name doesn't exist"
+            print("The name doesn't exist")
 
     @test_utils.system_changing
     def test_general_cleanup(self):
@@ -1003,7 +1002,7 @@ class TestProtocolCommands(reply.ReplyObserverInterface):
             user_list.append(user_name)
             req_rpc = self._rpc_wait_reply(doc)
             r = req_rpc.get_reply()
-            print r["payload"]["return_code"]
+            print(r["payload"]["return_code"])
             nose.tools.eq_(r["payload"]["return_code"], 0)
 
             pw_ent = pwd.getpwnam(user_name)
@@ -1034,4 +1033,4 @@ class TestProtocolCommands(reply.ReplyObserverInterface):
                     os.system('userdel -r %s' % name)
                     os.system('rm -rf /home/%s' % name)
         except KeyError:
-            print "The name doesn't exist"
+            print("The name doesn't exist")
