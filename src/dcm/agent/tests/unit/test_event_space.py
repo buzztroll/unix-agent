@@ -179,7 +179,7 @@ class TestEventSpace(unittest.TestCase):
         self.assertGreater(start_time[0], poll_time)
         t.join()
 
-    def register_events_in_callback(self):
+    def test_register_events_in_callback(self):
         event_space = events.EventSpace()
         param = []
 
@@ -200,3 +200,91 @@ class TestEventSpace(unittest.TestCase):
         self.assertEqual(len(param), 2)
         self.assertIn(1, param)
         self.assertIn(2, param)
+
+    def test_register_threaded_event(self):
+        event_space = events.EventSpace()
+        x_val = 1
+        y_val = []
+        apple_val = "sauce"
+
+        def test_callback(x_param, y_param, apple_param=None):
+            self.assertEqual(x_param, x_val)
+            self.assertEqual(y_param, y_val)
+            self.assertEqual(apple_param, apple_val)
+            y_val.append(threading.currentThread())
+
+        event_space.register_callback(test_callback,
+                                      args=[x_val, y_val],
+                                      kwargs={'apple_param': apple_val},
+                                      in_thread=True)
+
+        event_space.poll(timeblock=0.0)
+        self.assertEqual(len(y_val), 1)
+        self.assertNotEqual(y_val[0], threading.currentThread())
+
+    def test_callback_delay_threaded(self):
+        """Make sure that the delayed callback is called second"""
+        event_space = events.EventSpace()
+        x_val = []
+
+        def test_callback1(x_param):
+            self.assertEqual(x_param, x_val)
+            x_val.append(1)
+
+        def test_callback2(x_param):
+            self.assertEqual(x_param, x_val)
+            x_val.append(2)
+
+        d = 0.1
+        event_space.register_callback(
+            test_callback2, args=[x_val], delay=d, in_thread=True)
+        event_space.register_callback(
+            test_callback1, args=[x_val], in_thread=True)
+
+        event_space.poll(timeblock=d*2.0)
+        self.assertEqual(len(x_val), 2)
+        self.assertEqual(x_val[0], 1)
+        self.assertEqual(x_val[1], 2)
+
+    def test_cancel_a_callback_threaded(self):
+        """cancel a callback and verify it did not run"""
+        event_space = events.EventSpace()
+        x_val = []
+        d = 0.1
+
+        def test_callback1(x_param):
+            x_param.append(1)
+            self.fail("This should be canceled")
+
+        ub1 = event_space.register_callback(
+            test_callback1, args=[x_val], delay=d, in_thread=True)
+
+        x = event_space.cancel_callback(ub1)
+        self.assertTrue(x)
+
+        event_space.poll(timeblock=d*2.0)
+        self.assertEqual(len(x_val), 0)
+
+    def test_rest(self):
+
+        event_space = events.EventSpace()
+        x_val = []
+        d = 0.1
+
+        def test_callback1(x_param):
+            x_param.append(1)
+
+        def test_callback2_thread(x_param):
+            x_param.append(1)
+
+        event_space.register_callback(
+            test_callback1, args=[x_val], delay=d*2)
+        event_space.register_callback(
+            test_callback2_thread, args=[x_val], delay=d*2, in_thread=True)
+
+        event_space.poll(timeblock=d)
+
+        event_space.reset()
+
+        event_space.poll(timeblock=d*2)
+        self.assertEqual(len(x_val), 0)
