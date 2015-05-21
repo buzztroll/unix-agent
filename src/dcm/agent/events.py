@@ -42,19 +42,13 @@ class UserCallback(object):
         finally:
             self._lock.release()
 
+    def __repr__(self):
+        return str(self._func)
+
     def __cmp__(self, other):
         return cmp(self._time_ready, other.get_time_ready())
 
     def call(self):
-        if self._in_thread:
-            # TODO XXX figure out how to join the thread for clean up
-            _g_logger.debug("UserCallback starting run thread")
-            self._run_thread = threading.Thread(target=self._call)
-            self._run_thread.start()
-        else:
-            self._call()
-
-    def _call(self):
         try:
             _g_logger.debug("UserCallback calling %s" % self._func.__name__)
             self._lock.acquire()
@@ -106,6 +100,9 @@ class UserCallback(object):
             return self._time_ready <= tm
         finally:
             self._lock.release()
+
+    def in_thread(self):
+        return self._in_thread
 
     def get_rc(self):
         """
@@ -178,6 +175,8 @@ class EventSpace(object):
         self._q = []
         self._cond = threading.Condition()
         self._done = False
+        self._running_threads = []
+        self._done_threads = []
 
     def register_callback(self, func, args=None, kwargs=None, delay=0,
                           in_thread=False):
@@ -238,6 +237,19 @@ class EventSpace(object):
         finally:
             self._cond.release()
 
+    def _run_threaded(self, ub):
+        this_thread = threading.currentThread() 
+        try:
+            ub.call()
+        finally:
+            self._cond.acquire()
+            try:
+                self._running_threads.remove(this_thread)
+                self._done_threads.append(this_thread)
+                self._cond.notifyAll()
+            finally:
+                self._cond.release()
+
     def _build_ready_list(self, now, end_time):
         # get everything that is ready right now while under lock.  It nothing
         # is ready a time to sleep is returned
@@ -248,7 +260,15 @@ class EventSpace(object):
             head_ub = heapq.nsmallest(1, self._q)
             if head_ub:
                 if head_ub[0].is_ready(tm=now):
-                    ready_list.append(heapq.heappop(self._q))
+                    ub = heapq.heappop(self._q)
+                    if ub.in_thread():
+                        _run_thread = threading.Thread(
+                            target=self._run_threaded,
+                            args=(ub,))
+                        self._running_threads.append(_run_thread)
+                        _run_thread.start()
+                    else:
+                        ready_list.append(ub)
                 else:
                     first_not_ready = head_ub[0]
                     done = True
@@ -265,6 +285,12 @@ class EventSpace(object):
             sleep_time = max(0.0, td.total_seconds())
 
         return ready_list, sleep_time
+
+    def _clear_done_threads(self):
+        # This should only be called locked
+        for t in self._done_threads[:]:
+            t.join()
+            self._done_threads.remove(t)
 
     def poll(self, timeblock=5.0):
         """
@@ -287,6 +313,7 @@ class EventSpace(object):
                 if self._done:
                     return any_called
 
+                self._clear_done_threads()
                 ready_to_unlock = False
                 while not ready_to_unlock and not done:
                     ready_list, sleep_time =\
@@ -326,6 +353,26 @@ class EventSpace(object):
                 for ub in self._q:
                     ub._cancel()
             self._cond.notifyAll()
+        finally:
+            self._cond.release()
+
+    def reset(self):
+
+        # first disallow any new registrations and cancel anything that has
+        # not yet started
+        self._cond.acquire()
+        try:
+            self._done = True
+            # canceling everything in the list will mark everything that is
+            # not already effectively running to never run
+            for ub in self._q:
+                ub._cancel()
+            self._q = []
+            while len(self._running_threads) > 0:
+                self._cond.wait()
+            self._clear_done_threads()
+            # now that everything is clear allow new registrations again
+            self._done = False
         finally:
             self._cond.release()
 

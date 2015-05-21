@@ -144,6 +144,10 @@ class DCMAgent(object):
         if self.conn:
             self.g_logger.debug("Closing the connection")
             self.conn.close()
+
+        self.g_logger.debug("Waiting for all threads and callbacks in the "
+                            "event system.")
+        dcm_events.reset()
         self.g_logger.debug("Service closed")
 
 
