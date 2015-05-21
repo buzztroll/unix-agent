@@ -148,6 +148,8 @@ class DCMAgent(object):
         self.g_logger.debug("Waiting for all threads and callbacks in the "
                             "event system.")
         dcm_events.reset()
+        print utils.build_assertion_exception(
+            self.g_logger, "from service cleanup")
         self.g_logger.debug("Service closed")
 
 

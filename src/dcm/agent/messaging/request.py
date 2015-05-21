@@ -1,4 +1,5 @@
 import logging
+import threading
 import uuid
 
 import dcm.agent.exceptions as exceptions
@@ -6,6 +7,8 @@ import dcm.agent.messaging.states as states
 import dcm.agent.messaging.types as types
 import dcm.agent.messaging.utils as utils
 import dcm.agent.state_machine as state_machine
+import dcm.agent.utils as agent_util
+
 
 from dcm.agent.events import global_space as dcm_events
 
@@ -38,6 +41,14 @@ class RequestRPC(object):
 
         self._setup_states()
         self.ack_sender = 0
+        self._lock = threading.RLock()
+
+
+    def lock(self):
+        self._lock.acquire()
+
+    def unlock(self):
+        self._lock.release()
 
     def get_reply(self):
         return self._reply_doc
@@ -46,10 +57,12 @@ class RequestRPC(object):
         self._sm.event_occurred(states.RequesterEvents.CALLBACK_RETURNED,
                                 message={})
 
+    @agent_util.class_method_sync
     def send(self):
         self._sm.event_occurred(states.RequesterEvents.REQUEST_MADE,
                                 message={})
 
+    @agent_util.class_method_sync
     def cancel(self):
         self._sm.event_occurred(states.RequesterEvents.CANCEL_REQUESTED,
                                 message={})
@@ -58,6 +71,7 @@ class RequestRPC(object):
         self._reply_callback(*self._reply_args, **self._reply_kwargs)
         self.user_reply_callback_returns()
 
+    @agent_util.class_method_sync
     def incoming_message(self, json_doc):
         type_to_event = {
             types.MessageTypes.ACK: states.RequesterEvents.ACK_RECEIVED,
@@ -79,20 +93,24 @@ class RequestRPC(object):
         self._sm.event_occurred(type_to_event[json_doc['type']],
                                 message=json_doc)
 
+    @agent_util.class_method_sync
     def request_timeout(self, request_message_timer):
         self._sm.event_occurred(states.RequesterEvents.TIMEOUT,
                                 message_timer=request_message_timer)
 
+    @agent_util.class_method_sync
     def ack_sent_timeout(self, timer=None):
         if timer is None:
             timer = self._completion_timer
         self._sm.event_occurred(states.RequesterEvents.CLEANUP_TIMEOUT,
                                 timer=timer)
 
+    @agent_util.class_method_sync
     def user_reply_callback_returns(self):
         self._sm.event_occurred(states.RequesterEvents.CALLBACK_RETURNED,
                                 message={})
 
+    @agent_util.class_method_sync
     def user_failed_callback_returns(self):
         self._sm.event_occurred(states.RequesterEvents.CALLBACK_RETURNED,
                                 message={})
@@ -112,13 +130,17 @@ class RequestRPC(object):
         self.send_doc(reply_ack_doc)
         if self._completion_timer is not None:
             self._completion_timer.cancel()
-        self._completion_timer = utils.AckCleanupTimer(self._cleanup_timeout,
-                                                       self.ack_sent_timeout)
-        self._completion_timer.start()
 
+        self._completion_timer = dcm_events.register_callback(
+            self.ack_sent_timeout,
+            kwargs={'timer': self._completion_timer},
+            delay=self._cleanup_timeout)
+
+    @agent_util.class_method_sync
     def cleanup(self):
         self._session_complete()
 
+    @agent_util.class_method_sync
     def send_doc(self, doc):
         doc['entity'] = "requester"
         self._conn.send(doc)
@@ -129,7 +151,7 @@ class RequestRPC(object):
         if self._message_timer:
             self._message_timer.cancel()
         if self._completion_timer:
-            self._completion_timer.cancel()
+            dcm_events.cancel_callback(self._completion_timer)
 
     def _register_failed_callback(self):
         pass

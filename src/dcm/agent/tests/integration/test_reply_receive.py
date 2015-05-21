@@ -209,7 +209,6 @@ class TestProtocolCommands(reply.ReplyObserverInterface):
         return reqRPC
 
     def tearDown(self):
-        print test_utils.build_assertion_exception("tester")
         self.request_listener.wait_for_all_nicely()
         self.svc.cleanup_agent()
         self.req_conn.close()

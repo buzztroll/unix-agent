@@ -206,12 +206,15 @@ class TestEventSpace(unittest.TestCase):
         x_val = 1
         y_val = []
         apple_val = "sauce"
+        is_called_event = threading.Event()
 
         def test_callback(x_param, y_param, apple_param=None):
             self.assertEqual(x_param, x_val)
             self.assertEqual(y_param, y_val)
             self.assertEqual(apple_param, apple_val)
             y_val.append(threading.currentThread())
+            is_called_event.set()
+
 
         event_space.register_callback(test_callback,
                                       args=[x_val, y_val],
@@ -219,6 +222,7 @@ class TestEventSpace(unittest.TestCase):
                                       in_thread=True)
 
         event_space.poll(timeblock=0.0)
+        is_called_event.wait(timeout=0.5)
         self.assertEqual(len(y_val), 1)
         self.assertNotEqual(y_val[0], threading.currentThread())
 
