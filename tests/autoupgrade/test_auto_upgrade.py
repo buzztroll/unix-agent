@@ -8,7 +8,8 @@ import sys
 from ws4py.websocket import WebSocket
 from ws4py.server.wsgirefserver import WSGIServer, WebSocketWSGIRequestHandler
 from ws4py.server.wsgiutils import WebSocketWSGIApplication
-import dcm.agent.parent_receive_q as parent_receive_q
+
+from dcm.agent.events import global_space as dcm_events
 
 
 class ServerEvent(object):
@@ -254,7 +255,7 @@ def make_this_server():
     server.timeout = 1
     while not _g_event.isSet():
         server.handle_request()
-        parent_receive_q._g_main_q_maker.poll(blocking=False)
+        dcm_events.poll(timeblock=0.0)
 
     global _g_message
     global _g_rc

@@ -10,6 +10,8 @@ formatters:
         format: "%(asctime)s $(name)s %(levelname)s - %(message)s || REQUEST=%(dcm_request_id)s command=%(dcm_command_name)s request_kws=%(dcm_kwargs)s"
     message:
         format: "%(asctime)s $(name)s %(levelname)s - %(message)s || REQUEST=%(dcm_request_id)s message=%(dcm_message_type)s request_kws=%(dcm_kwargs)s"
+    wire:
+        format: "[%(asctime)s] %(message)s"
 
 
 filters:
@@ -52,6 +54,12 @@ handlers:
         formatter: message
         stream: ext://sys.stdout
 
+    wire_handler:
+        class: logging.StreamHandler
+        level: DEBUG
+        formatter: wire
+        stream: ext://sys.stdout
+
 
 loggers:
     dcm.agent:
@@ -74,6 +82,10 @@ loggers:
         handlers: [dcm_logger, message_request_tracer]
         propagate: no
 
+    DCM_AGENT_WIRE:
+        level: DEBUG
+        handlers: [wire_handler]
+        propagate: no
 
 root:
     level: DEBUG

@@ -20,8 +20,9 @@ import dcm.agent.logger as logger
 import dcm.agent.messaging as messaging
 import dcm.agent.messaging.persistence as persistence
 import dcm.agent.messaging.reply as reply
-import dcm.agent.parent_receive_q as parent_receive_q
 import dcm.agent.utils as utils
+
+from dcm.agent.events import global_space as dcm_events
 
 _g_conf_file_env = "DCM_AGENT_CONF"
 
@@ -69,7 +70,7 @@ class DCMAgent(object):
 
     def shutdown_main_loop(self):
         self.shutting_down = True
-        parent_receive_q.wakeup()
+        dcm_events.wakeup(cancel_all=True)
 
     def pre_threads(self):
         signal.signal(signal.SIGINT, self.kill_handler)
@@ -117,7 +118,7 @@ class DCMAgent(object):
     def agent_main_loop(self):
         while not self.shutting_down:
             try:
-                parent_receive_q.poll()
+                dcm_events.poll()
             except Exception as ex:
                 utils.log_to_dcm(
                     logging.ERROR,
@@ -126,7 +127,6 @@ class DCMAgent(object):
                 self.g_logger.exception("A top level exception occurred")
 
     def cleanup_agent(self):
-        parent_receive_q.flush()
         if self.db_cleaner:
             self.g_logger.debug("Shutting down the db cleaner runner")
             self.db_cleaner.done()
@@ -144,6 +144,12 @@ class DCMAgent(object):
         if self.conn:
             self.g_logger.debug("Closing the connection")
             self.conn.close()
+
+        self.g_logger.debug("Waiting for all threads and callbacks in the "
+                            "event system.")
+        dcm_events.reset()
+        print utils.build_assertion_exception(
+            self.g_logger, "from service cleanup")
         self.g_logger.debug("Service closed")
 
 

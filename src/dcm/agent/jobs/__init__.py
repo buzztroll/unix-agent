@@ -82,7 +82,7 @@ class Plugin(object):
                         _g_logger.exception(ex.message)
                         raise exceptions.AgentPluginBadParameterException(
                             self.name, "Parameter %s has an invalid "
-                                       "value" % arg)
+                                       "value %s" % (arg, a))
                 setattr(self.args, arg, a)
 
     @utils.not_implemented_decorator

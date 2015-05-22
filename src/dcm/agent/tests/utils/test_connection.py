@@ -5,8 +5,9 @@ import threading
 import dcm.agent.connection.connection_interface as conniface
 import dcm.agent.messaging.utils as utils
 import dcm.agent.messaging.types as message_types
-import dcm.agent.parent_receive_q as parent_receive_q
 import dcm.agent.tests.utils.test_exceptions as test_exceptions
+
+from dcm.agent.events import global_space as dcm_events
 
 
 _g_logger = logging.getLogger(__name__)
@@ -43,7 +44,6 @@ class TestConnection(conniface.ConnectionInterface):
     def __init__(self, reader, writer, reply_ignore_count=0,
                  retrans_requests=None):
         # a file like object that is full of command arguments. space separated
-        self._readq = None
         self._reader = reader
         self._writer = writer
         self._reply_ignore_count = reply_ignore_count
@@ -81,18 +81,17 @@ class TestConnection(conniface.ConnectionInterface):
         self._request_number += 1
 
         self._check_retrans(request_id, message_types.MessageTypes.REQUEST)
-        self._readq.put(request_doc)
+        dcm_events.register_callback(
+            self.recv_obj.incoming_parent_q_message, args=[request_doc])
 
     def set_receiver(self, receive_object):
         """
         Read 1 packet from the connection.  1 complete json doc.
         """
         self.recv_obj = receive_object
-        self._readq = parent_receive_q.get_master_receive_queue(
-            self, str(self))
         self._read_from_file()
 
-    def incoming_parent_q_message(self, msg):
+    def incoming_parent_q_message(self, request_id, msg):
         self._read_from_file()
         self.recv_obj.incoming_parent_q_message(msg)
 
@@ -100,7 +99,9 @@ class TestConnection(conniface.ConnectionInterface):
         if request_id in self._retrans_map:
             retrans = self._retrans_map[request_id]
             if retrans.should_retrans(event):
-                self._readq.put(retrans.request_doc)
+                dcm_events.register_callback(
+                    self.incoming_parent_q_message,
+                    args=[request_id, retrans.request_doc])
 
     def connect(self, receive_object, handshake_manager):
         pass
@@ -132,7 +133,9 @@ class TestConnection(conniface.ConnectionInterface):
                         "request_id": doc["request_id"],
                         "message_id": doc["message_id"],
                     }
-                    self._readq.put(reply_ack)
+                    dcm_events.register_callback(
+                        self.incoming_parent_q_message,
+                        args=[doc["request_id"], reply_ack])
                 else:
                     self._reply_ignore_count -= 1
             else:
@@ -140,38 +143,31 @@ class TestConnection(conniface.ConnectionInterface):
                     "type %s should never happen" % t)
 
 
-class ReqRepQHolder(object):
+class ReplyConnection(object):
 
     def __init__(self):
-        self._req_recv_q = parent_receive_q.create_put_q("test_req_q_recv")
-        self._req_send_q = parent_receive_q.create_put_q("test_req_q_send")
+        pass
 
-    class TestCon(conniface.ConnectionInterface):
-        def __init__(self, sq, rq):
-            self._send_q = sq
-            self._recv_q = rq
+    def send(self, doc):
+        dcm_events.register_callback(self._request.incoming_message, args=[doc])
 
-        def connect(self, receive_object, handshake_manager):
-            pass
+    def set_request_side(self, request):
+        self._request = request
 
-        def set_receiver(self, receive_object):
-            parent_receive_q.set_put_queue(self._recv_q, receive_object)
+    def close(self):
+        pass
 
-        def send(self, doc):
-            self._send_q.put(doc)
 
-        def close(self):
-            try:
-                parent_receive_q.unregister_put_queue(self._recv_q)
-            except Exception:
-                pass
-            try:
-                parent_receive_q.unregister_put_queue(self._send_q)
-            except Exception:
-                pass
+class RequestConnection(object):
 
-    def get_req_conn(self):
-        return ReqRepQHolder.TestCon(self._req_send_q, self._req_recv_q)
+    def __init__(self):
+        pass
 
-    def get_reply_conn(self):
-        return ReqRepQHolder.TestCon(self._req_recv_q, self._req_send_q)
+    def send(self, doc):
+        self._rl.incoming_parent_q_message(doc)
+
+    def set_request_listener(self, rl):
+        self._rl = rl
+
+    def close(self):
+        pass

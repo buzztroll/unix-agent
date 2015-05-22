@@ -5,8 +5,9 @@ import unittest
 
 import dcm.agent.connection.websocket as websocket
 import dcm.agent.handshake as handshake
-import dcm.agent.parent_receive_q as parent_receive_q
 import dcm.agent.tests.utils.general as test_utils
+
+from dcm.agent.events import global_space as dcm_events
 
 
 class FakeMsgHandle(object):
@@ -26,15 +27,6 @@ class TestBackoff(unittest.TestCase):
             max_backoff_seconds,
             run_time_seconds,
             conn_obj):
-
-        def incoming_handshake(incoming_handshake_doc):
-            return True
-
-        def make_handshake():
-            # This is just a good place after the connection to throw an
-            # error
-            ws.throw_error(Exception("just for tests"))
-            return {}
 
         class FakeHS(object):
             def get_send_document(self):
@@ -62,8 +54,7 @@ class TestBackoff(unittest.TestCase):
         done_time = nw + datetime.timedelta(seconds=run_time_seconds)
         while done_time > nw:
             remaining = done_time - nw
-            parent_receive_q.poll(
-                blocking=True, timeblock=remaining.total_seconds())
+            dcm_events.poll(timeblock=remaining.total_seconds())
             nw = datetime.datetime.now()
 
         ws.close()
@@ -125,7 +116,7 @@ class TestBackoff(unittest.TestCase):
             run_time_seconds,
             conn_obj)
 
-        self.assertGreaterEqual(m.connect.call_count, 2)
+        self.assertGreaterEqual(expected_backoff_count, m.connect.call_count)
 
     @mock.patch('dcm.agent.connection.websocket._WebSocketClient')
     def test_force_backoff(self, conn_obj):
@@ -155,16 +146,9 @@ class TestBackoff(unittest.TestCase):
                  'return_code':
                      handshake.HandshakeIncomingReply.REPLY_CODE_FORCE_BACKOFF})
 
-        def incoming_handshake(incoming_handshake_doc):
-            return False
-
-        def make_handshake():
-            return {}
-
-
         class FakeHS(object):
             def get_send_document(self):
-                parent_receive_q.register_user_callback(send_in_handshake)
+                dcm_events.register_callback(send_in_handshake)
                 return {}
 
             def incoming_document(self, incoming_doc):
@@ -180,8 +164,7 @@ class TestBackoff(unittest.TestCase):
         done_time = nw + datetime.timedelta(seconds=run_time_seconds)
         while done_time > nw:
             remaining = done_time - nw
-            parent_receive_q.poll(blocking=True,
-                                  timeblock=remaining.total_seconds())
+            dcm_events.poll(timeblock=remaining.total_seconds())
             nw = datetime.datetime.now()
 
         ws.close()

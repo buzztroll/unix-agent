@@ -6,7 +6,7 @@ import time
 import urllib
 
 import dcm.agent.jobs as jobs
-import dcm.agent.parent_receive_q as parent_receive_q
+from dcm.agent.events import global_space as dcm_events
 
 
 _g_logger = logging.getLogger(__name__)
@@ -41,12 +41,12 @@ class JobReply(object):
 
 class JobRunner(threading.Thread):
 
-    def __init__(self, conf, queue, reply_queue):
+    def __init__(self, conf, queue, job_update_callback):
         super(JobRunner, self).__init__()
         self._queue = queue
         self._exit = threading.Event()
         self._current_job = None
-        self._reply_queue = reply_queue
+        self._job_update_callback = job_update_callback
         self._conf = conf
 
     # It should be safe to call done without a lock
@@ -72,7 +72,8 @@ class JobRunner(threading.Thread):
                                     (work.name, work.request_id))
 
                     job_reply = JobReply(work.job_id)
-                    self._reply_queue.put(job_reply)
+                    dcm_events.register_callback(
+                        self._job_update_callback, args=[job_reply])
 
                     plugin = jobs.load_python_module(
                         work.items_map["module_name"],
@@ -97,7 +98,8 @@ class JobRunner(threading.Thread):
                         job_reply.error = job_reply.reply_doc["message"]
                 finally:
                     job_reply.end_date = calendar.timegm(time.gmtime())
-                    self._reply_queue.put(job_reply)
+                    dcm_events.register_callback(
+                        self._job_update_callback, args=[job_reply])
                     _g_logger.debug("Completed the long job %s:%s "
                                     "STATUS=%s" % (work.name, work.request_id,
                                                    job_reply.job_status))
@@ -113,7 +115,7 @@ class JobRunner(threading.Thread):
         _g_logger.info("Job runner %s thread ending." % self.getName())
 
 
-class LongRunner(parent_receive_q.ParentReceiveQObserver):
+class LongRunner(object):
 
     def __init__(self, conf):
         self._job_table = {}
@@ -121,14 +123,11 @@ class LongRunner(parent_receive_q.ParentReceiveQObserver):
         self._lock = threading.RLock()
         self._conf = conf
         self._run_queue = Queue.Queue()
-        self._reply_queue = parent_receive_q.get_master_receive_queue(
-            self, str(self))
         self._runner_list = []
         for i in range(conf.workers_long_runner_threads):
-            jr = JobRunner(conf, self._run_queue, self._reply_queue)
+            jr = JobRunner(conf, self._run_queue, self.job_update_callback)
             self._runner_list.append(jr)
             jr.start()
-        self._timers = []
 
     def shutdown(self):
         # IF we want to make sure the queue is empty we must call
@@ -144,12 +143,6 @@ class LongRunner(parent_receive_q.ParentReceiveQObserver):
             r.join()
             _g_logger.debug("Runner %s is done" % str(r))
         _g_logger.info("The dispatcher is closed.")
-        for t in self._timers:
-            try:
-                t.cancel()
-            except:
-                pass
-            t.join()
 
     def start_new_job(self, conf, request_id, items_map,
                       name, arguments):
@@ -173,10 +166,9 @@ class LongRunner(parent_receive_q.ParentReceiveQObserver):
     def job_complete(self, job_id):
         if self._conf.jobs_retain_job_time == 0:
             return
-        t = threading.Timer(self._conf.jobs_retain_job_time,
-                            self._job_cleanup, job_id)
-        self._timers.append(t)
-        t.start()
+        dcm_events.register_callback(self._job_cleanup,
+                                     args=[job_id],
+                                     delay=self._conf.jobs_retain_job_time)
 
     def _job_cleanup(self, job_id):
         with self._lock:
@@ -190,7 +182,7 @@ class LongRunner(parent_receive_q.ParentReceiveQObserver):
             except Exception:
                 return None
 
-    def incoming_parent_q_message(self, job_reply):
+    def job_update_callback(self, job_reply):
         with self._lock:
             try:
                 _g_logger.debug("long runner poll has the lock, "
