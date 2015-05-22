@@ -338,6 +338,7 @@ def build_assertion_exception(logger, msg):
     details_out = details_out + os.linesep + " === Stack trace End === "
     msg = msg + " | " + details_out
     logger.error(msg)
+    return msg
 
 
 def base64type_convertor(b64str):
