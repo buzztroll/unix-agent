@@ -256,13 +256,12 @@ class WebSocketConnection(threading.Thread):
     def send(self, doc):
         _g_logger.debug("Adding a message to the send queue")
         self._send_queue.put(doc)
-        self._cond.notify()
+        self._cond.notify_all()
 
     @agent_utils.class_method_sync
     def close(self):
         _g_logger.debug("Websocket connection closed.")
         self.event_close()
-        self._cond.notifyAll()
 
     @agent_utils.class_method_sync
     def run(self):
@@ -361,7 +360,8 @@ class WebSocketConnection(threading.Thread):
             self._ws.close()
         except Exception as ex:
             _g_logger.warn("Error closing the connection " + ex.message)
-        self._cond.notify()
+        self._done_event.set()
+        self._cond.notify_all()
 
     def _sm_error_while_connecting(self):
         try:
@@ -369,7 +369,7 @@ class WebSocketConnection(threading.Thread):
         except Exception as ex:
             _g_logger.warn("Error closing the connection " + ex.message)
         self._backoff.error()
-        self._cond.notify()
+        self._cond.notify_all()
         self._register_connect()
 
 
@@ -415,8 +415,8 @@ class WebSocketConnection(threading.Thread):
         _g_logger.debug("close called when open")
 
         self._done_event.set()
+        self._cond.notify_all()
         self._ws.close()
-        self._cond.notify()
 
     def _sm_hs_close(self):
         """
@@ -424,7 +424,7 @@ class WebSocketConnection(threading.Thread):
         """
         _g_logger.debug("close event while handshaking")
         self._done_event.set()
-        self._cond.notify()
+        self._cond.notify_all()
 
     def _sm_not_open_close(self):
         """
@@ -432,7 +432,7 @@ class WebSocketConnection(threading.Thread):
         """
         _g_logger.debug("close event while not open")
         self._done_event.set()
-        self._cond.notify()
+        self._cond.notify_all()
 
     def _sm_open_poll(self):
         """

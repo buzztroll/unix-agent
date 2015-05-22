@@ -146,13 +146,6 @@ class TestBackoff(unittest.TestCase):
                  'return_code':
                      handshake.HandshakeIncomingReply.REPLY_CODE_FORCE_BACKOFF})
 
-        def incoming_handshake(incoming_handshake_doc):
-            return False
-
-        def make_handshake():
-            return {}
-
-
         class FakeHS(object):
             def get_send_document(self):
                 dcm_events.register_callback(send_in_handshake)
