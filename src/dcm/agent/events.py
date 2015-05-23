@@ -238,7 +238,7 @@ class EventSpace(object):
             self._cond.release()
 
     def _run_threaded(self, ub):
-        this_thread = threading.currentThread() 
+        this_thread = threading.currentThread()
         try:
             ub.call()
         finally:

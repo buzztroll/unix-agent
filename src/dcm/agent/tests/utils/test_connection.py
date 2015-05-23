@@ -149,7 +149,8 @@ class ReplyConnection(object):
         pass
 
     def send(self, doc):
-        dcm_events.register_callback(self._request.incoming_message, args=[doc])
+        dcm_events.register_callback(
+            self._request.incoming_message, args=[doc])
 
     def set_request_side(self, request):
         self._request = request

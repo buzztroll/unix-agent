@@ -103,7 +103,6 @@ class TestProtocolCommands(reply.ReplyObserverInterface):
                            cloud_region)
             cls.storage_clouds.append(cloud)
 
-
     @classmethod
     def setUpClass(cls):
         test_utils.connect_to_debugger()
@@ -117,8 +116,8 @@ class TestProtocolCommands(reply.ReplyObserverInterface):
                      "-U", cls.run_as_user,
                      "-l", "/tmp/agent_test_log.log"]
         if 'DCM_AWS_EXTRAS_BUCKET' in os.environ:
-            extras_repo = ("http://" + os.environ['DCM_AWS_EXTRAS_BUCKET']
-                           + ".s3.amazonaws.com")
+            extras_repo = ("http://" + os.environ['DCM_AWS_EXTRAS_BUCKET'] +
+                           ".s3.amazonaws.com")
             conf_args.append("--extra-package-location")
             conf_args.append(extras_repo)
         if 'DCM_INSTALL_EXTRAS' in os.environ:
@@ -885,7 +884,6 @@ class TestProtocolCommands(reply.ReplyObserverInterface):
         finally:
             self.conf_obj.extra_base_path = old_extra_path
 
-
     def test_bad_arguments(self):
         orig_hostname = socket.gethostname()
 
@@ -930,13 +928,12 @@ class TestProtocolCommands(reply.ReplyObserverInterface):
         r = req_rpc.get_reply()
         nose.tools.eq_(r["payload"]["return_code"], 0)
         try:
-            for name in user_list: # delete and clean up user
+            for name in user_list:  # delete and clean up user
                 pw_ent = pwd.getpwnam(name)
                 if pw_ent is not None:
                     os.system('userdel -r %s' % name)
         except KeyError:
             print("The name doesn't exist")
-
 
     @test_utils.system_changing
     def test_delete_private_keys(self):
@@ -977,7 +974,7 @@ class TestProtocolCommands(reply.ReplyObserverInterface):
             nose.tools.eq_(os.path.isfile(keyfile_path), False)
 
         try:
-            for name in user_list: # delete and clean up user and homedir
+            for name in user_list:  # delete and clean up user and homedir
                 pw_ent = pwd.getpwnam(name)
                 if pw_ent is not None:
                     os.system('userdel -r %s' % name)
@@ -1027,7 +1024,7 @@ class TestProtocolCommands(reply.ReplyObserverInterface):
         nose.tools.eq_(os.listdir(log_dir), [])
 
         try:
-            for name in user_list: # delete and clean up user and homedir
+            for name in user_list:  # delete and clean up user and homedir
                 pw_ent = pwd.getpwnam(name)
                 if pw_ent is not None:
                     os.system('userdel -r %s' % name)

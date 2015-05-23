@@ -21,7 +21,7 @@ def main(bin_path):
                 if is_privatekey(filepath):
                     cmd = '%s %s' % \
                         (os.path.join(bin_path, 'secureDelete'),
-                        filepath)
+                         filepath)
                     os.system(cmd)
 
 if __name__ == "__main__":

@@ -372,7 +372,6 @@ class WebSocketConnection(threading.Thread):
         self._cond.notify_all()
         self._register_connect()
 
-
     def _sm_received_hs(self, incoming_data=None):
         """
         The handshake has arrived
@@ -392,7 +391,8 @@ class WebSocketConnection(threading.Thread):
 
     def _sm_open_incoming_message(self, incoming_data=None):
         _g_logger.debug("New message received")
-        dcm_events.register_callback(self._receive_callback, args=[incoming_data])
+        dcm_events.register_callback(
+            self._receive_object, args=[incoming_data])
         self._backoff.activity()
 
     def _sm_hs_failed(self):
@@ -404,7 +404,8 @@ class WebSocketConnection(threading.Thread):
         try:
             self._ws.close()
         except Exception as ex:
-            _g_logger.exception("Got an error while closing in handshake state")
+            _g_logger.exception(
+                "Got an error while closing in handshake state")
         self._cond.notify()
         self._register_connect()
 
@@ -504,7 +505,8 @@ class WebSocketConnection(threading.Thread):
         try:
             self._ws.close()
         except Exception as ex:
-            _g_logger.exception("Got an error while closing in handshake state")
+            _g_logger.exception(
+                "Got an error while closing in handshake state")
 
     def _sm_connection_finished_right_after_done(self):
         """
@@ -517,7 +519,8 @@ class WebSocketConnection(threading.Thread):
         try:
             self._ws.close()
         except Exception as ex:
-            _g_logger.exception("Got an error while closing in handshake state")
+            _g_logger.exception(
+                "Got an error while closing in handshake state")
 
     def _setup_states(self):
         self._sm.add_transition(WsConnStates.WAITING,

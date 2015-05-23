@@ -112,7 +112,6 @@ class TestEventSpace(unittest.TestCase):
         event_space.poll(timeblock=d*2.0)
         self.assertEqual(len(x_val), 0)
 
-
     def test_cancel_already_run_callback(self):
         """cancel an already called callback and verify return code"""
         event_space = events.EventSpace()
@@ -214,7 +213,6 @@ class TestEventSpace(unittest.TestCase):
             self.assertEqual(apple_param, apple_val)
             y_val.append(threading.currentThread())
             is_called_event.set()
-
 
         event_space.register_callback(test_callback,
                                       args=[x_val, y_val],
