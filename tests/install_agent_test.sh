@@ -39,5 +39,5 @@ cd /prov
 ./installer.sh --cloud Amazon --url ws://enstratius.com:16309/ws --base-path /dcm
 
 # activate virualenv and run nosetests
-. /opt/dcm-agent/embedded/agentve/bin/activate
-/opt/dcm-agent/embedded/agentve/bin/nosetests -v dcm.agent.tests
+. /opt/dcm-agent/agentve/bin/activate
+/opt/dcm-agent/agentve/bin/nosetests -v dcm.agent.tests

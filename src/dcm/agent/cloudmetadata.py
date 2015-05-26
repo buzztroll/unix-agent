@@ -484,5 +484,5 @@ def _get_metadata_server_url_data(url, timeout=10, headers=None):
     if response.code != 200:
         _g_logger.debug("URL response code is %s" % str(response.code))
         return None
-    data = response.read().strip()
+    data = response.read().decode()
     return data

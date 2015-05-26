@@ -103,6 +103,7 @@ class TestProtocolCommands(reply.ReplyObserverInterface):
                            cloud_region)
             cls.storage_clouds.append(cloud)
 
+
     @classmethod
     def setUpClass(cls):
         test_utils.connect_to_debugger()
@@ -116,8 +117,8 @@ class TestProtocolCommands(reply.ReplyObserverInterface):
                      "-U", cls.run_as_user,
                      "-l", "/tmp/agent_test_log.log"]
         if 'DCM_AWS_EXTRAS_BUCKET' in os.environ:
-            extras_repo = ("http://" + os.environ['DCM_AWS_EXTRAS_BUCKET'] +
-                           ".s3.amazonaws.com")
+            extras_repo = ("http://" + os.environ['DCM_AWS_EXTRAS_BUCKET']
+                           + ".s3.amazonaws.com")
             conf_args.append("--extra-package-location")
             conf_args.append(extras_repo)
         if 'DCM_INSTALL_EXTRAS' in os.environ:
@@ -247,7 +248,6 @@ class TestProtocolCommands(reply.ReplyObserverInterface):
                           "administrator": False}}
         req_rpc = self._rpc_wait_reply(doc)
         r = req_rpc.get_reply()
-        print(r["payload"]["return_code"])
         nose.tools.eq_(r["payload"]["return_code"], 0)
 
         pw_ent = pwd.getpwnam(user_name)
@@ -671,7 +671,7 @@ class TestProtocolCommands(reply.ReplyObserverInterface):
                           "fileSystem": "ext3",
                           "raidLevel": "NONE",
                           "encryptedFsEncryptionKey":
-                          base64.b64encode(bytearray(enc_key)),
+                          base64.b64encode(enc_key.encode()).decode(),
                           "mountPoint": mount_point,
                           "devices": [device_id]}}
         req_rpc = self._rpc_wait_reply(doc)
@@ -754,13 +754,13 @@ class TestProtocolCommands(reply.ReplyObserverInterface):
                    """ % tmpfname
 
         sha256 = hashlib.sha256()
-        sha256.update(exe_data)
+        sha256.update(exe_data.encode())
         checksum = sha256.hexdigest()
 
         doc = {
             "command": "run_script",
             "arguments": {
-                "b64script": base64.b64encode(exe_data),
+                "b64script": base64.b64encode(exe_data.encode()).decode(),
                 "arguments": args,
                 "checksum": checksum
             }
@@ -788,7 +788,7 @@ class TestProtocolCommands(reply.ReplyObserverInterface):
 
         with open(chef_script_path, "w") as fptr:
             fptr.write(fake_chef_script)
-        os.chmod(chef_script_path, 0x755)
+        os.chmod(chef_script_path, 0o755)
 
         runListIds = ["recipe[git]", "recipe[2]"]
         confClientName = "confname"
@@ -848,11 +848,11 @@ class TestProtocolCommands(reply.ReplyObserverInterface):
 
             with open(chef_script_path, "w") as fptr:
                 fptr.write(fake_chef_script)
-            os.chmod(chef_script_path, 0x755)
+            os.chmod(chef_script_path, 0o755)
 
             confClientName = "confname"
-            configCert = base64.b64encode(bytearray(str(uuid.uuid4())))
-            configKey = base64.b64encode(bytearray(str(uuid.uuid4())))
+            configCert = base64.b64encode(str(uuid.uuid4()).encode()).decode()
+            configKey = base64.b64encode(str(uuid.uuid4()).encode()).decode()
 
             arguments = {
                 "endpoint": "http://notreal.com",
@@ -884,6 +884,7 @@ class TestProtocolCommands(reply.ReplyObserverInterface):
         finally:
             self.conf_obj.extra_base_path = old_extra_path
 
+
     def test_bad_arguments(self):
         orig_hostname = socket.gethostname()
 
@@ -914,7 +915,6 @@ class TestProtocolCommands(reply.ReplyObserverInterface):
             user_list.append(user_name)
             req_rpc = self._rpc_wait_reply(doc)
             r = req_rpc.get_reply()
-            print(r["payload"]["return_code"])
             nose.tools.eq_(r["payload"]["return_code"], 0)
 
             pw_ent = pwd.getpwnam(user_name)
@@ -928,12 +928,13 @@ class TestProtocolCommands(reply.ReplyObserverInterface):
         r = req_rpc.get_reply()
         nose.tools.eq_(r["payload"]["return_code"], 0)
         try:
-            for name in user_list:  # delete and clean up user
+            for name in user_list: # delete and clean up user
                 pw_ent = pwd.getpwnam(name)
                 if pw_ent is not None:
                     os.system('userdel -r %s' % name)
         except KeyError:
             print("The name doesn't exist")
+
 
     @test_utils.system_changing
     def test_delete_private_keys(self):
@@ -952,7 +953,6 @@ class TestProtocolCommands(reply.ReplyObserverInterface):
             user_list.append(user_name)
             req_rpc = self._rpc_wait_reply(doc)
             r = req_rpc.get_reply()
-            print(r["payload"]["return_code"])
             nose.tools.eq_(r["payload"]["return_code"], 0)
 
             pw_ent = pwd.getpwnam(user_name)
@@ -974,7 +974,7 @@ class TestProtocolCommands(reply.ReplyObserverInterface):
             nose.tools.eq_(os.path.isfile(keyfile_path), False)
 
         try:
-            for name in user_list:  # delete and clean up user and homedir
+            for name in user_list: # delete and clean up user and homedir
                 pw_ent = pwd.getpwnam(name)
                 if pw_ent is not None:
                     os.system('userdel -r %s' % name)
@@ -999,7 +999,6 @@ class TestProtocolCommands(reply.ReplyObserverInterface):
             user_list.append(user_name)
             req_rpc = self._rpc_wait_reply(doc)
             r = req_rpc.get_reply()
-            print(r["payload"]["return_code"])
             nose.tools.eq_(r["payload"]["return_code"], 0)
 
             pw_ent = pwd.getpwnam(user_name)
@@ -1024,7 +1023,7 @@ class TestProtocolCommands(reply.ReplyObserverInterface):
         nose.tools.eq_(os.listdir(log_dir), [])
 
         try:
-            for name in user_list:  # delete and clean up user and homedir
+            for name in user_list: # delete and clean up user and homedir
                 pw_ent = pwd.getpwnam(name)
                 if pw_ent is not None:
                     os.system('userdel -r %s' % name)

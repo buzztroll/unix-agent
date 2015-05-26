@@ -69,7 +69,7 @@ class RunScript(jobs.Plugin):
         try:
             with open(script_file, "wb") as f:
                 f.write(data)
-            os.chmod(script_file, 0x755)
+            os.chmod(script_file, 0o755)
 
             command_list = []
             if self.args.runUnderSudo:

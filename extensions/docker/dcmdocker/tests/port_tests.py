@@ -2,7 +2,7 @@ import collections
 import os
 import socket
 import unittest
-import urlparse
+import urllib.parse
 from nose.plugins import skip
 import uuid
 
@@ -24,7 +24,7 @@ class TestDockerContainer(unittest.TestCase):
         cls.host = '127.0.0.1'
         if 'DOCKER_HOST' in os.environ:
             docker_url = os.environ['DOCKER_HOST']
-            p = urlparse.urlparse(docker_url)
+            p = urllib.parse.urlparse(docker_url)
             cls.host = p.hostname
 
         def parse_fake(opt_list):
@@ -84,7 +84,7 @@ class TestDockerContainer(unittest.TestCase):
         reply_obj = reply['reply_object']
         container_id = reply_obj['Id']
 
-        print "Container ID " + container_id
+        print("Container ID " + container_id)
         arguments = {
             "container": container_id,
             "port_bindings": {5050: [("0.0.0.0", 5050)]}

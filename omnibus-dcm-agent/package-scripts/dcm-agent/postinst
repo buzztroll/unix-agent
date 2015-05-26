@@ -116,7 +116,7 @@ echo "env -i PATH=$PATH $BASEDIRNAME/bin/enstratiusinitd " '$@' >> $startup_fnam
 chmod 755 $startup_fname
 
 echo "Create the configuration file"
-/opt/dcm-agent/embedded/agentve/bin/dcm-agent-configure -v -I -U $DCM_USERNAME -p $BASEDIRNAME
+/opt/dcm-agent/agentve/bin/dcm-agent-configure -v -I -U $DCM_USERNAME -p $BASEDIRNAME
 if [ $? -ne 0 ]; then
     echo "The default configuration failed"
     exit 1

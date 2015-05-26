@@ -43,7 +43,7 @@ Configure
 =========
 
 The safest way to configure the agent is with the configuration tool which can
-be found at /opt/dcm-agent/embedded/bin/dcm-agent-configure
+be found at /opt/dcm-agent/agentve/bin/dcm-agent-configure
 
 New Configuration
 -----------------

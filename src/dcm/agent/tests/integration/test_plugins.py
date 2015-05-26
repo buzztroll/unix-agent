@@ -220,7 +220,7 @@ echo $1 > %s
 
         sha256 = hashlib.sha256()
         sha256.update(bash_script.encode())
-        actual_checksum = sha256.hexdigest().decode()
+        actual_checksum = sha256.hexdigest()
 
         b64_script = base64.b64encode(bash_script.encode()).decode()
 
@@ -250,7 +250,7 @@ echo $1 > %s
         sha256.update(str(uuid.uuid4()).encode())
         actual_checksum = sha256.hexdigest()
 
-        b64_script = base64.b64encode(bash_script).decode()
+        b64_script = base64.b64encode(bash_script.encode()).decode()
 
         arguments = {'b64script': b64_script, 'checksum': actual_checksum,
                      'arguments': [msg]}

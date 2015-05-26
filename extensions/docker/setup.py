@@ -9,7 +9,7 @@ setup(name='dcmdocker',
       author_email="support@enstratius.com",
       url="http://www.enstratius.com/",
       packages=find_packages(),
-      install_requires=["docker-py == 0.5.0"],
+      install_requires=["docker-py == 1.2.2"],
       classifiers=[
           "Development Status :: 4 - Beta",
           "Environment :: Console",

@@ -16,17 +16,17 @@ class TestWebSocketClient(ws4py_client.WebSocketClient):
         self.done = False
 
     def opened(self):
-        print "open"
+        print("open")
         _g_logger.debug("Web socket %s has been opened" % self._url)
 
     def closed(self, code, reason=None):
-        print "closed " + str(code) + ":" + str(reason)
+        print("closed " + str(code) + ":" + str(reason))
         _g_logger.info("Web socket %s has been closed %d %s"
                        % (self._url, code, reason))
         self.done = True
 
     def received_message(self, m):
-        print m.data
+        print(str(m.data))
         _g_logger.debug("WS message received " + m.data)
 
 

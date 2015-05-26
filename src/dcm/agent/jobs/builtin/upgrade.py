@@ -48,9 +48,9 @@ class Upgrade(jobs.Plugin):
         script_file = self.conf.get_temp_file("upgradescript")
         opts_file = self.conf.get_temp_file("upgradeopts")
         try:
-            with open(script_file, "w") as f:
+            with open(script_file, "wb") as f:
                 f.write(data)
-            os.chmod(script_file, 0x755)
+            os.chmod(script_file, 0o755)
 
             # write the configuration to a file.  We may not be safe assuming
             # that the default configuration location is correct

@@ -110,7 +110,7 @@ class FetchRunScript(jobs.Plugin):
             return reply
 
         try:
-            os.chmod(exe_file, 0x755)
+            os.chmod(exe_file, 0o755)
 
             command_list = []
             if self.args.runUnderSudo:

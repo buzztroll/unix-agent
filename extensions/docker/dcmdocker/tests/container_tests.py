@@ -153,7 +153,7 @@ class TestDockerContainer(unittest.TestCase):
         reply_obj = reply['reply_object']
         container_id = reply_obj['Id']
 
-        print "Container ID " + container_id
+        print("Container ID " + container_id)
         arguments = {
             "container": container_id
         }
@@ -164,8 +164,8 @@ class TestDockerContainer(unittest.TestCase):
         plugin = top_container.TopContainer(
             self.conf, "400", {}, "test", arguments)
         reply = plugin.run()
-        print "top"
-        print reply
+        print("top")
+        print(str(reply))
 
         plugin = stop_container.StopContainer(
             self.conf, "400", {}, "test", arguments)

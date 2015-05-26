@@ -168,7 +168,6 @@ def run_command(conf, cmd_line, cwd=None, in_env=None):
         # read everything logged and send it to the logger
         with open(log_file, "r") as fptr:
             for line in fptr.readlines():
-                line = line.decode('utf-8')
                 if line.strip():
                     log_to_dcm(logging.INFO, line)
         os.remove(log_file)
@@ -354,12 +353,12 @@ def build_assertion_exception(logger, msg):
 
 def base64type_convertor(b64str):
     """base 64 decoded string"""
-    return base64.b64decode(b64str).decode("utf-8")
+    return base64.b64decode(b64str.encode()).decode("utf-8")
 
 
 def base64type_binary_convertor(b64str):
     """base 64 decoded string"""
-    return base64.b64decode(b64str)
+    return base64.b64decode(b64str.encode())
 
 
 def user_name(proposed_name):
@@ -485,7 +484,7 @@ def package_suffix(distro_name):
 def http_get_to_file(url, filename):
     try:
         response = urllib.request.urlopen(url)
-        with open(filename, "w") as fptr:
+        with open(filename, "wb") as fptr:
             data = response.read(64*1024)
             while data:
                 fptr.write(data)
