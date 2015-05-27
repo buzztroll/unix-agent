@@ -10,9 +10,8 @@ import dcm.agent.tests.utils.general as test_utils
 from dcm.agent.events import global_space as dcm_events
 
 
-class FakeMsgHandle(object):
-    def incoming_parent_q_message(self, incoming_doc):
-        pass
+def fake_incoming_message(incoming_doc):
+    pass
 
 
 class TestBackoff(unittest.TestCase):
@@ -40,7 +39,6 @@ class TestBackoff(unittest.TestCase):
         m = mock.Mock()
         conn_obj.return_value = m
 
-        fm = FakeMsgHandle()
         server_url = "wss://notreal.com"
 
         ws = websocket.WebSocketConnection(
@@ -48,7 +46,7 @@ class TestBackoff(unittest.TestCase):
             backoff_amount=int(backoff_seconds*1000),
             max_backoff=int(max_backoff_seconds*1000))
 
-        ws.connect(fm, FakeHS())
+        ws.connect(fake_incoming_message, FakeHS())
 
         nw = datetime.datetime.now()
         done_time = nw + datetime.timedelta(seconds=run_time_seconds)
@@ -131,7 +129,6 @@ class TestBackoff(unittest.TestCase):
         m = mock.Mock()
         conn_obj.return_value = m
 
-        fm = FakeMsgHandle()
         server_url = "wss://notreal.com"
 
         ws = websocket.WebSocketConnection(
@@ -157,8 +154,7 @@ class TestBackoff(unittest.TestCase):
                     force_backoff=force_time)
                 return hs
 
-
-        ws.connect(fm, FakeHS())
+        ws.connect(fake_incoming_message, FakeHS())
 
         nw = datetime.datetime.now()
         done_time = nw + datetime.timedelta(seconds=run_time_seconds)

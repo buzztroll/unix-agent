@@ -85,7 +85,7 @@ class TestCloudMetadata(unittest.TestCase):
 
     def test_get_instance_data_google_none(self):
         self.conf.meta_data_object = cloudmetadata.GCEMetaData(
-            base_url=self.conf.cloud_metadata_url)
+            self.conf, base_url=self.conf.cloud_metadata_url)
         self._get_instance_data_cloud_none(cloudmetadata.CLOUD_TYPES.Google)
 
     def test_get_instance_data_joyent_none(self):
@@ -94,7 +94,7 @@ class TestCloudMetadata(unittest.TestCase):
 
     def test_get_instance_data_azure_none(self):
         self.conf.cloud_type = cloudmetadata.CLOUD_TYPES.Azure
-        self.conf.meta_data_object = cloudmetadata.AzureMetaData()
+        self.conf.meta_data_object = cloudmetadata.AzureMetaData(self.conf)
         inst_id = self.conf.meta_data_object.get_instance_id()
         # this will likely change in the future
         hostname = socket.gethostname()
@@ -105,7 +105,7 @@ class TestCloudMetadata(unittest.TestCase):
     @patch('dcm.agent.cloudmetadata._get_metadata_server_url_data')
     def test_get_aws_instance_id(self, mock_server):
         self.conf.meta_data_object = cloudmetadata.AWSMetaData(
-            base_url=self.conf.cloud_metadata_url)
+            self.conf, base_url=self.conf.cloud_metadata_url)
         mock_server.return_value = 'fake_instance_id'
         instance_id = self.conf.meta_data_object.get_instance_id()
         self.assertEqual(instance_id, 'fake_instance_id')
@@ -113,7 +113,7 @@ class TestCloudMetadata(unittest.TestCase):
     @patch('dcm.agent.cloudmetadata._get_metadata_server_url_data')
     def test_get_gce_instance_id(self, mock_server):
         self.conf.meta_data_object = cloudmetadata.GCEMetaData(
-            base_url=self.conf.cloud_metadata_url)
+            self.conf, base_url=self.conf.cloud_metadata_url)
         mock_server.return_value = 'fake_instance_id'
         instance_id = self.conf.meta_data_object.get_instance_id()
         self.assertEqual(instance_id, 'fake_instance_id')
@@ -127,7 +127,7 @@ class TestCloudMetadata(unittest.TestCase):
 
     @patch('dcm.agent.cloudmetadata.AzureMetaData.get_instance_id')
     def test_get_azure_instance_id(self, mock_instance_id):
-        self.conf.meta_data_object = cloudmetadata.AzureMetaData()
+        self.conf.meta_data_object = cloudmetadata.AzureMetaData(self.conf)
         mock_instance_id.return_value =\
             'fake_instance_id:fake_instance_id:fake_instance_id'
         instance_id = self.conf.meta_data_object.get_instance_id()
@@ -137,7 +137,7 @@ class TestCloudMetadata(unittest.TestCase):
     @patch('dcm.agent.cloudmetadata._get_metadata_server_url_data')
     def test_get_aws_startup_script(self, mock_server):
         self.conf.meta_data_object = cloudmetadata.AWSMetaData(
-            base_url=self.conf.cloud_metadata_url)
+            self.conf, base_url=self.conf.cloud_metadata_url)
         mock_server.return_value = 'fake_startup_script'
         script = self.conf.meta_data_object.get_startup_script()
         self.assertEqual(script, 'fake_startup_script')
@@ -145,7 +145,7 @@ class TestCloudMetadata(unittest.TestCase):
     @patch('dcm.agent.cloudmetadata._get_metadata_server_url_data')
     def test_get_gce_startup_script(self, mock_server):
         self.conf.meta_data_object = cloudmetadata.GCEMetaData(
-            base_url=self.conf.cloud_metadata_url)
+            self.conf, base_url=self.conf.cloud_metadata_url)
         mock_server.return_value = 'fake_startup_script'
         script = self.conf.meta_data_object.get_startup_script()
         self.assertEqual(script, 'fake_startup_script')
@@ -159,7 +159,7 @@ class TestCloudMetadata(unittest.TestCase):
 
     @patch('dcm.agent.cloudmetadata._get_metadata_server_url_data')
     def test_get_openstack_startup_script(self, mock_cloud_meta):
-        self.conf.meta_data_object = cloudmetadata.OpenStackMetaData()
+        self.conf.meta_data_object = cloudmetadata.OpenStackMetaData(self.conf)
         mock_cloud_meta.return_value = 'fake_startup_script'
         script = self.conf.meta_data_object.get_startup_script()
         self.assertEqual(script, 'fake_startup_script')

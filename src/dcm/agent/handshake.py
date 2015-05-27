@@ -19,10 +19,8 @@ import string
 import uuid
 
 import dcm.agent
-import dcm.agent.cloudmetadata as cloudmetadata
 import dcm.agent.exceptions as exceptions
 import dcm.agent.jobs as jobs
-import dcm.agent.utils as utils
 
 
 _g_logger = logging.getLogger(__name__)
@@ -86,10 +84,7 @@ class HandshakeManager(object):
             self._generate_token()
 
     def validate_token_file(self):
-        token_dir = os.path.join(self.conf.storage_base_dir, "secure")
-        if not os.path.exists(token_dir):
-            os.mkdir(token_dir, 0700)
-
+        token_dir = self.conf.get_secure_dir()
         # At some point we should validate that only this user can read this
         # file
         # utils.validate_file_permissions(
@@ -172,12 +167,7 @@ class HandshakeManager(object):
         meta_data_object = self.conf.meta_data_object
         ipv4s = meta_data_object.get_handshake_ip_address()
         ipv6s = []
-        injected_id = cloudmetadata.get_env_injected_id()
-        if not injected_id:
-            _g_logger.debug("No ENV ID set, check the cloud specific "
-                            "metadata object")
-            injected_id = meta_data_object.get_injected_id()
-
+        injected_id = meta_data_object.get_injected_id()
         vm_instance = meta_data_object.get_instance_id()
 
         handshake_doc = {

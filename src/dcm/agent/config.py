@@ -289,6 +289,17 @@ class AgentConfig(object):
                     raise exceptions.AgentOptionSectionNotFoundException(
                         opt.name)
 
+    def get_secure_dir(self):
+        token_dir = os.path.join(self.storage_base_dir, "secure")
+        if not os.path.exists(token_dir):
+            os.mkdir(token_dir, 0700)
+        # At some point we should validate that only this user can read this
+        # file
+        # utils.validate_file_permissions(
+        #     token_dir, username=self.conf.system_user, permissions=0700)
+        #
+        return token_dir
+
 
 def build_options_list():
     option_list = [

@@ -60,14 +60,10 @@ def normalize_cloud_name(cloud_name):
     return None
 
 
-def get_env_injected_id():
-    try:
-        return os.environ[ENV_INJECTED_ID_KEY]
-    except KeyError:
-        return None
-
-
 class CloudMetaData(object):
+    def __init__(self, conf):
+        self.conf = conf
+
     def get_cloud_metadata(self, key):
         return None
 
@@ -76,6 +72,25 @@ class CloudMetaData(object):
         return None
 
     def get_injected_id(self):
+        # The injected ID should be retrieved as follows:
+        # 1) if it is available from the cloud specific metadata use that
+        # 2) if in the env use that
+        # 3) if the secure file has it use that
+        secure_dir = self.conf.get_secure_dir()
+        id_file_path = os.path.join(secure_dir, "injected_id")
+
+        if ENV_INJECTED_ID_KEY in os.environ:
+            env_key = os.environ[ENV_INJECTED_ID_KEY]
+            with os.fdopen(os.open(id_file_path,
+                           os.O_WRONLY | os.O_CREAT,
+                           int("0600", 8)), "wb") as fptr:
+                fptr.write(env_key)
+            return env_key
+
+        if os.path.exists(id_file_path):
+            with open(id_file_path, "r") as fptr:
+                env_key = fptr.readline()
+                return env_key
         return None
 
     def get_startup_script(self):
@@ -100,6 +115,10 @@ class CloudMetaData(object):
 
 
 class UnknownMetaData(CloudMetaData):
+    def __init__(self, conf):
+        super(UnknownMetaData, self).__init__(conf)
+        _g_logger.debug("Using Unknown")
+
     def is_effective_cloud(self):
         return True
 
@@ -108,7 +127,9 @@ class UnknownMetaData(CloudMetaData):
 
 
 class AWSMetaData(CloudMetaData):
-    def __init__(self, base_url=None):
+    def __init__(self, conf, base_url=None):
+        super(AWSMetaData, self).__init__(conf)
+        _g_logger.debug("Using AWS")
         if base_url is not None:
             self.base_url = base_url
         else:
@@ -137,7 +158,9 @@ class AWSMetaData(CloudMetaData):
     def get_injected_id(self):
         injected_id = self.get_cloud_metadata("es:dmcm-launch-id")
         _g_logger.debug("AWS injected ID is %s" % str(injected_id))
-        return injected_id
+        if injected_id:
+            return injected_id
+        return super(AWSMetaData, self).get_injected_id()
 
     def get_ipv4_addresses(self):
         # do caching
@@ -163,6 +186,7 @@ class AWSMetaData(CloudMetaData):
 
 class CloudStackMetaData(CloudMetaData):
     def __init__(self, conf, base_url=None):
+        super(CloudStackMetaData, self).__init__(conf)
         _g_logger.debug("Using CloudStack")
         self.conf = conf
         self.base_url = base_url
@@ -196,6 +220,8 @@ class CloudStackMetaData(CloudMetaData):
 
 class JoyentMetaData(CloudMetaData):
     def __init__(self, conf):
+        super(JoyentMetaData, self).__init__(conf)
+        _g_logger.debug("Using Joyent")
         self.conf = conf
         self.cmd_location = None
 
@@ -236,7 +262,9 @@ class JoyentMetaData(CloudMetaData):
     def get_injected_id(self):
         injected_id = self.get_cloud_metadata("es:dmcm-launch-id")
         _g_logger.debug("Injected ID is %s" % str(injected_id))
-        return injected_id
+        if injected_id:
+            return injected_id
+        return super(JoyentMetaData, self).get_injected_id()
 
     def get_startup_script(self):
         return self.get_cloud_metadata("user-script")
@@ -246,7 +274,9 @@ class JoyentMetaData(CloudMetaData):
 
 
 class GCEMetaData(CloudMetaData):
-    def __init__(self, base_url=None):
+    def __init__(self, conf, base_url=None):
+        super(GCEMetaData, self).__init__(conf)
+        _g_logger.debug("Using GCE")
         if base_url is not None:
             self.base_url = base_url
         else:
@@ -276,7 +306,9 @@ class GCEMetaData(CloudMetaData):
         injected_id = self.get_cloud_metadata(
             "instance/attributes/es-dmcm-launch-id")
         _g_logger.debug("Instance ID is %s" % str(injected_id))
-        return injected_id
+        if injected_id:
+            return injected_id
+        return super(GCEMetaData, self).get_injected_id()
 
     def get_handshake_ip_address(self):
         return utils.get_ipv4_addresses()
@@ -286,6 +318,10 @@ class GCEMetaData(CloudMetaData):
 
 
 class AzureMetaData(CloudMetaData):
+    def __init__(self, conf, base_url=None):
+        super(AzureMetaData, self).__init__(conf)
+        _g_logger.debug("Using Azure")
+
     def get_instance_id(self):
         hostname = socket.gethostname()
         if not hostname:
@@ -301,7 +337,9 @@ class AzureMetaData(CloudMetaData):
 
 
 class OpenStackMetaData(CloudMetaData):
-    def __init__(self, base_url=None):
+    def __init__(self, conf, base_url=None):
+        super(OpenStackMetaData, self).__init__(conf)
+        _g_logger.debug("Using OpenStack")
         if base_url is not None:
             self.base_url = base_url
         else:
@@ -333,6 +371,10 @@ class OpenStackMetaData(CloudMetaData):
 
 
 class KonamiMetaData(CloudMetaData):
+    def __init__(self, conf):
+        super(KonamiMetaData, self).__init__(conf)
+        _g_logger.debug("Using Konami")
+
     def get_cloud_metadata(self, key):
         env_str = "DCM_KONAMI_%s" % key
         try:
@@ -344,7 +386,10 @@ class KonamiMetaData(CloudMetaData):
         return self.get_cloud_metadata("INSTANCE_ID")
 
     def get_injected_id(self):
-        return self.get_cloud_metadata("INJECTED_ID")
+        injected_id = self.get_cloud_metadata("INJECTED_ID")
+        if injected_id:
+            return injected_id
+        return super(KonamiMetaData, self).get_injected_id()
 
     def get_handshake_ip_address(self):
         private = self.get_cloud_metadata("PRIVATE_IP")
@@ -359,25 +404,26 @@ def set_metadata_object(conf):
     cloud_name = normalize_cloud_name(conf.cloud_type)
 
     if cloud_name == CLOUD_TYPES.Amazon:
-        meta_data_obj = AWSMetaData(base_url=conf.cloud_metadata_url)
+        meta_data_obj = AWSMetaData(conf, base_url=conf.cloud_metadata_url)
     elif cloud_name == CLOUD_TYPES.Joyent:
         meta_data_obj = JoyentMetaData(conf)
     elif cloud_name == CLOUD_TYPES.Google:
-        meta_data_obj = GCEMetaData(base_url=conf.cloud_metadata_url)
+        meta_data_obj = GCEMetaData(conf, base_url=conf.cloud_metadata_url)
     elif cloud_name == CLOUD_TYPES.Azure:
-        meta_data_obj = AzureMetaData()
+        meta_data_obj = AzureMetaData(conf)
     elif cloud_name == CLOUD_TYPES.OpenStack:
-        meta_data_obj = OpenStackMetaData(base_url=conf.cloud_metadata_url)
+        meta_data_obj = OpenStackMetaData(conf,
+                                          base_url=conf.cloud_metadata_url)
     elif cloud_name == CLOUD_TYPES.CloudStack or \
             cloud_name == CLOUD_TYPES.CloudStack3:
         meta_data_obj = CloudStackMetaData(
             conf, base_url=conf.cloud_metadata_url)
     elif cloud_name == CLOUD_TYPES.Konami:
-        meta_data_obj = KonamiMetaData()
+        meta_data_obj = KonamiMetaData(conf)
     elif cloud_name == CLOUD_TYPES.Other:
-        meta_data_obj = UnknownMetaData()
+        meta_data_obj = UnknownMetaData(conf)
     else:
-        meta_data_obj = CloudMetaData()
+        meta_data_obj = CloudMetaData(conf)
 
     _g_logger.debug("Metadata comes from " + str(meta_data_obj))
 
@@ -390,12 +436,12 @@ def guess_effective_cloud(conf):
     # guessed (eg: Azure)
     ordered_list_of_clouds = [
         JoyentMetaData(conf),
-        OpenStackMetaData(),
+        OpenStackMetaData(conf),
         CloudStackMetaData(conf),
-        AWSMetaData(),
-        GCEMetaData(),
-        AzureMetaData(),
-        UnknownMetaData()
+        AWSMetaData(conf),
+        GCEMetaData(conf),
+        AzureMetaData(conf),
+        UnknownMetaData(conf)
     ]
     for md in ordered_list_of_clouds:
         if md.is_effective_cloud():
