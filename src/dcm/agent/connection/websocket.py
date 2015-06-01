@@ -163,7 +163,7 @@ class RepeatQueue(object):
 
 class _WebSocketClient(ws4py_client.WebSocketClient):
 
-    def __init__(self, manager, url, _receive_object, protocols=None,
+    def __init__(self, manager, url, receive_callback, protocols=None,
                  extensions=None,
                  heartbeat_freq=None, ssl_options=None, headers=None):
         ws4py_client.WebSocketClient.__init__(
@@ -172,7 +172,7 @@ class _WebSocketClient(ws4py_client.WebSocketClient):
             headers=headers)
         _g_logger.info("Attempting to connect to %s" % url)
 
-        self._receive_object = _receive_object
+        self._receive_callback = receive_callback
         self.manager = manager
         self._url = url
         self._dcm_closed_called = False
@@ -234,8 +234,8 @@ class WebSocketConnection(threading.Thread):
         self._backoff.force_backoff_time(backoff_seconds)
 
     @agent_utils.class_method_sync
-    def connect(self, receive_object, handshake_manager):
-        self._receive_object = receive_object
+    def connect(self, receive_callback, handshake_manager):
+        self._receive_callback = receive_callback
         self._handshake_manager = handshake_manager
         self.start()
 
@@ -335,7 +335,7 @@ class WebSocketConnection(threading.Thread):
     def _sm_connect(self):
         try:
             self._ws = _WebSocketClient(
-                self, self._server_url, self._receive_object,
+                self, self._server_url, self._receive_callback,
                 protocols=['dcm'], heartbeat_freq=self._heartbeat_freq,
                 ssl_options=self._ssl_options)
             dcm_events.register_callback(
@@ -392,7 +392,7 @@ class WebSocketConnection(threading.Thread):
 
     def _sm_open_incoming_message(self, incoming_data=None):
         _g_logger.debug("New message received")
-        dcm_events.register_callback(self._receive_object, args=[incoming_data])
+        dcm_events.register_callback(self._receive_callback, args=[incoming_data])
         self._backoff.activity()
 
     def _sm_hs_failed(self):

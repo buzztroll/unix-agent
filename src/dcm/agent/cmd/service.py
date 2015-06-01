@@ -106,7 +106,7 @@ class DCMAgent(object):
 
             logger.set_dcm_connection(self.conf, self.conn)
 
-            self.conn.connect(self.request_listener,
+            self.conn.connect(self.request_listener.incoming_parent_q_message,
                               self.handshaker)
             self.disp.start_workers(self.request_listener)
 

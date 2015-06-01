@@ -103,7 +103,7 @@ class TestConnection(conniface.ConnectionInterface):
                     self.incoming_parent_q_message,
                     args=[request_id, retrans.request_doc])
 
-    def connect(self, receive_object, handshake_manager):
+    def connect(self, receive_callback, handshake_manager):
         pass
 
     def close(self):
