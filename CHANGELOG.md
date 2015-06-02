@@ -1,3 +1,23 @@
+# 0.9.21 (2015-6-2)
+
+Features:
+* Cleaning all the files in the secure directory.
+* Persisting the injected ID if it is found in the environment.
+* Added functionality to clean images.
+* Config object now contains system sudo.
+* Refactored backoff mechanism and added forced backoff.
+* Bumped agent to protocol version 104.
+
+Bug Fixes:
+* Fixed how clean image reports to DCM.
+* Refactored the event distribution model.
+* Refactored the state machine software for general use.
+* Reorganized imports and did PEP8 cleanup.
+* Moved Konami to DCM.
+* Allowing compression option to run script plugin.
+* Fixed a security issue that could allow nonadministrative users 
+  with access to the server to spoof the agent connection. 
+
 # 0.9.20 (2015-4-27)
 
 Features:
