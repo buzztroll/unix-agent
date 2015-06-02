@@ -292,7 +292,7 @@ class AgentConfig(object):
     def get_secure_dir(self):
         token_dir = os.path.join(self.storage_base_dir, "secure")
         if not os.path.exists(token_dir):
-            os.mkdir(token_dir, 0700)
+            os.mkdir(token_dir, 0o700)
         # At some point we should validate that only this user can read this
         # file
         # utils.validate_file_permissions(

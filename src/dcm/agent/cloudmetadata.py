@@ -85,7 +85,7 @@ class CloudMetaData(object):
             env_key = os.environ[ENV_INJECTED_ID_KEY]
             with os.fdopen(os.open(id_file_path,
                            os.O_WRONLY | os.O_CREAT,
-                           int("0600", 8)), "wb") as fptr:
+                           0o600), "wb") as fptr:
                 fptr.write(env_key)
             return env_key
 
