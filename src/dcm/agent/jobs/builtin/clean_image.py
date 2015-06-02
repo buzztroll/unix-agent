@@ -25,7 +25,7 @@ class CleanImage(jobs.Plugin):
         res_doc = {"return_code": 0,
                    "message": "Keys were deleted successfully",
                    "error_message": "",
-                   "reply_type": "void"}
+                   "reply_type": "job_description"}
 
         exe = self.conf.get_script_location("delete_keys.py")
         cmd = [
@@ -46,7 +46,7 @@ class CleanImage(jobs.Plugin):
         res_doc = {"return_code": 0,
                    "message": "History deleted successfully",
                    "error_message": "",
-                   "reply_type": "void"}
+                   "reply_type": "job_description"}
 
         exe = self.conf.get_script_location("delete_history.py")
         cmd = [
@@ -67,7 +67,7 @@ class CleanImage(jobs.Plugin):
         res_doc = {"return_code": 0,
                    "message": "General cleanup completed successfully",
                    "error_message": "",
-                   "reply_type": "void"}
+                   "reply_type": "job_description"}
 
         exe = self.conf.get_script_location("general_cleanup.py")
         cmd = [
@@ -118,7 +118,7 @@ class CleanImage(jobs.Plugin):
             return {"return_code": 0,
                     "message": "Clean image command ran successfully",
                     "error_message": "",
-                    "reply_type": "void"}
+                    "reply_type": "job_description"}
         except Exception as ex:
             _g_logger.exception("clean_image failed: " + str(ex))
             return {'return_code': 1, "message": ex.message}
