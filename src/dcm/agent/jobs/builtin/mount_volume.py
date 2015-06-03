@@ -116,7 +116,7 @@ class MountVolume(direct_pass.DirectPass):
             key_file_dir = os.path.join(self.conf.storage_base_dir, "tmp")
         key_file_path = os.path.join(key_file_dir, "fskey.txt")
 
-        with open(key_file_path, "w") as fptr:
+        with open(key_file_path, "wb") as fptr:
             fptr.write(self.args.encryptedFsEncryptionKey)
 
         return key_file_path
@@ -220,7 +220,8 @@ class MountVolume(direct_pass.DirectPass):
                                                 key_file_path)
                     target_device = encrypted_device
                 finally:
-                    utils.safe_delete(key_file_path)
+                    if key_file_path:
+                        utils.safe_delete(key_file_path)
             self.format(target_device)
         elif self.args.encryptedFsEncryptionKey:
             key_file_path = None
