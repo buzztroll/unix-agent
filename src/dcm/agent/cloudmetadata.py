@@ -81,18 +81,19 @@ class CloudMetaData(object):
         secure_dir = self.conf.get_secure_dir()
         id_file_path = os.path.join(secure_dir, "injected_id")
 
+        env_key = None
         if ENV_INJECTED_ID_KEY in os.environ:
             env_key = os.environ[ENV_INJECTED_ID_KEY]
             with os.fdopen(os.open(id_file_path,
                            os.O_WRONLY | os.O_CREAT,
                            0o600), "wb") as fptr:
-                fptr.write(env_key)
-            return env_key
-
-        if os.path.exists(id_file_path):
+                fptr.write(env_key.encode())
+        elif os.path.exists(id_file_path):
             with open(id_file_path, "r") as fptr:
                 env_key = fptr.readline()
-                return env_key
+
+        if env_key and env_key.strip() != "":
+            return env_key.strip()
         return None
 
     def get_startup_script(self):

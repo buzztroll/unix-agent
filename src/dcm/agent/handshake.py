@@ -82,6 +82,7 @@ class HandshakeManager(object):
                                     % self._token_file_path)
         if self._token is None:
             self._generate_token()
+        _g_logger.debug("TOKEN IS " + self._token)
 
     def validate_token_file(self):
         token_dir = self.conf.get_secure_dir()

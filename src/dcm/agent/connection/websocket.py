@@ -194,7 +194,7 @@ class _WebSocketClient(ws4py_client.WebSocketClient):
 
     def received_message(self, m):
         _g_wire_logger.debug("INCOMING\n--------\n%s\n--------" % str(m.data))
-        json_doc = json.loads(m.data)
+        json_doc = json.loads(m.data.decode())
         self.manager.event_incoming_message(json_doc)
 
     def send(self, payload, binary=False):
@@ -392,7 +392,7 @@ class WebSocketConnection(threading.Thread):
     def _sm_open_incoming_message(self, incoming_data=None):
         _g_logger.debug("New message received")
         dcm_events.register_callback(
-            self._receive_object, args=[incoming_data])
+            self._receive_callback, args=[incoming_data])
         self._backoff.activity()
 
     def _sm_hs_failed(self):
