@@ -17,7 +17,6 @@ import dcm.agent.config as config
 import dcm.agent.dispatcher as dispatcher
 import dcm.agent.exceptions as exceptions
 import dcm.agent.handshake as handshake
-import dcm.agent.intrusion_detection as intrusion_detect
 import dcm.agent.logger as logger
 import dcm.agent.messaging as messaging
 import dcm.agent.messaging.persistence as persistence
@@ -61,7 +60,6 @@ class DCMAgent(object):
         self.request_listener = None
         self.g_logger = logging.getLogger(__name__)
         self._db = persistence.SQLiteAgentDB(conf.storage_dbfile)
-        self._intrusion_detection = None
         self.db_cleaner = None
         self.handshaker = handshake.HandshakeManager(self.conf, self._db)
 
@@ -101,12 +99,6 @@ class DCMAgent(object):
             self.request_listener = reply.RequestListener(
                 self.conf, self.conn, self.disp, self._db)
 
-            self._intrusion_detection = \
-                intrusion_detect.setup_intrusion_detection(
-                    self.conf, self.conn)
-            if self._intrusion_detection:
-                self._intrusion_detection.start()
-
             logger.set_dcm_connection(self.conf, self.conn)
 
             self.conn.connect(self.request_listener.incoming_parent_q_message,
@@ -134,8 +126,6 @@ class DCMAgent(object):
             self.g_logger.debug("Shutting down the db cleaner runner")
             self.db_cleaner.done()
             self.db_cleaner.join()
-        if self._intrusion_detection:
-            self._intrusion_detection.stop()
         self.g_logger.debug("Shutting down the job runner")
         self.conf.stop_job_runner()
         if self.request_listener:
