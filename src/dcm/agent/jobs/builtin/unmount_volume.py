@@ -48,7 +48,7 @@ class UnmountVolume(jobs.Plugin):
                     "error_message": "", "reply_type": "void"}
         except exceptions.AgentExecutableException as aex:
             return {"return_code": 1, "message": "",
-                    "error_message": aex.message, "reply_type": "void"}
+                    "error_message": str(aex), "reply_type": "void"}
 
 
 def load_plugin(conf, job_id, items_map, name, arguments):

@@ -26,7 +26,9 @@ import string
 import sys
 import tempfile
 import traceback
-import urllib2
+import urllib.error
+import urllib.parse
+import urllib.request
 
 import dcm
 
@@ -68,7 +70,7 @@ def not_implemented_decorator(func):
     def call(self, *args, **kwargs):
         def raise_error(func):
             raise exceptions.AgentNotImplementedException(
-                func_name=func.func_name)
+                func_name=func.__name__)
         return raise_error(func)
     return call
 
@@ -152,12 +154,20 @@ def run_command(conf, cmd_line, cwd=None, in_env=None):
                                    cwd=cwd,
                                    env=env)
         stdout, stderr = process.communicate()
+        if stdout is not None:
+            stdout = stdout.decode()
+        else:
+            stdout = ""
+        if stderr is not None:
+            stderr = stderr.decode()
+        else:
+            stderr = ""
+
         rc = (stdout, stderr, process.returncode)
     if log_file:
         # read everything logged and send it to the logger
         with open(log_file, "r") as fptr:
             for line in fptr.readlines():
-                line = line.decode('utf-8')
                 if line.strip():
                     log_to_dcm(logging.INFO, line)
         os.remove(log_file)
@@ -257,7 +267,7 @@ def get_device_mappings(conf):
             }
             device_mapping_list.append(device_mapping)
     except Exception as ex:
-        _g_logger.exception(ex.message)
+        _g_logger.exception(str(ex))
         _g_logger.error("listDevice stdout: " + stdout)
         _g_logger.error("listDevice stderr: " + stderr)
         raise
@@ -326,7 +336,7 @@ def log_to_dcm(lvl, msg, *args, **kwargs):
 
 def build_assertion_exception(logger, msg):
     details_out = " === Stack trace Begin === " + os.linesep
-    for threadId, stack in sys._current_frames().items():
+    for threadId, stack in list(sys._current_frames().items()):
         details_out = details_out + os.linesep + \
             "##### Thread %s #####" % threadId + os.linesep
         for filename, lineno, name, line in traceback.extract_stack(stack):
@@ -343,12 +353,12 @@ def build_assertion_exception(logger, msg):
 
 def base64type_convertor(b64str):
     """base 64 decoded string"""
-    return base64.b64decode(b64str).decode("utf-8")
+    return base64.b64decode(b64str.encode()).decode("utf-8")
 
 
 def base64type_binary_convertor(b64str):
     """base 64 decoded string"""
-    return base64.b64decode(b64str)
+    return base64.b64decode(b64str.encode())
 
 
 def user_name(proposed_name):
@@ -473,13 +483,13 @@ def package_suffix(distro_name):
 
 def http_get_to_file(url, filename):
     try:
-        response = urllib2.urlopen(url)
-        with open(filename, "w") as fptr:
+        response = urllib.request.urlopen(url)
+        with open(filename, "wb") as fptr:
             data = response.read(64*1024)
             while data:
                 fptr.write(data)
                 data = response.read(64*1024)
-    except urllib2.URLError:
+    except urllib.error.URLError:
         raise exceptions.AgentRuntimeException(
             "There was a problem connecting to the URL " + url)
 
@@ -584,7 +594,7 @@ def get_ipv6_addresses():
 def validate_file_permissions(file_path, username=None, permissions=None):
     stat_info = os.stat(file_path)
     if permissions is not None:
-        if (stat_info.st_mode & 0777) != permissions:
+        if (stat_info.st_mode & 0o777) != permissions:
             raise exceptions.AgentFilePermissionsException(
                 "The path %s does not have the proper permissions" % file_path)
 

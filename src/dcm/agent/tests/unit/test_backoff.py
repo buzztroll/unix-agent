@@ -149,7 +149,7 @@ class TestBackoff(unittest.TestCase):
                 return {}
 
             def incoming_document(self, incoming_doc):
-                hs =  handshake.HandshakeIncomingReply(
+                hs = handshake.HandshakeIncomingReply(
                     handshake.HandshakeIncomingReply.REPLY_CODE_FORCE_BACKOFF,
                     force_backoff=force_time)
                 return hs

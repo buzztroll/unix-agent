@@ -1,4 +1,4 @@
-from types import DictType, ModuleType
+from types import ModuleType
 import unittest
 
 import dcm.agent.cmd.gen_docs as gen_docs
@@ -43,7 +43,7 @@ class TestGenDocs(unittest.TestCase):
             x = gen_docs.dynamic_import(file)
             y = gen_docs.get_protocol_argument_dict(x)
             # it is a dict
-            assert (isinstance(y, DictType))
+            assert (isinstance(y, dict))
 
     def test_gen_md_output(self):
         """
@@ -62,7 +62,7 @@ class TestGenDocs(unittest.TestCase):
 
         filetwo = 'add_user.py'
         expected_output_filetwo = """## add_user.py parameters:
-- lastName: The user's last name
+- administrator: A string that is either 'true' or 'false' which indicates if the new user should have ssh access
     - optional: True
     - type: str
     - default: None
@@ -70,17 +70,17 @@ class TestGenDocs(unittest.TestCase):
     - optional: True
     - type: str
     - default: None
-- userId: The new unix account name to be created
-    - optional: True
-    - type: Safe user name
-    - default: None
-- administrator: A string that is either 'true' or 'false' which indicates if the new user should have ssh access
-    - optional: True
-    - type: str
-    - default: None
 - firstName: The user's first name
     - optional: True
     - type: str
+    - default: None
+- lastName: The user's last name
+    - optional: True
+    - type: str
+    - default: None
+- userId: The new unix account name to be created
+    - optional: True
+    - type: Safe user name
     - default: None
 """
 

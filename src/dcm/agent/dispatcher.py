@@ -1,7 +1,9 @@
 import logging
-import Queue
+import queue
 import threading
-import urllib
+import urllib.error
+import urllib.parse
+import urllib.request
 
 import dcm.agent.longrunners as longrunners
 import dcm.agent.utils as utils
@@ -49,13 +51,13 @@ def _run_plugin(conf, items_map, request_id, command, arguments):
         _g_logger.exception(
             "Worker %s thread had a top level error when "
             "running job %s : %s"
-            % (threading.current_thread().getName(), request_id, ex.message))
+            % (threading.current_thread().getName(), request_id, str(ex)))
         utils.log_to_dcm(
             logging.ERROR,
             "A top level error occurred handling %s %s" % (command,
                                                            request_id))
         reply_doc = {
-            'Exception': urllib.quote(str(ex.message).encode('utf-8')),
+            'Exception': urllib.parse.quote(str(ex).encode('utf-8')),
             'return_code': 1}
     finally:
         _g_logger.info("Task done job " + request_id)
@@ -113,7 +115,7 @@ class Worker(threading.Thread):
 
                         _g_logger.info("Reply message sent for command " +
                                        workload.payload["command"])
-                except Queue.Empty:
+                except queue.Empty:
                     pass
                 except:
                     _g_logger.exception(
@@ -128,7 +130,7 @@ class Dispatcher(object):
     def __init__(self, conf):
         self._conf = conf
         self.workers = []
-        self.worker_q = Queue.Queue()
+        self.worker_q = queue.Queue()
         self._long_runner = longrunners.LongRunner(conf)
         self.request_listener = None
 
@@ -192,7 +194,7 @@ class Dispatcher(object):
                     payload["arguments"])
             except BaseException as ex:
                 reply_doc = {
-                    'Exception': urllib.quote(str(ex.message).encode('utf-8')),
+                    'Exception': urllib.parse.quote(str(ex).encode('utf-8')),
                     'return_code': 1}
             else:
                 payload_doc = dj.get_message_payload()

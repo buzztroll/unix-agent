@@ -22,7 +22,7 @@ if __name__ == "__main__":
     try:
         dcm_basedir = os.environ.get('DCM_BASEDIR')
     except Exception as ex:
-        _g_logger.exception("general_cleanup failed: " + str(ex.message))
+        _g_logger.exception("general_cleanup failed: " + str(ex))
         sys.exit(1)
     bin_path = os.path.dirname(os.path.abspath(__file__))
     main(bin_path, dcm_basedir)

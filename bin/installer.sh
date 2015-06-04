@@ -97,7 +97,7 @@ if [ $# -gt 0 ]; then
 fi
 
 function agent_exists() {
-    if [ -f "/opt/dcm-agent/embedded/agentve/bin/dcm-agent" ]; then
+    if [ -f "/opt/dcm-agent/agentve/bin/dcm-agent" ]; then
         return 0
     else
         return 1
@@ -106,7 +106,7 @@ function agent_exists() {
 
 function reconfig_prep() {
    echo "The existing version is"
-   /opt/dcm-agent/embedded/agentve/bin/dcm-agent --version
+   /opt/dcm-agent/agentve/bin/dcm-agent --version
    /etc/init.d/dcm-agent stop
    pkill -9 dcm-agent
    rm -f /dcm/etc/agentdb.sql
@@ -425,8 +425,8 @@ fi
 
 # Create configuration file and optionally install chef client(subject to change).
 if [ "X$1" == "X" ]; then
-    echo /opt/dcm-agent/embedded/bin/dcm-agent-configure -i --base-path /dcm
-    env -i PATH=$PATH /opt/dcm-agent/embedded/bin/dcm-agent-configure -i --base-path /dcm
+    echo /opt/dcm-agent/bin/dcm-agent-configure -i --base-path /dcm
+    env -i PATH=$PATH /opt/dcm-agent/bin/dcm-agent-configure -i --base-path /dcm
     # Install optional packages.
     install_chef_client
 else
@@ -442,8 +442,8 @@ else
           ;;
         esac
       done
-    echo /opt/dcm-agent/embedded/bin/dcm-agent-configure $@
-    env -i PATH=$PATH /opt/dcm-agent/embedded/bin/dcm-agent-configure $@
+    echo /opt/dcm-agent/bin/dcm-agent-configure $@
+    env -i PATH=$PATH /opt/dcm-agent/bin/dcm-agent-configure $@
 fi
 
 # Notification for non-native packages.

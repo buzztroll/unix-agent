@@ -82,6 +82,7 @@ class HandshakeManager(object):
                                     % self._token_file_path)
         if self._token is None:
             self._generate_token()
+        _g_logger.debug("TOKEN IS " + self._token)
 
     def validate_token_file(self):
         token_dir = self.conf.get_secure_dir()
@@ -135,20 +136,21 @@ class HandshakeManager(object):
             # This signals that we used a bad token but have the chance to
             # recover by trying a new one
             self._generate_token()
-            hs =  HandshakeIncomingReply(HandshakeIncomingReply.REPLY_CODE_BAD_TOKEN)
+            hs = HandshakeIncomingReply(HandshakeIncomingReply.REPLY_CODE_BAD_TOKEN)
         elif incoming_doc['return_code'] ==\
                 HandshakeIncomingReply.REPLY_CODE_UNAUTHORIZED:
             # unauthorized, like anything else can be transient.  Sometimes
             # dcm is just not ready for the agent when it comes up
-            hs =  HandshakeIncomingReply(HandshakeIncomingReply.REPLY_CODE_UNAUTHORIZED)
+            hs = HandshakeIncomingReply(HandshakeIncomingReply.REPLY_CODE_UNAUTHORIZED)
         elif incoming_doc['return_code'] ==\
                 HandshakeIncomingReply.REPLY_CODE_FORCE_BACKOFF:
             try:
                 backoff = incoming_doc[HandshakeIncomingReply.REPLY_KEY_FORCE_BACKOFF]
             except KeyError:
                 backoff = HandshakeIncomingReply.DEFAULT_FORCE_BACKOFF
-            hs =  HandshakeIncomingReply(HandshakeIncomingReply.REPLY_CODE_FORCE_BACKOFF,
-                                 force_backoff=backoff)
+            hs = HandshakeIncomingReply(
+                HandshakeIncomingReply.REPLY_CODE_FORCE_BACKOFF,
+                force_backoff=backoff)
         else:
             raise exceptions.AgentHandshakeUnknownTypeException(
                 "Unknown exception type")

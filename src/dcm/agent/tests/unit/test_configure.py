@@ -1,4 +1,4 @@
-import ConfigParser
+import configparser
 import os
 import shutil
 import sys
@@ -37,7 +37,7 @@ class TestConfigure(unittest.TestCase):
         rc = configure.main(conf_args)
         self.assertEqual(rc, 0)
 
-        parser = ConfigParser.SafeConfigParser()
+        parser = configparser.SafeConfigParser()
         parser.read(os.path.join(self.test_base_path, "etc", "agent.conf"))
         cloud_from_file = parser.get("cloud", "type")
         self.assertEqual(cloudmetadata.CLOUD_TYPES.Amazon, cloud_from_file)
@@ -73,7 +73,7 @@ class TestConfigure(unittest.TestCase):
             rc = configure.main(conf_args)
             self.assertEqual(rc, 0)
 
-            parser = ConfigParser.SafeConfigParser()
+            parser = configparser.SafeConfigParser()
             parser.read(os.path.join(self.test_base_path, "etc", "agent.conf"))
 
             cloud_from_file = parser.get("cloud", "type")
@@ -116,7 +116,7 @@ class TestConfigure(unittest.TestCase):
         rc = configure.main(conf_args)
         self.assertEqual(rc, 0)
 
-        parser = ConfigParser.SafeConfigParser()
+        parser = configparser.SafeConfigParser()
         parser.read(os.path.join(self.test_base_path, "etc", "agent.conf"))
 
         agentmanager_url = parser.get("connection", "agentmanager_url")
@@ -182,7 +182,7 @@ class TestConfigure(unittest.TestCase):
 
         self.assertEqual(rc, 0)
 
-        parser = ConfigParser.SafeConfigParser()
+        parser = configparser.SafeConfigParser()
         parser.read(os.path.join(self.test_base_path, "etc", "agent.conf"))
 
         agentmanager_url = parser.get("connection", "agentmanager_url")

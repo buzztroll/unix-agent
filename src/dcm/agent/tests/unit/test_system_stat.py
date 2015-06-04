@@ -54,7 +54,7 @@ class TestSystemStats(unittest.TestCase):
         hold_count1 = 10
         interval1 = 0.1
         name1 = str(uuid.uuid4())
-        hold_count2 = hold_count1 / 2
+        hold_count2 = int(hold_count1 / 2)
         interval2 = interval1 * 2
         name2 = str(uuid.uuid4())
 

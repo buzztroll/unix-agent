@@ -45,8 +45,8 @@ class UserCallback(object):
     def __repr__(self):
         return str(self._func)
 
-    def __cmp__(self, other):
-        return cmp(self._time_ready, other.get_time_ready())
+    def __lt__(self, other):
+        return self._time_ready < other.get_time_ready()
 
     def call(self):
         try:
@@ -238,7 +238,7 @@ class EventSpace(object):
             self._cond.release()
 
     def _run_threaded(self, ub):
-        this_thread = threading.currentThread() 
+        this_thread = threading.currentThread()
         try:
             ub.call()
         finally:

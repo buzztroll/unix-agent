@@ -15,8 +15,9 @@ import hashlib
 import logging
 import os
 import sys
-import urllib2
-import urlparse
+import urllib.error
+import urllib.parse
+import urllib.request
 
 import dcm.agent.exceptions as exceptions
 import dcm.agent.jobs as jobs
@@ -54,12 +55,12 @@ class FetchRunScript(jobs.Plugin):
         exe_file = self.conf.get_temp_file("fetch_exe_file")
         timeout = self.args.connect_timeout
 
-        u_req = urllib2.Request(self.args.url)
+        u_req = urllib.request.Request(self.args.url)
         u_req.add_header("Content-Type", "application/x-www-form-urlencoded")
         u_req.add_header("Connection", "Keep-Alive")
         u_req.add_header("Cache-Control", "no-cache")
 
-        response = urllib2.urlopen(u_req, timeout=timeout)
+        response = urllib.request.urlopen(u_req, timeout=timeout)
         if response.code != 200:
             raise exceptions.AgentRuntimeException("The url %s was invalid"
                                                    % self.args.url)
@@ -78,7 +79,7 @@ class FetchRunScript(jobs.Plugin):
         return exe_file, True
 
     def _do_file(self):
-        url_parts = urlparse.urlparse(self.args.url)
+        url_parts = urllib.parse.urlparse(self.args.url)
         return url_parts.path, False
 
     def run(self):
@@ -86,14 +87,14 @@ class FetchRunScript(jobs.Plugin):
                        'https': self._do_http_download,
                        'file': self._do_file}
 
-        url_parts = urlparse.urlparse(self.args.url)
+        url_parts = urllib.parse.urlparse(self.args.url)
 
-        if url_parts.scheme not in _scheme_map.keys():
+        if url_parts.scheme not in list(_scheme_map.keys()):
             # for now we are only accepting http.  in the future we will
             # switch on scheme to decide what cloud storage protocol module
             # to use
             raise exceptions.AgentOptionValueException(
-                "url", url_parts.scheme, str(_scheme_map.keys()))
+                "url", url_parts.scheme, str(list(_scheme_map.keys())))
 
         exe_file = None
         func = _scheme_map[url_parts.scheme]
@@ -104,12 +105,12 @@ class FetchRunScript(jobs.Plugin):
                 raise
             reply = {"return_code": 1, "message": "",
                      "error_message": "Failed to download the URL %s: %s" %
-                                      (self.args.url, ex.message),
+                                      (self.args.url, str(ex)),
                      "reply_type": "void"}
             return reply
 
         try:
-            os.chmod(exe_file, 0x755)
+            os.chmod(exe_file, 0o755)
 
             command_list = []
             if self.args.runUnderSudo:

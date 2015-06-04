@@ -1,4 +1,4 @@
-import ConfigParser
+import configparser
 import libcloud.security
 import logging
 import logging.config
@@ -107,10 +107,10 @@ class ConfigOpt(object):
         if default is None:
             default = self.default
         try:
-            v = parser.get(self.section, self.name, default)
-        except ConfigParser.NoOptionError:
+            v = parser.get(self.section, self.name, fallback=default)
+        except configparser.NoOptionError:
             v = default
-        except ConfigParser.NoSectionError:
+        except configparser.NoSectionError:
             v = default
         if v is None:
             return v
@@ -268,7 +268,7 @@ class AgentConfig(object):
 
             relative_path = os.path.dirname(config_file)
 
-            parser = ConfigParser.SafeConfigParser()
+            parser = configparser.SafeConfigParser()
             parser.read(config_file)
 
             if add_features is not None:
@@ -276,7 +276,7 @@ class AgentConfig(object):
                     features = parser.items(add_features)
                     for k, v in features:
                         self.features[k] = v
-                except ConfigParser.NoSectionError:
+                except configparser.NoSectionError:
                     pass
 
             for opt in option_list:
@@ -285,14 +285,14 @@ class AgentConfig(object):
                     v = opt.get_value(parser, relative_path=relative_path,
                                       default=getattr(self, oname))
                     setattr(self, oname, v)
-                except ConfigParser.NoSectionError:
+                except configparser.NoSectionError:
                     raise exceptions.AgentOptionSectionNotFoundException(
                         opt.name)
 
     def get_secure_dir(self):
         token_dir = os.path.join(self.storage_base_dir, "secure")
         if not os.path.exists(token_dir):
-            os.mkdir(token_dir, 0700)
+            os.mkdir(token_dir, 0o700)
         # At some point we should validate that only this user can read this
         # file
         # utils.validate_file_permissions(

@@ -37,7 +37,7 @@ if [ $? -ne 0 ]; then
     exit 1
 fi
 
-. /opt/dcm-agent/embedded/agentve/bin/activate
+. /opt/dcm-agent/agentve/bin/activate
 
 
 # if 4 is not null test the local install

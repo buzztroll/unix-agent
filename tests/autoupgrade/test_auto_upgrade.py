@@ -40,7 +40,7 @@ def test_done(rc, message):
     _g_rc = rc
     _g_message = message
     _g_event.set()
-    print message
+    print(message)
     sys.exit(rc)
 
 
@@ -71,12 +71,12 @@ class FakeAgentManager(object):
 
     #@utils.class_method_sync
     def message_done(self):
-        print "request done"
+        print("request done")
         self._sm.event_occurred(ServerEvent.REQUEST_COMPLETE)
 
     @utils.class_method_sync
     def incoming_message(self, incoming_doc):
-        print "incoming message"
+        print("incoming message")
         self._sm.event_occurred(ServerEvent.INCOMING_MESSAGE, msg=incoming_doc)
 
     def get_handshake_doc(self):
@@ -102,14 +102,14 @@ class FakeAgentManager(object):
     def _sm_first_handshake(self, msg=None):
         message_dict = json.loads(msg)
         self._first_agent_version = message_dict['version']
-        print "First agent version is %s" % self._first_agent_version
+        print("First agent version is %s" % self._first_agent_version)
 
         self._conn.send(self.get_handshake_doc())
 
         doc = {
             "command": "initialize",
             "arguments": {"cloudId": "3",
-                          "customerId": 100L,
+                          "customerId": 100,
                           "regionId": None,
                           "zoneId": None,
                           "serverId": self.agent_id,
@@ -134,24 +134,24 @@ class FakeAgentManager(object):
         self._req_RPC.send()
 
     def _sm_outstanding_request_msg(self, msg=None):
-        print msg
+        print(msg)
         self._req_RPC.incoming_message(json.loads(msg))
 
     def _sm_upgrade_done(self):
-        print "The upgrade completed nicely"
+        print("The upgrade completed nicely")
 
     def _sm_upgrade_closed(self):
-        print "The upgrade close but still may be working"
+        print("The upgrade close but still may be working")
 
     def _sm_failed(self):
-        print "failed"
+        print("failed")
         test_done(1, "FAILED")
 
     def _sm_second_handshake(self, msg=None):
-        print "second handshake is in"
+        print("second handshake is in")
         message_dict = json.loads(msg)
         self._second_agent_version = message_dict['version']
-        print "Second agent version is %s" % self._first_agent_version
+        print("Second agent version is %s" % self._first_agent_version)
         self._conn.send(self.get_handshake_doc())
         if self._second_agent_version != self.expected_version:
             test_done(1, "The upgraded version does not seem correct.  "
@@ -218,11 +218,11 @@ fake_am = FakeAgentManager()
 class FakeServerWebsocket(WebSocket):
 
     def opened(self):
-        print "opened connection"
+        print("opened connection")
         fake_am.set_connection(self)
 
     def closed(self, code, reason=None):
-        print "Closed " + reason
+        print("Closed " + reason)
         fake_am.ws_closed()
 
     def received_message(self, message):
@@ -231,12 +231,12 @@ class FakeServerWebsocket(WebSocket):
             if d['type'] == "LOG":
                 return
         except Exception as ex:
-            print ex
+            print(str(ex))
             pass
         try:
             fake_am.incoming_message(message.data)
         except Exception as ex:
-            print ex
+            print(str(ex))
             raise
 
     def send(self, doc):
@@ -259,7 +259,7 @@ def make_this_server():
 
     global _g_message
     global _g_rc
-    print _g_message
+    print(_g_message)
     return _g_rc
 
 

@@ -105,8 +105,8 @@ class JobRunnerWorker(multiprocessing.Process):
         stderr = sync_job.get_stderr()
 
         _g_logger.info("command %s:  STDOUT: %s" %
-                       (sync_job.cmd, unicode(stdout, errors='ignore')))
-        _g_logger.info("STDERR: %s " % unicode(stderr, errors='ignore'))
+                       (sync_job.cmd, stdout))
+        _g_logger.info("STDERR: %s " % stderr)
         _g_logger.info("Return code: " + str(rc))
 
         return (rc, stdout, stderr)

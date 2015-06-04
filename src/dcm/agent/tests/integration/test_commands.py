@@ -1,7 +1,7 @@
 import json
 import os
 import shutil
-import StringIO
+import io
 import tempfile
 import unittest
 
@@ -36,8 +36,8 @@ class TestSingleCommands(unittest.TestCase):
             incoming_lines, outfile, reply_ignore_count=drop_count)
 
     def _simple_message(self, drop_count, command, stdout, stderr):
-        inlines = StringIO.StringIO(command)
-        outfile = StringIO.StringIO()
+        inlines = io.StringIO(command)
+        outfile = io.StringIO()
         conn = self._get_conn(inlines, outfile, drop_count)
         request_listener = reply.RequestListener(
             self.conf_obj, conn, self.disp, self.db)
@@ -48,7 +48,10 @@ class TestSingleCommands(unittest.TestCase):
             # wait until the request is done
             while request_listener.get_messages_processed() != 1:
                 dcm_events.poll()
-            output = json.loads(outfile.buflist[0])
+
+            line = outfile.getvalue().split('\n')[0]
+            line = line.strip()
+            output = json.loads(line)
             self.assertEquals(stdout, output['stdout'].strip())
             self.assertEquals(stderr, output['stderr'])
             self.assertEquals(0, output['return_code'])
@@ -57,31 +60,31 @@ class TestSingleCommands(unittest.TestCase):
             request_listener.wait_for_all_nicely()
 
     def test_message_no_fail(self):
-        self._simple_message(0, "echo Hello1", "Hello1", None)
+        self._simple_message(0, "echo Hello1", "Hello1", '')
 
     def test_message_drop_1_ack(self):
-        self._simple_message(1, "echo Hello1", "Hello1", None)
+        self._simple_message(1, "echo Hello1", "Hello1", '')
 
     def test_message_drop_3_acks(self):
-        self._simple_message(3, "echo Hello1", "Hello1", None)
+        self._simple_message(3, "echo Hello1", "Hello1", '')
 
     def test_long_message_no_fail(self):
-        self._simple_message(0, "sleep 3", "", None)
+        self._simple_message(0, "sleep 3", "", '')
 
     def test_long_message_drop_1_ack(self):
-        self._simple_message(1, "sleep 3", "", None)
+        self._simple_message(1, "sleep 3", "", '')
 
     def test_long_message_drop_3_ack(self):
-        self._simple_message(3, "sleep 3", "", None)
+        self._simple_message(3, "sleep 3", "", '')
 
     def test_short_sleep_message_no_fail(self):
-        self._simple_message(0, "sleep 3", "", None)
+        self._simple_message(0, "sleep 3", "", '')
 
     def test_short_sleep_message_drop_1_ack(self):
-        self._simple_message(1, "sleep 0.1", "", None)
+        self._simple_message(1, "sleep 0.1", "", '')
 
     def test_short_sleep_message_drop_3_ack(self):
-        self._simple_message(3, "sleep 0.1", "", None)
+        self._simple_message(3, "sleep 0.1", "", '')
 
 
 class TestSerialCommands(unittest.TestCase):
@@ -112,8 +115,8 @@ class TestSerialCommands(unittest.TestCase):
             for i in range(count):
                 in_command = in_command + command + os.linesep
 
-        inlines = StringIO.StringIO(in_command)
-        outfile = StringIO.StringIO()
+        inlines = io.StringIO(in_command)
+        outfile = io.StringIO()
 
         conn = self._get_conn(inlines, outfile, drop_count)
         request_listener = reply.RequestListener(
@@ -125,9 +128,11 @@ class TestSerialCommands(unittest.TestCase):
         while request_listener.get_messages_processed() < count:
             dcm_events.poll()
 
-        for i in range(count):
-            output = json.loads(outfile.buflist[i])
-            self.assertEquals(0, output['return_code'])
+            for line in outfile.getvalue().split('\n'):
+                line = line.strip()
+                if line:
+                    output = json.loads(line.strip())
+                    self.assertEquals(0, output['return_code'])
 
         request_listener.shutdown()
         request_listener.wait_for_all_nicely()
@@ -183,8 +188,8 @@ class TestRetransmission(unittest.TestCase):
         try:
             in_command = os.linesep.join(command)
             count = len(command)
-            inlines = StringIO.StringIO(in_command)
-            outfile = StringIO.StringIO()
+            inlines = io.StringIO(in_command)
+            outfile = io.StringIO()
             conn = self._get_conn(inlines, outfile, drop_count, retrans_list)
 
             request_listener = reply.RequestListener(
@@ -200,9 +205,11 @@ class TestRetransmission(unittest.TestCase):
             while request_listener.get_messages_processed() < count:
                 dcm_events.poll()
 
-            for i in range(count):
-                output = json.loads(outfile.buflist[i])
-                self.assertEquals(0, output['return_code'])
+            for line in outfile.getvalue().split('\n'):
+                line = line.strip()
+                if line:
+                    output = json.loads(line.strip())
+                    self.assertEquals(0, output['return_code'])
         finally:
             if request_listener:
                 request_listener.shutdown()

@@ -54,8 +54,8 @@ class TestJobRunner(unittest.TestCase):
 
         def _sleep_func():
             (stdout, stderr, rc) = self.jr.run_command(["/bin/sleep", "5"])
-            print stderr
-            print stdout
+            print(stderr)
+            print(stdout)
             self.assertEqual(0, rc)
 
         threads = []

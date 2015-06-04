@@ -28,7 +28,7 @@ class SystemStats(object):
         except Exception as ex:
             _g_logger.exception(
                 "The system stat collector " + self.name + " failed with " +
-                ex.message)
+                str(ex))
 
     # this should only be called from below wait(), and thus locked
     def add_value(self, v):
@@ -100,7 +100,7 @@ def start_new_system_stat(
         name, stat_type, hold_count, check_interval, **kwvals):
     if stat_type not in _g_stat_object_map:
         raise exceptions.AgentOptionValueException(
-            "stat_type", stat_type, str(_g_stat_object_map.keys()))
+            "stat_type", stat_type, str(list(_g_stat_object_map.keys())))
 
     _g_lock.acquire()
     try:
@@ -151,7 +151,7 @@ def stop_stats(name):
 def clean_up_all():
     _g_lock.acquire()
     try:
-        for name in _g_active_stats.keys():
+        for name in list(_g_active_stats.keys()):
             stat_obj = _g_active_stats[name]
             stat_obj.stop()
             del _g_active_stats[name]

@@ -15,7 +15,9 @@ import json
 import logging
 import os
 import socket
-import urllib2
+import urllib.error
+import urllib.parse
+import urllib.request
 
 import dcm.agent.exceptions as exceptions
 import dcm.agent.utils as utils
@@ -79,18 +81,19 @@ class CloudMetaData(object):
         secure_dir = self.conf.get_secure_dir()
         id_file_path = os.path.join(secure_dir, "injected_id")
 
+        env_key = None
         if ENV_INJECTED_ID_KEY in os.environ:
             env_key = os.environ[ENV_INJECTED_ID_KEY]
             with os.fdopen(os.open(id_file_path,
                            os.O_WRONLY | os.O_CREAT,
-                           int("0600", 8)), "wb") as fptr:
-                fptr.write(env_key)
-            return env_key
-
-        if os.path.exists(id_file_path):
+                           0o600), "wb") as fptr:
+                fptr.write(env_key.encode())
+        elif os.path.exists(id_file_path):
             with open(id_file_path, "r") as fptr:
                 env_key = fptr.readline()
-                return env_key
+
+        if env_key and env_key.strip() != "":
+            return env_key.strip()
         return None
 
     def get_startup_script(self):
@@ -466,7 +469,7 @@ def _get_metadata_server_url_data(url, timeout=10, headers=None):
         return None
 
     _g_logger.debug("Attempting to get metadata at %s" % url)
-    u_req = urllib2.Request(url)
+    u_req = urllib.request.Request(url)
     u_req.add_header("Content-Type", "application/x-www-form-urlencoded")
     u_req.add_header("Connection", "Keep-Alive")
     u_req.add_header("Cache-Control", "no-cache")
@@ -475,12 +478,12 @@ def _get_metadata_server_url_data(url, timeout=10, headers=None):
             u_req.add_header(h, v)
 
     try:
-        response = urllib2.urlopen(u_req, timeout=timeout)
-    except urllib2.URLError:
-        _g_logger.debug("URL error message is %s" % urllib2.URLError.message)
+        response = urllib.request.urlopen(u_req, timeout=timeout)
+    except urllib.error.URLError as ex:
+        _g_logger.debug("URL error message is %s" % ex.reason)
         return None
     if response.code != 200:
         _g_logger.debug("URL response code is %s" % str(response.code))
         return None
-    data = response.read().strip()
+    data = response.read().decode()
     return data

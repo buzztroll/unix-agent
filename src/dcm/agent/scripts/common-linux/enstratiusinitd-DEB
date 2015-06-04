@@ -10,7 +10,7 @@ DIRNAME=`dirname $0`
 . /lib/lsb/init-functions
 
 PIDFILE=$DCM_BASEDIR/dcm-agent.pid
-EXE=/opt/dcm-agent/embedded/agentve/bin/dcm-agent
+EXE=/opt/dcm-agent/agentve/bin/dcm-agent
 CONF=$DCM_BASEDIR/etc/agent.conf
 
 

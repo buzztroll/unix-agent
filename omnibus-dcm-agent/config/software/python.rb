@@ -1,5 +1,6 @@
 #
-# Copyright 2013-2014 Chef Software, Inc.
+# Copyright:: Copyright (c) 2013-2014 Chef Software, Inc.
+# License:: Apache License, Version 2.0
 #
 # Licensed under the Apache License, Version 2.0 (the "License");
 # you may not use this file except in compliance with the License.
@@ -15,8 +16,9 @@
 #
 
 name "python"
-default_version "2.7.8"
+default_version "3.4.1"
 
+dependency "readline"
 dependency "sqlite"
 dependency "gdbm"
 dependency "ncurses"
@@ -24,29 +26,29 @@ dependency "zlib"
 dependency "openssl"
 dependency "bzip2"
 
-source url: "http://python.org/ftp/python/#{version}/Python-#{version}.tgz",
-       md5: 'd4bca0159acb0b44a781292b5231936f'
+source :url => "http://python.org/ftp/python/#{version}/Python-#{version}.tgz",
+       :md5 => '26695450087f8587b26d0b6a63844af5'
 
 relative_path "Python-#{version}"
 
+LIB_PATH = %W(#{install_dir}/embedded/lib #{install_dir}/embedded/lib64 #{install_dir}/embedded/libexec #{install_dir}/lib #{install_dir}/lib64 #{install_dir}/libexec)
+
+env = {
+  "CFLAGS" => "-I#{install_dir}/embedded/include -O3 -g -pipe",
+  "LDFLAGS" => "-Wl,-rpath,#{LIB_PATH.join(',-rpath,')} -L#{LIB_PATH.join(' -L')} -I#{install_dir}/embedded/include",
+  "CPPFLAGS" => "-I#{install_dir}/embedded/include",
+}
+
 build do
-  env = {
-    "CFLAGS" => "-I#{install_dir}/embedded/include -O3 -g -pipe",
-    "LDFLAGS" => "-Wl,-rpath,#{install_dir}/embedded/lib -L#{install_dir}/embedded/lib",
-    "CPPFLAGS" => "-I#{install_dir}/embedded/include",
-  }
+  command ["./configure",
+           "--prefix=#{install_dir}/embedded",
+           "--enable-shared",
+           "--with-dbmliborder=gdbm"].join(" "), :env => env
+  command "make", :env => env
+  command "make install", :env => env
 
-  command "./configure" \
-          " --prefix=#{install_dir}/embedded" \
-          " --enable-shared" \
-          " --with-dbmliborder=gdbm", env: env
-
-  make env: env
-  make "install", env: env
-
-  # There exists no configure flag to tell Python to not compile readline
-  delete "#{install_dir}/embedded/lib/python2.7/lib-dynload/readline.*"
-
-  # Remove unused extension which is known to make healthchecks fail on CentOS 6
-  delete "#{install_dir}/embedded/lib/python2.7/lib-dynload/_bsddb.*"
+  # There exists no configure flag to tell Python to not compile readline support :(
+  block do
+    FileUtils.rm_f(Dir.glob("#{install_dir}/lib/python3.4/lib-dynload/dbm.*"))
+  end
 end

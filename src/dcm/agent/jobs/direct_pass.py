@@ -47,7 +47,7 @@ class DirectPass(jobs.Plugin):
                     "exist." % name)
         except KeyError as ke:
             raise exceptions.AgentPluginConfigException(
-                "The plugin %s requires the option %s" % (name, ke.message))
+                "The plugin %s requires the option %s" % (name, str(ke)))
 
     def run(self):
         command_list = [self.exe_path]

@@ -64,7 +64,7 @@ echo $1 > %s
             fptr.write(bash_script)
 
         sha256 = hashlib.sha256()
-        sha256.update(bash_script)
+        sha256.update(bash_script.encode())
         actual_checksum = sha256.hexdigest()
 
         url = "file://%s" % exefile
@@ -92,7 +92,7 @@ echo $1 > %s
 """ % tmpfilepath
 
         sha256 = hashlib.sha256()
-        sha256.update(bash_script)
+        sha256.update(bash_script.encode())
         actual_checksum = sha256.hexdigest()
 
         key_name = "fetchtestkey" + str(uuid.uuid4()).split("-")[0]
@@ -138,7 +138,7 @@ echo $1 > %s
 
         sha256 = hashlib.sha256()
         # fake a checksum for failure
-        sha256.update(str(uuid.uuid4()))
+        sha256.update(str(uuid.uuid4()).encode())
         actual_checksum = sha256.hexdigest()
 
         key_name = "fetchtestkey" + str(uuid.uuid4()).split("-")[0]
@@ -169,14 +169,14 @@ class TestRunScriptPlugin(unittest.TestCase):
 
     def test_zipped_python_run(self):
         py_script = """import sys
-print sys.executable
+print(sys.executable)
 """
-        compressed_script = zlib.compress(py_script)
-        b64_py = base64.b64encode(compressed_script)
+        compressed_script = zlib.compress(py_script.encode())
+        b64_py = base64.b64encode(compressed_script).decode()
 
         sha256 = hashlib.sha256()
         # fake a checksum for failure
-        sha256.update(py_script)
+        sha256.update(py_script.encode())
         actual_checksum = sha256.hexdigest()
 
         arguments = {'b64script': b64_py,
@@ -192,13 +192,13 @@ print sys.executable
 
     def test_python_run(self):
         py_script = """import sys
-print sys.executable
+print(sys.executable)
 """
-        b64_py = base64.b64encode(py_script)
+        b64_py = base64.b64encode(py_script.encode()).decode()
 
         sha256 = hashlib.sha256()
         # fake a checksum for failure
-        sha256.update(py_script)
+        sha256.update(py_script.encode())
         actual_checksum = sha256.hexdigest()
 
         arguments = {'b64script': b64_py,
@@ -219,10 +219,10 @@ echo $1 > %s
 """ % tmpfilepath
 
         sha256 = hashlib.sha256()
-        sha256.update(bash_script)
+        sha256.update(bash_script.encode())
         actual_checksum = sha256.hexdigest()
 
-        b64_script = base64.b64encode(bash_script)
+        b64_script = base64.b64encode(bash_script.encode()).decode()
 
         arguments = {'b64script': b64_script, 'checksum': actual_checksum,
                      'arguments': [msg]}
@@ -247,10 +247,10 @@ echo $1 > %s
 """ % tmpfilepath
 
         sha256 = hashlib.sha256()
-        sha256.update(str(uuid.uuid4()))
+        sha256.update(str(uuid.uuid4()).encode())
         actual_checksum = sha256.hexdigest()
 
-        b64_script = base64.b64encode(bash_script)
+        b64_script = base64.b64encode(bash_script.encode()).decode()
 
         arguments = {'b64script': b64_script, 'checksum': actual_checksum,
                      'arguments': [msg]}

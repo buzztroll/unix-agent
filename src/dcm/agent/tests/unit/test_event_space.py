@@ -112,7 +112,6 @@ class TestEventSpace(unittest.TestCase):
         event_space.poll(timeblock=d*2.0)
         self.assertEqual(len(x_val), 0)
 
-
     def test_cancel_already_run_callback(self):
         """cancel an already called callback and verify return code"""
         event_space = events.EventSpace()
@@ -154,7 +153,7 @@ class TestEventSpace(unittest.TestCase):
         event_space.poll(timeblock=0.0)
         self.assertIsNone(ub.get_rc())
         self.assertTrue(ub.has_run())
-        self.assertEqual(exception_message, ub.get_exception().message)
+        self.assertEqual(exception_message, str(ub.get_exception()))
 
     def test_wakeup_on_register(self):
         # test that callback happens when it is registered after the poll
@@ -214,7 +213,6 @@ class TestEventSpace(unittest.TestCase):
             self.assertEqual(apple_param, apple_val)
             y_val.append(threading.currentThread())
             is_called_event.set()
-
 
         event_space.register_callback(test_callback,
                                       args=[x_val, y_val],

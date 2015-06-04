@@ -79,7 +79,7 @@ class ReplyRPC(object):
                     self._reply_message_timer.cancel()
                 except Exception as ex:
                     _g_logger.info("an exception occurred when trying to "
-                                   "cancel the timer: " + ex.message)
+                                   "cancel the timer: " + str(ex))
 
     @agent_util.class_method_sync
     def ack(self,
@@ -765,7 +765,7 @@ class RequestListener(object):
                 return
 
             if incoming_doc["type"] == message_types.MessageTypes.REQUEST:
-                if len(self._requests.keys()) >=\
+                if len(list(self._requests.keys())) >=\
                         self._conf.messaging_max_at_once > -1:
 
                     # short circuit the case where the agent is too busy
@@ -869,7 +869,7 @@ class RequestListener(object):
         self._shutdown = True  #  XXX danger will robinson.  Lets not have
                                #  too many flags like this before we have
                                #  a state machine
-        for req in self._requests.values():
+        for req in list(self._requests.values()):
             req.kill()
 
     def wait_for_all_nicely(self):
@@ -889,7 +889,7 @@ class RequestListener(object):
         except Exception as ex:
             _g_logger.exception(
                 "Error processing the message: %s" % str(incoming_doc))
-            self._send_bad_message_reply(incoming_doc, ex.message)
+            self._send_bad_message_reply(incoming_doc, str(ex))
 
 
 class ReplyObserverInterface(object):

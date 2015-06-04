@@ -1,5 +1,5 @@
-pep8==1.4.5
-boto==2.35.2
+pep8==1.6.2
+boto==2.38.0
 nose>1.3
 mock>=1.0
 coverage==3.7.1

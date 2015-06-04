@@ -29,12 +29,12 @@ class GetAgentData(jobs.Plugin):
 
     def run(self):
         load = psutil.cpu_percent(0.1)  # NOTE(buzztroll) blocks for 0.1s
-        (total_ram, used_ram, f, p) = psutil.phymem_usage()
+        mem_usage = psutil.phymem_usage()
         reply_object = {
             "cpu_count": multiprocessing.cpu_count(),
             "cpu_load": load,
-            "current_ram": used_ram,
-            "max_ram": total_ram,
+            "current_ram": mem_usage.used,
+            "max_ram": mem_usage.total,
             "processes": len(psutil.get_pid_list()),
             "platform": platform.platform(),
             # NOTE(buzztroll) I am not sure what to do with server state.  The

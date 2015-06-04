@@ -16,7 +16,7 @@ import datetime
 import errno
 import json
 import logging
-import Queue
+import queue
 import socket
 import ssl
 import threading
@@ -102,7 +102,7 @@ class Backoff(object):
 class RepeatQueue(object):
 
     def __init__(self, max_req_id=500):
-        self._q = Queue.Queue()
+        self._q = queue.Queue()
         self._lock = threading.RLock()
         self._message_id_set = set()
         self._request_id_count = {}
@@ -137,7 +137,7 @@ class RepeatQueue(object):
                         return
             except Exception as ex:
                 _g_logger.warn("Exception checking if message is a retrans "
-                               "%s" % ex.message)
+                               "%s" % str(ex))
             return self._q.put(item, block=block, timeout=timeout)
         finally:
             self._lock.release()
@@ -152,7 +152,7 @@ class RepeatQueue(object):
                         self._message_id_set.remove(item['message_id'])
             except Exception as ex:
                 _g_logger.info("Exception checking if message has an id "
-                               "%s" % ex.message)
+                               "%s" % str(ex))
             return item
         finally:
             self._lock.release()
@@ -194,7 +194,7 @@ class _WebSocketClient(ws4py_client.WebSocketClient):
 
     def received_message(self, m):
         _g_wire_logger.debug("INCOMING\n--------\n%s\n--------" % str(m.data))
-        json_doc = json.loads(m.data)
+        json_doc = json.loads(m.data.decode())
         self.manager.event_incoming_message(json_doc)
 
     def send(self, payload, binary=False):
@@ -359,7 +359,7 @@ class WebSocketConnection(threading.Thread):
         try:
             self._ws.close()
         except Exception as ex:
-            _g_logger.warn("Error closing the connection " + ex.message)
+            _g_logger.warn("Error closing the connection " + str(ex))
         self._done_event.set()
         self._cond.notify_all()
 
@@ -367,11 +367,10 @@ class WebSocketConnection(threading.Thread):
         try:
             self._ws.close()
         except Exception as ex:
-            _g_logger.warn("Error closing the connection " + ex.message)
+            _g_logger.warn("Error closing the connection " + str(ex))
         self._backoff.error()
         self._cond.notify_all()
         self._register_connect()
-
 
     def _sm_received_hs(self, incoming_data=None):
         """
@@ -392,7 +391,8 @@ class WebSocketConnection(threading.Thread):
 
     def _sm_open_incoming_message(self, incoming_data=None):
         _g_logger.debug("New message received")
-        dcm_events.register_callback(self._receive_callback, args=[incoming_data])
+        dcm_events.register_callback(
+            self._receive_callback, args=[incoming_data])
         self._backoff.activity()
 
     def _sm_hs_failed(self):
@@ -404,7 +404,8 @@ class WebSocketConnection(threading.Thread):
         try:
             self._ws.close()
         except Exception as ex:
-            _g_logger.exception("Got an error while closing in handshake state")
+            _g_logger.exception(
+                "Got an error while closing in handshake state")
         self._cond.notify()
         self._register_connect()
 
@@ -458,7 +459,7 @@ class WebSocketConnection(threading.Thread):
                         "A WS socket error occurred %s" % self._server_url)
                 self._throw_error(er)
                 done = True
-            except Queue.Empty:
+            except queue.Empty:
                 done = True
             except Exception as ex:
                 _g_logger.exception(str(ex))
@@ -504,7 +505,8 @@ class WebSocketConnection(threading.Thread):
         try:
             self._ws.close()
         except Exception as ex:
-            _g_logger.exception("Got an error while closing in handshake state")
+            _g_logger.exception(
+                "Got an error while closing in handshake state")
 
     def _sm_connection_finished_right_after_done(self):
         """
@@ -517,7 +519,8 @@ class WebSocketConnection(threading.Thread):
         try:
             self._ws.close()
         except Exception as ex:
-            _g_logger.exception("Got an error while closing in handshake state")
+            _g_logger.exception(
+                "Got an error while closing in handshake state")
 
     def _setup_states(self):
         self._sm.add_transition(WsConnStates.WAITING,

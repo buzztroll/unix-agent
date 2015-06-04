@@ -1,6 +1,7 @@
 import mock
 import nose
 
+import dcm.agent.config as config
 import dcm.agent.exceptions as exceptions
 import dcm.agent.messaging.persistence as persistence
 import dcm.agent.messaging.reply as reply
@@ -257,11 +258,11 @@ class TestRequestListener(object):
 
     def setUp(self):
         self.db = persistence.SQLiteAgentDB(":memory:")
+        self.conf = config.AgentConfig([])
 
     def test_read_request(self):
         conn = mock.Mock()
         disp = mock.Mock()
-        conf = mock.Mock()
 
         request_id = "requestID"
         message_id = "messageID"
@@ -274,14 +275,13 @@ class TestRequestListener(object):
         }
         disp.incoming_request.return_value = None
 
-        reply_listener = reply.RequestListener(conf, conn, disp, self.db)
+        reply_listener = reply.RequestListener(self.conf, conn, disp, self.db)
         reply_listener.incoming_parent_q_message(request_doc)
         nose.tools.ok_(disp.incoming_request.called)
 
     def test_read_request_retrans_request(self):
         disp = mock.Mock()
         conn = mock.Mock()
-        conf = mock.Mock()
 
         request_id = "requestID"
         message_id = "messageID"
@@ -293,14 +293,13 @@ class TestRequestListener(object):
             'payload': {}
         }
         # just make sure that everything doesnt blow up on a repeated request
-        reply_listener = reply.RequestListener(conf, conn, disp, self.db)
+        reply_listener = reply.RequestListener(self.conf, conn, disp, self.db)
         reply_listener.incoming_parent_q_message(request_doc)
         reply_listener.incoming_parent_q_message(request_doc)
 
     def test_unknown_ack(self):
         disp = mock.Mock()
         conn = mock.Mock()
-        conf = mock.Mock()
 
         request_id = "requestID"
         message_id = "messageID"
@@ -312,7 +311,7 @@ class TestRequestListener(object):
             "payload": {}
         }
 
-        reply_listener = reply.RequestListener(conf, conn, disp, self.db)
+        reply_listener = reply.RequestListener(self.conf , conn, disp, self.db)
         reply_listener.incoming_parent_q_message(ack_doc)
 
         (param_list, keywords) = conn.send.call_args

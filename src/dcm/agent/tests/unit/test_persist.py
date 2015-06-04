@@ -110,7 +110,6 @@ class TestPersistMemory(unittest.TestCase):
         res = self.db.lookup_req(request_id)
         nose.tools.eq_(res.agent_id, agent_id)
         nose.tools.eq_(res.request_id, request_id)
-        print res.reply_doc
         nose.tools.eq_(json.loads(res.reply_doc), reply_doc)
 
     def test_new_record_update_lookup(self):
@@ -235,9 +234,9 @@ class TestPersistMultiThread(unittest.TestCase):
         def _thread_lookup():
             try:
                 res = self.db.lookup_req(request_id)
-                print res
+                print(res)
             except Exception as ex:
-                print ex.message
+                print(str(ex))
                 failed.append(True)
 
         t = threading.Thread(target=_thread_lookup)
@@ -263,9 +262,9 @@ class TestPersistMultiThread(unittest.TestCase):
             try:
                 res = self.db.update_record(
                     request_id, messaging_states.ReplyStates.REPLY)
-                print res
+                print(res)
             except Exception as ex:
-                print ex.message
+                print(str(ex))
                 failed.append(True)
 
         t = threading.Thread(target=_thread_lookup)

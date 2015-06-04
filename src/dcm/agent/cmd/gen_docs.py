@@ -6,7 +6,7 @@ import types
 import dcm.agent.jobs.builtin as jobs
 
 filelist = [f for f in os.listdir(os.path.dirname(jobs.__file__))
-            if not f.startswith("__init")
+            if not f.startswith("__")
             and not f.endswith(".pyc")]
 
 
@@ -44,14 +44,15 @@ def output_markdown(f, pa_dict):
     """
     flatstring = '## ' + f + ' parameters:\n'
 
-    for key, value in pa_dict.iteritems():
+    for key in sorted(list(pa_dict.keys())):
+        value = pa_dict[key]
         flatstring += '- ' + key + ': ' + value[0] + '\n'
         flatstring += '    - optional: ' + '%s' % value[1] + '\n'
         flatstring += '    - type: ' + '%s' % get_type_string(value[2]) + '\n'
         flatstring += '    - default: ' + '%s' % str(value[3]) + '\n'
         flatstring += ''
 
-    print flatstring
+    print(flatstring)
     return flatstring
 
 

@@ -27,6 +27,6 @@ relative_path "pip-#{version}"
 build do
   env = with_standard_compiler_flags(with_embedded_path)
 
-  command "#{install_dir}/embedded/bin/python setup.py install" \
+  command "#{install_dir}/embedded/bin/python3 setup.py install" \
           " --prefix=#{install_dir}/embedded", env: env
 end

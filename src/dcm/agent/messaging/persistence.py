@@ -290,7 +290,7 @@ class DBCleaner(threading.Thread):
                 self._db.clean_all_expired(cut_off_time)
             except Exception as ex:
                 _g_logger.exception("An exception occurred in the db sweeper "
-                                    "thread " + ex.message)
+                                    "thread " + str(ex))
             finally:
                 self._cond.release()
 
