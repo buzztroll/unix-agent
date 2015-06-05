@@ -180,13 +180,12 @@ def _gather_info(conf):
     message += "Version: " + version + "\n"
     message += "Protocol version: " + str(protocol_version)
 
-    with open("/tmp/startup_script.txt", "w") as ss:
-        ss.write(startup_script)
-    ss.close()
+    if startup_script:
+        with open("/tmp/startup_script.txt", "w") as ss:
+            ss.write(startup_script)
 
     with open("/tmp/meta_info.txt", "w") as mi:
         mi.write(message)
-    mi.close()
 
     # gather processes
     with open("/tmp/process_info.txt", "w") as pi:
