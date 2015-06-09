@@ -154,19 +154,17 @@ def console_log(cli_args, level, msg, **kwargs):
 
 
 def _gather_info(conf):
-    tar = tarfile.open("/tmp/agent_info.tar.gz", "w:gz")
+    output_tar_path = "/tmp/agent_info.tar.gz"
+    tar = tarfile.open(output_tar_path, "w:gz")
 
-    if os.path.exists("/dcm"):
-        tar.add("/dcm")
+    if os.path.exists(conf.storage_base_dir):
+        tar.add(conf.storage_base_dir)
     try:
         effective_cloud = cm.guess_effective_cloud(conf)
     except:
         effective_cloud = "Not able to determine cloud"
 
-    try:
-        platform = utils.identify_platform(conf)
-    except Exception as ex:
-        platform = "Not able to determine platform: " + str(ex)
+    platform = (conf.platform_name, conf.platform_version)
 
     try:
         startup_script = conf.meta_data_object.get_startup_script()
@@ -190,12 +188,18 @@ def _gather_info(conf):
     # gather processes
     with open("/tmp/process_info.txt", "w") as pi:
         for p in [x for x in psutil.process_iter()
-                  if x.username == conf.system_user]:
-            pi.write(p.name + " : " + str(p.pid) + os.linesep)
-            pi.write("\tstarted at: " + str(p.create_time) + os.linesep)
-            pi.write("\t: " + str(p.cmdline) + os.linesep)
-            pi.write("\t" + str(p.get_cpu_times()) + os.linesep)
-            pi.write("\t" + str(p.get_memory_info()) + os.linesep)
+                  if x.username() == conf.system_user]:
+            try:
+                pi.write(p.name() + " : " + str(p.pid) + os.linesep)
+                pi.write("\tstarted at: " + str(p.create_time()) + os.linesep)
+                pi.write("\t: " + str(p.cmdline()) + os.linesep)
+                pi.write("\t" + str(p.get_cpu_times()) + os.linesep)
+                pi.write("\t" + str(p.get_memory_info()) + os.linesep)
+            except psutil.AccessDenied:
+                # the process list may change
+                pass
+            except psutil.NoSuchProcess:
+                pass
 
     files_to_collect = ["/tmp/boot.log",
                         "/tmp/error.log",
@@ -214,10 +218,11 @@ def _gather_info(conf):
 
     print("""
 **********************************************************************
-To get all log and configuration file copy /tmp/agent_info.tar.gz to
+To get all log and configuration file copy %s to
 your local machine
 **********************************************************************
-""")
+""" % output_tar_path)
+    return output_tar_path
 
 
 def parse_command_line(argv):
@@ -270,7 +275,7 @@ def start_main_service(cli_args):
             agent.shutdown_main_loop()
         if getattr(cli_args, "verbose", 0) > 2:
             raise
-    except:
+    except Exception as ex:
         _g_logger = logging.getLogger(__name__)
         console_log(
             cli_args,
@@ -362,17 +367,17 @@ def get_status(cli_args):
             p = psutil.Process(pid)
             clint.textui.puts(clint.textui.colored.green("RUNNING"))
             start_time_str = datetime.datetime.fromtimestamp(
-                p.create_time).strftime("%Y-%m-%d %H:%M:%S")
+                p.create_time()).strftime("%Y-%m-%d %H:%M:%S")
             with clint.textui.indent(4):
                 clint.textui.puts(clint.textui.columns(
                     ["Started at:", label_col_width],
                     [start_time_str, 70 - label_col_width]))
                 clint.textui.puts(clint.textui.columns(
                     ["User:", label_col_width],
-                    [p.username, 70 - label_col_width]))
+                    [p.username(), 70 - label_col_width]))
                 clint.textui.puts(clint.textui.columns(
                     ["Status:", label_col_width],
-                    [p.status, 70 - label_col_width]))
+                    [p.status(), 70 - label_col_width]))
                 clint.textui.puts(clint.textui.columns(
                     ["Pid:", label_col_width],
                     [str(pid), 70 - label_col_width]))
