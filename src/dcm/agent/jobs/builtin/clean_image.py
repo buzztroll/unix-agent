@@ -1,6 +1,10 @@
 import logging
 import sys
-from dcm.agent import jobs, utils
+import threading
+
+import dcm.agent.events.globals as events
+import dcm.agent.jobs as jobs
+import dcm.agent.utils as utils
 from dcm.agent.jobs.builtin.remove_user import RemoveUser
 
 
@@ -20,6 +24,8 @@ class CleanImage(jobs.Plugin):
     def __init__(self, conf, job_id, items_map, name, arguments):
         super(CleanImage, self).__init__(
             conf, job_id, items_map, name, arguments)
+        self._done_event = threading.Event()
+        self._topic_error = None
 
     def delete_private_keys(self):
         res_doc = {"return_code": 0,
@@ -84,8 +90,18 @@ class CleanImage(jobs.Plugin):
             res_doc["error_message"] = stderr
         return res_doc
 
-    def run(self, res_doc={}):
+    def _clean_topic_done(self, topic_error):
+        self._topic_error = topic_error
+        self._done_event.set()
+
+    def run(self):
+        res_doc = {}
         try:
+            events.global_pubsub.publish(
+                events.DCMAgentTopics.CLEANUP,
+                topic_kwargs={'request_id': self.job_id},
+                done_cb=self._clean_topic_done)
+
             if self.args.delUser:
                 utils.log_to_dcm(logging.INFO, 'Deleting users.')
                 for user in self.args.delUser:
@@ -113,6 +129,13 @@ class CleanImage(jobs.Plugin):
             utils.log_to_dcm(logging.INFO, 'Starting general cleanup.')
             res_doc = self.general_cleanup()
             if res_doc['return_code'] != 0:
+                return res_doc
+
+            self._done_event.wait()
+            if self._topic_error is not None:
+                res_doc['return_code'] = 1
+                res_doc["message"] = ''
+                res_doc["error_message"] = str(self._topic_error)
                 return res_doc
 
             return {"return_code": 0,

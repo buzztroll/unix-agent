@@ -18,6 +18,7 @@ class UserCallback(object):
         self._func = func
         self._canceled = False
         self._called = False
+        self._calling = False
         self._args = args
         self._in_thread = in_thread
         self._run_thread = None
@@ -49,24 +50,25 @@ class UserCallback(object):
         return self._time_ready < other.get_time_ready()
 
     def call(self):
+        _g_logger.debug("UserCallback calling %s" % self._func.__name__)
+        self._lock.acquire()
         try:
-            _g_logger.debug("UserCallback calling %s" % self._func.__name__)
-            self._lock.acquire()
-            try:
-                if self._canceled:
-                    return
-                self._called = True
-            finally:
-                self._lock.release()
+            if self._canceled:
+                return
+            self._calling = True
+        finally:
+            self._lock.release()
 
+        try:
             self._rc = self._func(*self._args, **self._kwargs)
+            self._called = True  # This should be safe unlocked
         except Exception as ex:
             _g_logger.error("UserCallback function %(func_name)s threw "
                             "exception %(ex)s" %
                             {'func_name': self._func.__name__,
                              'ex': str(ex)})
             self._exception = ex
-        finally:
+        else:
             _g_logger.debug("UserCallback function %s returned successfully."
                             % self._func.__name__)
 
@@ -81,7 +83,7 @@ class UserCallback(object):
         try:
             self._time_ready = datetime.datetime.now()
             self._canceled = True
-            return not self._called
+            return not self._calling
         finally:
             self._lock.release()
 
