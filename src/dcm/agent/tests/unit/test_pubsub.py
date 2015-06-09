@@ -1,8 +1,8 @@
 import unittest
 import uuid
 
-import dcm.agent.events as events
-import dcm.agent.pubsub as pubsub
+import dcm.agent.events.callback as events
+import dcm.agent.events.pubsub as pubsub
 import dcm.agent.tests.utils.general as test_utils
 
 

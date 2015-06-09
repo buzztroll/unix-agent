@@ -3,7 +3,7 @@ import urllib.parse
 import urllib.error
 import urllib.request
 
-from dcm.agent.events import global_space as dcm_events
+from dcm.agent.events.globals import global_space as dcm_events
 
 
 def send_log_to_dcm_callback(conn=None, token=None, message=None, level=None):

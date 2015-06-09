@@ -7,7 +7,7 @@ import dcm.agent.connection.websocket as websocket
 import dcm.agent.handshake as handshake
 import dcm.agent.tests.utils.general as test_utils
 
-from dcm.agent.events import global_space as dcm_events
+from dcm.agent.events.globals import global_space as dcm_events
 
 
 def fake_incoming_message(incoming_doc):

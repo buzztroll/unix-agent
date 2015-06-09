@@ -23,7 +23,7 @@ import dcm.agent.messaging.persistence as persistence
 import dcm.agent.messaging.reply as reply
 import dcm.agent.utils as utils
 
-from dcm.agent.events import global_space as dcm_events
+from dcm.agent.events.globals import global_space as dcm_events
 
 
 _g_conf_file_env = "DCM_AGENT_CONF"

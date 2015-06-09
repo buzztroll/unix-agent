@@ -5,7 +5,7 @@ import uuid
 import dcm.agent.utils as agent_utils
 
 
-from dcm.agent.events import global_space as dcm_events
+from dcm.agent.events.globals import global_space as dcm_events
 
 
 _g_logger = logging.getLogger(__name__)

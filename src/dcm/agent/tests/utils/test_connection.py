@@ -7,7 +7,7 @@ import dcm.agent.messaging.utils as utils
 import dcm.agent.messaging.types as message_types
 import dcm.agent.tests.utils.test_exceptions as test_exceptions
 
-from dcm.agent.events import global_space as dcm_events
+from dcm.agent.events.globals import global_space as dcm_events
 
 
 _g_logger = logging.getLogger(__name__)

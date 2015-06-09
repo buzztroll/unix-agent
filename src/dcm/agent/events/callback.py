@@ -375,6 +375,3 @@ class EventSpace(object):
             self._done = False
         finally:
             self._cond.release()
-
-
-global_space = EventSpace()
