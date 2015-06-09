@@ -14,6 +14,8 @@ def _deliver_topic(
     topic_error = None
     try:
         for s in subs:
+            if topic_args is None:
+                topic_args = []
             if topic_kwargs is None:
                 topic_kwargs = {}
             s(*topic_args, **topic_kwargs)
@@ -43,7 +45,7 @@ class PubSubEvent(object):
             try:
                 subs = self._subscribers[topic][:]
             except KeyError:
-                return
+                subs = []  # set this to empty to trip the done_cb
 
             ka = {'topic_args': topic_args,
                   'topic_kwargs': topic_kwargs,
