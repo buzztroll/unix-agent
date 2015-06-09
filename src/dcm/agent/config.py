@@ -26,11 +26,6 @@ class PLATFORM_TYPES(object):
     PLATFORM_DEBIAN = "debian"
 
 
-def get_all_platforms():
-    return [getattr(PLATFORM_TYPES, i)
-            for i in dir(PLATFORM_TYPES) if i.startswith("PLATFORM_")]
-
-
 def get_python_script_dir():
     # we allow it to pull out of the python package for tests and
     # installs that are done from something other than out packaging

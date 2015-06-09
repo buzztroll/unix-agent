@@ -32,7 +32,6 @@ import urllib.request
 
 import dcm
 
-import dcm.agent
 import dcm.agent.exceptions as exceptions
 
 
@@ -103,14 +102,6 @@ def verify_config_file(opts):
         except:
             _g_logger.warn("Please check the config file.  The value %s is "
                            "missing and could be needed." % warn)
-
-
-def generate_password(length=None):
-    if length is None:
-        length = 8 + random.randint(0, 10)
-    selection_set = string.ascii_letters + string.digits + string.punctuation
-    pw = ''.join(random.choice(selection_set) for x in range(length))
-    return pw
 
 
 def setup_remote_pydev(host, port):
@@ -367,7 +358,7 @@ def json_param_type(json_str):
         return None
     if type(json_str) == dict:
         return json_str
-    if json_str.lower().equals("null"):
+    if json_str.lower() == "null":
         return None
     return json.loads(json_str)
 

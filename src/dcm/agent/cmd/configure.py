@@ -135,24 +135,6 @@ def setup_command_line_parser():
     return parser
 
 
-def run_command(cmd):
-    try:
-        process = subprocess.Popen(
-            cmd,
-            shell=True,
-            stdout=subprocess.PIPE,
-            stderr=subprocess.PIPE,
-            bufsize=0,
-            env=os.environ)
-        stdout, stderr = process.communicate()
-        rc = process.returncode
-    except Exception as ex:
-        rc = 1
-        stdout = None
-        stderr = str(ex)
-    return rc, stdout, stderr
-
-
 def _get_input(prompt):
     return input(prompt)
 

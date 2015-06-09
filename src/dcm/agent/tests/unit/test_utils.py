@@ -31,3 +31,16 @@ class TestUtils(unittest.TestCase):
 
     def test_stack_trace(self):
         utils.build_assertion_exception(logging, "a message")
+
+    def test_json_params(self):
+        res = utils.json_param_type(None)
+        self.assertIsNone(res)
+        res = utils.json_param_type("null")
+        self.assertIsNone(res)
+        res = utils.json_param_type('{"x": 1}')
+        self.assertTrue('x' in res.keys())
+        self.assertEqual(res['x'], 1)
+        res = utils.json_param_type({"x": 1})
+        self.assertTrue('x' in res.keys())
+        self.assertEqual(res['x'], 1)
+
