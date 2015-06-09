@@ -67,6 +67,7 @@ class DCMAgent(object):
 
     def clean_db_handler(self, request_id=None, *args, **kwargs):
         self._db.clean_all(request_id)
+        logger.delete_logs()
 
     def kill_handler(self, signum, frame):
         self.shutdown_main_loop()

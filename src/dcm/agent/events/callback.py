@@ -71,6 +71,8 @@ class UserCallback(object):
         else:
             _g_logger.debug("UserCallback function %s returned successfully."
                             % self._func.__name__)
+        finally:
+            self._called = True  # This should be safe unlocked
 
     def _cancel(self):
         """
