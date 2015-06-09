@@ -397,10 +397,6 @@ def build_options_list():
                   help_msg="This value is for internal testing only.  "
                            "Do not change it.", hidden=True),
 
-        ConfigOpt("intrusion", "module", str, default=None,
-                  help_msg="The python module to be loaded for handling "
-                           "intrusion detection."),
-
         ConfigOpt("extra", "location", str,
                   default='http://s3.amazonaws.com/es-pyagent/',
                   help_msg="Location of extra packages"),

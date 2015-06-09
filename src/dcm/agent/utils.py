@@ -190,19 +190,8 @@ def safe_delete(fname):
         return False
 
 
-def make_friendly_id(prefix, uid):
-    str_id = "%s%09d" % (prefix, uid)
-    return str_id[0:3] + "-" + str_id[3:6] + "-" + str_id[6:9]
-
-
 def make_id_string(prefix, uid):
     return "%s%03d" % (prefix, uid)
-
-
-def get_time_backup_string():
-    nw = datetime.datetime.now()
-    tm_str = nw.strftime("%Y%m%d.%H%M%S.%f")
-    return tm_str
 
 
 def secure_delete(conf, file_name):

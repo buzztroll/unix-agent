@@ -17,7 +17,6 @@ import dcm.agent.config as config
 import dcm.agent.dispatcher as dispatcher
 import dcm.agent.exceptions as exceptions
 import dcm.agent.handshake as handshake
-import dcm.agent.intrusion_detection as intrusion_detect
 import dcm.agent.logger as logger
 import dcm.agent.messaging as messaging
 import dcm.agent.messaging.persistence as persistence
@@ -61,7 +60,6 @@ class DCMAgent(object):
         self.request_listener = None
         self.g_logger = logging.getLogger(__name__)
         self._db = persistence.SQLiteAgentDB(conf.storage_dbfile)
-        self._intrusion_detection = None
         self.db_cleaner = None
         self.handshaker = handshake.HandshakeManager(self.conf, self._db)
 
@@ -101,12 +99,6 @@ class DCMAgent(object):
             self.request_listener = reply.RequestListener(
                 self.conf, self.conn, self.disp, self._db)
 
-            self._intrusion_detection = \
-                intrusion_detect.setup_intrusion_detection(
-                    self.conf, self.conn)
-            if self._intrusion_detection:
-                self._intrusion_detection.start()
-
             logger.set_dcm_connection(self.conf, self.conn)
 
             self.conn.connect(self.request_listener.incoming_parent_q_message,
@@ -134,8 +126,6 @@ class DCMAgent(object):
             self.g_logger.debug("Shutting down the db cleaner runner")
             self.db_cleaner.done()
             self.db_cleaner.join()
-        if self._intrusion_detection:
-            self._intrusion_detection.stop()
         self.g_logger.debug("Shutting down the job runner")
         self.conf.stop_job_runner()
         if self.request_listener:
@@ -164,19 +154,17 @@ def console_log(cli_args, level, msg, **kwargs):
 
 
 def _gather_info(conf):
-    tar = tarfile.open("/tmp/agent_info.tar.gz", "w:gz")
+    output_tar_path = "/tmp/agent_info.tar.gz"
+    tar = tarfile.open(output_tar_path, "w:gz")
 
-    if os.path.exists("/dcm"):
-        tar.add("/dcm")
+    if os.path.exists(conf.storage_base_dir):
+        tar.add(conf.storage_base_dir)
     try:
         effective_cloud = cm.guess_effective_cloud(conf)
     except:
         effective_cloud = "Not able to determine cloud"
 
-    try:
-        platform = utils.identify_platform(conf)
-    except Exception as ex:
-        platform = "Not able to determine platform: " + str(ex)
+    platform = (conf.platform_name, conf.platform_version)
 
     try:
         startup_script = conf.meta_data_object.get_startup_script()
@@ -190,23 +178,28 @@ def _gather_info(conf):
     message += "Version: " + version + "\n"
     message += "Protocol version: " + str(protocol_version)
 
-    with open("/tmp/startup_script.txt", "w") as ss:
-        ss.write(startup_script)
-    ss.close()
+    if startup_script:
+        with open("/tmp/startup_script.txt", "w") as ss:
+            ss.write(startup_script)
 
     with open("/tmp/meta_info.txt", "w") as mi:
         mi.write(message)
-    mi.close()
 
     # gather processes
     with open("/tmp/process_info.txt", "w") as pi:
         for p in [x for x in psutil.process_iter()
-                  if x.username == conf.system_user]:
-            pi.write(p.name + " : " + str(p.pid) + os.linesep)
-            pi.write("\tstarted at: " + str(p.create_time) + os.linesep)
-            pi.write("\t: " + str(p.cmdline) + os.linesep)
-            pi.write("\t" + str(p.get_cpu_times()) + os.linesep)
-            pi.write("\t" + str(p.get_memory_info()) + os.linesep)
+                  if x.username() == conf.system_user]:
+            try:
+                pi.write(p.name() + " : " + str(p.pid) + os.linesep)
+                pi.write("\tstarted at: " + str(p.create_time()) + os.linesep)
+                pi.write("\t: " + str(p.cmdline()) + os.linesep)
+                pi.write("\t" + str(p.get_cpu_times()) + os.linesep)
+                pi.write("\t" + str(p.get_memory_info()) + os.linesep)
+            except psutil.AccessDenied:
+                # the process list may change
+                pass
+            except psutil.NoSuchProcess:
+                pass
 
     files_to_collect = ["/tmp/boot.log",
                         "/tmp/error.log",
@@ -225,10 +218,11 @@ def _gather_info(conf):
 
     print("""
 **********************************************************************
-To get all log and configuration file copy /tmp/agent_info.tar.gz to
+To get all log and configuration file copy %s to
 your local machine
 **********************************************************************
-""")
+""" % output_tar_path)
+    return output_tar_path
 
 
 def parse_command_line(argv):
@@ -281,7 +275,7 @@ def start_main_service(cli_args):
             agent.shutdown_main_loop()
         if getattr(cli_args, "verbose", 0) > 2:
             raise
-    except:
+    except Exception as ex:
         _g_logger = logging.getLogger(__name__)
         console_log(
             cli_args,
@@ -373,17 +367,17 @@ def get_status(cli_args):
             p = psutil.Process(pid)
             clint.textui.puts(clint.textui.colored.green("RUNNING"))
             start_time_str = datetime.datetime.fromtimestamp(
-                p.create_time).strftime("%Y-%m-%d %H:%M:%S")
+                p.create_time()).strftime("%Y-%m-%d %H:%M:%S")
             with clint.textui.indent(4):
                 clint.textui.puts(clint.textui.columns(
                     ["Started at:", label_col_width],
                     [start_time_str, 70 - label_col_width]))
                 clint.textui.puts(clint.textui.columns(
                     ["User:", label_col_width],
-                    [p.username, 70 - label_col_width]))
+                    [p.username(), 70 - label_col_width]))
                 clint.textui.puts(clint.textui.columns(
                     ["Status:", label_col_width],
-                    [p.status, 70 - label_col_width]))
+                    [p.status(), 70 - label_col_width]))
                 clint.textui.puts(clint.textui.columns(
                     ["Pid:", label_col_width],
                     [str(pid), 70 - label_col_width]))
