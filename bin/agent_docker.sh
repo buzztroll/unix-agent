@@ -83,7 +83,7 @@ function install_agent() {
     cd /tmp
 
     if [ "X$AGENT_BASE_URL" == "X" ]; then
-        AGENT_BASE_URL="https://s3.amazonaws.com/dcmagentdockerdemo"
+        AGENT_BASE_URL="https://s3.amazonaws.com/dcmagentunstable"
     fi
     export AGENT_BASE_URL
 
@@ -92,7 +92,7 @@ function install_agent() {
     chmod 755 installer.sh
 
     echo 'Agent being installed with dcm host: ' $DCM_URL
-    ./installer.sh --base-path /dcm --url $DCM_URL -B $AGENT_UNVERIFIED
+    ./installer.sh --base-path /dcm --url $DCM_URL $AGENT_UNVERIFIED -B
 }
 
 function identify_platform() {
@@ -162,7 +162,7 @@ function reconfigure_agent() {
    pkill -9 dcm-agent
    rm -f /dcm/etc/agentdb.sql
    set -e
-   /opt/dcm-agent/agentve/bin/dcm-agent-configure --base-path /dcm --url $DCM_URL -B
+   /opt/dcm-agent/agentve/bin/dcm-agent-configure --base-path /dcm --url $DCM_URL $AGENT_UNVERIFIED -B
 }
 
 function install_docker() {
