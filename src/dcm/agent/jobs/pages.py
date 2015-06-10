@@ -18,7 +18,7 @@ import threading
 import dcm.agent.exceptions as exceptions
 import dcm.agent.utils as utils
 
-from dcm.agent.events import global_space as dcm_events
+from dcm.agent.events.globals import global_space as dcm_events
 
 
 class BasePage(object):

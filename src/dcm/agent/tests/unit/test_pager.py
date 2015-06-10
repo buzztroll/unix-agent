@@ -1,11 +1,10 @@
 import json
-import time
 import unittest
 
 import dcm.agent.exceptions as exceptions
 import dcm.agent.jobs.pages as pages
 
-from dcm.agent.events import global_space as dcm_events
+from dcm.agent.events.globals import global_space as dcm_events
 
 
 class TestPager(unittest.TestCase):

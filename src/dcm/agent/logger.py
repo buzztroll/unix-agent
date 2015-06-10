@@ -1,9 +1,12 @@
+import glob
 import logging
+from logging.handlers import RotatingFileHandler
+import os
 import urllib.parse
 import urllib.error
 import urllib.request
 
-from dcm.agent.events import global_space as dcm_events
+from dcm.agent.events.globals import global_space as dcm_events
 
 
 def send_log_to_dcm_callback(conn=None, token=None, message=None, level=None):
@@ -68,3 +71,22 @@ def clear_dcm_logging():
             for h in logger.handlers:
                 if type(h) == dcmLogger:
                     h.set_conn(None, None)
+
+
+def delete_logs():
+    # effectively just for tests
+    for key in logging.Logger.manager.loggerDict:
+        logger = logging.Logger.manager.loggerDict[key]
+        if type(logger) == logging.Logger:
+            for h in logger.handlers:
+                if isinstance(h, logging.FileHandler):
+                    # just to truncate the file
+                    with open(h.baseFilename, "w"):
+                        pass
+
+                    if isinstance(h, RotatingFileHandler):
+                        for l in glob.glob("%s.*" % h.baseFilename):
+                            try:
+                                os.remove(l)
+                            except:
+                                pass

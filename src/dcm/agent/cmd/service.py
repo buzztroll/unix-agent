@@ -23,7 +23,7 @@ import dcm.agent.messaging.persistence as persistence
 import dcm.agent.messaging.reply as reply
 import dcm.agent.utils as utils
 
-from dcm.agent.events import global_space as dcm_events
+import dcm.agent.events.globals as events
 
 
 _g_conf_file_env = "DCM_AGENT_CONF"
@@ -62,6 +62,12 @@ class DCMAgent(object):
         self._db = persistence.SQLiteAgentDB(conf.storage_dbfile)
         self.db_cleaner = None
         self.handshaker = handshake.HandshakeManager(self.conf, self._db)
+        events.global_pubsub.subscribe(
+            events.DCMAgentTopics.CLEANUP, self.clean_db_handler)
+
+    def clean_db_handler(self, request_id=None, *args, **kwargs):
+        self._db.clean_all(request_id)
+        logger.delete_logs()
 
     def kill_handler(self, signum, frame):
         self.shutdown_main_loop()
@@ -71,7 +77,7 @@ class DCMAgent(object):
 
     def shutdown_main_loop(self):
         self.shutting_down = True
-        dcm_events.wakeup(cancel_all=True)
+        events.global_space.wakeup(cancel_all=True)
 
     def pre_threads(self):
         signal.signal(signal.SIGINT, self.kill_handler)
@@ -113,7 +119,7 @@ class DCMAgent(object):
     def agent_main_loop(self):
         while not self.shutting_down:
             try:
-                dcm_events.poll()
+                events.global_space.poll()
             except Exception as ex:
                 utils.log_to_dcm(
                     logging.ERROR,
@@ -140,7 +146,7 @@ class DCMAgent(object):
 
         self.g_logger.debug("Waiting for all threads and callbacks in the "
                             "event system.")
-        dcm_events.reset()
+        events.global_space.reset()
         print(utils.build_assertion_exception(
                 self.g_logger, "from service cleanup"))
         self.g_logger.debug("Service closed")

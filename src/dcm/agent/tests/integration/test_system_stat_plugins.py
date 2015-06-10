@@ -9,7 +9,7 @@ import dcm.agent.jobs.builtin.init_system_stat as init_system_stat
 import dcm.agent.jobs.builtin.get_system_stat as get_system_stat
 import dcm.agent.jobs.builtin.delete_system_stat as delete_system_stat
 
-from dcm.agent.events import global_space as event_space
+from dcm.agent.events.globals import global_space as event_space
 
 
 class TestSystemStatPlugin(unittest.TestCase):

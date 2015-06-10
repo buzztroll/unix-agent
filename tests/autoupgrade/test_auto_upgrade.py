@@ -9,7 +9,7 @@ from ws4py.websocket import WebSocket
 from ws4py.server.wsgirefserver import WSGIServer, WebSocketWSGIRequestHandler
 from ws4py.server.wsgiutils import WebSocketWSGIApplication
 
-from dcm.agent.events import global_space as dcm_events
+from dcm.agent.events.globals import global_space as dcm_events
 
 
 class ServerEvent(object):

@@ -1,8 +1,8 @@
 import unittest
 import uuid
 
-import dcm.agent.events as events
-import dcm.agent.pubsub as pubsub
+import dcm.agent.events.callback as events
+import dcm.agent.events.pubsub as pubsub
 import dcm.agent.tests.utils.general as test_utils
 
 
@@ -29,7 +29,9 @@ class TestPubSub(unittest.TestCase):
             y_val.append("called")
 
         self._pub_sub.subscribe(topic, test_callback)
-        self._pub_sub.publish(topic, x_val, y_val, apple_param=apple_val)
+        self._pub_sub.publish(topic,
+                              topic_args=(x_val, y_val),
+                              topic_kwargs={'apple_param': apple_val})
 
         self._event_space.poll(timeblock=0.0)
         self.assertEqual(len(y_val), 1)
@@ -50,7 +52,7 @@ class TestPubSub(unittest.TestCase):
         self._pub_sub.subscribe(topic, test_callback1)
         self._pub_sub.subscribe(topic, test_callback2)
         self._pub_sub.subscribe(topic, test_callback3)
-        self._pub_sub.publish(topic, x_val)
+        self._pub_sub.publish(topic, topic_args=(x_val,))
 
         self._event_space.poll(timeblock=0.0)
         self.assertEqual(len(x_val), 3)
@@ -77,3 +79,65 @@ class TestPubSub(unittest.TestCase):
         except KeyError:
             passes = True
         self.assertTrue(passes)
+
+    def test_done_callback(self):
+        topic = str(uuid.uuid4())
+        x_val = []
+
+        def test_callback1(x_param):
+            x_param.append(1)
+
+        def test_callback2(x_param):
+            x_param.append(2)
+
+        def test_callback3(x_param):
+            x_param.append(3)
+
+        def done_cb(topic_error, x_param=None):
+            self.assertEqual(len(x_param), 3)
+            self.assertIn(1, x_param)
+            self.assertIn(2, x_param)
+            self.assertIn(3, x_param)
+            self.assertIsNone(topic_error)
+            x_param.append("done")
+
+        self._pub_sub.subscribe(topic, test_callback1)
+        self._pub_sub.subscribe(topic, test_callback2)
+        self._pub_sub.subscribe(topic, test_callback3)
+        self._pub_sub.publish(topic,
+                              topic_args=(x_val,),
+                              done_cb=done_cb,
+                              done_kwargs={'x_param': x_val})
+
+        self._event_space.poll(timeblock=0.0)
+        self.assertIn('done', x_val)
+
+    def test_done_error_callback(self):
+        topic = str(uuid.uuid4())
+        x_val = []
+
+        def test_callback1(x_param):
+            x_param.append(1)
+
+        def test_callback2(x_param):
+            raise Exception("error")
+
+        def test_callback3(x_param):
+            x_param.append(3)
+
+        def done_cb(topic_error, x_param=None):
+            self.assertLess(len(x_param), 3)
+            self.assertIsNotNone(topic_error)
+            x_param.append("done")
+
+        self._pub_sub.subscribe(topic, test_callback1)
+        self._pub_sub.subscribe(topic, test_callback2)
+        self._pub_sub.subscribe(topic, test_callback3)
+        self._pub_sub.publish(topic,
+                              topic_args=(x_val,),
+                              done_cb=done_cb,
+                              done_kwargs={'x_param': x_val})
+
+        self._event_space.poll(timeblock=0.0)
+        self.assertIn('done', x_val)
+

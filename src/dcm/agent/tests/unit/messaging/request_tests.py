@@ -8,7 +8,7 @@ import dcm.agent.messaging.request as request
 import dcm.agent.messaging.states as states
 import dcm.agent.messaging.types as types
 
-from dcm.agent.events import global_space as dcm_events
+from dcm.agent.events.globals import global_space as dcm_events
 
 
 class TestRequesterStandardPath(unittest.TestCase):

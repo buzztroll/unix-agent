@@ -11,7 +11,7 @@ import dcm.agent.utils as utils
 import dcm.agent.jobs as jobs
 import dcm.eventlog.tracer as tracer
 
-from dcm.agent.events import global_space as dcm_events
+from dcm.agent.events.globals import global_space as dcm_events
 
 
 _g_logger = logging.getLogger(__name__)
