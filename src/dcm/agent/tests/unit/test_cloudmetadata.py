@@ -191,6 +191,30 @@ class TestJoyentMetaDataBase(unittest.TestCase):
         x = self.cm_obj.get_injected_id()
         self.assertEqual(fakeid, x)
 
+    @mock.patch('dcm.agent.utils.run_command')
+    def test_base_injected_try_both_locations(self, runcmd):
+        fakeid = "someid"
+        runcmd.return_value = ("", "error", 1)
+
+        tmp_dir = tempfile.mkdtemp()
+        try:
+            self.conf.get_secure_dir.return_value = tmp_dir
+            self.conf.system_sudo = "sudo"
+            x = self.cm_obj.get_injected_id()
+
+            call1 = mock.call(
+                self.conf,
+                ["sudo", "/usr/sbin/mdata-get", "es:dmcm-launch-id"])
+            call2 = mock.call(
+                self.conf,
+                ["sudo", "/lib/smartdc/mdata-get", "es:dmcm-launch-id"])
+
+            self.assertEqual(runcmd.call_args_list, [call1, call2])
+            self.assertEqual(runcmd.call_count, 2)
+            self.assertIsNone(x)
+        finally:
+            shutil.rmtree(tmp_dir)
+
 
 class TestGCEMetaDataBase(unittest.TestCase):
     @classmethod
@@ -246,4 +270,3 @@ class TestKonamiMetaDataBase(unittest.TestCase):
     def test_cloud_type(self):
         self.assertEqual(self.cm_obj.get_cloud_type(),
                          cm.CLOUD_TYPES.Konami)
-
