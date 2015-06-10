@@ -1,5 +1,6 @@
 from distutils.log import warn
 import getpass
+import json
 import os
 import shutil
 import tempfile
@@ -125,3 +126,177 @@ class TestProgramOptions(unittest.TestCase):
             self.assertEqual(rc, 1)
         finally:
             os.remove(pid_file)
+
+    @mock.patch('dcm.agent.messaging.persistence.SQLiteAgentDB')
+    @mock.patch('dcm.agent.cloudmetadata.guess_effective_cloud')
+    @mock.patch('dcm.agent.utils.identify_platform')
+    def test_status_db_jobs_request_lookup(
+            self, id_platform, guess_effective_cloud_mock, fake_db):
+
+        class FakeRequest(object):
+            def __init__(self, doc):
+                self.request_doc = json.dumps({'payload': doc})
+
+        class FakeDB(object):
+            def get_all_complete(self):
+                return [FakeRequest({'command': 'initialize'})]
+            def get_all_reply(self):
+                return []
+            def get_all_rejected(self):
+                return []
+            def get_all_ack(self):
+                return []
+            def get_all_reply_nacked(self):
+                return []
+
+        fake_db.return_value = FakeDB()
+        id_platform.return_value = ("ubuntu", "14.04")
+        guess_effective_cloud_mock.return_value = "Other"
+        rc = dcmagent.main(
+            args=["dcm-agent", "-c", self.test_conf_path, "status"])
+        self.assertEqual(rc, 1)
+
+    @mock.patch('dcm.agent.messaging.persistence.SQLiteAgentDB')
+    @mock.patch('dcm.agent.cloudmetadata.guess_effective_cloud')
+    @mock.patch('dcm.agent.utils.identify_platform')
+    def test_status_exception_in_request_lookup(
+            self, id_platform, guess_effective_cloud_mock, fake_db):
+
+        class FakeRequest(object):
+            def __init__(self, doc):
+                self.request_doc = json.dumps({'payload': doc})
+
+        class FakeDB(object):
+            def get_all_complete(self):
+                return [FakeRequest({'nocommand': 'initialize'})]
+            def get_all_reply(self):
+                return []
+            def get_all_rejected(self):
+                return []
+            def get_all_ack(self):
+                return []
+            def get_all_reply_nacked(self):
+                return []
+
+        fake_db.return_value = FakeDB()
+        id_platform.return_value = ("ubuntu", "14.04")
+        guess_effective_cloud_mock.return_value = "Other"
+        rc = dcmagent.main(
+            args=["dcm-agent", "-c", self.test_conf_path, "status"])
+        self.assertEqual(rc, 1)
+
+    @mock.patch('dcm.agent.messaging.persistence.SQLiteAgentDB')
+    @mock.patch('dcm.agent.cloudmetadata.guess_effective_cloud')
+    @mock.patch('dcm.agent.utils.identify_platform')
+    def test_status_db_jobs_request_lookup_not_initialized(
+            self, id_platform, guess_effective_cloud_mock, fake_db):
+
+        class FakeRequest(object):
+            def __init__(self, doc):
+                self.request_doc = json.dumps({'payload': doc})
+
+        class FakeDB(object):
+            def get_all_complete(self):
+                return []
+            def get_all_reply(self):
+                return [FakeRequest({'command': 'initialize'})]
+            def get_all_rejected(self):
+                return []
+            def get_all_ack(self):
+                return []
+            def get_all_reply_nacked(self):
+                return []
+
+        fake_db.return_value = FakeDB()
+        id_platform.return_value = ("ubuntu", "14.04")
+        guess_effective_cloud_mock.return_value = "Other"
+        rc = dcmagent.main(
+            args=["dcm-agent", "-c", self.test_conf_path, "status"])
+        self.assertEqual(rc, 1)
+
+    @mock.patch('dcm.agent.messaging.persistence.SQLiteAgentDB')
+    @mock.patch('dcm.agent.cloudmetadata.guess_effective_cloud')
+    @mock.patch('dcm.agent.utils.identify_platform')
+    def test_status_db_jobs_request_lookup_rejected_initialized(
+            self, id_platform, guess_effective_cloud_mock, fake_db):
+
+        class FakeRequest(object):
+            def __init__(self, doc):
+                self.request_doc = json.dumps({'payload': doc})
+
+        class FakeDB(object):
+            def get_all_complete(self):
+                return []
+            def get_all_reply(self):
+                return []
+            def get_all_rejected(self):
+                return [FakeRequest({'command': 'initialize'})]
+            def get_all_ack(self):
+                return []
+            def get_all_reply_nacked(self):
+                return []
+
+        fake_db.return_value = FakeDB()
+        id_platform.return_value = ("ubuntu", "14.04")
+        guess_effective_cloud_mock.return_value = "Other"
+        rc = dcmagent.main(
+            args=["dcm-agent", "-c", self.test_conf_path, "status"])
+        self.assertEqual(rc, 1)
+
+    @mock.patch('dcm.agent.messaging.persistence.SQLiteAgentDB')
+    @mock.patch('dcm.agent.cloudmetadata.guess_effective_cloud')
+    @mock.patch('dcm.agent.utils.identify_platform')
+    def test_status_db_jobs_request_lookup_acked_initialized(
+            self, id_platform, guess_effective_cloud_mock, fake_db):
+
+        class FakeRequest(object):
+            def __init__(self, doc):
+                self.request_doc = json.dumps({'payload': doc})
+
+        class FakeDB(object):
+            def get_all_complete(self):
+                return []
+            def get_all_reply(self):
+                return []
+            def get_all_rejected(self):
+                return []
+            def get_all_ack(self):
+                return [FakeRequest({'command': 'initialize'})]
+            def get_all_reply_nacked(self):
+                return []
+
+        fake_db.return_value = FakeDB()
+        id_platform.return_value = ("ubuntu", "14.04")
+        guess_effective_cloud_mock.return_value = "Other"
+        rc = dcmagent.main(
+            args=["dcm-agent", "-c", self.test_conf_path, "status"])
+        self.assertEqual(rc, 1)
+
+    @mock.patch('dcm.agent.messaging.persistence.SQLiteAgentDB')
+    @mock.patch('dcm.agent.cloudmetadata.guess_effective_cloud')
+    @mock.patch('dcm.agent.utils.identify_platform')
+    def test_status_db_jobs_request_lookup_nacked_initialized(
+            self, id_platform, guess_effective_cloud_mock, fake_db):
+
+        class FakeRequest(object):
+            def __init__(self, doc):
+                self.request_doc = json.dumps({'payload': doc})
+
+        class FakeDB(object):
+            def get_all_complete(self):
+                return []
+            def get_all_reply(self):
+                return []
+            def get_all_rejected(self):
+                return []
+            def get_all_ack(self):
+                return []
+            def get_all_reply_nacked(self):
+                return [FakeRequest({'command': 'initialize'})]
+
+        fake_db.return_value = FakeDB()
+        id_platform.return_value = ("ubuntu", "14.04")
+        guess_effective_cloud_mock.return_value = "Other"
+        rc = dcmagent.main(
+            args=["dcm-agent", "-c", self.test_conf_path, "status"])
+        self.assertEqual(rc, 1)
