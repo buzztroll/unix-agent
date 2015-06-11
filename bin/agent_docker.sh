@@ -162,7 +162,7 @@ function reconfigure_agent() {
    pkill -9 dcm-agent
    rm -f /dcm/etc/agentdb.sql
    set -e
-   /opt/dcm-agent/agentve/bin/dcm-agent-configure --base-path /dcm --url $DCM_URL $AGENT_UNVERIFIED -B
+   /opt/dcm-agent/embedded/agentve/bin/dcm-agent-configure --base-path /dcm --url $DCM_URL $AGENT_UNVERIFIED -B
 }
 
 function install_docker() {
