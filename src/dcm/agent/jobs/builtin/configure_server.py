@@ -77,47 +77,6 @@ class ConfigureServer(jobs.Plugin):
         if not self.args.runAsUser:
             self.args.runAsUser = self.conf.system_user
 
-    def configure_server_legacy(self):
-        """
-        This will handle protocol 0 and protocol 15
-        """
-        cfg_file_path = self.conf.get_temp_file("configManagement.cfg")
-        token_file_path = self.conf.get_temp_file("token.pem")
-
-        auth_id = self.args.authId
-        endpoint = self.args.endpoint
-
-        # set the token
-        if self.args.configToken:
-            token = self.args.configToken
-        elif self.args.encryptedAuthSecret:
-            token = self.args.encryptedAuthSecret
-        else:
-            token = None
-
-        try:
-            with open(cfg_file_path, "w") as fptr:
-                fptr.write(self.args.configurationData)
-
-            if token:
-                with open(token_file_path, "w") as fptr:
-                    fptr.write(token)
-                    fptr.write(os.linesep)
-
-            # run the figure program
-            exe_name = "runConfigurationManagement-" + self.args.configType
-            exe = self.conf.get_script_location(exe_name)
-            cmd = [exe,
-                   self.args.runAsUser,
-                   token_file_path,
-                   cfg_file_path,
-                   auth_id,
-                   endpoint]
-            return utils.run_command(self.conf, cmd)
-        finally:
-            utils.safe_delete(cfg_file_path)
-            utils.safe_delete(token_file_path)
-
     def configure_server_with_chef(self):
         chef_dir = self.conf.get_temp_file("chefconf", isdir=True)
         run_list_file_name = os.path.join(chef_dir, "runList.cfg")
@@ -235,24 +194,13 @@ class ConfigureServer(jobs.Plugin):
         _g_logger.info("Running configuration management of type " +
                        self.args.configType)
 
-        if self.args.configType.upper() == "ENSTRATUS":
-            raise exceptions.AgentOptionException(
-                "configType", "CHEF or PUPPET", self.args.configType)
-
-        if self.name == "configure_server" or \
-                self.name == "configure_server_15":
-            (stdout, stderr, rc) = self.configure_server_legacy()
-        elif self.name == "configure_server_16":
-            (stdout, stderr, rc) = self.configure_server_legacy()
+        if self.args.configType.upper() == "CHEF":
+            (stdout, stderr, rc) = self.configure_server_with_chef()
+        elif self.args.configType.upper() == "PUPPET":
+            (stdout, stderr, rc) = self.configure_server_with_puppet()
         else:
-            if self.args.configType.upper() == "CHEF":
-                (stdout, stderr, rc) = self.configure_server_with_chef()
-            elif self.args.configType.upper() == "PUPPET":
-                (stdout, stderr, rc) = self.configure_server_with_puppet()
-            else:
-                rc = 1
-                stderr = "The type %s is not supported." % self.args.configType
-                stdout = ""
+            raise exceptions.AgentOptionTypeException(
+                "configType", "CHEF or PUPPET", self.args.configType)
 
         if rc != 0:
             reply_doc = {"return_code": rc,
