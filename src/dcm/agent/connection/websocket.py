@@ -51,8 +51,6 @@ class WsConnStates:
     DONE = "DONE"
 
 
-g_dcm_backoff_key = "FORCED_BACKOFF"
-
 
 class Backoff(object):
 

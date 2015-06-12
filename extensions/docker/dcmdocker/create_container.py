@@ -68,3 +68,7 @@ class DockerCreateContainer(docker_utils.DockerJob):
 
 def load_plugin(conf, job_id, items_map, name, arguments):
     return DockerCreateContainer(conf, job_id, items_map, name, arguments)
+
+
+def get_features(conf):
+    return {'docker': "1.1.2"}

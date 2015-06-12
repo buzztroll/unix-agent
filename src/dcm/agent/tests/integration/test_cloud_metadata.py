@@ -61,6 +61,7 @@ class TestCloudMetadata(unittest.TestCase):
         self.clouds = None
         self.cloud_types = None
 
+    @test_utils.skip_docker
     def test_dhcp(self):
         ipaddr = cloudmetadata.get_dhcp_ip_address(self.conf)
         if platform.system().lower() == "linux":

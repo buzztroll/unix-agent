@@ -303,7 +303,7 @@ def build_options_list():
         ConfigOpt("pydev", "port", int, default=None, options=None,
                   help_msg="The port where the pydev debugger is listening"),
 
-        ConfigOpt("workers", "count", int, default=1, options=None,
+        ConfigOpt("workers", "count", int, default=2, options=None,
                   help_msg="The number of worker threads that will be "
                            "processing incoming requests"),
 
