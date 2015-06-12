@@ -27,10 +27,15 @@ type=ws
 [plugin]
 configfile=%s
 
+[storage]
+base_dir=%s
+
 [features]
 hello=world
 test=2
-                """ % pluggin_path
+                """ % (pluggin_path, self.tmp_d)
+
+        os.mkdir(os.path.join(self.tmp_d, "secure"))
 
         self.conf_path = os.path.join(self.tmp_d, "agent.conf")
         with open(self.conf_path, "w") as fptr:
