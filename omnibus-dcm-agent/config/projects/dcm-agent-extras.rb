@@ -20,6 +20,7 @@ dependency "preparation"
 # dcm-agent-extras dependencies/components
 dependency "puppet-gem"
 dependency "ec2-ami-tools"
+dependency "ossec"
 
 # Version manifest file
 dependency "version-manifest"
