@@ -69,7 +69,7 @@ class CleanImage(jobs.Plugin):
             res_doc["error_message"] = stderr
         return res_doc
 
-    def general_cleanup(self):
+    def general_cleanup(self, dbfile):
         res_doc = {"return_code": 0,
                    "message": "General cleanup completed successfully",
                    "error_message": "",
@@ -80,7 +80,8 @@ class CleanImage(jobs.Plugin):
             self.conf.system_sudo,
             '-E',
             sys.executable,
-            exe
+            exe,
+            dbfile
         ]
 
         (stdout, stderr, rc) = utils.run_command(self.conf, cmd)
@@ -127,7 +128,7 @@ class CleanImage(jobs.Plugin):
                 return res_doc
 
             utils.log_to_dcm(logging.INFO, 'Starting general cleanup.')
-            res_doc = self.general_cleanup()
+            res_doc = self.general_cleanup(self.conf.storage_dbfile)
             if res_doc['return_code'] != 0:
                 return res_doc
 

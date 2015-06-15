@@ -1021,6 +1021,9 @@ class TestProtocolCommands(reply.ReplyObserverInterface):
 
         log_dir = os.path.join(self.test_base_path, 'logs')
         nose.tools.eq_(os.listdir(log_dir), [])
+        secure_dir = os.path.join(self.test_base_path, 'secure')
+        nose.tools.eq_(os.path.isfile(os.path.join(secure_dir, 'agentdb.sql')), True)
+        nose.tools.eq_(os.path.isfile(os.path.join(secure_dir, 'token')), False)
 
         try:
             for name in user_list: # delete and clean up user and homedir
