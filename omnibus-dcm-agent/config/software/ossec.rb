@@ -20,4 +20,9 @@ build do
     "USER_ENABLE_ACTIVE_RESPONSE" => "n"
   }
   command "#{source_path}/install.sh", :env => build_env
+
+  erb source: "ossec.conf.erb",
+      dest: "#{dst_path}/etc/ossec.conf",
+      mode: 0644,
+      vars: {}
 end
