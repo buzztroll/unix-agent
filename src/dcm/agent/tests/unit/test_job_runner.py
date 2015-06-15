@@ -156,14 +156,14 @@ class TestJobRunnerChild(unittest.TestCase):
         jr = job_runner.JobRunnerWorker(pipe, g_fake_conf)
         tr = threading.Thread(target=jr.run)
         tr.start()
-        time.sleep(1)
         # check that we got good stuff back
+        time.sleep(0.2)
         args, kwargs = pipe.send.call_args_list[0]
         self.assertEqual(args[0][0], 0)
         pid = args[0][1]
-
         wrk = (job_runner.JobRunnerWorker.CMD_POLL_JOB, pid)
         pass_force_in_results.put(wrk)
+        time.sleep(0.2)
 
         jr.done()
         tr.join()
