@@ -1,7 +1,11 @@
 from collections import namedtuple
 import os
+import queue
 import threading
 import unittest
+import uuid
+import mock
+import time
 
 import dcm.agent.job_runner as job_runner
 
@@ -70,3 +74,99 @@ class TestJobRunner(unittest.TestCase):
 
         for t in threads:
             t.join()
+
+
+class TestJobRunnerChild(unittest.TestCase):
+
+    def test_none_from_pipe(self):
+        pipe = mock.Mock()
+        pipe.poll.return_value = True
+        pipe.recv.return_value = None
+        jr = job_runner.JobRunnerWorker(pipe, g_fake_conf)
+        tr = threading.Thread(target=jr.run)
+        tr.start()
+        time.sleep(0.1)
+        jr.done()
+        tr.join()
+
+    def test_basic_sync_job(self):
+        msg = str(uuid.uuid4())
+        wrk = (job_runner.JobRunnerWorker.CMD_JOB, ["/bin/echo", msg], "/", {})
+        pipe = mock.Mock()
+        pipe.poll.return_value = True
+        pipe.recv.return_value = wrk
+        jr = job_runner.JobRunnerWorker(pipe, g_fake_conf)
+        tr = threading.Thread(target=jr.run)
+        tr.start()
+        time.sleep(0.05)
+        jr.done()
+        tr.join()
+        # check that we got good stuff back
+        args, kwargs = pipe.send.call_args_list[0]
+        self.assertEqual(args[0][0], 0)
+
+    def test_bad_sync_job(self):
+        msg = str(uuid.uuid4())
+        wrk = (job_runner.JobRunnerWorker.CMD_JOB, ["notreal"], "/", {})
+        pipe = mock.Mock()
+        pipe.poll.return_value = True
+        pipe.recv.return_value = wrk
+        jr = job_runner.JobRunnerWorker(pipe, g_fake_conf)
+        tr = threading.Thread(target=jr.run)
+        tr.start()
+        time.sleep(0.05)
+        jr.done()
+        tr.join()
+        # check that we got good stuff back
+        args, kwargs = pipe.send.call_args_list[0]
+        self.assertEqual(args[0][0], 1)
+
+    def test_unknown_job(self):
+        msg = str(uuid.uuid4())
+        wrk = ("NOTREAL", ["/bin/echo", msg], "/", {})
+        pipe = mock.Mock()
+        pipe.poll.return_value = True
+        pipe.recv.return_value = wrk
+        pipe.send.side_effect = Exception("BadMessage")
+        jr = job_runner.JobRunnerWorker(pipe, g_fake_conf)
+        tr = threading.Thread(target=jr.run)
+        tr.start()
+        time.sleep(0.05)
+        jr.done()
+        tr.join()
+        # check that we got good stuff back
+        self.assertEqual(pipe.send.call_count, 0)
+
+    def test_poll_job(self):
+
+        pass_force_in_results = queue.Queue()
+
+        def poller():
+            try:
+                return pass_force_in_results.get(timeout=1.0)
+            except:
+                return None
+
+        msg = str(uuid.uuid4())
+        wrk = (job_runner.JobRunnerWorker.CMD_JOB, ["/bin/echo", msg], "/", {})
+        pass_force_in_results.put(wrk)
+        pipe = mock.Mock()
+        pipe.poll.side_effect = lambda x: pass_force_in_results.qsize() > 0
+        pipe.recv.side_effect = poller
+        jr = job_runner.JobRunnerWorker(pipe, g_fake_conf)
+        tr = threading.Thread(target=jr.run)
+        tr.start()
+        time.sleep(1)
+        # check that we got good stuff back
+        args, kwargs = pipe.send.call_args_list[0]
+        self.assertEqual(args[0][0], 0)
+        pid = args[0][1]
+
+        wrk = (job_runner.JobRunnerWorker.CMD_POLL_JOB, pid)
+        pass_force_in_results.put(wrk)
+
+        jr.done()
+        tr.join()
+        args, kwargs = pipe.send.call_args_list[1]
+        self.assertEqual(args[0][0], 0)
+        self.assertEqual(args[0][1].strip(), msg)
