@@ -26,14 +26,13 @@ class TestAlertMessaging(unittest.TestCase):
         alerter.stop()
         self.assertEqual(alerter._sm._current_state, "COMPLETE")
 
-
     def test_alert_retransmission(self):
         timeout = 0.1
         alert_doc = {"somekey": "value"}
         conn = mock.Mock()
         alerter = alert_msg.AlertAckMsg(alert_doc, conn, timeout=timeout)
         alerter.send()
-        dcm_events.poll(timeblock=timeout*2.0)
+        dcm_events.poll(timeblock=timeout*1.5)
         alerter.incoming_message()
 
         call = mock.call(alert_doc)
@@ -46,7 +45,7 @@ class TestAlertMessaging(unittest.TestCase):
         conn = mock.Mock()
         alerter = alert_msg.AlertAckMsg(alert_doc, conn, timeout=timeout)
         alerter.send()
-        dcm_events.poll(timeblock=timeout*2.0)
+        dcm_events.poll(timeblock=timeout*1.5)
         alerter.incoming_message()
         alerter.incoming_message()
         call = mock.call(alert_doc)
