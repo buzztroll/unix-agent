@@ -46,20 +46,19 @@ class StateMachine(object):
                        "%(old_state)s to %(new_state)s") % locals()
             _g_logger.debug(log_msg)
             self._event_list.append((event, old_state, new_state))
-            if func is not None:
-                try:
-                    _g_logger.debug("Calling %s | %s" % (func.__name__,
-                                                         func.__doc__))
+            try:
+                if func is not None:
+                    _g_logger.debug("Calling %s | %s" % (func.__name__,                                                         func.__doc__))
                     func(**kwargs)
-                    self._current_state = new_state
-                    _g_logger.debug("Moved to new state %s." % new_state)
-                except exceptions.DoNotChangeStateException as dncse:
-                    _g_logger.warning("An error occurred that permits us "
-                                      "to continue but skip the state "
-                                      "change. %s" % str(dncse))
-                except Exception as ex:
-                    _g_logger.exception("An exception occurred %s")
-                    raise
+                self._current_state = new_state
+                _g_logger.debug("Moved to new state %s." % new_state)
+            except exceptions.DoNotChangeStateException as dncse:
+                _g_logger.warning("An error occurred that permits us "
+                                  "to continue but skip the state "
+                                  "change. %s" % str(dncse))
+            except Exception as ex:
+                _g_logger.exception("An exception occurred %s")
+                raise
         except KeyError as keyEx:
             raise exceptions.IllegalStateTransitionException(
                 event, self._current_state)

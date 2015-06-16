@@ -226,7 +226,7 @@ def get_default_conf_dict():
 
 def update_from_config_file(conf_file, conf_dict):
     # pull from the existing config file
-    parser = configparser.SafeConfigParser()
+    parser = configparser.ConfigParser()
     parser.read([conf_file])
 
     for s in parser.sections():
@@ -505,7 +505,8 @@ def main(argv=sys.argv[1:]):
 
     try:
         make_dirs(conf_d)
-        copy_scripts(conf_d)
+        if not opts.reload:
+            copy_scripts(conf_d)
         do_plugin_and_logging_conf(conf_d, opts)
         (_, base_dir) = conf_d["storage"]["base_dir"]
         cleanup_previous_install(conf_d)

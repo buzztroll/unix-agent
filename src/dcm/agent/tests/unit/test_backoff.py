@@ -1,6 +1,7 @@
 import datetime
 import math
 import mock
+import time
 import unittest
 
 import dcm.agent.connection.websocket as websocket
@@ -166,3 +167,46 @@ class TestBackoff(unittest.TestCase):
         ws.close()
 
         self.assertEqual(1, m.connect.call_count)
+
+    def test_backoff_object_ready_immediately(self):
+        initial_backoff_second = 300.0
+        max_backoff_seconds = initial_backoff_second
+        backoff = websocket.Backoff(
+            max_backoff_seconds,
+            initial_backoff_second=initial_backoff_second)
+        self.assertTrue(backoff.ready())
+
+    def test_backoff_object_error_not_ready(self):
+        initial_backoff_second = 300.0
+        max_backoff_seconds = initial_backoff_second
+        backoff = websocket.Backoff(
+            max_backoff_seconds,
+            initial_backoff_second=initial_backoff_second)
+        backoff.error()
+        self.assertFalse(backoff.ready())
+
+    def test_backoff_object_error_wait_ready(self):
+        initial_backoff_second = 0.05
+        max_backoff_seconds = initial_backoff_second
+        backoff = websocket.Backoff(
+            max_backoff_seconds,
+            initial_backoff_second=initial_backoff_second)
+        backoff.error()
+        time.sleep(initial_backoff_second)
+        self.assertTrue(backoff.ready())
+
+    def test_backoff_object_idle_time(self):
+        initial_backoff_second = 300.0
+        idle_mod = 0.25
+        max_backoff_seconds = initial_backoff_second * 10
+        backoff = websocket.Backoff(
+            max_backoff_seconds,
+            initial_backoff_second=initial_backoff_second,
+            idle_modifier=idle_mod)
+        backoff.activity()
+        idle_time = 1.0
+        time.sleep(idle_time)
+        backoff.closed()
+        self.assertFalse(backoff.ready())
+        time.sleep(idle_time * idle_mod)
+        self.assertTrue(backoff.ready())

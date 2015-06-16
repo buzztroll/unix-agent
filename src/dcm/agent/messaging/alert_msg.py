@@ -14,24 +14,25 @@ class States:
 
 class Events:
     TIMEOUT = "TIMEOUT"
-    SEND = "TIMEOUT"
+    SEND = "SEND"
     ACK_RECEIVED = "ACK_RECEIVED"
     STOP = "STOP"
 
 
 class AlertAckMsg(object):
 
-    def __init__(self, timeout, doc, conn):
+    def __init__(self, doc, conn, timeout=5.0):
         self._timeout = timeout
         self._doc = doc
         self._sm = state_machine.StateMachine(States.NEW)
+        self.setup_states()
         self._timer = None
         self._lock = threading.RLock()
         self._conn = conn
 
     @utils.class_method_sync
     def incoming_message(self):
-        self._sm.event_occurred(Events.ACK_RECEIVED, message={})
+        self._sm.event_occurred(Events.ACK_RECEIVED)
 
     def lock(self):
         self._lock.acquire()
@@ -41,11 +42,15 @@ class AlertAckMsg(object):
 
     @utils.class_method_sync
     def timeout(self):
-        self._sm.event_occurred(Events.TIMEOUT, message={})
+        self._sm.event_occurred(Events.TIMEOUT)
 
     @utils.class_method_sync
     def send(self):
-        self._sm.event_occurred(Events.SEND, message={})
+        self._sm.event_occurred(Events.SEND)
+
+    @utils.class_method_sync
+    def stop(self):
+        self._sm.event_occurred(Events.STOP)
 
     def _send_timeout(self):
         self._timer = dcm_events.register_callback(
@@ -57,14 +62,14 @@ class AlertAckMsg(object):
 
     def _sm_ack_received(self):
         # the timer must be active
-        self._timer.cancel()
+        dcm_events.cancel_callback(self._timer)
         self._timer = None
 
     def _sm_resend_message(self):
         self._send_timeout()
 
     def _sm_stopping_early(self):
-        self._timer.cancel()
+        dcm_events.cancel_callback(self._timer)
         self._timer = None
 
     def setup_states(self):
@@ -74,7 +79,7 @@ class AlertAckMsg(object):
                                 self._sm_send_message)
         self._sm.add_transition(States.NEW,
                                 Events.STOP,
-                                States.NEW,
+                                States.COMPLETE,
                                 None)
 
         self._sm.add_transition(States.WAITING_FOR_ACK,
