@@ -24,6 +24,5 @@ build do
 
   erb source: "ossec.conf.erb",
       dest: "#{dst_path}/etc/ossec.conf",
-      mode: 0644,
-      vars: {}
+      mode: 0644
 end
