@@ -1,4 +1,23 @@
-# 0.9.21 (2015-6-2)
+# 0.11.0 (2015-6-18)
+
+Features:
+* Ported the agent to python 3.
+* Added ossec to the extras packages for intrusion detection use on
+  the agent.
+* Additional tests (alert messaging, backoff, job_runner, etc).
+* Added a pub/sub mechanism for a cleaner separation of concerns.
+
+Bug Fixes:
+* Add a path to gem when running puppet configuration management.
+* Prevent re-copying scripts when doing a re-configure.
+* Prevent clean_image from directly deleting the messaging database
+  and thereby breaking communication.  Now the db is cleaned out
+  via a pub/sub mechanism.
+* Removed legacy configure management features.
+
+Features:
+
+# 0.10.0 (2015-6-2)
 
 Features:
 * Cleaning all the files in the secure directory.
@@ -15,7 +34,7 @@ Bug Fixes:
 * Reorganized imports and did PEP8 cleanup.
 * Moved Konami to DCM.
 * Allowing compression option to run script plugin.
-* Fixed a security issue that could allow nonadministrative users 
+* Fixed a security issue that could allow non-administrative users 
   with access to the server to spoof the agent connection. 
 
 # 0.9.20 (2015-4-27)
