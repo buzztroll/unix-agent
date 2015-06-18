@@ -20,7 +20,7 @@ PUPPET_BIN=$EXTRAS_PATH/bin/puppet
 CERT_DIR=$PUPPET_CONF_DIR/ssl/certs/
 KEY_DIR=$PUPPET_CONF_DIR/ssl/private_keys/
 $LOGGER -t "$logTag" "Running configuration management for Puppet..."
-
+export PATH=$EXTRAS_PATH/bin:$EXTRAS_PATH/embedded/bin:$PATH
 puppet_stdfile=`mktemp -q /tmp/dcmagentpuppetrun.XXXXXX`
 
 # we need to test if the passed puppetmaster is an IP or hostname
