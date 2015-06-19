@@ -66,7 +66,7 @@ if [[ $EXIT != 0 ]]; then
     exit 92
 fi
 
-$REAL_SUDO -i ${PUPPET_BIN} agent --confdir $PUPPET_CONF_DIR --onetime --no-daemonize --detailed-exitcodes --logdest=$DCM_TMP_DIR/es-puppet-firstrun.log > $puppet_stdfile 2>&1
+$REAL_SUDO -E ${PUPPET_BIN} agent --confdir $PUPPET_CONF_DIR --onetime --no-daemonize --detailed-exitcodes --logdest=$DCM_TMP_DIR/es-puppet-firstrun.log > $puppet_stdfile 2>&1
 EXIT=$?
 
 if [ -s $puppet_stdfile ]; then
