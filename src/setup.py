@@ -19,7 +19,7 @@ def get_git_version():
         if rc != 0:
             semversion = "unknown"
         else:
-            semversion = stdoutdata.strip()
+            semversion = stdoutdata.decode().strip()
 
         p = subprocess.Popen("git rev-parse HEAD",
                              cwd=basedir,
@@ -30,7 +30,7 @@ def get_git_version():
         rc = p.wait()
         if rc != 0:
             return ""
-        version = "-" + stdoutdata.strip()
+        version = "-" + stdoutdata.decode().strip()
 
         p = subprocess.Popen("git diff",
                              cwd=basedir,
@@ -41,7 +41,7 @@ def get_git_version():
         rc = p.wait()
         if rc == 0 and stdoutdata:
             version = version + "-diff"
-        return semversion + "-" + version
+        return semversion + version
     except Exception:
         return ""
 
