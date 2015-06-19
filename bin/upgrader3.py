@@ -5,8 +5,9 @@ import shutil
 import subprocess
 import sys
 import tempfile
-import urllib2
-
+import urllib.error
+import urllib.parse
+import urllib.request
 
 # in this version we only support the upgrade of agents installed with
 # unmodifed package defaults
@@ -24,12 +25,12 @@ _g_logger = logging
 def get_installer(url):
     osf, fname = tempfile.mkstemp()
     os.close(osf)
-    response = urllib2.urlopen(url)
+    response = urllib.request.urlopen(url)
     html = response.read()
     with open(fname, "w") as fptr:
         fptr.write(html)
-    os.chmod(fname, 0755)
-    print fname
+    os.chmod(fname, 0o755)
+    print(fname)
     return fname
 
 
