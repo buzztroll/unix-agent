@@ -17,6 +17,7 @@ else
 	sed -i "/$DCM_USERNAME/d" /etc/sudoers
 fi
 
+rm -rf /opt/dcm-agent
 rm -f /etc/init.d/dcm-agent
 
 echo "dcm-agent has been uninstalled!"

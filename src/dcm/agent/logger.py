@@ -5,6 +5,8 @@ import os
 import urllib.parse
 import urllib.error
 import urllib.request
+import pwd
+import grp
 
 from dcm.agent.events.globals import global_space as dcm_events
 
@@ -90,3 +92,24 @@ def delete_logs():
                                 os.remove(l)
                             except:
                                 pass
+
+
+def logs_perms(conf):
+    uid = pwd.getpwnam(conf.system_user).pw_uid
+    gid = grp.getgrnam(conf.system_user).gr_gid
+    # effectively just for tests
+    for key in logging.Logger.manager.loggerDict:
+        logger = logging.Logger.manager.loggerDict[key]
+        if type(logger) == logging.Logger:
+            for h in logger.handlers:
+                if isinstance(h, logging.FileHandler):
+                    for l in glob.glob("%s*" % os.path.abspath(h.baseFilename)):
+                        # change everything in the dir for the rotating file case
+                        try:
+                            os.chmod(l, 0o600)
+                        except:
+                            pass
+                        try:
+                            os.chown(l, uid, gid)
+                        except:
+                            pass
