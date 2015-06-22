@@ -97,7 +97,7 @@ if [ $# -gt 0 ]; then
 fi
 
 function agent_exists() {
-    if [ -f "/opt/dcm-agent/agentve/bin/dcm-agent" ]; then
+    if [ -f "/opt/dcm-agent/embedded" ]; then
         return 0
     else
         return 1
