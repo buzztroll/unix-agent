@@ -1,4 +1,4 @@
-# 0.11.0 (2015-6-23)
+# 0.11.1 (2015-6-23)
 
 Bug Fixes:
 * In the previous release when then extras were installed it cause the
