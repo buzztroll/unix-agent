@@ -1,4 +1,5 @@
 from distutils.log import warn
+import getpass
 import logging
 import os
 import tempfile
@@ -26,6 +27,7 @@ class TestLoggingClear(unittest.TestCase):
             log_file_str = fptr.read()
 
         log_file_str = log_file_str.replace("@LOG_LEVEL@", "DEBUG")
+        log_file_str = log_file_str.replace("@DCM_USER@", getpass.getuser())
         log_file_str = log_file_str.replace("@LOGFILE_PATH@", cls.base_log_file)
 
         with open(cls.log_conf_file, "w") as fptr:

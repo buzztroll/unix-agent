@@ -194,7 +194,6 @@ class AgentConfig(object):
         self._normalize_options()
 
         setup_logging(self.logging_configfile)
-        logger.logs_perms(self)
 
     def _normalize_options(self):
         if self.storage_dbfile is None:

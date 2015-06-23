@@ -17,29 +17,32 @@ filters:
 
 handlers:
     file_handler:
-        class: logging.handlers.RotatingFileHandler
+        class: dcm.agent.logger.DCMAgentLogger
         level: @LOG_LEVEL@
         formatter: simple
         filename: @LOGFILE_PATH@
+        owner: @DCM_USER@
         maxBytes: 10485760
         backupCount: 20
         encoding: utf8
         filters: [add_request]
 
     wire_handler:
-        class: logging.handlers.RotatingFileHandler
+        class: dcm.agent.logger.DCMAgentLogger
         level: INFO
         formatter: wire
         filename: @LOGFILE_PATH@.wire
+        owner: @DCM_USER@
         maxBytes: 10485760
         backupCount: 20
         encoding: utf8
 
     job_runner_file_handler:
-        class: logging.handlers.RotatingFileHandler
+        class: dcm.agent.logger.DCMAgentLogger
         level: @LOG_LEVEL@
         formatter: simple
         filename: @LOGFILE_PATH@.job_runner
+        owner: @DCM_USER@
         maxBytes: 10485760
         backupCount: 20
         encoding: utf8
