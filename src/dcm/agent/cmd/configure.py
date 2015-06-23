@@ -5,6 +5,7 @@ from __future__ import print_function
 
 import argparse
 import configparser
+import glob
 import os
 import shutil
 import subprocess
@@ -370,14 +371,18 @@ def do_plugin_and_logging_conf(conf_d, opts):
         for line in lines:
             line = line.replace("@LOGFILE_PATH@", log_file)
             line = line.replace("@LOG_LEVEL@", opts.loglevel)
+            line = line.replace("@DCM_USER@", conf_d["system"]["user"][1])
             fptr.write(line)
 
 
 def copy_scripts(conf_d):
     (h, dest_dir) = conf_d["storage"]["script_dir"]
-    src_script_dir = config.get_python_script_dir()
-    os.system("cp %s %s" % (os.path.join(src_script_dir, 'common-linux', '*'),
-                            dest_dir))
+    src_script_dir = os.path.join(
+        config.get_python_script_dir(), 'common-linux')
+    for s in glob.glob("%s/*" % os.path.abspath(src_script_dir)):
+        if os.path.isfile(s):
+            d = os.path.basename(s)
+            shutil.copy(s, os.path.join(dest_dir, d))
 
 
 def update_relative_paths(conf_d):

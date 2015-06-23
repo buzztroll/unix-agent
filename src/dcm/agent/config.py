@@ -12,6 +12,7 @@ from dcm.agent.cloudmetadata import CLOUD_TYPES
 import dcm.agent.connection.websocket as websocket
 import dcm.agent.exceptions as exceptions
 import dcm.agent.job_runner as job_runner
+import dcm.agent.logger as logger
 import dcm.agent.tests.utils.test_connection as test_connection  # TODO
 import dcm.agent.utils as utils
 
@@ -425,3 +426,4 @@ def setup_logging(logging_configfile):
     with open(logging_configfile, 'rt') as f:
         config = yaml.load(f.read())
         logging.config.dictConfig(config)
+

@@ -5,6 +5,8 @@ import os
 import urllib.parse
 import urllib.error
 import urllib.request
+import pwd
+import grp
 
 from dcm.agent.events.globals import global_space as dcm_events
 
@@ -79,14 +81,38 @@ def delete_logs():
         logger = logging.Logger.manager.loggerDict[key]
         if type(logger) == logging.Logger:
             for h in logger.handlers:
-                if isinstance(h, logging.FileHandler):
-                    # just to truncate the file
-                    with open(h.baseFilename, "w"):
-                        pass
+                if isinstance(h, DCMAgentLogger):
+                    h.clear_logs()
 
-                    if isinstance(h, RotatingFileHandler):
-                        for l in glob.glob("%s.*" % h.baseFilename):
-                            try:
-                                os.remove(l)
-                            except:
-                                pass
+
+class DCMAgentLogger(RotatingFileHandler):
+
+    def __init__(self, filename, owner=None, mode='a', maxBytes=0, backupCount=0, encoding=None, delay=False):
+        self._uid = pwd.getpwnam(owner).pw_uid
+        self._gid = grp.getgrnam(owner).gr_gid
+        super(DCMAgentLogger, self).__init__(
+            filename, mode=mode, maxBytes=maxBytes, backupCount=backupCount,
+            encoding=encoding, delay=delay)
+        self.log_perms()
+
+    def _open(self):
+        s = super(DCMAgentLogger, self)._open()
+        self.log_perms()
+        return s
+
+    def log_perms(self):
+        for l in glob.glob("%s*" % os.path.abspath(self.baseFilename)):
+            try:
+                os.chown(l, self._uid, self._gid)
+            except Exception:
+                logging.exception("We could not set the log file ownership.")
+
+    def clear_logs(self):
+        with open(self.baseFilename, "w"):
+            pass
+
+        for l in glob.glob("%s.*" % self.baseFilename):
+            try:
+                os.remove(l)
+            except:
+                logging.exception("Failed to remove a rotated file.")
