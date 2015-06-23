@@ -115,6 +115,13 @@ echo "Done."
 echo "env -i PATH=$PATH $BASEDIRNAME/bin/enstratiusinitd " '$@' >> $startup_fname
 chmod 755 $startup_fname
 
+if [ -e /opt/dcm-agent/embedded/agentve ]; then
+    # when one agent is installed on top of another this directory is left there
+    # and thus the link fails to properly create
+    rm -rf /opt/dcm-agent/embedded/agentve
+fi
+ln -s /opt/dcm-agent/agentve /opt/dcm-agent/embedded/agentve
+
 echo "Create the configuration file"
 /opt/dcm-agent/agentve/bin/dcm-agent-configure -v -I -U $DCM_USERNAME -p $BASEDIRNAME
 if [ $? -ne 0 ]; then
