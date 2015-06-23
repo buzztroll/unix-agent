@@ -1,3 +1,12 @@
+# 0.11.0 (2015-6-23)
+
+Bug Fixes:
+* In the previous release when then extras were installed it cause the
+  logs to be owned by the root user and thus the agent would fail to
+  log on start and died.  This patches fixes this.
+* Fixes problems when upgrading from one version to another without
+  uninstalling first.
+
 # 0.11.0 (2015-6-18)
 
 Features:
