@@ -455,5 +455,6 @@ if [[ $platform != 'ubuntu' ]]; then
     echo "========================================================================================="
 fi
 
+rm -f /dcm/logs/*
 echo "To start the agent now please run:"
 echo " /etc/init.d/dcm-agent start"

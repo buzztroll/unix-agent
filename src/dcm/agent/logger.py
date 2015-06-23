@@ -113,3 +113,20 @@ def logs_perms(conf):
                             os.chown(l, uid, gid)
                         except:
                             pass
+
+
+class DCMAgentLogger(RotatingFileHandler):
+
+    def set_owner(self, owner):
+        self._uid = pwd.getpwnam(owner).pw_uid
+        self._gid = grp.getgrnam(owner).gr_gid
+
+    def clear_logs(self):
+        with open(self.baseFilename, "w"):
+            pass
+
+        for l in glob.glob("%s.*" % self.baseFilename):
+            try:
+                os.remove(l)
+            except:
+                pass
