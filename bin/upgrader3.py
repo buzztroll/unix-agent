@@ -27,7 +27,7 @@ def get_installer(url):
     os.close(osf)
     response = urllib.request.urlopen(url)
     html = response.read()
-    with open(fname, "w") as fptr:
+    with open(fname, "wb") as fptr:
         fptr.write(html)
     os.chmod(fname, 0o755)
     print(fname)
