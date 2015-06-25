@@ -58,9 +58,13 @@ fi
 
 sleep 10
 sudo mount "$mountPoint" 2>&1 | $LOGGER -t "$logTag"
-exit_if_pipe_false "Mount failed."
+ret=$?
+if [ $ret -ne 0 ]; then
+    echo "Mount failed."
+    exit $ret
+fi
 sudo chown $DCM_USER:$DCM_USER "$mountPoint"  2>&1 | $LOGGER -t "$logTag"
-sudo chmod 775 "$mountPoint" 2>&1 | $LOGGER -t "$logTag"
-ret=${PIPESTATUS}
+sudo chmod 775 "$mountPoint" 2>&1
+ret=$?
 				
 exit $ret

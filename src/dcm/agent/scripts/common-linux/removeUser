@@ -57,8 +57,8 @@ elif [ -f /etc/sudoers ]; then
 	sudo sed -i "/${USER_ID}/d" /etc/sudoers
 fi
 
-sudo "$USERDEL" -f -r "$USER_ID" 2>&1 | $LOGGER -t "$logTag"
-ret=${PIPESTATUS}
+sudo "$USERDEL" -f -r "$USER_ID" 2>&1
+ret=$?
 
 # After running 'userdel -f -r' command, code 12 is normally returned. That's because /var/mail/USER_ID does not exist.
 # Since it is not a fatal error but a warning, exit code 12 can be replaced with exit code 0.
