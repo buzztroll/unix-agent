@@ -83,8 +83,8 @@ fi
 
 echo "LOG FILE=$DCM_LOG_FILE"
 
-sudo "$GROUPADD" ${CUST_ID} 2>&1 | $LOGGER -t "$logTag"
-ret=${PIPESTATUS}
+sudo "$GROUPADD" ${CUST_ID} 2>&1
+ret=$?
 if [ $ret -ne 9 -a $ret -ne 0 ]; then
         $LOGGER -t "$logTag" "Group add failed. Exit code: ${ret}"
         exit $ret
@@ -95,8 +95,12 @@ if [ $exists == 0 ] ; then
 fi
 
 if [ ${ADMINISTRATOR} == "true" ] ; then
-	sudo ${USERMOD} -G $DCM_USER ${USER_ID} 2>&1 | $LOGGER -t "$logTag"
-	exit_if_pipe_false "User add of ${USER_ID} to dcm group failed."
+	sudo ${USERMOD} -G $DCM_USER ${USER_ID} 2>&1
+	ret=$?
+	if [ $ret -ne 0 ]; then
+	    echo "User add of ${USER_ID} to dcm group failed."
+	    exit $ret
+	fi
 	if [ -d /etc/sudoers.d ]; then
 		# For distros that have the latest sudo package which uses sudoers.d directory.
 		echo "${USER_ID} ALL=(ALL) NOPASSWD: ALL" > /tmp/${USER_ID}-sudoer
@@ -120,8 +124,8 @@ ret=0
 if [ "X${SSH_KEY_FILE}" != "X" ]; then
     cat ${SSH_KEY_FILE} | sudo tee -a /home/${USER_ID}/.ssh/authorized_keys
     sudo chown ${USER_ID}:${CUST_ID} /home/${USER_ID}/.ssh/authorized_keys 2>&1 | $LOGGER -t "$logTag"
-    sudo chmod 600 /home/${USER_ID}/.ssh/authorized_keys 2>&1 | $LOGGER -t "$logTag"
-    ret=${PIPESTATUS}
+    sudo chmod 600 /home/${USER_ID}/.ssh/authorized_keys 2>&1
+    ret=$?
 fi
 
 if [ -e /etc/selinux/ ]; then

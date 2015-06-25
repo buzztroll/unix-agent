@@ -1,6 +1,16 @@
 #!/usr/bin/env bash
 
-[ -t 0 ] || read PIPEINPUT
+function log_line() {
+    MSG=$1
+    if [ -z $DCM_LOG_FILE ]; then
+        echo "$MSG" 1>&2
+    else
+        if [ ! -e $DCM_LOG_FILE ]; then
+            touch $DCM_LOG_FILE
+        fi
+        echo "$MSG" >> $DCM_LOG_FILE
+    fi
+}
 
 tag=""
 if [ "X$1" == "X-t" ]; then
@@ -10,22 +20,13 @@ if [ "X$1" == "X-t" ]; then
 fi
 msg="${@}"
 
-if [ "X$PIPEINPUT" != "X" ]; then
-   if [ "X$msg" != "X" ]; then
-       msg="$msg "
-   fi
-   msg="$msg$PIPEINPUT"
+if [ ! -z "$msg" ]; then
+    log_line "$tag[${msg}]"
 fi
 
-if [ "X$msg" == "X" ]; then
-    exit 0
-fi
-
-if [ -z $DCM_LOG_FILE ]; then
-    echo "$tag[$msg]" 1>&2
-else
-    if [ ! -e $DCM_LOG_FILE ]; then
-        touch $DCM_LOG_FILE
-    fi
-    echo "$tag[$msg]" >> $DCM_LOG_FILE
+if [ ! -t 0 ]; then
+    while read PIPEINPUT;
+    do
+        log_line "$tag[${PIPEINPUT}]"
+    done
 fi
