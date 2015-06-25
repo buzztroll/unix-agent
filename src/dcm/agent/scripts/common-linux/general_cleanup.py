@@ -18,6 +18,15 @@ def main(bin_path, dcm_basedir, dbfile):
                          os.path.join(dirpath, file))
                     os.system(cmd)
 
+    files_to_clean = ["/var/lib/waagent/provisioned"]
+    for f in files_to_clean:
+        try:
+            os.remove(f)
+        except OSError as osEx:
+            # in many cases the file will not be there
+            if osEx.errno != 2:
+                sys.stderr.write(str(osEx))
+
 
 if __name__ == "__main__":
     try:
