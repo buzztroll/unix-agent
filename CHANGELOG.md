@@ -1,3 +1,11 @@
+# 0.11.2 (2015-6-25)
+
+Bug Fixes:
+* The symlink to dcm-agent-configure at
+  /opt/dcm-agent/embedded/bin/dcm-agent-configure was added back in.
+* The script logger can now handle more than 1 line this will avoid
+  the pipe status 141 problem.
+
 # 0.11.1 (2015-6-23)
 
 Bug Fixes:
