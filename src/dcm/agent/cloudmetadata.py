@@ -473,6 +473,8 @@ def set_metadata_object(conf):
             cloud_name == CLOUD_TYPES.CloudStack3:
         meta_data_obj = CloudStackMetaData(
             conf, base_url=conf.cloud_metadata_url)
+    elif cloud_name == CLOUD_TYPES.DigitalOcean:
+        meta_data_obj = DigitalOceanMetaData(conf, base_url=conf.cloud_metadata_url)
     elif cloud_name == CLOUD_TYPES.Konami:
         meta_data_obj = KonamiMetaData(conf)
     elif cloud_name == CLOUD_TYPES.Other:
@@ -495,6 +497,7 @@ def guess_effective_cloud(conf):
         CloudStackMetaData(conf),
         AWSMetaData(conf),
         GCEMetaData(conf),
+        DigitalOceanMetaData(conf),
         AzureMetaData(conf),
         UnknownMetaData(conf)
     ]
