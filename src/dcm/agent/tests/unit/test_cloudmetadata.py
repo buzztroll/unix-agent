@@ -270,3 +270,26 @@ class TestKonamiMetaDataBase(unittest.TestCase):
     def test_cloud_type(self):
         self.assertEqual(self.cm_obj.get_cloud_type(),
                          cm.CLOUD_TYPES.Konami)
+
+
+class TestDigitalOceanMetaDataBase(unittest.TestCase):
+    @classmethod
+    def setUpClass(cls):
+        test_utils.connect_to_debugger()
+
+    def setUp(self):
+        conf = mock.Mock()
+        self.cm_obj = cm.DigitalOceanMetaData(conf)
+
+    def test_cloud_type(self):
+        self.assertEqual(self.cm_obj.get_cloud_type(),
+                         cm.CLOUD_TYPES.DigitalOcean)
+
+    @mock.patch('dcm.agent.cloudmetadata._get_metadata_server_url_data')
+    def test_base_startup(self, md_server_data):
+        startup_data = "some date"
+        md_server_data.return_value = startup_data
+        sd = self.cm_obj.get_startup_script()
+        self.assertEqual(startup_data, sd)
+
+
