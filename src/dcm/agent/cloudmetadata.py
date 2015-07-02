@@ -233,7 +233,7 @@ class DigitalOceanMetaData(CloudMetaData):
         return ip_list
 
     def get_handshake_ip_address(self):
-        return [self.get_cloud_metadata("local-ipv4")]
+        return [self.get_cloud_metadata("interfaces/public/0/ipv4/address")]
 
     def get_cloud_type(self):
         return CLOUD_TYPES.DigitalOcean
