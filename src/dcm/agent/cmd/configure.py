@@ -197,7 +197,7 @@ def pick_meta_data(conf_d):
     elif cloud == cloudmetadata.CLOUD_TYPES.Google:
         mu = "http://metadata.google.internal/computeMetadata/v1"
     elif cloud == cloudmetadata.CLOUD_TYPES.DigitalOcean:
-        mu = "http://169.254.169.254/meta-data/v1"
+        mu = "http://169.254.169.254/metadata/v1"
     elif cloud == cloudmetadata.CLOUD_TYPES.CloudStack:
         mu = None
     elif cloud == cloudmetadata.CLOUD_TYPES.CloudStack3:
