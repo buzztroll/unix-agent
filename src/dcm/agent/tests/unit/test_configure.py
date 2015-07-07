@@ -96,6 +96,9 @@ class TestConfigure(unittest.TestCase):
             elif cloud == "Google":
                 mu = "http://metadata.google.internal/computeMetadata/v1"
                 self.assertEqual(mu, cloud_from_file)
+            elif cloud == "DigitalOcean":
+                mu = "http://169.254.169.254/metadata/v1"
+                self.assertEqual(mu, cloud_from_file)
             elif cloud == "CloudStack":
                 self.assertIsNone(cloud_from_file)
             elif cloud == "CloudStack3":
