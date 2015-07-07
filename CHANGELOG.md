@@ -1,3 +1,9 @@
+# 0.11.3 (2015-7-7)
+
+Features:
+* Added support for Digital Ocean.
+* Added needed clean up for Azure images in clean_image.
+
 # 0.11.2 (2015-6-25)
 
 Bug Fixes:
