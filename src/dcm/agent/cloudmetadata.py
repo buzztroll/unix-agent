@@ -37,6 +37,7 @@ class CLOUD_TYPES:
 #    CloudSigma = "CloudSigma"
     CloudStack = "CloudStack"
     CloudStack3 = "CloudStack3"
+    DigitalOcean = "DigitalOcean"
     Eucalyptus = "Eucalyptus"
 #    GoGrid = "GoGrid"
     Google = "Google"
@@ -185,6 +186,57 @@ class AWSMetaData(CloudMetaData):
 
     def get_cloud_type(self):
         return CLOUD_TYPES.Amazon
+
+
+class DigitalOceanMetaData(CloudMetaData):
+    def __init__(self, conf, base_url=None):
+        super(DigitalOceanMetaData, self).__init__(conf)
+        _g_logger.debug("Using Digital Ocean")
+        if base_url is not None:
+            self.base_url = base_url
+        else:
+            self.base_url = "http://169.254.169.254/metadata/v1"
+
+    def get_cloud_metadata(self, key):
+        _g_logger.debug("Get metadata %s" % key)
+        url = self.base_url + "/" + key
+        result = _get_metadata_server_url_data(url)
+        _g_logger.debug("Metadata value of %s is %s" % (key, result))
+        return result
+
+    def get_startup_script(self):
+        url = self.base_url + "/" + "user-data"
+        _g_logger.debug("Get user-data %s" % url)
+        result = _get_metadata_server_url_data(url)
+        _g_logger.debug("user-data: %s" % result)
+        return result
+
+    def get_instance_id(self):
+        instance_id = self.get_cloud_metadata("id")
+        super(DigitalOceanMetaData, self).get_instance_id()
+        _g_logger.debug("Instance ID is %s" % str(instance_id))
+        return instance_id
+
+    def get_ipv4_addresses(self):
+        # do caching
+        ip_list = []
+        private_ip = self.get_cloud_metadata("interfaces/public/0/ipv4/address")
+
+        if private_ip:
+            ip_list.append(private_ip)
+
+        ip_list_from_base =\
+            super(DigitalOceanMetaData, self).get_ipv4_addresses()
+        for ip in ip_list_from_base:
+            ip_list.append(ip)
+
+        return ip_list
+
+    def get_handshake_ip_address(self):
+        return [self.get_cloud_metadata("interfaces/public/0/ipv4/address")]
+
+    def get_cloud_type(self):
+        return CLOUD_TYPES.DigitalOcean
 
 
 class CloudStackMetaData(CloudMetaData):
@@ -421,6 +473,8 @@ def set_metadata_object(conf):
             cloud_name == CLOUD_TYPES.CloudStack3:
         meta_data_obj = CloudStackMetaData(
             conf, base_url=conf.cloud_metadata_url)
+    elif cloud_name == CLOUD_TYPES.DigitalOcean:
+        meta_data_obj = DigitalOceanMetaData(conf, base_url=conf.cloud_metadata_url)
     elif cloud_name == CLOUD_TYPES.Konami:
         meta_data_obj = KonamiMetaData(conf)
     elif cloud_name == CLOUD_TYPES.Other:
@@ -443,6 +497,7 @@ def guess_effective_cloud(conf):
         CloudStackMetaData(conf),
         AWSMetaData(conf),
         GCEMetaData(conf),
+        DigitalOceanMetaData(conf),
         AzureMetaData(conf),
         UnknownMetaData(conf)
     ]
