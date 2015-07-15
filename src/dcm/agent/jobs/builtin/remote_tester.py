@@ -52,17 +52,17 @@ class RemoteTester(jobs.Plugin):
             self._msg = json.dumps(msg)
 
             _g_logger.info("Start tester remote socket.  Send " + self._msg)
-            self.sock.send(self._msg)
+            self.sock.send(self._msg.encode())
             _g_logger.info("waiting to get a message back")
 
-            msg = ""
-            ch = ""
-            while ch != '\n':
-                ch = self.sock.recv(1)
-                msg = msg + ch
-            _g_logger.info("Tester plugin Received " + msg)
+            in_msg = b''
+            ch = b'123'
+            while len(ch) > 0:
+                ch = self.sock.recv(1024)
+                in_msg = in_msg + ch
+            _g_logger.info("Tester plugin Received " + in_msg.decode())
             self.sock.close()
-            rc = json.loads(msg)
+            rc = json.loads(in_msg.decode())
             _g_logger.info("Tester plugin sending back " + str(rc))
             return rc
         except Exception:

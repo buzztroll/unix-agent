@@ -83,6 +83,9 @@ class HandshakeManager(object):
         if self._token is None:
             self._generate_token()
         _g_logger.debug("TOKEN IS " + self._token)
+        if 'FOR_TEST_AGENT_ID_ENV' in os.environ:
+            self.agent_id = os.environ['FOR_TEST_AGENT_ID_ENV']
+
 
     def validate_token_file(self):
         token_dir = self.conf.get_secure_dir()
@@ -110,6 +113,7 @@ class HandshakeManager(object):
             # this means that everything worked out well and we can move on
             payload = incoming_doc["handshake"]
             self._incoming_handshake_payload = payload
+
             self.agent_id = payload.get('agentID')
             customer_id = payload.get('customerId')
 
