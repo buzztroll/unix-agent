@@ -79,8 +79,32 @@ class CpuIdleSystemStats(SystemStats):
         return "cpu_idle_stat_array"
 
 
+class AgentVerboseSystemStats(SystemStats):
+    def __init__(self, name, hold_count, check_interval):
+        super(AgentVerboseSystemStats, self).__init__(
+            name, hold_count, check_interval)
+
+    def poll(self):
+        load = psutil.cpu_percent(self.interval) / 100.0
+        disk_io_info = psutil.disk_io_counters()
+        net_io_info = psutil.net_io_counters()
+        timestamp = time.time()
+        self.add_value({'timestamp': timestamp,
+                        'cpu-load': load,
+                        'disk-read-ops': disk_io_info.read_count,
+                        'disk-write-ops': disk_io_info.write_count,
+                        'disk-read-bytes': disk_io_info.read_bytes,
+                        'disk-write-bytes': disk_io_info.write_bytes,
+                        'net-bytes-in': net_io_info.bytes_recv,
+                        'net-bytes-out': net_io_info.bytes_sent})
+
+    def get_stats_type(self):
+        return "system_info_stat_array"
+
+
 _g_stat_object_map = {
-    "cpu-idle": CpuIdleSystemStats
+    "cpu-idle": CpuIdleSystemStats,
+    "system-stats": AgentVerboseSystemStats
 }
 
 
