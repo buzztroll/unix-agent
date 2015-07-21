@@ -13,7 +13,8 @@
 #  ======================================================================
 import json
 import logging
-from dcm.agent import utils
+
+import dcm.agent.logger as dcm_logger
 
 import dcmdocker.utils as docker_utils
 
@@ -46,7 +47,8 @@ class PullRepo(docker_utils.DockerJob):
             except Exception as ex:
                 _g_logger.debug("Error dealing with the pull output " + str(ex))
         for k in id_map:
-            utils.log_to_dcm(logging.INFO, id_map[k])
+            dcm_logger.log_to_dcm_console_job_details(
+                job_name=self.name, details="pulled " + id_map[k])
         reply_doc = {
             "return_code": 0,
             "reply_type": "docker_pull",

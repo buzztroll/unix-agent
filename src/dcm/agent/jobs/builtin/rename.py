@@ -16,6 +16,7 @@ import re
 
 import dcm.agent.jobs.direct_pass as direct_pass
 import dcm.agent.exceptions as exceptions
+import dcm.agent.logger as dcm_logger
 import dcm.agent.utils as utils
 
 
@@ -60,10 +61,10 @@ class Rename(direct_pass.DirectPass):
             return reply_doc
 
         self.ordered_param_list.append(private_ips[0])
-        utils.log_to_dcm(
-            logging.INFO,
+        dcm_logger.log_to_dcm_console_job_details(
+            job_name=self.name, details=
             "Renaming the server to %s with the local IP %s"
-            % (self.args.serverName, private_ips[0]))
+                % (self.args.serverName, private_ips[0]))
 
         return super(Rename, self).run()
 

@@ -6,6 +6,7 @@ import re
 import subprocess
 
 import dcm.agent.exceptions as exceptions
+import dcm.agent.logger as dcm_logger
 import dcm.agent.utils as utils
 
 
@@ -68,10 +69,9 @@ class Plugin(object):
         # validate that nothing extra was sent
         for arg in self.arguments:
             if arg not in self.protocol_arguments:
-                utils.log_to_dcm(logging.WARN,
-                                 "The argument %s was sent from DCM "
-                                 "but is not understood by this "
-                                 "command." % arg)
+                dcm_logger.log_to_dcm_console_unknown_job_parameter(
+                    job_name=self.name,
+                    parameter_name=arg)
             else:
                 h, mandatory, t, default = self.protocol_arguments[arg]
                 a = self.arguments[arg]

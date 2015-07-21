@@ -4,6 +4,7 @@ import threading
 
 import dcm.agent.events.globals as events
 import dcm.agent.jobs as jobs
+import dcm.agent.logger as dcm_logger
 import dcm.agent.utils as utils
 from dcm.agent.jobs.builtin.remove_user import RemoveUser
 
@@ -104,7 +105,9 @@ class CleanImage(jobs.Plugin):
                 done_cb=self._clean_topic_done)
 
             if self.args.delUser:
-                utils.log_to_dcm(logging.INFO, 'Deleting users.')
+                dcm_logger.log_to_dcm_console_job_details(
+                    job_name=self.name,
+                    details='Deleting users.')
                 for user in self.args.delUser:
                     rdoc = RemoveUser(self.conf,
                                       self.job_id,
@@ -117,17 +120,20 @@ class CleanImage(jobs.Plugin):
                         return res_doc
 
             if self.args.delKeys:
-                utils.log_to_dcm(logging.INFO, 'Deleting private keys.')
+                dcm_logger.log_to_dcm_console_job_details(
+                    job_name=self.name, details='Deleting private keys.')
                 res_doc = self.delete_private_keys()
                 if res_doc['return_code'] != 0:
                     return res_doc
 
-            utils.log_to_dcm(logging.INFO, 'Deleting history files.')
+            dcm_logger.log_to_dcm_console_job_details(
+                job_name=self.name, details='Deleting history files.')
             res_doc = self.delete_history()
             if res_doc['return_code'] != 0:
                 return res_doc
 
-            utils.log_to_dcm(logging.INFO, 'Starting general cleanup.')
+            dcm_logger.log_to_dcm_console_job_details(
+                job_name=self.name, details='Starting general cleanup.')
             res_doc = self.general_cleanup(self.conf.storage_dbfile)
             if res_doc['return_code'] != 0:
                 return res_doc
