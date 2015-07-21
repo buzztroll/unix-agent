@@ -20,11 +20,12 @@ import queue
 import socket
 import ssl
 import threading
-from dcm.agent import handshake
 
 import ws4py.client.threadedclient as ws4py_client
 
 import dcm.agent.exceptions as exceptions
+import dcm.agent.handshake as handshake
+import dcm.agent.logger as dcm_logger
 import dcm.agent.state_machine as state_machine
 import dcm.agent.utils as agent_utils
 
@@ -131,7 +132,7 @@ class RepeatQueue(object):
                         agent_utils.build_assertion_exception(_g_logger, msg)
                         if self._request_id_count[request_id] ==\
                                 self._max_req_id:
-                            agent_utils.log_to_dcm(logging.ERROR, msg)
+                            dcm_logger.log_to_dcm_console_overloaded(msg=msg)
                         return
             except Exception as ex:
                 _g_logger.warn("Exception checking if message is a retrans "

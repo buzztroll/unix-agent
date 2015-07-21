@@ -17,6 +17,7 @@ import logging
 import dcm.agent.jobs as jobs
 from dcm.agent.jobs.builtin.add_user import AddUser
 from dcm.agent.jobs.builtin.rename import Rename
+import dcm.agent.logger as dcm_logger
 import dcm.agent.utils as utils
 
 
@@ -71,19 +72,21 @@ class InitializeJob(jobs.Plugin):
                                      "c", self.args.customerId)})
 
     def run(self):
-        utils.log_to_dcm(logging.DEBUG, "Initialize run")
+        _g_logger.debug("Initialize run")
         # verify that the parameters in initialize match what came in on the
         # connection
         try:
-            utils.log_to_dcm(logging.INFO,
-                             "Renaming the host to %s" % self.args.serverName)
+            dcm_logger.log_to_dcm_console_job_details(
+                job_name=self.name,
+                details="Renaming the host to %s" % self.args.serverName)
             res_doc = self.rename.run()
             if res_doc["return_code"] != 0:
                 res_doc["message"] = res_doc["message"] + " : rename failed"
                 return res_doc
 
             # add customer user
-            utils.log_to_dcm(logging.INFO, "Adding the user")
+            dcm_logger.log_to_dcm_console_job_details(
+                job_name=self.name, details="Adding the user")
             res_doc = self.add_user.run()
             if res_doc["return_code"] != 0:
                 res_doc["message"] = res_doc["message"] + " : addUser failed"

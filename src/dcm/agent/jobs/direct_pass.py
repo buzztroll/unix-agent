@@ -54,12 +54,9 @@ class DirectPass(jobs.Plugin):
         command_list.extend(self.ordered_param_list)
         _g_logger.debug("Plugin running the command %s" % str(command_list))
 
-        utils.log_to_dcm(logging.DEBUG,
-                         "Running the remote %s" % self.exe_path)
+        _g_logger.debug("Running the remote %s" % self.exe_path)
         (stdout, stderr, rc) = utils.run_command(
             self.conf, command_list, cwd=self.cwd)
-        utils.log_to_dcm(logging.DEBUG,
-                         "The script %s returned %d" % (self.exe_path, rc))
         _g_logger.debug("Command %s: stdout %s.  stderr: %s" %
                         (str(command_list), stdout, stderr))
         reply = {"return_code": rc, "message": stdout,

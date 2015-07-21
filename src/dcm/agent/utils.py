@@ -12,17 +12,14 @@
 #   is obtained from Dell, Inc.
 #  ======================================================================
 import base64
-import datetime
 import json
 import logging
 import netifaces
 import os
 import platform
 import pwd
-import random
 import re
 import subprocess
-import string
 import sys
 import tempfile
 import traceback
@@ -31,8 +28,8 @@ import urllib.parse
 import urllib.request
 
 import dcm
-
 import dcm.agent.exceptions as exceptions
+import dcm.agent.logger as dcm_logger
 
 
 _g_logger = logging.getLogger(__name__)
@@ -160,7 +157,8 @@ def run_command(conf, cmd_line, cwd=None, in_env=None):
         with open(log_file, "r") as fptr:
             for line in fptr.readlines():
                 if line.strip():
-                    log_to_dcm(logging.INFO, line)
+                    dcm_logger.log_to_dcm_console_job_details(
+                        job_name=str(cmd_line), details=line)
         os.remove(log_file)
     return rc
 
@@ -307,11 +305,6 @@ def close_encrypted_device(conf, encrypted_device_id):
     if rc != 0:
         raise exceptions.AgentExecutableException(command, rc, stdout, stderr)
     return rc
-
-
-def log_to_dcm(lvl, msg, *args, **kwargs):
-    l_logger = logging.getLogger("dcm.agent.log.to.agent.manager")
-    l_logger.log(lvl, msg, *args, **kwargs)
 
 
 def build_assertion_exception(logger, msg):

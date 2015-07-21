@@ -16,7 +16,7 @@ import logging
 import socket
 
 import dcm.agent.jobs as jobs
-import dcm.agent.utils as utils
+import dcm.agent.logger as dcm_logger
 
 
 _g_logger = logging.getLogger(__name__)
@@ -35,8 +35,9 @@ class RemoteTester(jobs.Plugin):
 
     def run(self):
         try:
-            utils.log_to_dcm(logging.INFO, "Test remote logging. %s"
-                                           % str(self.arguments))
+            dcm_logger.log_to_dcm_console_job_details(
+                job_name=self.name,
+                details="Test remote logging. %s" % str(self.arguments))
             for i in range(3):
                 try:
                     self.sock = socket.socket(socket.AF_INET,

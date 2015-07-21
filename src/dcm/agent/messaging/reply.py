@@ -5,6 +5,7 @@ import signal
 import sys
 
 import dcm.agent.exceptions as exceptions
+import dcm.agent.logger as dcm_logger
 import dcm.agent.messaging.states as states
 import dcm.agent.messaging.types as message_types
 import dcm.agent.messaging.utils as utils
@@ -769,10 +770,8 @@ class RequestListener(object):
                         self._conf.messaging_max_at_once > -1:
 
                     # short circuit the case where the agent is too busy
-                    agent_util.log_to_dcm(
-                        logging.DEBUG, "The new request was rejected "
-                                       "because the agent has too many "
-                                       "outstanding requests.")
+                    dcm_logger.log_to_dcm_console_overloaded(
+                        msg="The new request was rejected because the agent has too many outstanding requests.")
                     nack_doc = {
                         'type': message_types.MessageTypes.NACK,
                         'message_id': utils.new_message_id(),
@@ -804,9 +803,8 @@ class RequestListener(object):
                     _g_logger.exception("The dispatcher could not handle a "
                                         "message.")
                     del self._requests[request_id]
-                    agent_util.log_to_dcm(
-                        logging.ERROR,
-                        "The dispatcher could not handle the message.")
+                    dcm_logger.log_to_dcm_console_messaging_error(
+                        msg="The dispatcher could not handle the message.")
                     raise
             else:
                 # if we have never heard of the ID and this is not a new

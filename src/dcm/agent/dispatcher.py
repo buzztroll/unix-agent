@@ -5,11 +5,11 @@ import urllib.error
 import urllib.parse
 import urllib.request
 
-import dcm.agent.longrunners as longrunners
-import dcm.agent.utils as utils
-
 import dcm.agent.jobs as jobs
+import dcm.agent.logger as dcm_logger
+import dcm.agent.longrunners as longrunners
 import dcm.eventlog.tracer as tracer
+import dcm.agent.utils as utils
 
 from dcm.agent.events.globals import global_space as dcm_events
 
@@ -40,22 +40,20 @@ def _run_plugin(conf, items_map, request_id, command, arguments):
             command,
             arguments)
 
-        utils.log_to_dcm(
-            logging.INFO,
-            "Starting job for command %s %s" % (command, request_id))
+        dcm_logger.log_to_dcm_console_job_started(job_name=command,
+                                                  request_id=request_id)
         reply_doc = plugin.run()
-        utils.log_to_dcm(
-            logging.INFO,
-            "Completed successfully job %s %s" % (command, request_id))
+
+        dcm_logger.log_to_dcm_console_job_succeeded(job_name=command,
+                                                    request_id=request_id)
     except Exception as ex:
         _g_logger.exception(
             "Worker %s thread had a top level error when "
             "running job %s : %s"
             % (threading.current_thread().getName(), request_id, str(ex)))
-        utils.log_to_dcm(
-            logging.ERROR,
-            "A top level error occurred handling %s %s" % (command,
-                                                           request_id))
+
+        dcm_logger.log_to_dcm_console_job_failed(job_name=command,
+                                                 request_id=request_id)
         reply_doc = {
             'Exception': urllib.parse.quote(str(ex).encode('utf-8')),
             'return_code': 1}
@@ -172,9 +170,8 @@ class Dispatcher(object):
 
         items_map = jobs.parse_plugin_doc(self._conf, payload["command"])
 
-        utils.log_to_dcm(
-            logging.INFO,
-            "Incoming request for command %s" % payload["command"])
+        dcm_logger.log_to_dcm_console_incoming_message(
+            job_name=payload["command"])
 
         immediate = "immediate" in items_map
         long_runner = "longer_runner" in items_map

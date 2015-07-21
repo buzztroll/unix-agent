@@ -15,6 +15,7 @@ import logging
 import os
 
 import dcm.agent.jobs.direct_pass as direct_pass
+import dcm.agent.logger as dcm_logger
 import dcm.agent.utils as agent_util
 
 
@@ -50,13 +51,16 @@ class AddUser(direct_pass.DirectPass):
                 with open(key_file, "w") as f:
                     f.write(self.ssh_public_key)
                 self.ordered_param_list.append(key_file)
-            agent_util.log_to_dcm(
-                logging.INFO,
-                "Attempting to add the user %s." % self.args.userId)
+
+            dcm_logger.log_to_dcm_console_job_details(
+                job_name=self.name,
+                details="Attempting to add the user %s." % self.args.userId)
+
             rc = super(AddUser, self).run()
-            agent_util.log_to_dcm(
-                logging.INFO,
-                "The user %s was added." % self.args.userId)
+
+            dcm_logger.log_to_dcm_console_job_details(
+                job_name=self.name,
+                details="The user %s was added." % self.args.userId)
             return rc
         finally:
             if os.path.exists(key_file):

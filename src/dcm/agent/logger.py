@@ -1,3 +1,4 @@
+import functools
 import glob
 import logging
 from logging.handlers import RotatingFileHandler
@@ -116,3 +117,101 @@ class DCMAgentLogger(RotatingFileHandler):
                 os.remove(l)
             except:
                 logging.exception("Failed to remove a rotated file.")
+
+
+# Events to log to DCM
+def log_to_dcm_console(level, base_message, msg=None, **kwargs):
+    if not kwargs:
+        out_message = base_message
+    else:
+        out_message = base_message % kwargs
+    if msg:
+        out_message = out_message + " : " + msg
+
+    l_logger = logging.getLogger("dcm.agent.log.to.agent.manager")
+    l_logger.log(level, out_message)
+
+
+log_to_dcm_console_agent_started_log = functools.partial(
+    log_to_dcm_console,
+    logging.CRITICAL,
+    "The agent has started.  Version %(version)s.")
+
+
+log_to_dcm_console_successful_first_handshake = functools.partial(
+    log_to_dcm_console,
+    logging.CRITICAL,
+    "The agent has connected.")
+
+
+log_to_dcm_console_critical_error = functools.partial(
+    log_to_dcm_console,
+    logging.CRITICAL,
+    "The agent experienced a critical error.")
+
+
+log_to_dcm_console_overloaded = functools.partial(
+    log_to_dcm_console,
+    logging.CRITICAL,
+    "The agent is overloaded.")
+
+
+log_to_dcm_console_shutting_down = functools.partial(
+    log_to_dcm_console,
+    logging.CRITICAL,
+    "The agent is shutting down.")
+
+
+log_to_dcm_console_job_failed = functools.partial(
+    log_to_dcm_console,
+    logging.ERROR,
+    "The job %(job_name)s failed with request_id %(request_id)s.")
+
+
+log_to_dcm_console_unknown_job = functools.partial(
+    log_to_dcm_console,
+    logging.ERROR,
+    "The job %(job_name)s is unknown.")
+
+
+log_to_dcm_console_messaging_error = functools.partial(
+    log_to_dcm_console,
+    logging.ERROR,
+    "The agent experienced a problem when communicating with DCM.")
+
+
+log_to_dcm_console_unknown_job_parameter = functools.partial(
+    log_to_dcm_console,
+    logging.WARN,
+    "The job %(job_name)s received the unknown parameter %(parameter_name)s.  The parameter will be ignored.")
+
+
+log_to_dcm_console_successful_reconnect = functools.partial(
+    log_to_dcm_console,
+    logging.INFO,
+    "The agent successfully reconnected.")
+
+
+log_to_dcm_console_job_succeeded = functools.partial(
+    log_to_dcm_console,
+    logging.INFO,
+    "The job %(job_name)s successfully completed with request_id %(request_id)s.")
+
+
+log_to_dcm_console_job_started = functools.partial(
+    log_to_dcm_console,
+    logging.INFO,
+    "The job %(job_name)s has started with request_id %(request_id)s.")
+
+
+log_to_dcm_console_job_details = functools.partial(
+    log_to_dcm_console,
+    logging.DEBUG,
+    "Details from %(job_name)s : %(details)s.")
+
+
+log_to_dcm_console_incoming_message = functools.partial(
+    log_to_dcm_console,
+    logging.DEBUG,
+    "An incoming message for the command %(job_name)s.")
+
