@@ -19,8 +19,8 @@ import urllib.error
 import urllib.parse
 import urllib.request
 
-import dcm.agent.exceptions as exceptions
 import dcm.agent.plugins.api.base as plugin_base
+import dcm.agent.plugins.api.exceptions as plugin_exceptions
 import dcm.agent.plugins.api.utils as plugin_utils
 
 
@@ -62,8 +62,10 @@ class FetchRunScript(plugin_base.Plugin):
 
         response = urllib.request.urlopen(u_req, timeout=timeout)
         if response.code != 200:
-            raise exceptions.AgentRuntimeException("The url %s was invalid"
-                                                   % self.args.url)
+            raise plugin_exceptions.AgentPluginParameterBadValueException(
+                self.name,
+                "url",
+                expected_values="The url %s was invalid" % self.args.url)
 
         sha256 = hashlib.sha256()
         data = response.read(1024)
@@ -74,7 +76,7 @@ class FetchRunScript(plugin_base.Plugin):
                 data = response.read(1024)
         actual_checksum = sha256.hexdigest()
         if self.args.checksum and actual_checksum != self.args.checksum:
-            raise exceptions.AgentPluginOperationException(
+            raise plugin_exceptions.AgentPluginOperationException(
                 "The checksum did not match")
         return exe_file, True
 
@@ -93,14 +95,15 @@ class FetchRunScript(plugin_base.Plugin):
             # for now we are only accepting http.  in the future we will
             # switch on scheme to decide what cloud storage protocol module
             # to use
-            raise exceptions.AgentOptionValueException(
-                "url", url_parts.scheme, str(list(_scheme_map.keys())))
+            raise plugin_exceptions.AgentPluginParameterBadValueException(
+                "url", url_parts.scheme,
+                expected_values=str(list(_scheme_map.keys())))
 
         func = _scheme_map[url_parts.scheme]
         try:
             exe_file, cleanup = func()
         except BaseException as ex:
-            if type(ex) == exceptions.AgentPluginOperationException:
+            if type(ex) == plugin_exceptions.AgentPluginOperationException:
                 raise
             reply = {"return_code": 1, "message": "",
                      "error_message": "Failed to download the URL %s: %s" %

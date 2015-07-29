@@ -4,6 +4,7 @@ import tempfile
 import unittest
 
 import dcm.agent.cmd.service as service
+from dcm.agent.plugins.api.utils import json_param_type
 import dcm.agent.utils as utils
 
 
@@ -33,14 +34,14 @@ class TestUtils(unittest.TestCase):
         utils.build_assertion_exception(logging, "a message")
 
     def test_json_params(self):
-        res = utils.json_param_type(None)
+        res = json_param_type(None)
         self.assertIsNone(res)
-        res = utils.json_param_type("null")
+        res = json_param_type("null")
         self.assertIsNone(res)
-        res = utils.json_param_type('{"x": 1}')
+        res = json_param_type('{"x": 1}')
         self.assertTrue('x' in res.keys())
         self.assertEqual(res['x'], 1)
-        res = utils.json_param_type({"x": 1})
+        res = json_param_type({"x": 1})
         self.assertTrue('x' in res.keys())
         self.assertEqual(res['x'], 1)
 

@@ -14,8 +14,8 @@
 import logging
 
 import dcm.agent.plugins.api.base as plugin_base
+import dcm.agent.plugins.api.utils as plugin_utils
 import dcm.agent.systemstats as systemstats
-import dcm.agent.utils as utils
 
 
 _g_logger = logging.getLogger(__name__)
@@ -60,7 +60,7 @@ class TesterInitSystemStat(plugin_base.Plugin):
         "checkInterval": ("The number of seconds over which to collect this "
                           "metric", True, float, None),
         "kwargs": ("A JSON doc for stat collector specific parameters",
-                   False, utils.json_param_type, None),
+                   False, plugin_utils.json_param_type, None),
     }
 
     def __init__(self, conf, job_id, items_map, name, arguments):

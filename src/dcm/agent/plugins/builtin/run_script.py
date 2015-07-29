@@ -17,8 +17,8 @@ import os
 import sys
 import zlib
 
-import dcm.agent.exceptions as exceptions
 import dcm.agent.plugins.api.base as plugin_base
+import dcm.agent.plugins.api.exceptions as plugin_exceptions
 import dcm.agent.plugins.api.utils as plugin_utils
 
 
@@ -56,7 +56,7 @@ class RunScript(plugin_base.Plugin):
         data = self.args.b64script
         if self.args.compression:
             if self.args.compression not in _g_compression_map:
-                raise exceptions.AgentPluginBadParameterException(
+                raise plugin_exceptions.AgentPluginBadParameterException(
                     'compression',
                     "The value % is not a supported compression module")
             data = _g_compression_map[self.args.compression](data)
@@ -64,7 +64,7 @@ class RunScript(plugin_base.Plugin):
         sha256.update(data)
         actual_checksum = sha256.hexdigest()
         if actual_checksum != self.args.checksum:
-            raise exceptions.AgentPluginOperationException(
+            raise plugin_exceptions.AgentPluginOperationException(
                 "The checksum did not match")
         try:
             with open(script_file, "wb") as f:

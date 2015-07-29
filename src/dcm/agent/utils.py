@@ -11,14 +11,11 @@
 #   this material is strictly forbidden unless prior written permission
 #   is obtained from Dell, Inc.
 #  ======================================================================
-import base64
-import json
 import logging
 import netifaces
 import os
 import platform
 import pwd
-import re
 import subprocess
 import sys
 import tempfile
@@ -236,14 +233,7 @@ def build_assertion_exception(logger, msg):
     return msg
 
 
-def json_param_type(json_str):
-    if json_str is None:
-        return None
-    if type(json_str) == dict:
-        return json_str
-    if json_str.lower() == "null":
-        return None
-    return json.loads(json_str)
+
 
 
 def identify_platform(conf):

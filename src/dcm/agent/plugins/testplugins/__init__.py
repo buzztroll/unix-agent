@@ -3,6 +3,7 @@ import subprocess
 
 import dcm.agent.exceptions as agent_exceptions
 import dcm.agent.plugins.api.base as plugin_base
+from dcm.agent.plugins.api.exceptions import AgentPluginConfigException
 import dcm.agent.plugins.loader as plugin_loader
 
 
@@ -14,12 +15,12 @@ class ExePlugin(plugin_base.Plugin):
         super(ExePlugin, self).__init__(
             conf, request_id, items_map, name, arguments)
         if 'path' not in items_map:
-            raise agent_exceptions.AgentPluginConfigException(
+            raise AgentPluginConfigException(
                 "The configuration for the %s plugin does not have "
                 "an path entry." % name)
         exe_path = items_map['path']
         if not os.path.exists(exe_path):
-            raise agent_exceptions.AgentPluginConfigException(
+            raise AgentPluginConfigException(
                 "Module %s is misconfigured.  The path %s "
                 "does not exists" % (name, exe_path))
         self.exe = os.path.abspath(exe_path)
@@ -62,7 +63,7 @@ class ExePlugin(plugin_base.Plugin):
                 "stderr": stderr,
                 "return_code": process.returncode}
 
-    def cancel(self, reply_rpc, *args, **kwargs):
+    def cancel(self, *args, **kwargs):
         pass
 
 

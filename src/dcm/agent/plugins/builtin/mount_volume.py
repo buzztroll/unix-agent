@@ -18,6 +18,7 @@ from dcm.agent.cloudmetadata import CLOUD_TYPES
 import dcm.agent.config as config
 import dcm.agent.exceptions as exceptions
 import dcm.agent.plugins.api.base as plugin_base
+import dcm.agent.plugins.api.exceptions as plugin_exceptions
 import dcm.agent.plugins.api.utils as plugin_utils
 import dcm.agent.utils as utils
 
@@ -135,15 +136,17 @@ class MountVolume(plugin_base.ScriptPlugin):
             exe = self.conf.get_script_location("assembleRaid")
 
         if self.args.raidLevel.upper() == "NONE":
-            raise exceptions.AgentPluginBadParameterException(
+            raise plugin_exceptions.AgentPluginParameterBadValueException(
                 "mount_volume",
+                "raidLevel",
                 "When using multiple volumes you must specify a RAID level")
 
         try:
             raid_level = str(int(self.args.raidLevel[4:]))
         except:
-            raise exceptions.AgentPluginBadParameterException(
+            raise plugin_exceptions.AgentPluginParameterBadValueException(
                 "mount_volume",
+                "raidLevel",
                 "Invalid RAID level")
 
         cmd = [exe, raid_level, device_id]
@@ -170,8 +173,9 @@ class MountVolume(plugin_base.ScriptPlugin):
         modified_device_list = []
         for target_device in self.args.devices:
             if target_device not in _cloud_stack_map:
-                raise exceptions.AgentPluginBadParameterException(
+                raise plugin_exceptions.AgentPluginParameterBadValueException(
                     "mount_volume",
+                    "raidLevel",
                     "When using cloud stack the device must be one of: %s" %
                     str(list(_cloud_stack_map.keys())))
             modified_device_list.append(_cloud_stack_map[target_device])
@@ -183,7 +187,7 @@ class MountVolume(plugin_base.ScriptPlugin):
 
         if len(self.args.devices) > 1 and\
                 self.args.raidLevel.upper() == "NONE":
-            raise exceptions.AgentJobException(
+            raise plugin_exceptions.AgentPluginException(
                 "Must specify a RAID volume with mounting multiple devices at "
                 "once.")
 

@@ -15,24 +15,24 @@ import logging
 import re
 
 import dcm.agent.plugins.api.base as plugin_base
-import dcm.agent.exceptions as exceptions
+import dcm.agent.plugins.api.exceptions as plugin_exceptions
 import dcm.agent.plugins.api.utils as plugin_utils
 
 
 _g_logger = logging.getLogger(__name__)
 
 
-def is_legal(proposed_name):
+def _is_legal(proposed_name):
     if len(proposed_name) > 255:
-        raise exceptions.AgentPluginMessageException(
-            "%s is an invalid hostname.  Too long" % proposed_name)
+        raise plugin_exceptions.AgentPluginParameterBadValueException(
+            "rename", "serverName", "less than 255")
 
     regex = ("^(([a-zA-Z]|[a-zA-Z][a-zA-Z0-9\-]*[a-zA-Z0-9])\.)"
              "*([A-Za-z]|[A-Za-z][A-Za-z0-9\-]*[A-Za-z0-9])$")
     allowed = re.compile(regex)
     if allowed is None:
-        raise exceptions.AgentPluginMessageException(
-            "%s is an invalid hostname" % proposed_name)
+        raise plugin_exceptions.AgentPluginParameterBadValueException(
+            "rename", "serverName", "a legal hostname")
 
 
 class Rename(plugin_base.ScriptPlugin):
@@ -47,7 +47,7 @@ class Rename(plugin_base.ScriptPlugin):
         super(Rename, self).__init__(
             conf, job_id, items_map, name, arguments)
 
-        is_legal(arguments["serverName"])
+        _is_legal(arguments["serverName"])
         self.ordered_param_list = [arguments["serverName"]]
 
     def run(self):

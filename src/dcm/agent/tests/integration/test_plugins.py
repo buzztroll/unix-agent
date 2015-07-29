@@ -11,6 +11,7 @@ import zlib
 
 import dcm.agent.config as config
 import dcm.agent.exceptions as exceptions
+from dcm.agent.plugins.api.exceptions import AgentPluginOperationException
 import dcm.agent.plugins.builtin.fetch_run as fetch_plugin
 import dcm.agent.plugins.builtin.run_script as run_script_plugin
 import dcm.agent.tests.utils.general as test_utils
@@ -154,7 +155,7 @@ echo $1 > %s
         plugin = fetch_plugin.load_plugin(
             self.conf_obj, str(uuid.uuid4()),
             {}, "fetch_plugin", arguments)
-        self.assertRaises(exceptions.AgentPluginOperationException,
+        self.assertRaises(AgentPluginOperationException,
                           plugin.run)
 
 
@@ -258,5 +259,5 @@ echo $1 > %s
         plugin = run_script_plugin.load_plugin(
             self.conf_obj, str(uuid.uuid4()),
             {}, "run_script", arguments)
-        self.assertRaises(exceptions.AgentPluginOperationException,
+        self.assertRaises(AgentPluginOperationException,
                           plugin.run)

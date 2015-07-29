@@ -19,6 +19,7 @@ import urllib.parse
 
 import dcm.agent.exceptions as exceptions
 import dcm.agent.plugins.api.base as plugin_base
+import dcm.agent.plugins.api.exceptions as plugin_exceptions
 import dcm.agent.plugins.api.utils as plugin_utils
 import dcm.agent.utils as utils
 
@@ -200,8 +201,8 @@ class ConfigureServer(plugin_base.Plugin):
         elif self.args.configType.upper() == "PUPPET":
             (stdout, stderr, rc) = self.configure_server_with_puppet()
         else:
-            raise exceptions.AgentOptionTypeException(
-                "configType", "CHEF or PUPPET", self.args.configType)
+            raise plugin_exceptions.AgentPluginParameterBadValueException(
+                "configType", "CHEF or PUPPET")
 
         if rc != 0:
             reply_doc = {"return_code": rc,

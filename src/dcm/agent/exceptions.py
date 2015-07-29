@@ -1,21 +1,24 @@
+class AgentBaseException(Exception):
+    pass
 
-class AgentNotImplementedException(Exception):
+
+class AgentNotImplementedException(AgentBaseException):
     def __init__(self, func_name):
         message = "The function %s must be implemented." % (func_name)
         super(AgentNotImplementedException, self).__init__(message)
 
 
-class AgentOptionException(Exception):
+class AgentOptionException(AgentBaseException):
     pass
 
 
-class AgentExtrasNotInstalledException(Exception):
+class AgentExtrasNotInstalledException(AgentBaseException):
     def __init__(self, exmsg):
         message = "The package install failed with: %s" % exmsg
         super(AgentExtrasNotInstalledException, self).__init__(message)
 
 
-class AgentPageNotFoundException(Exception):
+class AgentPageNotFoundException(AgentBaseException):
     def __init__(self, page_token):
         message = ("The page set with token %(page_token)s was not found."
                    % locals())
@@ -82,47 +85,11 @@ class AgentConnectionException(Exception):
         super(AgentConnectionException, self).__init__(error_msg)
 
 
-class AgentPluginConfigException(Exception):
+class AgentHandshakeUnknownTypeException(AgentBaseException):
     pass
 
 
-class AgentPluginMessageException(Exception):
-    pass
-
-
-class AgentHandshakeUnknownTypeException(Exception):
-    pass
-
-
-class AgentPluginParameterException(Exception):
-    def __init__(self, command_name, argument_name):
-        message = ("The command %(command_name)s requires the arguments "
-                   "%(argument_name)s and it was not found."
-                   % locals())
-        super(AgentPluginParameterException, self).__init__(message)
-
-
-class AgentPluginParameterBadValueException(Exception):
-    def __init__(self, command_name, argument_name):
-        message = ("The command %(command_name)s requires the arguments "
-                   "%(argument_name)s and it was not found."
-                   % locals())
-        super(AgentPluginParameterException, self).__init__(message)
-
-
-class AgentPluginOperationException(Exception):
-    pass
-
-
-class AgentPluginOperationIsImagingException(AgentPluginOperationException):
-    message = "The %(operation_name)s command cannot be run while the agent " \
-              "is imaging the service."
-
-    def __init__(self, operation_name):
-        super(AgentPluginOperationIsImagingException, self.message % locals())
-
-
-class StateMachineException(Exception):
+class StateMachineException(AgentBaseException):
     pass
 
 
@@ -138,11 +105,11 @@ class IllegalStateTransitionException(StateMachineException):
             self.msg % {"event": event, "state": state})
 
 
-class AssertionFailure(Exception):
+class AssertionFailure(AgentBaseException):
     pass
 
 
-class MessagingException(Exception):
+class MessagingException(AgentBaseException):
     pass
 
 
@@ -173,15 +140,6 @@ class InvalidMessageParameterValueException(MalformedMessageException):
                         'attr_value': attr_value})
 
 
-class AgentPluginBadParameterException(MalformedMessageException):
-    msg = "The command %(command_name)s received invalid arguments." \
-          "%(message)s"
-
-    def __init__(self, command_name, message):
-        super(AgentPluginBadParameterException, self).__init__(
-            self.msg % locals())
-
-
 class AgentHandshakeException(Exception):
     def __init__(self, handshake_doc, extra_msg=None):
         if handshake_doc:
@@ -202,19 +160,19 @@ class PerminateConnectionException(MessagingException):
         super(PerminateConnectionException, self).__init__(self.msg % locals())
 
 
-class AgentRuntimeException(Exception):
+class AgentRuntimeException(AgentBaseException):
     pass
 
 
-class AgentFilePermissionsException(Exception):
+class AgentFilePermissionsException(AgentBaseException):
     pass
 
 
-class AgentConnectionDriverException(Exception):
+class AgentConnectionDriverException(AgentBaseException):
     pass
 
 
-class AgentExecutableException(Exception):
+class AgentExecutableException(AgentBaseException):
     msg = "The external process run with %(command_line)s returned an " \
           "error. rc=%(rc)s stderr=%(stderr)s stdout=%(stdout)s"
 
@@ -222,25 +180,20 @@ class AgentExecutableException(Exception):
         super(AgentExecutableException, self).__init__(self.msg % locals())
 
 
-class AgentJobException(Exception):
-    def __init__(self, message):
-        super(AgentJobException, self).__init__(message)
-
-
-class AgentUnsupportedCloudFeature(Exception):
+class AgentUnsupportedCloudFeature(AgentBaseException):
     pass
 
 
-class AgentStorageCloudException(Exception):
+class AgentStorageCloudException(AgentBaseException):
     def __init__(self, message):
         super(AgentStorageCloudException, self).__init__(message)
 
 
-class PersistenceException(Exception):
+class PersistenceException(AgentBaseException):
     pass
 
 
-class AgentPlatformNotDetectedException(Exception):
+class AgentPlatformNotDetectedException(AgentBaseException):
     def __init__(self):
         message = ("The platform was not detected")
         super(AgentPlatformNotDetectedException, self).__init__(message)

@@ -12,7 +12,7 @@ from dcm.agent.cloudmetadata import CLOUD_TYPES
 import dcm.agent.connection.websocket as websocket
 import dcm.agent.exceptions as exceptions
 import dcm.agent.job_runner as job_runner
-import dcm.agent.logger as logger
+from dcm.agent.plugins.api.exceptions import AgentPluginConfigException
 import dcm.agent.tests.utils.test_connection as test_connection  # TODO
 import dcm.agent.utils as utils
 
@@ -221,7 +221,7 @@ class AgentConfig(object):
             path = os.path.join(self.storage_script_dir, name)
             _g_logger.debug("Script location %s" % path)
             if not os.path.exists(path):
-                raise exceptions.AgentPluginConfigException(
+                raise AgentPluginConfigException(
                     "There is no proper configuration for %s" % name)
             return path
 
