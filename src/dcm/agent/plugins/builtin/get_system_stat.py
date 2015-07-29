@@ -11,22 +11,33 @@
 #   this material is strictly forbidden unless prior written permission
 #   is obtained from Dell, Inc.
 #  ======================================================================
-import dcm.agent.jobs.direct_pass as direct_pass
+import logging
+
+import dcm.agent.plugins.api.base as plugin_base
+import dcm.agent.systemstats as systemstats
+
+_g_logger = logging.getLogger(__name__)
 
 
-class Terminate(direct_pass.DirectPass):
+class GetSystemStat(plugin_base.Plugin):
 
     protocol_arguments = {
-        "ignoreErrors":
-        ("Ignore any errors that are returned from the terminate script",
-         False, str, None)
+        "statName": ("The name of the stat collector to query.",
+                     True, str, None),
     }
 
     def __init__(self, conf, job_id, items_map, name, arguments):
-        super(Terminate, self).__init__(
+        super(GetSystemStat, self).__init__(
             conf, job_id, items_map, name, arguments)
-        self._ordered_param_list = [self.args.ignoreErrors]
+
+    def run(self):
+        reply_doc = {
+            "return_code": 0,
+            "reply_type": systemstats.get_stats_type(self.args.statName),
+            "reply_object": systemstats.get_stats(self.args.statName)
+        }
+        return reply_doc
 
 
 def load_plugin(conf, job_id, items_map, name, arguments):
-    return Terminate(conf, job_id, items_map, name, arguments)
+    return GetSystemStat(conf, job_id, items_map, name, arguments)

@@ -20,14 +20,14 @@ import urllib.parse
 import urllib.request
 
 import dcm.agent.exceptions as exceptions
-import dcm.agent.jobs as jobs
-import dcm.agent.utils as utils
+import dcm.agent.plugins.api.base as plugin_base
+import dcm.agent.plugins.api.utils as plugin_utils
 
 
 _g_logger = logging.getLogger(__name__)
 
 
-class FetchRunScript(jobs.Plugin):
+class FetchRunScript(plugin_base.Plugin):
 
     protocol_arguments = {
         "url": ("The location of the script as a url", True, str, None),
@@ -96,7 +96,6 @@ class FetchRunScript(jobs.Plugin):
             raise exceptions.AgentOptionValueException(
                 "url", url_parts.scheme, str(list(_scheme_map.keys())))
 
-        exe_file = None
         func = _scheme_map[url_parts.scheme]
         try:
             exe_file, cleanup = func()
@@ -123,7 +122,8 @@ class FetchRunScript(jobs.Plugin):
                 command_list.extend(self.args.arguments)
             _g_logger.debug("FetchRunScript is running the command %s"
                             % str(command_list))
-            (stdout, stderr, rc) = utils.run_command(self.conf, command_list)
+            (stdout, stderr, rc) = plugin_utils.run_command(
+                self.conf, command_list)
             _g_logger.debug("Command %s: stdout %s.  stderr: %s" %
                             (str(command_list), stdout, stderr))
             reply = {"return_code": rc, "message": stdout,

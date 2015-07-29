@@ -14,17 +14,16 @@
 
 import logging
 
-import dcm.agent.jobs as jobs
-from dcm.agent.jobs.builtin.add_user import AddUser
-from dcm.agent.jobs.builtin.rename import Rename
-import dcm.agent.logger as dcm_logger
-import dcm.agent.utils as utils
+import dcm.agent.plugins.api.base as plugin_base
+from dcm.agent.plugins.builtin.add_user import AddUser
+from dcm.agent.plugins.builtin.rename import Rename
+import dcm.agent.plugins.api.utils as plugin_utils
 
 
 _g_logger = logging.getLogger(__name__)
 
 
-class InitializeJob(jobs.Plugin):
+class InitializeJob(plugin_base.Plugin):
 
     protocol_arguments = {
         "cloudId":
@@ -51,7 +50,7 @@ class InitializeJob(jobs.Plugin):
          True, str, None),
         "encryptedEphemeralFsKey":
         ("The file system key for encrypted ephemeral file systems.",
-         True, utils.base64type_convertor, None)
+         True, plugin_utils.base64type_convertor, None)
     }
 
     def __init__(self, conf, job_id, items_map, name, arguments):
@@ -68,7 +67,7 @@ class InitializeJob(jobs.Plugin):
                                  "password": None,
                                  "authentication": None,
                                  "administrator": "false",
-                                 "userId": utils.make_id_string(
+                                 "userId": plugin_utils.make_id_string(
                                      "c", self.args.customerId)})
 
     def run(self):
@@ -76,7 +75,7 @@ class InitializeJob(jobs.Plugin):
         # verify that the parameters in initialize match what came in on the
         # connection
         try:
-            dcm_logger.log_to_dcm_console_job_details(
+            plugin_utils.log_to_dcm_console_job_details(
                 job_name=self.name,
                 details="Renaming the host to %s" % self.args.serverName)
             res_doc = self.rename.run()
@@ -85,7 +84,7 @@ class InitializeJob(jobs.Plugin):
                 return res_doc
 
             # add customer user
-            dcm_logger.log_to_dcm_console_job_details(
+            plugin_utils.log_to_dcm_console_job_details(
                 job_name=self.name, details="Adding the user")
             res_doc = self.add_user.run()
             if res_doc["return_code"] != 0:

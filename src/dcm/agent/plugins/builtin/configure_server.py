@@ -18,25 +18,26 @@ import os
 import urllib.parse
 
 import dcm.agent.exceptions as exceptions
-import dcm.agent.jobs as jobs
+import dcm.agent.plugins.api.base as plugin_base
+import dcm.agent.plugins.api.utils as plugin_utils
 import dcm.agent.utils as utils
 
 
 _g_logger = logging.getLogger(__name__)
 
 
-class ConfigureServer(jobs.Plugin):
+class ConfigureServer(plugin_base.Plugin):
     protocol_arguments = {
         "configType":
             ("", True, str, None),
         "authId":
             ("", False, str, None),
         "configurationData":
-            ("", False, utils.base64type_convertor, None),
+            ("", False, plugin_utils.base64type_convertor, None),
         "encryptedConfigToken":
-            ("", False, utils.base64type_convertor, None),
+            ("", False, plugin_utils.base64type_convertor, None),
         "encryptedAuthSecret":
-            ("", False, utils.base64type_convertor, None),
+            ("", False, plugin_utils.base64type_convertor, None),
         "endpoint":
             ("", False, str, None),
         "providerRegionId":
@@ -52,9 +53,9 @@ class ConfigureServer(jobs.Plugin):
         "scriptFiles":
             ("", False, list, None),
         "storagePublicKey":
-            ("", False, utils.base64type_convertor, None),
+            ("", False, plugin_utils.base64type_convertor, None),
         "storagePrivateKey":
-            ("", False, utils.base64type_convertor, None),
+            ("", False, plugin_utils.base64type_convertor, None),
         "environmentId":
             ("", False, str, None),
         "personalityFiles":
@@ -62,13 +63,13 @@ class ConfigureServer(jobs.Plugin):
         "configClientName":
             ("", False, str, None),
         "configCert":
-            ("", False, utils.base64type_convertor, None),
+            ("", False, plugin_utils.base64type_convertor, None),
         "configKey":
-            ("", False, utils.base64type_convertor, None),
+            ("", False, plugin_utils.base64type_convertor, None),
         "runListIds":
             ("", False, list, None),
         "parameterList":
-            ("", False, utils.base64type_convertor, None),
+            ("", False, plugin_utils.base64type_convertor, None),
     }
 
     def __init__(self, conf, job_id, items_map, name, arguments):
@@ -116,10 +117,10 @@ class ConfigureServer(jobs.Plugin):
                         authId,
                         endpoint,
                         environmentId]
-            return utils.run_command(self.conf, cmd_list)
+            return plugin_utils.run_command(self.conf, cmd_list)
         finally:
-            utils.safe_delete(run_list_file_name)
-            utils.safe_delete(token_file_path)
+            plugin_utils.safe_delete(run_list_file_name)
+            plugin_utils.safe_delete(token_file_path)
 
     def _edit_puppet_conf(self, template_path, new_location, endpoint):
         parser = configparser.SafeConfigParser()
@@ -184,11 +185,11 @@ class ConfigureServer(jobs.Plugin):
                    self.args.configClientName,
                    self.conf.extra_base_path,
                    puppet_conf_path]
-            return utils.run_command(self.conf, cmd)
+            return plugin_utils.run_command(self.conf, cmd)
         finally:
-            utils.safe_delete(cert_file_path)
-            utils.safe_delete(key_file_path)
-            utils.safe_delete(puppet_conf_path)
+            plugin_utils.safe_delete(cert_file_path)
+            plugin_utils.safe_delete(key_file_path)
+            plugin_utils.safe_delete(puppet_conf_path)
 
     def run(self):
         _g_logger.info("Running configuration management of type " +

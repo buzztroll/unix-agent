@@ -19,14 +19,14 @@ import urllib.request
 
 import dcm.agent
 import dcm.agent.config as config
-import dcm.agent.jobs as jobs
-import dcm.agent.utils as utils
+import dcm.agent.plugins.api.base as plugin_base
+import dcm.agent.plugins.api.utils as plugin_utils
 
 
 _g_logger = logging.getLogger(__name__)
 
 
-class Upgrade(jobs.Plugin):
+class Upgrade(plugin_base.Plugin):
 
     protocol_arguments = {
         "newVersion": ("The version of the agent to upgrade to.",
@@ -77,7 +77,7 @@ class Upgrade(jobs.Plugin):
             command_list.extend(self.args.args)
             _g_logger.debug("Plugin running the command %s"
                             % str(command_list))
-            (stdout, stderr, rc) = utils.run_command(self.conf, command_list)
+            (stdout, stderr, rc) = plugin_utils.run_command(self.conf, command_list)
             _g_logger.debug("Command %s: stdout %s.  stderr: %s" %
                             (str(command_list), stdout, stderr))
             reply = {"return_code": rc, "message": stdout,
@@ -85,9 +85,9 @@ class Upgrade(jobs.Plugin):
             return reply
         finally:
             if os.path.exists(script_file):
-                utils.secure_delete(self.conf, script_file)
+                plugin_utils.secure_delete(self.conf, script_file)
             if os.path.exists(opts_file):
-                utils.secure_delete(self.conf, opts_file)
+                plugin_utils.secure_delete(self.conf, opts_file)
 
 
 def load_plugin(conf, job_id, items_map, name, arguments):

@@ -1,8 +1,9 @@
 import collections
 import os
 import unittest
-from nose.plugins import skip
 import uuid
+
+from nose.plugins import skip
 
 import dcmdocker.stop_container as stop_container
 import dcmdocker.import_image as import_image
@@ -14,7 +15,7 @@ import dcmdocker.start_container as start_container
 import dcmdocker.restart_container as restart_container
 import dcmdocker.delete_container as delete_container
 import dcmdocker.get_container_details as get_container_details
-import dcm.agent.jobs.pages as pages
+import dcm.agent.plugins.api.pages as pages
 
 
 class TestDockerContainer(unittest.TestCase):
@@ -62,7 +63,7 @@ class TestDockerContainer(unittest.TestCase):
 
     def setUp(self):
         """
-        :return: a list of the files in src/dcm/agent/jobs/builtin
+        :return: a list of the files in src/dcm/agent/plugins/builtin
         """
         pass
 

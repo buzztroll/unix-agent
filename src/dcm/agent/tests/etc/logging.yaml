@@ -72,7 +72,7 @@ loggers:
         handlers: [message_request_tracer]
         propagate: no
 
-    dcm.agent.jobs:
+    dcm.agent.plugins:
         level: DEBUG
         handlers: [job_request_tracer]
         propagate: no

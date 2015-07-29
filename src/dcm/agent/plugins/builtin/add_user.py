@@ -11,19 +11,17 @@
 #   this material is strictly forbidden unless prior written permission
 #   is obtained from Dell, Inc.
 #  ======================================================================
-import logging
 import os
 
-import dcm.agent.jobs.direct_pass as direct_pass
-import dcm.agent.logger as dcm_logger
-import dcm.agent.utils as agent_util
+import dcm.agent.plugins.api.base as plugin_base
+import dcm.agent.plugins.api.utils as plugin_utils
 
 
-class AddUser(direct_pass.DirectPass):
+class AddUser(plugin_base.ScriptPlugin):
 
     protocol_arguments = {
         "userId": ("The new unix account name to be created", True,
-                   agent_util.user_name, None),
+                   plugin_utils.user_name, None),
         "firstName": ("The user's first name", True, str, None),
         "lastName": ("The user's last name", True, str, None),
         "authentication": ("The user's ssh public key", True, str, None),
@@ -52,19 +50,19 @@ class AddUser(direct_pass.DirectPass):
                     f.write(self.ssh_public_key)
                 self.ordered_param_list.append(key_file)
 
-            dcm_logger.log_to_dcm_console_job_details(
+            plugin_utils.log_to_dcm_console_job_details(
                 job_name=self.name,
                 details="Attempting to add the user %s." % self.args.userId)
 
             rc = super(AddUser, self).run()
 
-            dcm_logger.log_to_dcm_console_job_details(
+            plugin_utils.log_to_dcm_console_job_details(
                 job_name=self.name,
                 details="The user %s was added." % self.args.userId)
             return rc
         finally:
             if os.path.exists(key_file):
-                agent_util.secure_delete(self.conf, key_file)
+                plugin_utils.secure_delete(self.conf, key_file)
 
 
 def load_plugin(conf, job_id, items_map, name, arguments):

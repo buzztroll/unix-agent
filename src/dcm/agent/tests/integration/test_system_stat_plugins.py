@@ -5,9 +5,9 @@ import uuid
 
 import dcm.agent.config as config
 import dcm.agent.systemstats as systemstats
-import dcm.agent.jobs.builtin.init_system_stat as init_system_stat
-import dcm.agent.jobs.builtin.get_system_stat as get_system_stat
-import dcm.agent.jobs.builtin.delete_system_stat as delete_system_stat
+import dcm.agent.plugins.builtin.init_system_stat as init_system_stat
+import dcm.agent.plugins.builtin.get_system_stat as get_system_stat
+import dcm.agent.plugins.builtin.delete_system_stat as delete_system_stat
 
 from dcm.agent.events.globals import global_space as event_space
 

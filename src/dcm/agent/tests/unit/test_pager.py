@@ -2,7 +2,7 @@ import json
 import unittest
 
 import dcm.agent.exceptions as exceptions
-import dcm.agent.jobs.pages as pages
+import dcm.agent.plugins.api.pages as pages
 
 from dcm.agent.events.globals import global_space as dcm_events
 

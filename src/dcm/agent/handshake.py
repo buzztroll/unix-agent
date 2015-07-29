@@ -11,7 +11,6 @@
 #   this material is strictly forbidden unless prior written permission
 #   is obtained from Dell, Inc.
 #  ======================================================================
-import getpass
 import logging
 import os
 import random
@@ -20,14 +19,13 @@ import uuid
 
 import dcm.agent
 import dcm.agent.exceptions as exceptions
-import dcm.agent.jobs as jobs
-
+import dcm.agent.plugins.loader as plugin_loader
 
 _g_logger = logging.getLogger(__name__)
 
 
 def get_plugin_handshake_descriptor(conf):
-    items = jobs.get_all_plugins(conf)
+    items = plugin_loader.get_all_plugins(conf)
     command_name_list = [i for i in items]
     return command_name_list
 
@@ -162,10 +160,10 @@ class HandshakeManager(object):
         return hs
 
     def get_send_document(self):
-        plugin_dict = jobs.get_all_plugins(self.conf)
+        plugin_dict = plugin_loader.get_all_plugins(self.conf)
         features = self.conf.features.copy()
         for plugin_name in plugin_dict:
-            p_feature = jobs.get_module_features(
+            p_feature = plugin_loader.get_module_features(
                 self.conf, plugin_name, plugin_dict[plugin_name])
             features.update(p_feature)
 

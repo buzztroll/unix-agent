@@ -18,8 +18,8 @@ import sys
 import zlib
 
 import dcm.agent.exceptions as exceptions
-import dcm.agent.jobs as jobs
-import dcm.agent.utils as utils
+import dcm.agent.plugins.api.base as plugin_base
+import dcm.agent.plugins.api.utils as plugin_utils
 
 
 _g_logger = logging.getLogger(__name__)
@@ -30,11 +30,11 @@ _g_compression_map = {
 }
 
 
-class RunScript(jobs.Plugin):
+class RunScript(plugin_base.Plugin):
 
     protocol_arguments = {
         "b64script": ("A base64 encoded executable.", True,
-                      utils.base64type_binary_convertor, None),
+                      plugin_utils.base64type_binary_convertor, None),
         "checksum": ("The checksum of the script.", True, str, None),
         "inpython": ("Run this script with the current python environment.",
                      False, bool, False),
@@ -81,7 +81,8 @@ class RunScript(jobs.Plugin):
                 command_list.extend(self.args.arguments)
             _g_logger.debug("Plugin running the command %s"
                             % str(command_list))
-            (stdout, stderr, rc) = utils.run_command(self.conf, command_list)
+            (stdout, stderr, rc) = plugin_utils.run_command(
+                self.conf, command_list)
             _g_logger.debug("Command %s: stdout %s.  stderr: %s" %
                             (str(command_list), stdout, stderr))
             reply = {"return_code": rc, "message": stdout,

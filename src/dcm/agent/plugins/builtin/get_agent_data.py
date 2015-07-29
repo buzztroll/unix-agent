@@ -16,10 +16,10 @@ import multiprocessing
 import platform
 import psutil
 
-import dcm.agent.jobs as jobs
+import dcm.agent.plugins.api.base as plugin_base
 
 
-class GetAgentData(jobs.Plugin):
+class GetAgentData(plugin_base.Plugin):
 
     protocol_arguments = {}
 

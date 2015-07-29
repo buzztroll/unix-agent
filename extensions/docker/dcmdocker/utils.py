@@ -1,7 +1,8 @@
 import docker
 import docker.errors as errors
 import dcm.agent.config as config
-import dcm.agent.jobs as jobs
+
+import dcm.agent.plugins.api.base as plugin_base
 
 
 class DCMDockerException(Exception):
@@ -22,7 +23,7 @@ def get_docker_connection(conf):
     return c
 
 
-class DockerJob(jobs.Plugin):
+class DockerJob(plugin_base.Plugin):
     def __init__(self, conf, job_id, items_map, name, arguments):
         super(DockerJob, self).__init__(
             conf, job_id, items_map, name, arguments)

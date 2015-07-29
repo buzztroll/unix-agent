@@ -11,22 +11,30 @@
 #   this material is strictly forbidden unless prior written permission
 #   is obtained from Dell, Inc.
 #  ======================================================================
-import dcm.agent.jobs.direct_pass as direct_pass
+
+import dcm.agent.plugins.api.base as plugin_base
+import dcm.agent.systemstats as systemstats
 
 
-class RemoveUser(direct_pass.DirectPass):
+class DeleteSystemStat(plugin_base.Plugin):
 
     protocol_arguments = {
-        "userId":
-        ("The unix account name of the user to remove",
-         True, str, None)
+        "statName": ("The name of the stat collector to query.",
+                     True, str, None),
     }
 
     def __init__(self, conf, job_id, items_map, name, arguments):
-        super(RemoveUser, self).__init__(
+        super(DeleteSystemStat, self).__init__(
             conf, job_id, items_map, name, arguments)
-        self.ordered_param_list = [self.args.userId]
+
+    def run(self):
+        systemstats.stop_stats(self.args.statName)
+        reply_doc = {
+            "return_code": 0,
+            "reply_type": "void"
+        }
+        return reply_doc
 
 
 def load_plugin(conf, job_id, items_map, name, arguments):
-    return RemoveUser(conf, job_id, items_map, name, arguments)
+    return DeleteSystemStat(conf, job_id, items_map, name, arguments)

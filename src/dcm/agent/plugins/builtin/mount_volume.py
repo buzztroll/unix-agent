@@ -17,7 +17,8 @@ import os
 from dcm.agent.cloudmetadata import CLOUD_TYPES
 import dcm.agent.config as config
 import dcm.agent.exceptions as exceptions
-import dcm.agent.jobs.direct_pass as direct_pass
+import dcm.agent.plugins.api.base as plugin_base
+import dcm.agent.plugins.api.utils as plugin_utils
 import dcm.agent.utils as utils
 
 
@@ -59,7 +60,7 @@ def _is_supported(conf):
     return conf.platform_name.lower() in supported_distros
 
 
-class MountVolume(direct_pass.DirectPass):
+class MountVolume(plugin_base.ScriptPlugin):
 
     protocol_arguments = {
         "formatVolume":
@@ -71,7 +72,7 @@ class MountVolume(direct_pass.DirectPass):
         "raidLevel": ("The RAID configuration to use", True, str, "NONE"),
         "encryptedFsEncryptionKey":
         ("The encryption key for encrypted volumes", False,
-         utils.base64type_binary_convertor, None),
+         plugin_utils.base64type_binary_convertor, None),
         "mountPoint": ("The directory on which the volume will be mounted",
                        False, str, None),
         "devices": ("The list of devices that will be used.",
@@ -90,7 +91,7 @@ class MountVolume(direct_pass.DirectPass):
             if pkg_installer_cmd:
                 cmd_path = self.conf.get_script_location(pkg_installer_cmd[0])
                 pkg_installer_cmd[0] = cmd_path
-                (stdout, stderr, rc) = utils.run_command(
+                (stdout, stderr, rc) = plugin_utils.run_command(
                     self.conf, pkg_installer_cmd)
                 _g_logger.debug("Results of install: stdout: %s, stderr: "
                                 "%s, rc %d" % (str(stdout), str(stderr), rc))
@@ -100,7 +101,7 @@ class MountVolume(direct_pass.DirectPass):
                    device_id,
                    encrypted_device_id,
                    key_file_path]
-        (stdout, stderr, rc) = utils.run_command(self.conf, command)
+        (stdout, stderr, rc) = plugin_utils.run_command(self.conf, command)
         if rc != 0:
             raise exceptions.AgentExecutableException(
                 command, rc, stdout, stderr)
@@ -151,7 +152,7 @@ class MountVolume(direct_pass.DirectPass):
             cmd.append(d)
 
         _g_logger.debug("Running the raid configuration command %s" % str(cmd))
-        (stdout, stderr, rc) = utils.run_command(self.conf, cmd)
+        (stdout, stderr, rc) = plugin_utils.run_command(self.conf, cmd)
         _g_logger.debug("configure raid results: %d stdout=%s stderr=%s" %
                         (rc, str(stdout), str(stderr)))
 
@@ -233,7 +234,7 @@ class MountVolume(direct_pass.DirectPass):
                                             key_file_path)
                 target_device = encrypted_device
             finally:
-                utils.safe_delete(key_file_path)
+                plugin_utils.safe_delete(key_file_path)
         utils.mount(self.conf,
                     target_device,
                     self.args.fileSystem,

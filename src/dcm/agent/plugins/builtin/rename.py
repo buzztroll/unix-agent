@@ -14,10 +14,9 @@
 import logging
 import re
 
-import dcm.agent.jobs.direct_pass as direct_pass
+import dcm.agent.plugins.api.base as plugin_base
 import dcm.agent.exceptions as exceptions
-import dcm.agent.logger as dcm_logger
-import dcm.agent.utils as utils
+import dcm.agent.plugins.api.utils as plugin_utils
 
 
 _g_logger = logging.getLogger(__name__)
@@ -36,7 +35,7 @@ def is_legal(proposed_name):
             "%s is an invalid hostname" % proposed_name)
 
 
-class Rename(direct_pass.DirectPass):
+class Rename(plugin_base.ScriptPlugin):
 
     protocol_arguments = {
         "serverName":
@@ -61,7 +60,7 @@ class Rename(direct_pass.DirectPass):
             return reply_doc
 
         self.ordered_param_list.append(private_ips[0])
-        dcm_logger.log_to_dcm_console_job_details(
+        plugin_utils.log_to_dcm_console_job_details(
             job_name=self.name, details=
             "Renaming the server to %s with the local IP %s"
                 % (self.args.serverName, private_ips[0]))

@@ -11,8 +11,8 @@ import zlib
 
 import dcm.agent.config as config
 import dcm.agent.exceptions as exceptions
-import dcm.agent.jobs.builtin.fetch_run as fetch_plugin
-import dcm.agent.jobs.builtin.run_script as run_script_plugin
+import dcm.agent.plugins.builtin.fetch_run as fetch_plugin
+import dcm.agent.plugins.builtin.run_script as run_script_plugin
 import dcm.agent.tests.utils.general as test_utils
 
 

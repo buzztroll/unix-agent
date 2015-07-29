@@ -15,14 +15,14 @@ import json
 import logging
 import socket
 
-import dcm.agent.jobs as jobs
+import dcm.agent.plugins.api.base as plugin_base
 import dcm.agent.logger as dcm_logger
 
 
 _g_logger = logging.getLogger(__name__)
 
 
-class RemoteTester(jobs.Plugin):
+class RemoteTester(plugin_base.Plugin):
 
     protocol_arguments = {}
 

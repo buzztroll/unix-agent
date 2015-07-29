@@ -14,13 +14,13 @@
 
 import logging
 
-import dcm.agent.jobs as jobs
+import dcm.agent.plugins.api.base as plugin_base
 
 
 _g_logger = logging.getLogger(__name__)
 
 
-class GetJobDescription(jobs.Plugin):
+class GetJobDescription(plugin_base.Plugin):
 
     protocol_arguments = {
         "jobId":

@@ -1,22 +1,23 @@
 import collections
 import os
 import unittest
-from nose.plugins import skip
 import uuid
+
+from nose.plugins import skip
 
 import dcmdocker.pull_repo as pull_repo
 import dcmdocker.list_images as list_images
 import dcmdocker.import_image as import_image
 import dcmdocker.delete_image as delete_image
 import dcmdocker.list_containers as list_containers
-import dcm.agent.jobs.pages as pages
+import dcm.agent.plugins.api.pages as pages
 
 
 class TestDockerImageCommands(unittest.TestCase):
 
     def setUp(self):
         """
-        :return: a list of the files in src/dcm/agent/jobs/builtin
+        :return: a list of the files in src/dcm/agent/plugins/builtin
         """
         docker_url = 'http+unix://var/run/docker.sock'
         if 'DOCKER_HOST' in os.environ:

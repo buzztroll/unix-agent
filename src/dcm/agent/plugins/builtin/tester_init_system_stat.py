@@ -13,7 +13,7 @@
 #  ======================================================================
 import logging
 
-import dcm.agent.jobs as jobs
+import dcm.agent.plugins.api.base as plugin_base
 import dcm.agent.systemstats as systemstats
 import dcm.agent.utils as utils
 
@@ -50,7 +50,7 @@ class TesterCpuIdleSystemStats(systemstats.SystemStats):
         return "cpu_idle_stat_array"
 
 
-class TesterInitSystemStat(jobs.Plugin):
+class TesterInitSystemStat(plugin_base.Plugin):
 
     protocol_arguments = {
         "statType": ("The type of stat metric to initialize.", True,

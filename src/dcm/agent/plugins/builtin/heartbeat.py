@@ -11,39 +11,26 @@
 #   this material is strictly forbidden unless prior written permission
 #   is obtained from Dell, Inc.
 #  ======================================================================
-import dcm.agent.exceptions as exceptions
-import dcm.agent.jobs as jobs
-import dcm.agent.utils as utils
+
+import dcm.agent.plugins.api.base as plugin_base
 
 
-class GetDeviceMappings(jobs.Plugin):
+class Heartbeat(plugin_base.Plugin):
 
     protocol_arguments = {}
 
     def __init__(self, conf, job_id, items_map, name, arguments):
-        super(GetDeviceMappings, self).__init__(
+        super(Heartbeat, self).__init__(
             conf, job_id, items_map, name, arguments)
 
-        script_name = items_map["script_name"]
-        self.command = [conf.get_script_location(script_name)]
-
     def run(self):
-        try:
-            device_mapping_list = utils.get_device_mappings(self.conf)
-        except exceptions.AgentExecutableException as ex:
-            reply_doc = {
-                "return_code": 1,
-                "message": str(ex)
-            }
-            return reply_doc
-
         reply_doc = {
             "return_code": 0,
-            "reply_type": "device_mapping_array",
-            "reply_object": device_mapping_list
+            "reply_type": "string",
+            "reply_object": self.conf.state
         }
         return reply_doc
 
 
 def load_plugin(conf, job_id, items_map, name, arguments):
-    return GetDeviceMappings(conf, job_id, items_map, name, arguments)
+    return Heartbeat(conf, job_id, items_map, name, arguments)

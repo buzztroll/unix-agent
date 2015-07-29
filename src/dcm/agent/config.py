@@ -311,7 +311,7 @@ def build_options_list():
         ConfigOpt("workers", "long_runner_threads", int, default=1,
                   options=None,
                   help_msg="The number of worker threads that will be "
-                           "processing long running jobs (anything that "
+                           "processing long running plugins (anything that "
                            "returns a job description)"),
 
         ConfigOpt("connection", "type", str, default="ws", options=None,
@@ -388,7 +388,7 @@ def build_options_list():
             help_msg="The platform/distribution version on which this "
                      "agent is being installed.  Must be used with "
                      "[platform]name."),
-        ConfigOpt("jobs", "retain_job_time", int, default=3600),
+        ConfigOpt("plugins", "retain_job_time", int, default=3600),
         ConfigOpt("test", "skip_handshake", bool, default=False,
                   help_msg="This value is for internal testing only.  "
                            "Do not change it.", hidden=True),

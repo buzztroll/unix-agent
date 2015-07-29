@@ -3,16 +3,16 @@ import sys
 import threading
 
 import dcm.agent.events.globals as events
-import dcm.agent.jobs as jobs
 import dcm.agent.logger as dcm_logger
 import dcm.agent.utils as utils
-from dcm.agent.jobs.builtin.remove_user import RemoveUser
+import dcm.agent.plugins.api.base as plugin_base
+import dcm.agent.plugins.builtin.remove_user as remove_user
 
 
 _g_logger = logging.getLogger(__name__)
 
 
-class CleanImage(jobs.Plugin):
+class CleanImage(plugin_base.Plugin):
     protocol_arguments = {
         "delUser":
             ("List of accounts to remove",
@@ -109,11 +109,12 @@ class CleanImage(jobs.Plugin):
                     job_name=self.name,
                     details='Deleting users.')
                 for user in self.args.delUser:
-                    rdoc = RemoveUser(self.conf,
-                                      self.job_id,
-                                      {'script_name': 'removeUser'},
-                                      'remove_user',
-                                      {'userId': user}).run()
+                    rdoc = remove_user.RemoveUser(
+                        self.conf,
+                        self.job_id,
+                        {'script_name': 'removeUser'},
+                         'remove_user',
+                         {'userId': user}).run()
                     res_doc.update(rdoc)
                     if res_doc["return_code"] != 0:
                         res_doc["message"] += " : Delete users failed on %s" % user

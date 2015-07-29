@@ -5,11 +5,10 @@ import urllib.error
 import urllib.parse
 import urllib.request
 
-import dcm.agent.jobs as jobs
+import dcm.agent.plugins.loader as plugin_loader
 import dcm.agent.logger as dcm_logger
 import dcm.agent.longrunners as longrunners
 import dcm.eventlog.tracer as tracer
-import dcm.agent.utils as utils
 
 from dcm.agent.events.globals import global_space as dcm_events
 
@@ -33,7 +32,7 @@ class WorkReply(object):
 
 def _run_plugin(conf, items_map, request_id, command, arguments):
     try:
-        plugin = jobs.load_plugin(
+        plugin = plugin_loader.load_plugin(
             conf,
             items_map,
             request_id,
@@ -168,7 +167,8 @@ class Dispatcher(object):
         request_id = reply_obj.get_request_id()
         _g_logger.info("Creating a request ID %s" % request_id)
 
-        items_map = jobs.parse_plugin_doc(self._conf, payload["command"])
+        items_map = plugin_loader.parse_plugin_doc(
+            self._conf, payload["command"])
 
         dcm_logger.log_to_dcm_console_incoming_message(
             job_name=payload["command"])
