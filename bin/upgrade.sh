@@ -28,6 +28,10 @@ fi
 
 pip install requests
 
-chmod +x upgrade.py
+start=`dirname $0`
+cd $start
+start=`pwd`
+
+chmod +x $start/upgrade.py
 echo "Running upgrade script with arguments: $@"
-python upgrade.py $@
+python $start/upgrade.py $@
