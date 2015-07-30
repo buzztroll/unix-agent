@@ -8,9 +8,14 @@ if [ "X$2" != "Xnull" ]; then
     export AGENT_BASE_URL=$2
 fi
 
+if [ "X$3" != "Xnull" ]; then
+    export AGENT_VERSION=$3
+    echo "using version $3"
+fi
+
 #uuidgen | base64 > /vagrant/enckey
 #export ENCRYPTED_FILE_ENV=/vagrant/enckey
-
+export DCM_AGENT_REMOVE_EXISTING=1
 DIR=`dirname $0`
 cd $DIR
 
@@ -38,7 +43,7 @@ if [ $? -ne 0 ]; then
 fi
 
 . /opt/dcm-agent/agentve/bin/activate
-
+. /opt/dcm-agent/embedded/agentve/bin/activate
 
 # if 4 is not null test the local install
 if [ "X$4" != "Xnull" ]; then
