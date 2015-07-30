@@ -15,27 +15,14 @@ import dcmdocker.start_container as start_container
 import dcmdocker.restart_container as restart_container
 import dcmdocker.delete_container as delete_container
 import dcmdocker.get_container_details as get_container_details
-import dcm.agent.plugins.api.pages as pages
+import dcmdocker.tests.utils as test_utils
 
 
 class TestDockerContainer(unittest.TestCase):
 
     @classmethod
     def setUpClass(cls):
-        docker_url = 'http+unix://var/run/docker.sock'
-        if 'DOCKER_HOST' in os.environ:
-            docker_url = os.environ['DOCKER_HOST']
-
-        def parse_fake(opt_list):
-            pass
-        FakeConf = collections.namedtuple(
-            "FakeConf", ["docker_base_url",
-                         "docker_version",
-                         "docker_timeout",
-                         "parse_config_files",
-                         "page_monitor"])
-        cls.conf = FakeConf(docker_url, "1.12", 60, parse_fake,
-                            pages.PageMonitor())
+        cls.conf = test_utils.get_docker_conf_obj()
 
         if 'DCM_DOCKER_IMAGE_LOCATION' not in os.environ:
             raise skip.SkipTest('skipping')

@@ -18,6 +18,7 @@ import dcm.agent.plugins.api.base as plugin_base
 from dcm.agent.plugins.builtin.add_user import AddUser
 from dcm.agent.plugins.builtin.rename import Rename
 import dcm.agent.plugins.api.utils as plugin_utils
+import dcm.agent.utils as agent_utils
 
 
 _g_logger = logging.getLogger(__name__)
@@ -67,7 +68,7 @@ class InitializeJob(plugin_base.Plugin):
                                  "password": None,
                                  "authentication": None,
                                  "administrator": "false",
-                                 "userId": plugin_utils.make_id_string(
+                                 "userId": agent_utils.make_id_string(
                                      "c", self.args.customerId)})
 
     def run(self):

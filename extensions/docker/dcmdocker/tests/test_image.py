@@ -10,8 +10,7 @@ import dcmdocker.list_images as list_images
 import dcmdocker.import_image as import_image
 import dcmdocker.delete_image as delete_image
 import dcmdocker.list_containers as list_containers
-import dcm.agent.plugins.api.pages as pages
-
+import dcmdocker.tests.utils as test_utils
 
 class TestDockerImageCommands(unittest.TestCase):
 
@@ -19,20 +18,7 @@ class TestDockerImageCommands(unittest.TestCase):
         """
         :return: a list of the files in src/dcm/agent/plugins/builtin
         """
-        docker_url = 'http+unix://var/run/docker.sock'
-        if 'DOCKER_HOST' in os.environ:
-            docker_url = os.environ['DOCKER_HOST']
-
-        def parse_fake(opt_list):
-            pass
-        FakeConf = collections.namedtuple(
-            "FakeConf", ["docker_base_url",
-                         "docker_version",
-                         "docker_timeout",
-                         "parse_config_files",
-                         "page_monitor"])
-        self.conf = FakeConf(docker_url, "1.12", 60, parse_fake,
-                             pages.PageMonitor())
+        self.conf = test_utils.get_docker_conf_obj()
 
     def tearDown(self):
         pass

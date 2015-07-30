@@ -1,0 +1,4 @@
+include MANIFEST.in
+exclude .gitignore
+recursive-include dcmdocker *
+global-exclude *pyc *pyo

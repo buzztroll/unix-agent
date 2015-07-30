@@ -11,23 +11,17 @@ _g_logger = logging.getLogger(__name__)
 
 
 def base64type_convertor(b64str):
-    """This is used in plugin parameters for defining base 64 types.  It
-    will decode the value into a base 64 decoded string"""
+    """a base 64 decoded string"""
     return base64.b64decode(b64str.encode()).decode("utf-8")
 
 
 def base64type_binary_convertor(b64str):
-    """This is used in plugin parameters for defining base 64 types.  It
-    will decode the value into a base 64 decoded byte array"""
+    """a base 64 decoded byte array"""
     return base64.b64decode(b64str.encode())
 
 
 def json_param_type(json_str):
-    """
-    This is used in plugin parameters for defining json parameter types
-    :param json_str:  a string in json format
-    :return: a python dictionary
-    """
+    """a string in JSON format"""
     if json_str is None:
         return None
     if type(json_str) == dict:
@@ -38,11 +32,7 @@ def json_param_type(json_str):
 
 
 def user_name(proposed_name):
-    """
-    This is used in plugin parameters to validate a proper user name.
-    :param proposed_name: The proposed user name
-    :return: The same string if it passed otherwise an exception is thrown.
-    """
+    """Safe user name"""
     string_name = str(proposed_name)
 
     # this regex ONLY allows a-z, A-Z, 0-9, _,  -

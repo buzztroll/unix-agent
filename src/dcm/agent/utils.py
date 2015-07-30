@@ -233,11 +233,7 @@ def build_assertion_exception(logger, msg):
     return msg
 
 
-
-
-
 def identify_platform(conf):
-
     distro_name = None
     distro_version = None
 
