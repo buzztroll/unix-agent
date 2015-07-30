@@ -129,3 +129,123 @@ class TestAgentVerboseSystemStats(unittest.TestCase):
         self.assertIn('disk-write-ops', ent_1)
         self.assertIn('timestamp', ent_1)
         systemstats.stop_stats(name1)
+
+    def test_basic_read_ops(self):
+        hold_count1 = 10
+        interval1 = 0.1
+        name1 = str(uuid.uuid4())
+
+        systemstats.start_new_system_stat(
+            name1,
+            "disk-read-ops",
+            hold_count1,
+            interval1)
+
+        time.sleep((hold_count1 + 2) * interval1)
+        stats_d = systemstats.get_stats(name1)
+        self.assertEqual(len(stats_d['status']), hold_count1)
+
+        ent_1 = stats_d['status'][0]
+        self.assertIn('disk-read-ops', ent_1)
+        self.assertIn('timestamp', ent_1)
+        systemstats.stop_stats(name1)
+
+    def test_basic_write_ops(self):
+        hold_count1 = 10
+        interval1 = 0.1
+        name1 = str(uuid.uuid4())
+
+        systemstats.start_new_system_stat(
+            name1,
+            "disk-write-ops",
+            hold_count1,
+            interval1)
+
+        time.sleep((hold_count1 + 2) * interval1)
+        stats_d = systemstats.get_stats(name1)
+        self.assertEqual(len(stats_d['status']), hold_count1)
+
+        ent_1 = stats_d['status'][0]
+        self.assertIn('disk-write-ops', ent_1)
+        self.assertIn('timestamp', ent_1)
+        systemstats.stop_stats(name1)
+
+    def test_basic_read_bytes(self):
+        hold_count1 = 10
+        interval1 = 0.1
+        name1 = str(uuid.uuid4())
+
+        systemstats.start_new_system_stat(
+            name1,
+            "disk-read-bytes",
+            hold_count1,
+            interval1)
+
+        time.sleep((hold_count1 + 2) * interval1)
+        stats_d = systemstats.get_stats(name1)
+        self.assertEqual(len(stats_d['status']), hold_count1)
+
+        ent_1 = stats_d['status'][0]
+        self.assertIn('disk-read-bytes', ent_1)
+        self.assertIn('timestamp', ent_1)
+        systemstats.stop_stats(name1)
+
+    def test_basic_write_bytes(self):
+        hold_count1 = 10
+        interval1 = 0.1
+        name1 = str(uuid.uuid4())
+
+        systemstats.start_new_system_stat(
+            name1,
+            "disk-write-bytes",
+            hold_count1,
+            interval1)
+
+        time.sleep((hold_count1 + 2) * interval1)
+        stats_d = systemstats.get_stats(name1)
+        self.assertEqual(len(stats_d['status']), hold_count1)
+
+        ent_1 = stats_d['status'][0]
+        self.assertIn('disk-write-bytes', ent_1)
+        self.assertIn('timestamp', ent_1)
+        systemstats.stop_stats(name1)
+
+    def test_basic_net_in(self):
+        hold_count1 = 10
+        interval1 = 0.1
+        name1 = str(uuid.uuid4())
+
+        systemstats.start_new_system_stat(
+            name1,
+            "net-bytes-in",
+            hold_count1,
+            interval1)
+
+        time.sleep((hold_count1 + 2) * interval1)
+        stats_d = systemstats.get_stats(name1)
+        self.assertEqual(len(stats_d['status']), hold_count1)
+
+        ent_1 = stats_d['status'][0]
+        self.assertIn('net-bytes-in', ent_1)
+        self.assertIn('timestamp', ent_1)
+        systemstats.stop_stats(name1)
+
+    def test_basic_net_out(self):
+        hold_count1 = 10
+        interval1 = 0.1
+        name1 = str(uuid.uuid4())
+
+        systemstats.start_new_system_stat(
+            name1,
+            "net-bytes-out",
+            hold_count1,
+            interval1)
+
+        time.sleep((hold_count1 + 2) * interval1)
+        stats_d = systemstats.get_stats(name1)
+        self.assertEqual(len(stats_d['status']), hold_count1)
+
+        ent_1 = stats_d['status'][0]
+        self.assertIn('net-bytes-out', ent_1)
+        self.assertIn('timestamp', ent_1)
+        systemstats.stop_stats(name1)

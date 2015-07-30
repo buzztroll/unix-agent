@@ -102,9 +102,111 @@ class AgentVerboseSystemStats(SystemStats):
         return "system_info_stat_array"
 
 
+class AgentDiskReadOpsSystemStats(SystemStats):
+    def __init__(self, name, hold_count, check_interval):
+        super(AgentDiskReadOpsSystemStats, self).__init__(
+            name, hold_count, check_interval)
+
+    def poll(self):
+        super(AgentDiskReadOpsSystemStats, self).poll()
+        disk_io_info = psutil.disk_io_counters()
+        timestamp = time.time()
+        self.add_value({'timestamp': timestamp,
+                        'disk-read-ops': disk_io_info.read_count})
+
+    def get_stats_type(self):
+        return "disk_read_ops_stat_array"
+
+
+class AgentDiskWriteOpsSystemStats(SystemStats):
+    def __init__(self, name, hold_count, check_interval):
+        super(AgentDiskWriteOpsSystemStats, self).__init__(
+            name, hold_count, check_interval)
+
+    def poll(self):
+        super(AgentDiskWriteOpsSystemStats, self).poll()
+        disk_io_info = psutil.disk_io_counters()
+        timestamp = time.time()
+        self.add_value({'timestamp': timestamp,
+                        'disk-write-ops': disk_io_info.write_count})
+
+    def get_stats_type(self):
+        return "disk_write_ops_stat_array"
+
+
+class AgentDiskReadByesSystemStats(SystemStats):
+    def __init__(self, name, hold_count, check_interval):
+        super(AgentDiskReadByesSystemStats, self).__init__(
+            name, hold_count, check_interval)
+
+    def poll(self):
+        super(AgentDiskReadByesSystemStats, self).poll()
+        disk_io_info = psutil.disk_io_counters()
+        timestamp = time.time()
+        self.add_value({'timestamp': timestamp,
+                        'disk-read-bytes': disk_io_info.read_bytes})
+
+    def get_stats_type(self):
+        return "disk_read_bytes_stat_array"
+
+
+class AgentDiskWriteBytesSystemStats(SystemStats):
+    def __init__(self, name, hold_count, check_interval):
+        super(AgentDiskWriteBytesSystemStats, self).__init__(
+            name, hold_count, check_interval)
+
+    def poll(self):
+        super(AgentDiskWriteBytesSystemStats, self).poll()
+        disk_io_info = psutil.disk_io_counters()
+        timestamp = time.time()
+        self.add_value({'timestamp': timestamp,
+                        'disk-write-bytes': disk_io_info.write_bytes})
+
+    def get_stats_type(self):
+        return "disk_write_bytes_stat_array"
+
+
+class AgentNetInByesSystemStats(SystemStats):
+    def __init__(self, name, hold_count, check_interval):
+        super(AgentNetInByesSystemStats, self).__init__(
+            name, hold_count, check_interval)
+
+    def poll(self):
+        super(AgentNetInByesSystemStats, self).poll()
+        net_io_info = psutil.net_io_counters()
+        timestamp = time.time()
+        self.add_value({'timestamp': timestamp,
+                        'net-bytes-in': net_io_info.bytes_recv})
+
+    def get_stats_type(self):
+        return "net_bytes_in_stat_array"
+
+
+class AgentNetOutByesSystemStats(SystemStats):
+    def __init__(self, name, hold_count, check_interval):
+        super(AgentNetOutByesSystemStats, self).__init__(
+            name, hold_count, check_interval)
+
+    def poll(self):
+        super(AgentNetOutByesSystemStats, self).poll()
+        net_io_info = psutil.net_io_counters()
+        timestamp = time.time()
+        self.add_value({'timestamp': timestamp,
+                        'net-bytes-out': net_io_info.bytes_sent})
+
+    def get_stats_type(self):
+        return "net_bytes_out_stat_array"
+
+
 _g_stat_object_map = {
     "cpu-idle": CpuIdleSystemStats,
-    "system-stats": AgentVerboseSystemStats
+    "system-stats": AgentVerboseSystemStats,
+    "disk-read-ops": AgentDiskReadOpsSystemStats,
+    "disk-write-ops": AgentDiskWriteOpsSystemStats,
+    "disk-read-bytes": AgentDiskReadByesSystemStats,
+    "disk-write-bytes": AgentDiskWriteBytesSystemStats,
+    "net-bytes-in": AgentNetInByesSystemStats,
+    "net-bytes-out": AgentNetOutByesSystemStats
 }
 
 
