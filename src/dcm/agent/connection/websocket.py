@@ -303,7 +303,6 @@ class WebSocketConnection(threading.Thread):
 
     def _throw_error(self, exception, notify=True):
         _g_logger.warning("throwing error %s" % str(exception))
-        self._backoff.error()
         dcm_events.register_callback(self.event_error,
                                      kwargs={"exception": exception})
         if notify:
@@ -442,6 +441,7 @@ class WebSocketConnection(threading.Thread):
         except Exception as ex:
             _g_logger.exception(
                 "Got an error while closing in handshake state")
+        self._backoff.error()
         self._cond.notify()
         self._register_connect()
 
@@ -516,6 +516,7 @@ class WebSocketConnection(threading.Thread):
         """
         _g_logger.warn("An error occurred while waiting to try a new "
                        "connection.")
+        self._backoff.error()
 
     def _sm_handshake_poll(self):
         """
