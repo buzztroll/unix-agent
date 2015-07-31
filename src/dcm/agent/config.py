@@ -12,7 +12,7 @@ from dcm.agent.cloudmetadata import CLOUD_TYPES
 import dcm.agent.connection.websocket as websocket
 import dcm.agent.exceptions as exceptions
 import dcm.agent.job_runner as job_runner
-import dcm.agent.logger as logger
+from dcm.agent.plugins.api.exceptions import AgentPluginConfigException
 import dcm.agent.tests.utils.test_connection as test_connection  # TODO
 import dcm.agent.utils as utils
 
@@ -221,7 +221,7 @@ class AgentConfig(object):
             path = os.path.join(self.storage_script_dir, name)
             _g_logger.debug("Script location %s" % path)
             if not os.path.exists(path):
-                raise exceptions.AgentPluginConfigException(
+                raise AgentPluginConfigException(
                     "There is no proper configuration for %s" % name)
             return path
 
@@ -311,7 +311,7 @@ def build_options_list():
         ConfigOpt("workers", "long_runner_threads", int, default=1,
                   options=None,
                   help_msg="The number of worker threads that will be "
-                           "processing long running jobs (anything that "
+                           "processing long running plugins (anything that "
                            "returns a job description)"),
 
         ConfigOpt("connection", "type", str, default="ws", options=None,
@@ -388,7 +388,7 @@ def build_options_list():
             help_msg="The platform/distribution version on which this "
                      "agent is being installed.  Must be used with "
                      "[platform]name."),
-        ConfigOpt("jobs", "retain_job_time", int, default=3600),
+        ConfigOpt("plugins", "retain_job_time", int, default=3600),
         ConfigOpt("test", "skip_handshake", bool, default=False,
                   help_msg="This value is for internal testing only.  "
                            "Do not change it.", hidden=True),

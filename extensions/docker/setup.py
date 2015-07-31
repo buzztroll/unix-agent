@@ -1,6 +1,6 @@
 from setuptools import setup, find_packages
 
-g_version = "0.1"
+g_version = "0.2"
 
 setup(name='dcmdocker',
       version=g_version,
@@ -9,7 +9,8 @@ setup(name='dcmdocker',
       author_email="support@enstratius.com",
       url="http://www.enstratius.com/",
       packages=find_packages(),
-      install_requires=["docker-py == 1.2.2"],
+      install_requires=["docker-py == 1.3.1"],
+      include_package_data=True,
       classifiers=[
           "Development Status :: 4 - Beta",
           "Environment :: Console",

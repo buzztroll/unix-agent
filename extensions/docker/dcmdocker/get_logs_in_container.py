@@ -12,10 +12,10 @@
 #   is obtained from Dell, Inc.
 #  ======================================================================
 import logging
-
-import dcmdocker.utils as docker_utils
 import uuid
-from dcm.agent.jobs import pages
+
+from dcm.agent.plugins.api import pages
+import dcmdocker.utils as docker_utils
 
 
 _g_logger = logging.getLogger(__name__)

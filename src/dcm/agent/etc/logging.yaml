@@ -72,7 +72,7 @@ loggers:
         handlers: [job_runner_file_handler]
         propagate: no
 
-    dcm.agent.jobs:
+    dcm.agent.plugins:
         level: @LOG_LEVEL@
         handlers: [file_handler]
         propagate: no

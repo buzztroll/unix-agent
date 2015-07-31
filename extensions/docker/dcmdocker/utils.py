@@ -1,7 +1,9 @@
 import docker
 import docker.errors as errors
+import docker.tls
 import dcm.agent.config as config
-import dcm.agent.jobs as jobs
+
+import dcm.agent.plugins.api.base as plugin_base
 
 
 class DCMDockerException(Exception):
@@ -16,13 +18,29 @@ class DCMDockerConnectionException(DCMDockerException):
 
 
 def get_docker_connection(conf):
-    c = docker.Client(conf.docker_base_url,
-                      conf.docker_version,
-                      conf.docker_timeout)
+    tls = False
+    if conf.docker_tls:
+        client_cert = None
+        if conf.docker_client_cert_path and conf.docker_client_key_path:
+            client_cert=(conf.docker_client_cert_path,
+                         conf.docker_client_key_path)
+
+        ca_cert = None
+        if conf.docker_ca_cert_path:
+           ca_cert = conf.docker_ca_cert_path
+
+        tls = docker.tls.TLSConfig(verify=conf.docker_cert_verify,
+                                   client_cert=client_cert,
+                                   ca_cert=ca_cert)
+
+    c = docker.Client(base_url=conf.docker_base_url,
+                      version=conf.docker_version,
+                      timeout=conf.docker_timeout,
+                      tls=tls)
     return c
 
 
-class DockerJob(jobs.Plugin):
+class DockerJob(plugin_base.Plugin):
     def __init__(self, conf, job_id, items_map, name, arguments):
         super(DockerJob, self).__init__(
             conf, job_id, items_map, name, arguments)
@@ -43,6 +61,21 @@ def parse_docker_options(conf):
             config.ConfigOpt("docker", "version", str, default='1.12',
                              options=None,
                              help_msg="The docker API version."),
+            config.ConfigOpt("docker", "tls", bool, default=False,
+                             options=None,
+                             help_msg="Use TLS or not."),
+            config.ConfigOpt("docker", "cert_verify", bool, default=False,
+                             options=None,
+                             help_msg="Validate the cert or not."),
+            config.ConfigOpt("docker", "ca_cert", str, default=False,
+                             options=None,
+                             help_msg="Path to the ca certificate."),
+            config.ConfigOpt("docker", "client_cert_path", str, default=False,
+                             options=None,
+                             help_msg="Path to the client certificate."),
+            config.ConfigOpt("docker", "client_key_path", str, default=False,
+                             options=None,
+                             help_msg="Path to the client key."),
             config.ConfigOpt("docker", "timeout", int, default=30, options=None,
                              help_msg="The docker timeout."),
         ]

@@ -8,7 +8,7 @@ class TestGenDocs(unittest.TestCase):
 
     def setUp(self):
         """
-        :return: a list of the files in src/dcm/agent/jobs/builtin
+        :return: a list of the files in src/dcm/agent/plugins/builtin
         """
         self.files = gen_docs.filelist
 

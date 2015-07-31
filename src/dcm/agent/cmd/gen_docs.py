@@ -3,9 +3,9 @@ import importlib
 import os
 import types
 
-import dcm.agent.jobs.builtin as jobs
+import dcm.agent.plugins.builtin as builtins
 
-filelist = [f for f in os.listdir(os.path.dirname(jobs.__file__))
+filelist = [f for f in os.listdir(os.path.dirname(builtins.__file__))
             if not f.startswith("__")
             and not f.endswith(".pyc")]
 
@@ -16,7 +16,7 @@ def dynamic_import(f):
     :return:  reference to the imported module
     """
     filename = f[:-3]
-    fpath = "dcm.agent.jobs.builtin." + filename
+    fpath = "dcm.agent.plugins.builtin." + filename
     x = importlib.import_module(fpath)
 
     return x

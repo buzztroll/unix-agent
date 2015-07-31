@@ -13,9 +13,9 @@
 #  ======================================================================
 import logging
 import uuid
+from dcm.agent.plugins.api import pages
 
 import dcmdocker.utils as docker_utils
-from dcm.agent.jobs import pages
 
 
 _g_logger = logging.getLogger(__name__)

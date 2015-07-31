@@ -12,9 +12,9 @@
 #   is obtained from Dell, Inc.
 #  ======================================================================
 import uuid
+from dcm.agent.plugins.api import pages
 
 import dcmdocker.utils as docker_utils
-from dcm.agent.jobs import pages
 
 
 class DockerListContainer(docker_utils.DockerJob):

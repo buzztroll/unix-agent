@@ -13,7 +13,10 @@ import dcm.agent.messaging.reply as reply
 import dcm.agent.messaging.types as types
 import dcm.agent.tests.utils.test_connection as test_conn
 import dcm.agent.tests.utils.general as test_utils
+import dcm.agent.plugins.testplugins as testplugins
 from dcm.agent.events.globals import global_space as dcm_events
+
+testplugins.register_test_loader()
 
 
 class TestSingleCommands(unittest.TestCase):

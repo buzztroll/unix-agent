@@ -11,14 +11,11 @@
 #   this material is strictly forbidden unless prior written permission
 #   is obtained from Dell, Inc.
 #  ======================================================================
-import base64
-import json
 import logging
 import netifaces
 import os
 import platform
 import pwd
-import re
 import subprocess
 import sys
 import tempfile
@@ -183,85 +180,6 @@ def make_id_string(prefix, uid):
     return "%s%03d" % (prefix, uid)
 
 
-def secure_delete(conf, file_name):
-    exe_path = conf.get_script_location("secureDelete")
-    (stdout, stderr, rc) = run_command(conf, [exe_path, file_name])
-    _g_logger.debug("Secure delete executed with %d %s %s" % (rc,
-                                                              stdout,
-                                                              stderr))
-    with open(file_name, "w") as fptr:
-        fptr.write("*" * 100)
-    if os.path.exists(file_name):
-        os.remove(file_name)
-
-
-class DeviceTypes(object):
-    ROOT = "ROOT"
-    EPHEMERAL = "EPHEMERAL"
-    CUSTOM = "CUSTOM"
-
-
-def get_device_mappings(conf):
-    command = [conf.get_script_location("listDevices")]
-
-    (stdout, stderr, rc) = run_command(conf, command)
-    if rc != 0:
-        raise exceptions.AgentExecutableException(command, rc, stdout, stderr)
-
-    try:
-        device_mapping_list = []
-        lines = stdout.split(os.linesep)
-        for line in lines:
-            parts = line.split()
-            if len(parts) != 5:
-                continue
-
-            elements = parts[0].split("/")
-            device_id = elements[len(elements) - 1]
-            file_system = parts[1]
-            mount_point = parts[2]
-            size = int(parts[3])
-            used = int(parts[4])
-            if parts[0].startswith("/dev/mapper"):
-                encrypted = True
-            else:
-                encrypted = False
-
-            if mount_point == "/":
-                device_type = DeviceTypes.ROOT
-            elif mount_point == conf.storage_mountpoint:
-                device_type = DeviceTypes.EPHEMERAL
-            else:
-                device_type = DeviceTypes.CUSTOM
-
-            device_mapping = {
-                "device_id": device_id,
-                "encrypted": encrypted,
-                "file_system": file_system,
-                "mount_point": mount_point,
-                "size":  size,
-                "used": used,
-                "device_type": device_type
-            }
-            device_mapping_list.append(device_mapping)
-    except Exception as ex:
-        _g_logger.exception(str(ex))
-        _g_logger.error("listDevice stdout: " + stdout)
-        _g_logger.error("listDevice stderr: " + stderr)
-        raise
-
-    return device_mapping_list
-
-
-def unmount(conf, mount_point):
-    command = [conf.get_script_location("unmount"), mount_point]
-    (stdout, stderr, rc) = run_command(conf, command)
-    if rc != 0:
-        raise exceptions.AgentExecutableException(command, rc, stdout, stderr)
-
-    return rc
-
-
 def mount(conf, device_id, file_system, mount_point):
     if device_id.startswith("es"):
         device_id = "mapper/" + device_id
@@ -298,15 +216,6 @@ def open_encrypted_device(conf, raw_device_id, encrypted_device_id, key_file):
     return rc
 
 
-def close_encrypted_device(conf, encrypted_device_id):
-    command = [conf.get_script_location("closeEncryption"),
-               encrypted_device_id]
-    (stdout, stderr, rc) = run_command(conf, command)
-    if rc != 0:
-        raise exceptions.AgentExecutableException(command, rc, stdout, stderr)
-    return rc
-
-
 def build_assertion_exception(logger, msg):
     details_out = " === Stack trace Begin === " + os.linesep
     for threadId, stack in list(sys._current_frames().items()):
@@ -324,40 +233,7 @@ def build_assertion_exception(logger, msg):
     return msg
 
 
-def base64type_convertor(b64str):
-    """base 64 decoded string"""
-    return base64.b64decode(b64str.encode()).decode("utf-8")
-
-
-def base64type_binary_convertor(b64str):
-    """base 64 decoded string"""
-    return base64.b64decode(b64str.encode())
-
-
-def user_name(proposed_name):
-    """Safe user name"""
-
-    string_name = str(proposed_name)
-
-    # this regex ONLY allows a-z, A-Z, 0-9, _,  -
-    # but disallows _ or - at the beginning or end of username
-    if re.match("^(?![_-])[a-zA-Z0-9_-]+(?<![_-])$", string_name):
-        return proposed_name
-    raise ValueError("bad user name")
-
-
-def json_param_type(json_str):
-    if json_str is None:
-        return None
-    if type(json_str) == dict:
-        return json_str
-    if json_str.lower() == "null":
-        return None
-    return json.loads(json_str)
-
-
 def identify_platform(conf):
-
     distro_name = None
     distro_version = None
 
@@ -579,3 +455,62 @@ def validate_file_permissions(file_path, username=None, permissions=None):
 
 def get_wire_logger():
     return logging.getLogger("DCM_AGENT_WIRE")
+
+
+class DeviceTypes(object):
+    ROOT = "ROOT"
+    EPHEMERAL = "EPHEMERAL"
+    CUSTOM = "CUSTOM"
+
+
+def get_device_mappings(conf):
+    command = [conf.get_script_location("listDevices")]
+
+    (stdout, stderr, rc) = run_command(conf, command)
+    if rc != 0:
+        raise exceptions.AgentExecutableException(command, rc, stdout, stderr)
+
+    try:
+        device_mapping_list = []
+        lines = stdout.split(os.linesep)
+        for line in lines:
+            parts = line.split()
+            if len(parts) != 5:
+                continue
+
+            elements = parts[0].split("/")
+            device_id = elements[len(elements) - 1]
+            file_system = parts[1]
+            mount_point = parts[2]
+            size = int(parts[3])
+            used = int(parts[4])
+            if parts[0].startswith("/dev/mapper"):
+                encrypted = True
+            else:
+                encrypted = False
+
+            if mount_point == "/":
+                device_type = DeviceTypes.ROOT
+            elif mount_point == conf.storage_mountpoint:
+                device_type = DeviceTypes.EPHEMERAL
+            else:
+                device_type = DeviceTypes.CUSTOM
+
+            device_mapping = {
+                "device_id": device_id,
+                "encrypted": encrypted,
+                "file_system": file_system,
+                "mount_point": mount_point,
+                "size":  size,
+                "used": used,
+                "device_type": device_type
+            }
+            device_mapping_list.append(device_mapping)
+    except Exception as ex:
+        _g_logger.exception(str(ex))
+        _g_logger.error("listDevice stdout: " + stdout)
+        _g_logger.error("listDevice stderr: " + stderr)
+        raise
+
+    return device_mapping_list
+

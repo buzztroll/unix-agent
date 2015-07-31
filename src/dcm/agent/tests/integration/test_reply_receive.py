@@ -361,6 +361,7 @@ class TestProtocolCommands(reply.ReplyObserverInterface):
                           "administrator": True}}
         req_rpc = self._rpc_wait_reply(doc)
         r = req_rpc.get_reply()
+        print(str(r))
         nose.tools.eq_(r["payload"]["return_code"], 0)
 
         pw_ent = pwd.getpwnam(user_name)

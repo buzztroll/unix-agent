@@ -7,7 +7,8 @@ import urllib.parse
 import urllib.error
 import urllib.request
 
-import dcm.agent.jobs as jobs
+import dcm.agent.plugins.loader as plugin_loader
+
 from dcm.agent.events.globals import global_space as dcm_events
 
 
@@ -77,7 +78,7 @@ class JobRunner(threading.Thread):
                     dcm_events.register_callback(
                         self._job_update_callback, args=[job_reply])
 
-                    plugin = jobs.load_python_module(
+                    plugin = plugin_loader.load_python_module(
                         work.items_map["module_name"],
                         self._conf,
                         work.request_id,
@@ -150,7 +151,7 @@ class LongRunner(object):
                       name, arguments):
         module_name = items_map["module_name"]
 
-        plugin = jobs.load_python_module(
+        plugin = plugin_loader.load_python_module(
             module_name, conf, request_id, items_map, name, arguments)
 
         with self._lock:
