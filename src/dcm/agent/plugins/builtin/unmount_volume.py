@@ -17,8 +17,7 @@ import dcm.agent.plugins.api.utils as plugin_utils
 import dcm.agent.utils as utils
 
 
-
-def unmount(conf, mount_point):
+def _unmount(conf, mount_point):
     command = [conf.get_script_location("unmount"), mount_point]
     (stdout, stderr, rc) = plugin_utils.run_command(conf, command)
     if rc != 0:
@@ -54,7 +53,7 @@ class UnmountVolume(plugin_base.Plugin):
             d_id = mapping["device_id"]
             mount_point = mapping["mount_point"]
             if d_id == self.args.deviceId:
-                plugin_utils.unmount(self.conf, mount_point)
+                _unmount(self.conf, mount_point)
                 break
 
     def run(self):
