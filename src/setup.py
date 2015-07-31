@@ -80,6 +80,7 @@ setup(name='dcm-agent',
           "Operating System :: POSIX :: Linux",
           "Programming Language :: Python",
           "Topic :: System :: Clustering",
-          "Topic :: System :: Distributed Computing"
+          "Topic :: System :: Distributed Computing",
+          "Programming Language :: Python :: 3 :: Only"
       ]
       )
