@@ -1,20 +1,23 @@
-.. es-ex-pyagent documentation master file, created by
-   sphinx-quickstart on Thu Jul 30 20:07:45 2015.
-   You can adapt this file completely to your liking, but it should at least
-   contain the root `toctree` directive.
+DCM Agent For Linux
+===================
 
-Welcome to es-ex-pyagent's documentation!
-=========================================
+The dcm-agent is an open source python project for use with the Dell Cloud
+Manager (DCM).  When installed inside of a virtual machine that is launched
+using DCM it gives DCM system level controls over the VM instance and thus
+allows for the automated creation, monitoring, and control of sophisticated
+cloud applications.  Some of the features that it provides are:
 
-The top level document for sphinx.
+- Server health monitoring
+- Automated software installation/configuration
+- Adding/removing users
+- Disk volume management
 
 
 .. toctree::
     :maxdepth: 3
 
     install
-    dcm.agent.events
-    dcm.agent.messaging
+    commands
 
 
 Indices and tables
