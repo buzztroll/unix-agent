@@ -10,11 +10,15 @@ _g_logger = logging.getLogger(__name__)
 
 class StateMachine(object):
 
-    def __init__(self, start_state):
+    def __init__(self, start_state, logger=None):
         self._state_map = {}
         self._current_state = start_state
         self._user_callbacks_list = []
         self._event_list = []
+        if logger is None:
+            self._logger = _g_logger
+        else:
+            self._logger = logger
 
     def add_transition(self, state_event, event, new_state, func):
         if state_event not in self._state_map:
@@ -44,20 +48,20 @@ class StateMachine(object):
             # log line in a conf file
             log_msg = ("Event %(event)s occurred.  Moving from state "
                        "%(old_state)s to %(new_state)s") % locals()
-            _g_logger.debug(log_msg)
+            self._logger.debug(log_msg)
             self._event_list.append((event, old_state, new_state))
             try:
                 if func is not None:
-                    _g_logger.debug("Calling %s | %s" % (func.__name__,                                                         func.__doc__))
+                    self._logger.debug("Calling %s | %s" % (func.__name__,                                                         func.__doc__))
                     func(**kwargs)
                 self._current_state = new_state
-                _g_logger.debug("Moved to new state %s." % new_state)
+                self._logger.debug("Moved to new state %s." % new_state)
             except exceptions.DoNotChangeStateException as dncse:
-                _g_logger.warning("An error occurred that permits us "
+                self._logger.warning("An error occurred that permits us "
                                   "to continue but skip the state "
                                   "change. %s" % str(dncse))
             except Exception as ex:
-                _g_logger.exception("An exception occurred %s")
+                self._logger.exception("An exception occurred %s")
                 raise
         except KeyError as keyEx:
             raise exceptions.IllegalStateTransitionException(
