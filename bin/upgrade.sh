@@ -9,12 +9,10 @@ function help(){
 
           Usage: ./upgrade.sh version [ base_dir [ package_url [ upgrade_override ]]]
 
-          --version [VERSION]        Is required and sets AGENT_VERSION env var.
-          --base_dir [DIR]           Is optional and sets AGENT_BASE_DIR, default is /dcm.
-          --package_url [URL]        Is optional and sets AGENT_BASE_URL, default is http://linux.stable.agent.enstratius.com
-          --upgrade_override [URL]   Is optional and downloads the upgrade python program from a location other than
-                                     what is specified by package_url
-          --allow_unkown_certs/-Z    Is an optional flag to disable cert validation
+          --version [VERSION]        Required and sets AGENT_VERSION env var.
+          --base_dir [DIR]           Optional and sets AGENT_BASE_DIR, default is /dcm.
+          --package_url [URL]        Optional and sets AGENT_BASE_URL, default is http://linux.stable.agent.enstratius.com
+          --allow_unknown_certs/-Z    Optional flag to disable cert validation
           "
           }
 cd /tmp

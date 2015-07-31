@@ -217,11 +217,6 @@ def get_parse_args():
                         help="Disable cert validation.  In general this is a"
                              "bad idea but is very useful for testing.")
 
-    parser.add_argument("--upgrade_override",
-                        action='store_true',
-                        default=False,
-                        help="This is just a placeholder for now.")
-
     return parser.parse_args()
 
 
