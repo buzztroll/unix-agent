@@ -46,7 +46,14 @@ class Plugin(PluginInterface):
     }
 
     :param command_name: The name of this command.  This must be globally
-    unique for all the commands in a given agent.
+    unique for all the commands in a given agent.  It can be defined by
+    the module in order to tell the dcm-agent-add-plugin program the
+    desired name, however ultimately it will be set by the agent and the
+    value may be different than the desired name.
+
+    :param long_runner:  The variable long_runner can be set on the class
+    to instruct the dcm-agent-add-plugin that this plugin will be run for
+    a long time and should be set up for polling with get_job_description
     """
 
     protocol_arguments = {}

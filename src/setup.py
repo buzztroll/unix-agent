@@ -58,6 +58,7 @@ setup(name='dcm-agent',
               "dcm-agent=dcm.agent.cmd.service:main",
               "dcm-agent-configure=dcm.agent.cmd.configure:main",
               "dcm-agent-gen-docs=dcm.agent.cmd.gen_docs:main",
+              "dcm-agent-add-plugins=dcm.agent.cmd.add_plugin:main"
           ],
       },
       include_package_data=True,

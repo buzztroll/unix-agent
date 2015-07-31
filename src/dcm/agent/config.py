@@ -264,7 +264,7 @@ class AgentConfig(object):
 
             relative_path = os.path.dirname(config_file)
 
-            parser = configparser.SafeConfigParser()
+            parser = configparser.ConfigParser()
             parser.read(config_file)
 
             if add_features is not None:
