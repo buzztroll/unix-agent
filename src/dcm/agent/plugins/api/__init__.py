@@ -17,13 +17,11 @@ This function must return an instance of the class defined in step 1.
 The run method of the plugin class must return a dictionary with the following
 elements:
 
- {
-    "return_code": <0 for success, non-0 for failure>
-    "reply_type": <a string which defines the reply_object layout>
-    "reply_object": <a module defined reply payload>
-    "message": <A string describing the action>
-    "error_message": <A string describing any error that occurred>
-}
+    "return_code": 0 for success, non-0 for failure
+    "reply_type": A string which defines the reply_object layout
+    "reply_object": A module defined reply payload
+    "message": A string describing the action>
+    "error_message": A string describing any error that occurred
 
 If an exception occurs while processing the plugin should only throw exceptions
 defined in the dcm.agent.plugins.api.exceptions module.

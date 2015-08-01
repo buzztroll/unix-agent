@@ -13,8 +13,7 @@ cloud applications.  Some of the features that it provides are:
 
 - Server health monitoring
 - Automated software installation/configuration
-- Data set installations
-- Backups
+- Adding/removing users
 - Disk volume management
 
 The internal workings of the dcm-agent and its interactions with DCM are
@@ -26,9 +25,7 @@ Installation
 
 To install the agent from the this source do the following:
 
-pip install -r src/requirements.txt
-pip install -r src/test-requirements.txt
-python src/setup.py install
+pip install .
 
 Installation of Docker Extensions
 ============
@@ -122,20 +119,3 @@ Every command executed by the dcm-agent comes with a globally unique
 identifier.  This ID is used to make sure that the agent executes any command
 at most 1 time.  The commands and identifiers are kept in a sqlite database
 file.  Because of this the agent system can surive reboots.
-
-Commands
---------
-
-The dcm-agent runs a variety of system changing commands.  At this point in
-time altering the set of commands is not supported (in the future it will be),
-however modifications of the scripts that are executed is.  Details on this can
-be found at
-http://docs.enstratius.com/console/agent/additional_information.html.
-
-The agent is run as the user named dcm.  This user will have sudo access which
-will allow it to run commands that do things like:
-
-- add new users
-- mount volumes
-- install software
-- rename the host
