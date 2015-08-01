@@ -4,9 +4,9 @@ Installing and Configuring the DCM Agent
 In most cases the DCM Agent should be installed via the installer script
 which can be found `here <http://linux.stable.agent.enstratius.com/installer.sh>`_.
 This bash script will diagnose the system on which it is running to determine
-the Linux distribution on which it is run.  It will then use that information
-do download, install, and configure one of the packages in the
-`stable repository <http://linux.stable.agent.enstratius.com>`_.   These
+the correct distribution package to download, install, and configure.  The
+default package repository can be be found
+`here <http://linux.stable.agent.enstratius.com>`_.   These
 packages are created with `omnibus <https://github.com/chef/omnibus>`_
 and contain the full stack of software needed for the agent including
 python 3.4.
@@ -76,10 +76,15 @@ about your agent installation.
 Re-configure
 ------------
 
-The dcm-agent-configure program can also be used to update an agent
-configuration.  Once installed
-dcm-agent-configure -r <BASE_PATH>/etc/agent.conf
-can be used.  This will read in the current configuration and use all of its
+The dcm-agent-configure program can also be used to update an installed agent's
+configuration.  To reconfigure run
+
+.. code-block:: python
+
+   $ dcm-agent-configure -r <BASE_PATH>/etc/agent.conf
+
+
+This will read in the current configuration and use all of its
 values as defaults.  Any other passed in command line options or answers to
 interactive questions will override these defaults.
 

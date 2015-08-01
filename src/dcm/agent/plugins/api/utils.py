@@ -48,9 +48,8 @@ def user_name(proposed_name):
 def secure_delete(conf, file_name):
     """
     Delete a file in a secure manner
-    :param conf:  The DCM agent config object
-    :param file_name: The name of the file to delete
-    :return:
+    :param conf:  The DCM agent config object.
+    :param file_name: The name of the file to delete.
     """
     exe_path = conf.get_script_location("secureDelete")
     (stdout, stderr, rc) = agent_util.run_command(conf, [exe_path, file_name])
@@ -68,10 +67,11 @@ def run_command(conf, cmd_line, cwd=None, in_env=None, with_sudo=False):
 
     :param conf: The DCM agent config object.
     :param cmd_line: A list that is the command to run and all of its options
-    :param cwd: the directory to start in
-    :param in_env: the environment dictionary to use when running the command
-    :param with_sudo: A bool that defines whether to run the command under sudo
-    :return:
+    :param cwd: The directory to start in.
+    :param in_env: The environment dictionary to use when running the command.
+    :param with_sudo: A bool that defines whether to run the command under
+                      sudo.
+    :return: A 3 tuple (stdout, stderr, return code).
     """
     if with_sudo:
         cmd_line = cmd_line[:]
@@ -86,7 +86,6 @@ def log_to_dcm_console_job_details(job_name=None, details=None):
 
     :param job_name: The name of the command logging this message.
     :param details: The log message string.
-    :return:
     """
     return dcm_logger.log_to_dcm_console_job_details(
         job_name=job_name, details=details)
@@ -95,7 +94,8 @@ def log_to_dcm_console_job_details(job_name=None, details=None):
 def safe_delete(fname):
     """Delete a file but do not thrown an error if the files is not there.
 
-    :param fname:
-    :return:
+    :param fname: The path to the file to delete.
+    :return: True if the fine no longer exists.  False if an error occured
+             while trying to delete.
     """
     return agent_util.safe_delete(fname)
