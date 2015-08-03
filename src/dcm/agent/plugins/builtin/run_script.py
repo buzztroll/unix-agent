@@ -85,9 +85,8 @@ class RunScript(plugin_base.Plugin):
                 self.conf, command_list)
             _g_logger.debug("Command %s: stdout %s.  stderr: %s" %
                             (str(command_list), stdout, stderr))
-            reply = {"return_code": rc, "message": stdout,
-                     "error_message": stderr, "reply_type": "void"}
-            return reply
+            return plugin_base.PluginReply(
+                rc, message=stdout, error_message=stderr, reply_type="void")
         finally:
             if os.path.exists(script_file):
                 os.remove(script_file)

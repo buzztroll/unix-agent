@@ -43,13 +43,8 @@ class GetAgentData(plugin_base.Plugin):
             # meaning we should have rejected a new command long ago.
             "server_state": "OK"
         }
-
-        reply_doc = {
-            "return_code": 0,
-            "reply_type": "agent_data",
-            "reply_object": reply_object
-        }
-        return reply_doc
+        return plugin_base.PluginReply(
+            0, reply_type="agent_data", reply_object=reply_object)
 
 
 def load_plugin(conf, job_id, items_map, name, arguments):

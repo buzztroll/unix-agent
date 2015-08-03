@@ -29,11 +29,7 @@ class DeleteSystemStat(plugin_base.Plugin):
 
     def run(self):
         systemstats.stop_stats(self.args.statName)
-        reply_doc = {
-            "return_code": 0,
-            "reply_type": "void"
-        }
-        return reply_doc
+        return plugin_base.PluginReply(0, reply_type="void")
 
 
 def load_plugin(conf, job_id, items_map, name, arguments):

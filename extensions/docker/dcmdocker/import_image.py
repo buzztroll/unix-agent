@@ -14,6 +14,7 @@
 import json
 import logging
 
+import dcm.agent.plugins.api.base as plugin_base
 import dcmdocker.utils as docker_utils
 
 
@@ -38,12 +39,8 @@ class ImportImage(docker_utils.DockerJob):
             src=self.args.src, repository=self.args.repository,
             tag=self.args.tag, image=self.args.image)
         out = json.loads(out)
-        reply_doc = {
-            "return_code": 0,
-            "reply_type": "docker_import_image",
-            "reply_object": out
-        }
-        return reply_doc
+        return plugin_base.PluginReply(
+            0, reply_type="docker_import_image", reply_object=out)
 
 
 def load_plugin(conf, job_id, items_map, name, arguments):

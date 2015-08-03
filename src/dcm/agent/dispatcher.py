@@ -5,6 +5,7 @@ import urllib.error
 import urllib.parse
 import urllib.request
 
+import dcm.agent.plugins.api.base as plugin_base
 import dcm.agent.plugins.loader as plugin_loader
 import dcm.agent.logger as dcm_logger
 import dcm.agent.longrunners as longrunners
@@ -41,7 +42,8 @@ def _run_plugin(conf, items_map, request_id, command, arguments):
 
         dcm_logger.log_to_dcm_console_job_started(job_name=command,
                                                   request_id=request_id)
-        reply_doc = plugin.run()
+        reply_obj = plugin.run()
+        reply_doc = reply_obj.get_reply_doc()
 
         dcm_logger.log_to_dcm_console_job_succeeded(job_name=command,
                                                     request_id=request_id)
@@ -53,9 +55,9 @@ def _run_plugin(conf, items_map, request_id, command, arguments):
 
         dcm_logger.log_to_dcm_console_job_failed(job_name=command,
                                                  request_id=request_id)
-        reply_doc = {
-            'Exception': urllib.parse.quote(str(ex).encode('utf-8')),
-            'return_code': 1}
+        reply_obj = plugin_base.PluginReply(
+            1, error_message=urllib.parse.quote(str(ex).encode('utf-8')))
+        reply_doc = reply_obj.get_reply_doc()
     finally:
         _g_logger.info("Task done job " + request_id)
     return reply_doc
@@ -190,16 +192,14 @@ class Dispatcher(object):
                     payload["command"],
                     payload["arguments"])
             except BaseException as ex:
-                reply_doc = {
-                    'Exception': urllib.parse.quote(str(ex).encode('utf-8')),
-                    'return_code': 1}
+                reply_obj = plugin_base.PluginReply(
+                    1,
+                    error_message=urllib.parse.quote(str(ex).encode('utf-8')))
             else:
                 payload_doc = dj.get_message_payload()
-                reply_doc = {
-                    "return_code": 0,
-                    "reply_type": "job_description",
-                    "reply_object": payload_doc
-                }
+                reply_obj = plugin_base.PluginReply(
+                    0, reply_type="job_description", reply_object=payload_doc)
+            reply_doc = reply_obj.get_reply_doc()
             wr = WorkReply(request_id, reply_doc)
             dcm_events.register_callback(
                 self.work_complete_callback, args=[wr])

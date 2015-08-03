@@ -31,12 +31,10 @@ class GetSystemStat(plugin_base.Plugin):
             conf, job_id, items_map, name, arguments)
 
     def run(self):
-        reply_doc = {
-            "return_code": 0,
-            "reply_type": systemstats.get_stats_type(self.args.statName),
-            "reply_object": systemstats.get_stats(self.args.statName)
-        }
-        return reply_doc
+        return plugin_base.PluginReply(
+            0,
+            reply_type=systemstats.get_stats_type(self.args.statName),
+            reply_object=systemstats.get_stats(self.args.statName))
 
 
 def load_plugin(conf, job_id, items_map, name, arguments):

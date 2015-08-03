@@ -24,6 +24,41 @@ class PluginInterface(object):
         pass
 
 
+class PluginReply(object):
+    def __init__(self, return_code, reply_type="void", reply_object=None,
+                 message="", error_message=""):
+        """
+        :param return_code: 0 for success, non-0 for failure
+        :param reply_type: A string which defines the reply_object layout.  eg:
+        "void"
+        :param reply_object: A module defined reply payload.  The reply_type
+        argument is used to determine this values layout.
+        :param message: A string describing a successful action
+        :param error_message: A string describing any error that occurred while
+        processing this action.
+        """
+
+        self._reply_doc = {
+            'return_code': return_code,
+            'reply_type': reply_type,
+            'reply_object': reply_object,
+            'message': message,
+            'error_message': error_message
+        }
+
+    def get_reply_doc(self):
+        return self._reply_doc
+
+    def get_message(self):
+        return self._reply_doc['message']
+
+    def set_message(self, msg):
+        self._reply_doc['message'] = msg
+
+    def get_return_code(self):
+        return self._reply_doc['return_code']
+
+
 class _ArgHolder(object):
     pass
 
@@ -94,7 +129,7 @@ class Plugin(PluginInterface):
         except plugin_exceptions.AgentPluginParameterBadValueException:
             raise
         except Exception as ex:
-            raise plugin_exceptions.AgentPluginBadParameterException(
+            raise plugin_exceptions.AgentPluginParameterBadValueException(
                 self.name, "general", str(ex))
 
     def _validate_arguments(self):
@@ -120,7 +155,7 @@ class Plugin(PluginInterface):
                         a = t(a)
                     except Exception as ex:
                         _g_logger.exception(str(ex))
-                        raise plugin_exceptions.AgentPluginBadParameterException(
+                        raise plugin_exceptions.AgentPluginParameterBadValueException(
                             self.name,
                             "Parameter %s has an invalid value %s" % (arg, a))
                 setattr(self.args, arg, a)
@@ -151,21 +186,12 @@ class Plugin(PluginInterface):
         """
         This method is called by the agent to give the plugin a thread that it
         can use to do its work.  When the plugin is finished it should return
-        a reply dictionary of the following format:
-
-        {
-         "return_code": <0 for success, non-0 for failure>
-         "reply_type": <a string which defines the reply_object layout>
-         "reply_object": <a module defined reply payload>
-         "message": <A string describing the action>
-         "error_message": <A string describing any error that occurred>
-        }
+        a PluginReply.
 
         If the plugin experiences an error while processing it can throw an
         exception from the dcm.agent.plugins.api.exceptions module.
         """
         pass
-
 
 
 class ScriptPlugin(Plugin):
@@ -212,6 +238,4 @@ class ScriptPlugin(Plugin):
             self.conf, command_list, cwd=self.cwd)
         _g_logger.debug("Command %s: stdout %s.  stderr: %s" %
                         (str(command_list), stdout, stderr))
-        reply = {"return_code": rc, "message": stdout,
-                 "error_message": stderr, "reply_type": "void"}
-        return reply
+        return PluginReply(rc, message=stdout, error_message=stderr)

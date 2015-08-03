@@ -29,11 +29,6 @@ class CleanImage(plugin_base.Plugin):
         self._topic_error = None
 
     def delete_private_keys(self):
-        res_doc = {"return_code": 0,
-                   "message": "Keys were deleted successfully",
-                   "error_message": "",
-                   "reply_type": "job_description"}
-
         exe = self.conf.get_script_location("delete_keys.py")
         cmd = [
             self.conf.system_sudo,
@@ -44,17 +39,12 @@ class CleanImage(plugin_base.Plugin):
 
         (stdout, stderr, rc) = utils.run_command(self.conf, cmd)
         if rc != 0:
-            res_doc["return_code"] = rc
-            res_doc["message"] = stdout
-            res_doc["error_message"] = stderr
-        return res_doc
+            return plugin_base.PluginReply(
+                rc, messge=stdout, error_message=stderr)
+        return plugin_base.PluginReply(
+            0, message="Keys were deleted successfully")
 
     def delete_history(self):
-        res_doc = {"return_code": 0,
-                   "message": "History deleted successfully",
-                   "error_message": "",
-                   "reply_type": "job_description"}
-
         exe = self.conf.get_script_location("delete_history.py")
         cmd = [
             self.conf.system_sudo,
@@ -65,17 +55,12 @@ class CleanImage(plugin_base.Plugin):
 
         (stdout, stderr, rc) = utils.run_command(self.conf, cmd)
         if rc != 0:
-            res_doc["return_code"] = rc
-            res_doc["message"] = stdout
-            res_doc["error_message"] = stderr
-        return res_doc
+            return plugin_base.PluginReply(
+                rc, messge=stdout, error_message=stderr)
+        return plugin_base.PluginReply(
+            0, message="History deleted successfully")
 
     def general_cleanup(self, dbfile):
-        res_doc = {"return_code": 0,
-                   "message": "General cleanup completed successfully",
-                   "error_message": "",
-                   "reply_type": "job_description"}
-
         exe = self.conf.get_script_location("general_cleanup.py")
         cmd = [
             self.conf.system_sudo,
@@ -87,17 +72,17 @@ class CleanImage(plugin_base.Plugin):
 
         (stdout, stderr, rc) = utils.run_command(self.conf, cmd)
         if rc != 0:
-            res_doc["return_code"] = rc
-            res_doc["message"] = stdout
-            res_doc["error_message"] = stderr
-        return res_doc
+            return plugin_base.PluginReply(
+                rc, messge=stdout, error_message=stderr)
+        return plugin_base.PluginReply(
+            0, message="General cleanup completed successfully")
 
     def _clean_topic_done(self, topic_error):
         self._topic_error = topic_error
         self._done_event.set()
 
     def run(self):
-        res_doc = {}
+        message = ''
         try:
             events.global_pubsub.publish(
                 events.DCMAgentTopics.CLEANUP,
@@ -115,44 +100,41 @@ class CleanImage(plugin_base.Plugin):
                         {'script_name': 'removeUser'},
                          'remove_user',
                          {'userId': user}).run()
-                    res_doc.update(rdoc)
-                    if res_doc["return_code"] != 0:
-                        res_doc["message"] += " : Delete users failed on %s" % user
-                        return res_doc
+                    if rdoc.get_return_code() != 0:
+                        rdoc.set_message(rdoc.get_message() +
+                                         " : Delete users failed on %s" % user)
+                        return rdoc
 
             if self.args.delKeys:
                 dcm_logger.log_to_dcm_console_job_details(
                     job_name=self.name, details='Deleting private keys.')
                 res_doc = self.delete_private_keys()
-                if res_doc['return_code'] != 0:
+                if res_doc.get_return_code() != 0:
                     return res_doc
 
             dcm_logger.log_to_dcm_console_job_details(
                 job_name=self.name, details='Deleting history files.')
             res_doc = self.delete_history()
-            if res_doc['return_code'] != 0:
+            if res_doc.get_return_code() != 0:
                 return res_doc
 
             dcm_logger.log_to_dcm_console_job_details(
                 job_name=self.name, details='Starting general cleanup.')
             res_doc = self.general_cleanup(self.conf.storage_dbfile)
-            if res_doc['return_code'] != 0:
+            if res_doc.get_return_code() != 0:
                 return res_doc
 
             self._done_event.wait()
             if self._topic_error is not None:
-                res_doc['return_code'] = 1
-                res_doc["message"] = ''
-                res_doc["error_message"] = str(self._topic_error)
-                return res_doc
+                return plugin_base.PluginReply(
+                    1, error_message=str(self._topic_error))
 
-            return {"return_code": 0,
-                    "message": "Clean image command ran successfully",
-                    "error_message": "",
-                    "reply_type": "job_description"}
+            return plugin_base.PluginReply(
+                0, message="Clean image command ran successfully")
         except Exception as ex:
             _g_logger.exception("clean_image failed: " + str(ex))
-            return {'return_code': 1, "message": str(ex)}
+            return plugin_base.PluginReply(
+                1, message=str(ex), error_message=str(ex))
 
 
 def load_plugin(conf, job_id, items_map, name, arguments):

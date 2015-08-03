@@ -13,7 +13,9 @@
 #  ======================================================================
 import logging
 import uuid
-from dcm.agent.plugins.api import pages
+
+import dcm.agent.plugins.api.base as plugin_base
+import dcm.agent.plugins.api.pages as pages
 
 import dcmdocker.utils as docker_utils
 
@@ -50,13 +52,8 @@ class ListImages(docker_utils.DockerJob):
 
         page, token = self.conf.page_monitor.get_next_page(token)
         out = {'next_token': token, 'images': page}
-
-        reply_doc = {
-            "return_code": 0,
-            "reply_type": "docker_image_array",
-            "reply_object": out
-        }
-        return reply_doc
+        return plugin_base.PluginReply(
+            0, reply_type="docker_image_array", reply_object=out)
 
 
 def load_plugin(conf, job_id, items_map, name, arguments):

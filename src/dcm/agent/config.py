@@ -388,7 +388,7 @@ def build_options_list():
             help_msg="The platform/distribution version on which this "
                      "agent is being installed.  Must be used with "
                      "[platform]name."),
-        ConfigOpt("plugins", "retain_job_time", int, default=3600),
+        ConfigOpt("jobs", "retain_job_time", int, default=3600),
         ConfigOpt("test", "skip_handshake", bool, default=False,
                   help_msg="This value is for internal testing only.  "
                            "Do not change it.", hidden=True),

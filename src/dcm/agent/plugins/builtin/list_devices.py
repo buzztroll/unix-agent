@@ -37,18 +37,11 @@ class GetDeviceMappings(plugin_base.Plugin):
         try:
             device_mapping_list = utils.get_device_mappings(self.conf)
         except exceptions.AgentExecutableException as ex:
-            reply_doc = {
-                "return_code": 1,
-                "message": str(ex)
-            }
-            return reply_doc
-
-        reply_doc = {
-            "return_code": 0,
-            "reply_type": "device_mapping_array",
-            "reply_object": device_mapping_list
-        }
-        return reply_doc
+            return plugin_base.PluginReply(1, message=str(ex))
+        return plugin_base.PluginReply(
+            0,
+            reply_type="device_mapping_array",
+            reply_object=device_mapping_list)
 
 
 def load_plugin(conf, job_id, items_map, name, arguments):

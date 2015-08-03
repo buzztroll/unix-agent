@@ -37,14 +37,13 @@ class GetJobDescription(plugin_base.Plugin):
         lr = self.items_map["long_runner"]
         job_description = lr.lookup_job(job_id)
         if job_description is None:
-            return {'return_code': 1,
-                    'message': "no such job id %d" % job_id,
-                    'error_message': "no such job id %d" % job_id,
-                    'reply_type': 'void'}
+            msg = "no such job id %d" % job_id
+            return plugin_base.PluginReply(1, message=msg, error_message=msg)
 
-        return {'return_code': 0,
-                'reply_object': job_description.get_message_payload(),
-                'reply_type': 'job_description'}
+        return plugin_base.PluginReply(
+            0,
+            reply_object=job_description.get_message_payload(),
+            reply_type='job_description')
 
 
 def load_plugin(conf, job_id, items_map, name, arguments):

@@ -59,9 +59,8 @@ class ExePlugin(plugin_base.Plugin):
         self.logger.info("STDOUT: " + stdout)
         self.logger.info("STDERR: " + stderr)
         self.logger.info("Return code: " + str(process.returncode))
-        return {"stdout": stdout,
-                "stderr": stderr,
-                "return_code": process.returncode}
+        return plugin_base.PluginReply(
+            process.returncode, message=stdout, error_message=stderr)
 
     def cancel(self, *args, **kwargs):
         pass

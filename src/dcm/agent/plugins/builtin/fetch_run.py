@@ -105,11 +105,9 @@ class FetchRunScript(plugin_base.Plugin):
         except BaseException as ex:
             if type(ex) == plugin_exceptions.AgentPluginOperationException:
                 raise
-            reply = {"return_code": 1, "message": "",
-                     "error_message": "Failed to download the URL %s: %s" %
-                                      (self.args.url, str(ex)),
-                     "reply_type": "void"}
-            return reply
+            return plugin_base.PluginReply(
+                1, error_message="Failed to download the URL %s: %s"
+                                 % (self.args.url, str(ex)))
 
         try:
             os.chmod(exe_file, 0o755)
@@ -129,9 +127,8 @@ class FetchRunScript(plugin_base.Plugin):
                 self.conf, command_list)
             _g_logger.debug("Command %s: stdout %s.  stderr: %s" %
                             (str(command_list), stdout, stderr))
-            reply = {"return_code": rc, "message": stdout,
-                     "error_message": stderr, "reply_type": "void"}
-            return reply
+            return plugin_base.PluginReply(
+                rc, message=stdout, error_message=stderr, reply_type="void")
         finally:
             if exe_file and cleanup and os.path.exists(exe_file):
                 os.remove(exe_file)

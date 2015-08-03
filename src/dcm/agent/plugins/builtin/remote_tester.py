@@ -66,12 +66,9 @@ class RemoteTester(plugin_base.Plugin):
             rc = json.loads(in_msg.decode())
             _g_logger.info("Tester plugin sending back " + str(rc))
             return rc
-        except Exception:
-            _g_logger.exception("Something went wrong here")
-            return {'return_code': 1}
         except:
             _g_logger.exception("Something went wrong here")
-            return {'return_code': 1}
+            return plugin_base.PluginReply(1)
 
 
 def load_plugin(conf, job_id, items_map, name, arguments):

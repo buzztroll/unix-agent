@@ -36,6 +36,7 @@ class TestSystemStatPlugin(unittest.TestCase):
             self.conf_obj, str(uuid.uuid4()),
             {}, "init_system_stat", arguments)
         result = plugin.run()
+        result = result.get_reply_doc()
         self.assertEqual(result['return_code'], 0)
 
         try:
@@ -46,6 +47,7 @@ class TestSystemStatPlugin(unittest.TestCase):
                 self.conf_obj, str(uuid.uuid4()),
                 {}, "get_system_stat", arguments)
             result = plugin.run()
+            result = result.get_reply_doc()
             self.assertEqual(result['return_code'], 0)
             self.assertEqual(result['reply_type'], 'cpu_idle_stat_array')
             ro = result['reply_object']
@@ -56,6 +58,7 @@ class TestSystemStatPlugin(unittest.TestCase):
                 self.conf_obj, str(uuid.uuid4()),
                 {}, "delete_system_stat", arguments)
             result = plugin.run()
+            result = result.get_reply_doc()
             self.assertEqual(result['return_code'], 0)
         finally:
             try:
