@@ -37,11 +37,7 @@ class InitSystemStat(plugin_base.Plugin):
             self.args.statType,
             self.args.holdCount,
             self.args.checkInterval)
-        reply_doc = {
-            "return_code": 0,
-            "reply_type": "void"
-        }
-        return reply_doc
+        return plugin_base.PluginReply(0, reply_type="void")
 
 
 def load_plugin(conf, job_id, items_map, name, arguments):

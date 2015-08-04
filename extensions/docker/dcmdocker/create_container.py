@@ -13,6 +13,7 @@
 #  ======================================================================
 import logging
 
+import dcm.agent.plugins.api.base as plugin_base
 import dcmdocker.utils as docker_utils
 
 
@@ -58,12 +59,8 @@ class DockerCreateContainer(docker_utils.DockerJob):
             cpu_shares=None,
             working_dir=None,
             memswap_limit=self.args.memswap_limit)
-        reply_doc = {
-            "return_code": 0,
-            "reply_type": "docker_create_container",
-            "reply_object": out
-        }
-        return reply_doc
+        return plugin_base.PluginReply(
+            0, reply_type="docker_create_container", reply_object=out)
 
 
 def load_plugin(conf, job_id, items_map, name, arguments):

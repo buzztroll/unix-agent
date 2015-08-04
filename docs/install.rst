@@ -37,7 +37,7 @@ Agent:
 Manual Installation
 -------------------
 
-Althought it is not recommended or officially supported, the dcm-agent can be
+Although it is not recommended or officially supported, the dcm-agent can be
 installed manually into a python 3.4 virtual environment by running the
 following commands in the src directory:
 

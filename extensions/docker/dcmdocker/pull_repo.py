@@ -15,6 +15,7 @@ import json
 import logging
 
 import dcm.agent.logger as dcm_logger
+import dcm.agent.plugins.api.base as plugin_base
 
 import dcmdocker.utils as docker_utils
 
@@ -49,12 +50,8 @@ class PullRepo(docker_utils.DockerJob):
         for k in id_map:
             dcm_logger.log_to_dcm_console_job_details(
                 job_name=self.name, details="pulled " + id_map[k])
-        reply_doc = {
-            "return_code": 0,
-            "reply_type": "docker_pull",
-            "reply_object": None
-        }
-        return reply_doc
+        return plugin_base.PluginReply(
+            0, reply_type="docker_pull", reply_object=None)
 
 
 def load_plugin(conf, job_id, items_map, name, arguments):

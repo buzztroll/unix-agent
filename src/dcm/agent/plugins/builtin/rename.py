@@ -53,11 +53,8 @@ class Rename(plugin_base.ScriptPlugin):
     def run(self):
         private_ips = self.conf.meta_data_object.get_ipv4_addresses()
         if not private_ips:
-            reply_doc = {
-                "return_code": 1,
-                "message": "No IP Address was found"
-            }
-            return reply_doc
+            return plugin_base.PluginReply(
+                1, error_message="No IP Address was found")
 
         self.ordered_param_list.append(private_ips[0])
         plugin_utils.log_to_dcm_console_job_details(

@@ -76,6 +76,7 @@ echo $1 > %s
             self.conf_obj, str(uuid.uuid4()),
             {}, "fetch_plugin", arguments)
         result = plugin.run()
+        result = result.get_reply_doc()
         self.assertEqual(result['return_code'], 0)
         self.assertTrue(os.path.exists(tmpfilepath))
 
@@ -110,6 +111,7 @@ echo $1 > %s
             self.conf_obj, str(uuid.uuid4()),
             {}, "fetch_plugin", arguments)
         result = plugin.run()
+        result = result.get_reply_doc()
         self.assertEqual(result['return_code'], 0)
         self.assertTrue(os.path.exists(tmpfilepath))
 
@@ -127,6 +129,7 @@ echo $1 > %s
             self.conf_obj, str(uuid.uuid4()),
             {}, "fetch_plugin", arguments)
         result = plugin.run()
+        result = result.get_reply_doc()
         self.assertNotEqual(result['return_code'], 0)
 
     @test_utils.aws_access_needed
@@ -188,6 +191,7 @@ print(sys.executable)
             self.conf_obj, str(uuid.uuid4()),
             {}, "run_script", arguments)
         result = plugin.run()
+        result = result.get_reply_doc()
         self.assertEqual(result['return_code'], 0)
         self.assertEqual(sys.executable, result['message'].strip())
 
@@ -209,6 +213,7 @@ print(sys.executable)
             self.conf_obj, str(uuid.uuid4()),
             {}, "run_script", arguments)
         result = plugin.run()
+        result = result.get_reply_doc()
         self.assertEqual(result['return_code'], 0)
         self.assertEqual(sys.executable, result['message'].strip())
 
@@ -232,6 +237,8 @@ echo $1 > %s
             self.conf_obj, str(uuid.uuid4()),
             {}, "run_script", arguments)
         result = plugin.run()
+        result = result.get_reply_doc()
+
         self.assertEqual(result['return_code'], 0)
         self.assertTrue(os.path.exists(tmpfilepath))
 

@@ -13,6 +13,7 @@
 #  ======================================================================
 import logging
 
+import dcm.agent.plugins.api.base as plugin_base
 import dcmdocker.utils as docker_utils
 
 
@@ -31,12 +32,8 @@ class GetContainerDetails(docker_utils.DockerJob):
 
     def run(self):
         out = self.docker_conn.inspect_container(self.args.container)
-        reply_doc = {
-            "return_code": 0,
-            "reply_type": "docker_inspect_container",
-            "reply_object": out
-        }
-        return reply_doc
+        return plugin_base.PluginReply(
+            0, reply_type="docker_inspect_container", reply_object=out)
 
 
 def load_plugin(conf, job_id, items_map, name, arguments):

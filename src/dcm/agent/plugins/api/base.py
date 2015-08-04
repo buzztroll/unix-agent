@@ -10,75 +10,105 @@ import dcm.agent.utils as agent_util
 _g_logger = logging.getLogger(__name__)
 
 
-class PluginInterface(object):
-    @agent_util.not_implemented_decorator
-    def call(self, name, logger, arguments, **kwargs):
-        pass
+class PluginReply(object):
+    """An instance of this class must be returned from the run() method of
+    all extension plugins.  It is serialized into a JSON object and sent
+    back to DCM as a reply to the associated command.
+    """
 
-    @agent_util.not_implemented_decorator
-    def cancel(self, *args, **kwargs):
-        pass
+    def __init__(self, return_code, reply_type="void", reply_object=None,
+                 message="", error_message=""):
+        """
+        :param return_code: 0 for success, non-0 for failure
+        :param reply_type: A string which defines the reply_object layout.  eg:
+                           "void"
+        :param reply_object: A module defined reply payload.  The reply_type
+                             argument is used to determine this values layout.
+        :param message: A string describing a successful action
+        :param error_message: A string describing any error that occurred while
+                              processing this action.
+        """
+        self._reply_doc = {
+            'return_code': return_code,
+            'reply_type': reply_type,
+            'reply_object': reply_object,
+            'message': message,
+            'error_message': error_message
+        }
 
-    @agent_util.not_implemented_decorator
-    def get_name(self):
-        pass
+    def get_reply_doc(self):
+        return self._reply_doc
+
+    def get_message(self):
+        return self._reply_doc['message']
+
+    def set_message(self, msg):
+        self._reply_doc['message'] = msg
+
+    def get_return_code(self):
+        return self._reply_doc['return_code']
 
 
 class _ArgHolder(object):
     pass
 
 
-class Plugin(PluginInterface):
+class Plugin(object):
     """
     This is the base class that should be used for all plugins.  It handles
     the processing needed to validate and parse the protocol.  When defining
     a new plugin two class level variables should be defined:
 
-    :param protocol_arguments:  This is a dictionary of arguments that the
-    command will expect/accept from DCM.  It has the following format:
-    { <argument name> : (<human readable description string,
-                         <True | False bool that states if the argument is
-                          mandatory>,
-                         <argument type conversion function.  This converts
-                         a byte string into the needed python type.  Some
-                         base functions can be found in utils>,
-                         <Default value>),
-    }
+    :var protocol_arguments: This is a dictionary of arguments that the
+                             command will expect/accept from DCM.  It has the
+                             following format.
 
-    :param command_name: The name of this command.  This must be globally
-    unique for all the commands in a given agent.  It can be defined by
-    the module in order to tell the dcm-agent-add-plugin program the
-    desired name, however ultimately it will be set by the agent and the
-    value may be different than the desired name.
+                            .. code-block:: python
 
-    :param long_runner:  The variable long_runner can be set on the class
-    to instruct the dcm-agent-add-plugin that this plugin will be run for
-    a long time and should be set up for polling with get_job_description
+                              { <argument name> :
+                                 (<human readable description string,
+                                  <True | False bool that states if the argument is mandatory>,
+                                  <argument type conversion function.  This converts a byte string
+                                   into the needed python type.  Some base functions can be found
+                                   in utils>,
+                                  <Default value>),
+                              }
+
+    :var command_name: The name of this command.  This must be globally
+                       unique for all the commands in a given agent.  It can
+                       be defined by the module in order to tell the
+                       dcm-agent-add-plugin program the desired name, however
+                       ultimately it will be set by the agent and the
+                       value may be different than the desired name.
+
+    :var long_runner: The variable long_runner can be set on the class
+                      to instruct the dcm-agent-add-plugin that this plugin
+                      will be run for a long time and should be set up for
+                      polling with get_job_description
     """
 
     protocol_arguments = {}
-    # the command name is the wire protocol name of the command
     command_name = None
 
     def __init__(self, conf, request_id, items_map, name, arguments):
-        """
-        If the plugin overrides the constructor it must call super on
+        """If the plugin overrides the constructor it must call super on
         the parent constructor and pass in the same values it was passed.
 
-        :param conf:  The DCM agent configuration object.  This can be used
-        as a way to discover information about the agent deployment.  As an
-        example conf.platform_name will tell the plugin the linux distribution
-        name (eg: ubuntu).
+        :param conf: The DCM agent configuration object.  This can be used
+                     as a way to discover information about the agent
+                     deployment.  As an example conf.platform_name will tell
+                     the plugin the linux distribution name (eg: ubuntu).
         :param request_id: This is the request ID for this specific request
-         of the command.  This will be different every time.  The plugin
-         will rarely need this information.
-        :param items_map:  This is an opaque structure that is threaded through
-         the module.  Plugins should only use this when calling super()
+                           of the command.  This will be different every time.
+                           The plugin will rarely need this information.
+        :param items_map: This is an opaque structure that is threaded through
+                          the module.  Plugins should only use this when
+                          calling super()
         :param name: The name of this command.  This will match
-        cls.command_name
-        :param arguments:  The arguments that DCM passed into this command.
-        after the parent constructor is called these arguments will be
-        attributes of the self.args object.
+                     cls.command_name
+        :param arguments: The arguments that DCM passed into this command.
+                          after the parent constructor is called these
+                          arguments will be attributes of the self.args object.
         """
         logname = __name__ + "." + name
         log = logging.getLogger(logname)
@@ -94,7 +124,7 @@ class Plugin(PluginInterface):
         except plugin_exceptions.AgentPluginParameterBadValueException:
             raise
         except Exception as ex:
-            raise plugin_exceptions.AgentPluginBadParameterException(
+            raise plugin_exceptions.AgentPluginParameterBadValueException(
                 self.name, "general", str(ex))
 
     def _validate_arguments(self):
@@ -120,7 +150,7 @@ class Plugin(PluginInterface):
                         a = t(a)
                     except Exception as ex:
                         _g_logger.exception(str(ex))
-                        raise plugin_exceptions.AgentPluginBadParameterException(
+                        raise plugin_exceptions.AgentPluginParameterBadValueException(
                             self.name,
                             "Parameter %s has an invalid value %s" % (arg, a))
                 setattr(self.args, arg, a)
@@ -129,16 +159,14 @@ class Plugin(PluginInterface):
         return self.name + ":" + self.job_id
 
     def get_name(self):
-        """
-        This is called by DCM to get the name of the plugin.  This should not
-        be overridden.
-        :return: command name
+        """This is called by DCM to get the name of the plugin.  This should
+        not be overridden.
+        :return A string representing the command name:
         """
         return self.name
 
     def cancel(self, *args, **kwargs):
-        """
-        This method is called by the agent when an outstanding command needs
+        """This method is called by the agent when an outstanding command needs
         to be canceled.  The plug in should treat it like a signal to cancel.
         Then it is received the plugin should start canceling its work, however
         it should return from cancel immediately.  Cancel should not block
@@ -148,18 +176,9 @@ class Plugin(PluginInterface):
 
     @agent_util.not_implemented_decorator
     def run(self):
-        """
-        This method is called by the agent to give the plugin a thread that it
-        can use to do its work.  When the plugin is finished it should return
-        a reply dictionary of the following format:
-
-        {
-         "return_code": <0 for success, non-0 for failure>
-         "reply_type": <a string which defines the reply_object layout>
-         "reply_object": <a module defined reply payload>
-         "message": <A string describing the action>
-         "error_message": <A string describing any error that occurred>
-        }
+        """This method is called by the agent to give the plugin a thread that
+        it can use to do its work.  When the plugin is finished it should return
+        a PluginReply.
 
         If the plugin experiences an error while processing it can throw an
         exception from the dcm.agent.plugins.api.exceptions module.
@@ -167,10 +186,8 @@ class Plugin(PluginInterface):
         pass
 
 
-
 class ScriptPlugin(Plugin):
-    """
-    This base plugin class can be used for plugins that call out to
+    """This base plugin class can be used for plugins that call out to
     scripts.  The ordered_param_list member variable must be set with the
     parameters that the called script needs.  The script name is
     pulled from the plug ins configuration section, ex:
@@ -212,6 +229,4 @@ class ScriptPlugin(Plugin):
             self.conf, command_list, cwd=self.cwd)
         _g_logger.debug("Command %s: stdout %s.  stderr: %s" %
                         (str(command_list), stdout, stderr))
-        reply = {"return_code": rc, "message": stdout,
-                 "error_message": stderr, "reply_type": "void"}
-        return reply
+        return PluginReply(rc, message=stdout, error_message=stderr)

@@ -205,13 +205,10 @@ class ConfigureServer(plugin_base.Plugin):
                 "configType", "CHEF or PUPPET")
 
         if rc != 0:
-            reply_doc = {"return_code": rc,
-                         "message": stderr}
+            return plugin_base.PluginReply(rc, message=stderr)
         else:
-            reply_doc = {"return_code": rc,
-                         "reply_type": "string",
-                         "reply_object": stdout}
-        return reply_doc
+            return plugin_base.PluginReply(
+                rc, reply_type="string", reply_object=stdout)
 
 
 def load_plugin(conf, job_id, items_map, name, arguments):

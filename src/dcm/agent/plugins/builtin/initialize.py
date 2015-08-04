@@ -79,25 +79,24 @@ class InitializeJob(plugin_base.Plugin):
             plugin_utils.log_to_dcm_console_job_details(
                 job_name=self.name,
                 details="Renaming the host to %s" % self.args.serverName)
-            res_doc = self.rename.run()
-            if res_doc["return_code"] != 0:
-                res_doc["message"] = res_doc["message"] + " : rename failed"
-                return res_doc
+            res_obj = self.rename.run()
+            if res_obj.get_return_code() != 0:
+                res_obj.set_message(res_obj.get_message() + " : rename failed")
+                return res_obj
 
             # add customer user
             plugin_utils.log_to_dcm_console_job_details(
                 job_name=self.name, details="Adding the user")
-            res_doc = self.add_user.run()
-            if res_doc["return_code"] != 0:
-                res_doc["message"] = res_doc["message"] + " : addUser failed"
-                return res_doc
+            res_obj = self.add_user.run()
+            if res_obj.get_return_code() != 0:
+                res_obj.set_message(res_obj.get_message() + " : addUser failed")
+                return res_obj
 
             self.conf.state = "RUNNING"
-            return {"return_code": 0, "message": "",
-                    "error_message": "", "reply_type": "void"}
+            return plugin_base.PluginReply(0, reply_type="void")
         except Exception as ex:
             _g_logger.exception("initialize failed: " + str(ex))
-            return {'return_code': 1, "message": str(ex)}
+            return plugin_base.PluginReply(1, message=str(ex))
 
 
 def load_plugin(conf, job_id, items_map, name, arguments):

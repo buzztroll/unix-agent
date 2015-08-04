@@ -55,8 +55,8 @@ class TestSingleCommands(unittest.TestCase):
             line = outfile.getvalue().split('\n')[0]
             line = line.strip()
             output = json.loads(line)
-            self.assertEquals(stdout, output['stdout'].strip())
-            self.assertEquals(stderr, output['stderr'])
+            self.assertEquals(stdout, output['message'].strip())
+            self.assertEquals(stderr, output['error_message'])
             self.assertEquals(0, output['return_code'])
         finally:
             request_listener.shutdown()

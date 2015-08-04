@@ -1,3 +1,6 @@
+"""This module contains a set of exceptions that can be thrown from dcm-agent
+extension plugins.
+"""
 import dcm.agent.exceptions as agent_exceptions
 
 

@@ -24,12 +24,8 @@ class Heartbeat(plugin_base.Plugin):
             conf, job_id, items_map, name, arguments)
 
     def run(self):
-        reply_doc = {
-            "return_code": 0,
-            "reply_type": "string",
-            "reply_object": self.conf.state
-        }
-        return reply_doc
+        return plugin_base.PluginReply(
+            0, reply_type="string", reply_object=self.conf.state)
 
 
 def load_plugin(conf, job_id, items_map, name, arguments):

@@ -86,7 +86,8 @@ class JobRunner(threading.Thread):
                         work.name,
                         work.arguments)
 
-                    job_reply.reply_doc = plugin.run()
+                    reply_obj = plugin.run()
+                    job_reply.reply_doc = reply_obj.get_reply_doc()
                 except Exception as ex:
                     _g_logger.exception("An error occurred")
                     job_reply.error = str(ex)

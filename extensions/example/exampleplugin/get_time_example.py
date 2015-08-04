@@ -8,13 +8,8 @@ class GetTimeExample(plugin_base.Plugin):
 
     def run(self):
         tm = datetime.datetime.now()
-
-        reply_doc = {
-            "return_code": 0,
-            "reply_type": "string",
-            "reply_object": str(tm)
-        }
-        return reply_doc
+        return plugin_base.PluginReply(
+            0, reply_type="string", reply_object=str(tm))
 
 
 def load_plugin(conf, job_id, items_map, name, arguments):

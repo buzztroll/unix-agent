@@ -62,11 +62,10 @@ class UnmountVolume(plugin_base.Plugin):
             if self.args.encrypted:
                 plugin_utils.close_encrypted_device(
                     self.conf, self.args.deviceId)
-            return {"return_code": 0, "message": "",
-                    "error_message": "", "reply_type": "void"}
+            return plugin_base.PluginReply(0, reply_type="void")
         except exceptions.AgentExecutableException as aex:
-            return {"return_code": 1, "message": "",
-                    "error_message": str(aex), "reply_type": "void"}
+            return plugin_base.PluginReply(1, reply_type="void",
+                                           error_message=str(aex))
 
 
 def load_plugin(conf, job_id, items_map, name, arguments):

@@ -34,7 +34,6 @@ _cloud_stack_map = {
     "9": "xvdj"
 }
 
-
 _support_matrix = {
     CLOUD_TYPES.Amazon.lower(): [config.PLATFORM_TYPES.PLATFORM_UBUNTU.lower()]
 }
@@ -269,9 +268,7 @@ class MountVolume(plugin_base.ScriptPlugin):
         self._install_deps(_g_platform_dep_installer)
         rc = self.mount_block_volume()
 
-        reply = {"return_code": rc, "message": "",
-                 "error_message": "", "reply_type": "void"}
-        return reply
+        return plugin_base.PluginReply(rc, reply_type="void")
 
 
 def load_plugin(conf, job_id, items_map, name, arguments):

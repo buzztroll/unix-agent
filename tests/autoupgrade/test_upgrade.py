@@ -63,7 +63,8 @@ def main():
 
     # run upgrade script with specified version
     agent_upgrade_version = os.getenv('AGENT_UPGRADE_VERSION') or "0.11.2"
-    upgrade_id = client.exec_create(container, '/bin/bash /upgrade.sh --version %s' % agent_upgrade_version)
+    agent_upgrade_url = os.getenv('AGENT_UPGRADE_BASE_URL') or "http://linux.stable.agent.enstratius.com"
+    upgrade_id = client.exec_create(container, '/bin/bash /upgrade.sh --version %s --package_url %s' % (agent_upgrade_version, agent_upgrade_url))
     upgrade_response = client.exec_start(upgrade_id)
 
 

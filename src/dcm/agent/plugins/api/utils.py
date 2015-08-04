@@ -1,3 +1,6 @@
+"""This module contains a set of helper methods that will assist authors of
+dcm-agent extension plugins.
+"""
 import base64
 import json
 import logging
@@ -61,8 +64,8 @@ def secure_delete(conf, file_name):
 
 
 def run_command(conf, cmd_line, cwd=None, in_env=None, with_sudo=False):
-    """
-    Run an external executable or script.
+    """Run an external executable or script.
+
     :param conf: The DCM agent config object.
     :param cmd_line: A list that is the command to run and all of its options
     :param cwd: the directory to start in
@@ -78,11 +81,11 @@ def run_command(conf, cmd_line, cwd=None, in_env=None, with_sudo=False):
 
 
 def log_to_dcm_console_job_details(job_name=None, details=None):
-    """
-    Log a line back to DCM.  Lines logged in this way will show up in the DCM
-    console.  This should be used sparingly.
-    :param job_name:
-    :param details:
+    """Log a line back to DCM.  Lines logged in this way will show up in the
+    DCM console.  This should be used sparingly.
+
+    :param job_name: The name of the command logging this message.
+    :param details: The log message string.
     :return:
     """
     return dcm_logger.log_to_dcm_console_job_details(
@@ -90,8 +93,8 @@ def log_to_dcm_console_job_details(job_name=None, details=None):
 
 
 def safe_delete(fname):
-    """
-    Delete a file but do not thrown an error if the files is not there.
+    """Delete a file but do not thrown an error if the files is not there.
+
     :param fname:
     :return:
     """
