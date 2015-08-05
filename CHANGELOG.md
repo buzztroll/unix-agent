@@ -1,3 +1,21 @@
+# 0.12.0 (2015-8-4)
+
+Features:
+* Sphinx documentation.
+* Added a set of system monitors to support disk io operations and byte
+  counts and net io byte counts.
+* Refactored the plugin system to make it more friendly for third party
+  plugin developers.
+* Added a user friendly upgrade tool.
+
+Bug fixes:
+* Add pypi classifier for python3, fixes FB-7588
+* Tightened up the websocket state machine.  Closed a unlocked window
+  between receiving a handshake and processing it as a success or failure.
+* Tightened up what logs are sent back to the DCM console.
+* Patched to work with the current agent manager tests.
+* Cleaned up the backoff logic.
+
 # 0.11.3 (2015-7-7)
 
 Features:

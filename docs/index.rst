@@ -18,6 +18,7 @@ cloud applications.  Some of the features that it provides are:
 
     install
     commands
+    modules
 
 
 Indices and tables

@@ -20,8 +20,9 @@ class PluginReply(object):
                  message="", error_message=""):
         """
         :param return_code: 0 for success, non-0 for failure
-        :param reply_type: A string which defines the reply_object layout.  eg:
-                           "void"
+
+        :param reply_type: A string which defines the reply_object layout.  For
+                           example "void"
         :param reply_object: A module defined reply payload.  The reply_type
                              argument is used to determine this values layout.
         :param message: A string describing a successful action
@@ -54,25 +55,24 @@ class _ArgHolder(object):
 
 
 class Plugin(object):
-    """
-    This is the base class that should be used for all plugins.  It handles
+    """This is the base class that should be used for all plugins.  It handles
     the processing needed to validate and parse the protocol.  When defining
-    a new plugin two class level variables should be defined:
+    a new plugin two class level variables should be defined.
 
     :var protocol_arguments: This is a dictionary of arguments that the
                              command will expect/accept from DCM.  It has the
                              following format.
 
-                            .. code-block:: python
+                             .. code-block:: python
 
-                              { <argument name> :
-                                 (<human readable description string,
-                                  <True | False bool that states if the argument is mandatory>,
-                                  <argument type conversion function.  This converts a byte string
-                                   into the needed python type.  Some base functions can be found
-                                   in utils>,
-                                  <Default value>),
-                              }
+                                { <argument name> :
+                                   (<human readable description string,
+                                    <True | False bool that states if the argument is mandatory>,
+                                    <argument type conversion function.  This converts a byte string
+                                     into the needed python type.  Some base functions can be found
+                                     in utils>,
+                                     <Default value>),
+                                }
 
     :var command_name: The name of this command.  This must be globally
                        unique for all the commands in a given agent.  It can
@@ -84,7 +84,7 @@ class Plugin(object):
     :var long_runner: The variable long_runner can be set on the class
                       to instruct the dcm-agent-add-plugin that this plugin
                       will be run for a long time and should be set up for
-                      polling with get_job_description
+                      polling with get_job_description.
     """
 
     protocol_arguments = {}

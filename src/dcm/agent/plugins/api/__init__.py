@@ -1,5 +1,5 @@
 """This module provides the base functionality needed to create plugins to the
-DCM linux agent.  In it are the base classes needed to implement a plugin and
+DCM Linux agent.  In it are the base classes needed to implement a plugin and
 the API calls that plugins can use when interacting with the agent.  Each
 extension command must be in its own python module and must contain the
 following:
@@ -15,11 +15,10 @@ following:
 This function must return an instance of the class defined in the first step.
 
 The run method of the plugin class must return an instance of
-dcm.agent.plugins.api.base.PluginReply
+:py:class:`dcm.agent.plugins.api.base.PluginReply`
 
 If an exception occurs while processing the plugin should only throw exceptions
-defined in the dcm.agent.plugins.api.exceptions module.
+defined in the :py:mod:`dcm.agent.plugins.api.exceptions` module.
 
-For an example of this see dcm.agent.plugins.builtin.heartbeat.  :py:func:`dcm.agent.plugins.builtin.heartbeat.load_plugin`
-
+For an example of this see :py:mod:`dcm.agent.plugins.builtin.heartbeat`.
 """
