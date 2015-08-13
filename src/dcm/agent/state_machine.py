@@ -1,3 +1,18 @@
+#
+#  Copyright (C) 2014 Dell, Inc.
+#
+# Licensed under the Apache License, Version 2.0 (the "License");
+# you may not use this file except in compliance with the License.
+# You may obtain a copy of the License at
+#
+#     http://www.apache.org/licenses/LICENSE-2.0
+#
+# Unless required by applicable law or agreed to in writing, software
+# distributed under the License is distributed on an "AS IS" BASIS,
+# WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+# See the License for the specific language governing permissions and
+# limitations under the License.
+#
 import logging
 import os
 import sys
@@ -52,14 +67,15 @@ class StateMachine(object):
             self._event_list.append((event, old_state, new_state))
             try:
                 if func is not None:
-                    self._logger.debug("Calling %s | %s" % (func.__name__,                                                         func.__doc__))
+                    self._logger.debug("Calling %s | %s" % (func.__name__,
+                                                            func.__doc__))
                     func(**kwargs)
                 self._current_state = new_state
                 self._logger.debug("Moved to new state %s." % new_state)
             except exceptions.DoNotChangeStateException as dncse:
                 self._logger.warning("An error occurred that permits us "
-                                  "to continue but skip the state "
-                                  "change. %s" % str(dncse))
+                                     "to continue but skip the state "
+                                     "change. %s" % str(dncse))
             except Exception as ex:
                 self._logger.exception("An exception occurred %s")
                 raise

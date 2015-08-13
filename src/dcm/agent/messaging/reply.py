@@ -1,3 +1,18 @@
+#
+#  Copyright (C) 2014 Dell, Inc.
+#
+# Licensed under the Apache License, Version 2.0 (the "License");
+# you may not use this file except in compliance with the License.
+# You may obtain a copy of the License at
+#
+#     http://www.apache.org/licenses/LICENSE-2.0
+#
+# Unless required by applicable law or agreed to in writing, software
+# distributed under the License is distributed on an "AS IS" BASIS,
+# WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+# See the License for the specific language governing permissions and
+# limitations under the License.
+#
 import logging
 import os
 import threading
@@ -138,7 +153,7 @@ class ReplyRPC(object):
                 message_types.MessageTypes.ACK:
                     states.ReplyEvents.REPLY_ACK_RECEIVED,
                 message_types.MessageTypes.NACK:
-                states.ReplyEvents.REPLY_NACK_RECEIVED,
+                    states.ReplyEvents.REPLY_NACK_RECEIVED,
                 message_types.MessageTypes.CANCEL:
                     states.ReplyEvents.CANCEL_RECEIVED,
                 message_types.MessageTypes.STATUS:
@@ -871,7 +886,8 @@ class RequestListener(object):
             req.kill()
 
     def wait_for_all_nicely(self):
-        # XXX TODO how long should this block? do we need this?  looks like just for tests
+        # XXX TODO how long should this block? do we need this?
+        # looks like just for tests
         while self._requests:
             dcm_events.poll()
 

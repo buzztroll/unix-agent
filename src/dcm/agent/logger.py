@@ -1,3 +1,18 @@
+#
+#  Copyright (C) 2014 Dell, Inc.
+#
+# Licensed under the Apache License, Version 2.0 (the "License");
+# you may not use this file except in compliance with the License.
+# You may obtain a copy of the License at
+#
+#     http://www.apache.org/licenses/LICENSE-2.0
+#
+# Unless required by applicable law or agreed to in writing, software
+# distributed under the License is distributed on an "AS IS" BASIS,
+# WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+# See the License for the specific language governing permissions and
+# limitations under the License.
+#
 import functools
 import glob
 import logging
@@ -88,7 +103,8 @@ def delete_logs():
 
 class DCMAgentLogger(RotatingFileHandler):
 
-    def __init__(self, filename, owner=None, mode='a', maxBytes=0, backupCount=0, encoding=None, delay=False):
+    def __init__(self, filename, owner=None, mode='a', maxBytes=0,
+                 backupCount=0, encoding=None, delay=False):
         self._uid = pwd.getpwnam(owner).pw_uid
         self._gid = grp.getgrnam(owner).gr_gid
         super(DCMAgentLogger, self).__init__(
@@ -214,4 +230,3 @@ log_to_dcm_console_incoming_message = functools.partial(
     log_to_dcm_console,
     logging.DEBUG,
     "An incoming message for the command %(job_name)s.")
-

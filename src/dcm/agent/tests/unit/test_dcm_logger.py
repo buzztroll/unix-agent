@@ -1,3 +1,18 @@
+#
+#  Copyright (C) 2014 Dell, Inc.
+#
+# Licensed under the Apache License, Version 2.0 (the "License");
+# you may not use this file except in compliance with the License.
+# You may obtain a copy of the License at
+#
+#     http://www.apache.org/licenses/LICENSE-2.0
+#
+# Unless required by applicable law or agreed to in writing, software
+# distributed under the License is distributed on an "AS IS" BASIS,
+# WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+# See the License for the specific language governing permissions and
+# limitations under the License.
+#
 from distutils.log import warn
 import getpass
 import logging
@@ -28,7 +43,8 @@ class TestLoggingClear(unittest.TestCase):
 
         log_file_str = log_file_str.replace("@LOG_LEVEL@", "DEBUG")
         log_file_str = log_file_str.replace("@DCM_USER@", getpass.getuser())
-        log_file_str = log_file_str.replace("@LOGFILE_PATH@", cls.base_log_file)
+        log_file_str = log_file_str.replace(
+            "@LOGFILE_PATH@", cls.base_log_file)
 
         with open(cls.log_conf_file, "w") as fptr:
             fptr.write(log_file_str)
@@ -93,4 +109,3 @@ class TestLoggingClear(unittest.TestCase):
         self.assertEqual(log_dict['type'], "LOG")
         self.assertEqual(log_dict['level'], "ERROR")
         self.assertEqual(urllib.parse.unquote(log_dict['message']), msg)
-

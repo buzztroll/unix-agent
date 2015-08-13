@@ -1,16 +1,18 @@
-# ========= CONFIDENTIAL =========
 #
-# Copyright (C) 2010-2014 Dell, Inc. - ALL RIGHTS RESERVED
+#  Copyright (C) 2014 Dell, Inc.
 #
-# ======================================================================
-#   NOTICE: All information contained herein is, and remains the property
-#   of Dell, Inc. The intellectual and technical concepts contained herein
-#   are proprietary to Dell, Inc. and may be covered by U.S. and Foreign
-#   Patents, patents in process, and are protected by trade secret or
-#   copyright law. Dissemination of this information or reproduction of
-#   this material is strictly forbidden unless prior written permission
-#   is obtained from Dell, Inc.
-#  ======================================================================
+# Licensed under the Apache License, Version 2.0 (the "License");
+# you may not use this file except in compliance with the License.
+# You may obtain a copy of the License at
+#
+#     http://www.apache.org/licenses/LICENSE-2.0
+#
+# Unless required by applicable law or agreed to in writing, software
+# distributed under the License is distributed on an "AS IS" BASIS,
+# WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+# See the License for the specific language governing permissions and
+# limitations under the License.
+#
 import json
 import logging
 import os
@@ -220,7 +222,8 @@ class DigitalOceanMetaData(CloudMetaData):
     def get_ipv4_addresses(self):
         # do caching
         ip_list = []
-        private_ip = self.get_cloud_metadata("interfaces/public/0/ipv4/address")
+        private_ip = self.get_cloud_metadata(
+            "interfaces/public/0/ipv4/address")
 
         if private_ip:
             ip_list.append(private_ip)
@@ -474,7 +477,8 @@ def set_metadata_object(conf):
         meta_data_obj = CloudStackMetaData(
             conf, base_url=conf.cloud_metadata_url)
     elif cloud_name == CLOUD_TYPES.DigitalOcean:
-        meta_data_obj = DigitalOceanMetaData(conf, base_url=conf.cloud_metadata_url)
+        meta_data_obj = DigitalOceanMetaData(
+            conf, base_url=conf.cloud_metadata_url)
     elif cloud_name == CLOUD_TYPES.Konami:
         meta_data_obj = KonamiMetaData(conf)
     elif cloud_name == CLOUD_TYPES.Other:

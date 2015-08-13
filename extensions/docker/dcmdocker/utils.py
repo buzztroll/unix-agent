@@ -1,3 +1,18 @@
+#
+#  Copyright (C) 2014 Dell, Inc.
+#
+# Licensed under the Apache License, Version 2.0 (the "License");
+# you may not use this file except in compliance with the License.
+# You may obtain a copy of the License at
+#
+#     http://www.apache.org/licenses/LICENSE-2.0
+#
+# Unless required by applicable law or agreed to in writing, software
+# distributed under the License is distributed on an "AS IS" BASIS,
+# WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+# See the License for the specific language governing permissions and
+# limitations under the License.
+#
 import docker
 import docker.errors as errors
 import docker.tls
@@ -13,6 +28,7 @@ class DCMDockerException(Exception):
 class DCMDockerConnectionException(DCMDockerException):
     message = "Failed to connect to docker at %(url)s version %(version)s" \
               ": %(docker_msg)s"
+
     def __init__(self, url, version, docker_msg):
         super(DCMDockerConnectionException, self.message % locals())
 
@@ -22,12 +38,12 @@ def get_docker_connection(conf):
     if conf.docker_tls:
         client_cert = None
         if conf.docker_client_cert_path and conf.docker_client_key_path:
-            client_cert=(conf.docker_client_cert_path,
-                         conf.docker_client_key_path)
+            client_cert = (conf.docker_client_cert_path,
+                           conf.docker_client_key_path)
 
         ca_cert = None
         if conf.docker_ca_cert_path:
-           ca_cert = conf.docker_ca_cert_path
+            ca_cert = conf.docker_ca_cert_path
 
         tls = docker.tls.TLSConfig(verify=conf.docker_cert_verify,
                                    client_cert=client_cert,
@@ -48,7 +64,7 @@ class DockerJob(plugin_base.Plugin):
         try:
             self.docker_conn = get_docker_connection(self.conf)
         except errors.DockerException as docker_ex:
-            raise 
+            raise
 
 
 def parse_docker_options(conf):
@@ -76,7 +92,7 @@ def parse_docker_options(conf):
             config.ConfigOpt("docker", "client_key_path", str, default=False,
                              options=None,
                              help_msg="Path to the client key."),
-            config.ConfigOpt("docker", "timeout", int, default=30, options=None,
-                             help_msg="The docker timeout."),
+            config.ConfigOpt("docker", "timeout", int, default=30,
+                             options=None, help_msg="The docker timeout."),
         ]
         conf.parse_config_files(option_list)

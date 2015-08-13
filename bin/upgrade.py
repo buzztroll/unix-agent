@@ -1,3 +1,18 @@
+#
+#  Copyright (C) 2014 Dell, Inc.
+#
+# Licensed under the Apache License, Version 2.0 (the "License");
+# you may not use this file except in compliance with the License.
+# You may obtain a copy of the License at
+#
+#     http://www.apache.org/licenses/LICENSE-2.0
+#
+# Unless required by applicable law or agreed to in writing, software
+# distributed under the License is distributed on an "AS IS" BASIS,
+# WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+# See the License for the specific language governing permissions and
+# limitations under the License.
+#
 import argparse
 import re
 import os
@@ -49,7 +64,8 @@ def get_installer(url):
     return fname
 
 
-def run_installer(local_exe, pkg_base_url, new_version, backup_dir, allow_unknown_certs):
+def run_installer(local_exe, pkg_base_url, new_version, backup_dir,
+                  allow_unknown_certs):
     old_conf = os.path.join(backup_dir, "agent.conf")
     env = os.environ.copy()
     env["AGENT_BASE_URL"] = pkg_base_url
@@ -113,18 +129,18 @@ def read_old_conf(backup_dir):
 
 def stop_agent():
     p = subprocess.Popen(['sudo', '/etc/init.d/dcm-agent', 'status'],
-                           shell=False,
-                           stdout=subprocess.PIPE,
-                           stderr=subprocess.PIPE)
+                         shell=False,
+                         stdout=subprocess.PIPE,
+                         stderr=subprocess.PIPE)
     (stdoutdata, stderrdata) = p.communicate()
     rc = p.wait()
     status_message = stdoutdata.decode()
     if "RUNNING" in status_message and "NOT RUNNING" not in status_message:
         _g_logger.debug('Stopping the current agent')
         p = subprocess.Popen(['sudo', '/etc/init.d/dcm-agent', 'stop'],
-                               shell=False,
-                               stdout=subprocess.PIPE,
-                               stderr=subprocess.PIPE)
+                             shell=False,
+                             stdout=subprocess.PIPE,
+                             stderr=subprocess.PIPE)
         (stdoutdata, stderrdata) = p.communicate()
         rc = p.wait()
         if rc != 0:
@@ -134,14 +150,17 @@ def stop_agent():
 
 def _run_report(backup_dir, pre):
     _g_logger.debug('Running the agent report')
-    p = subprocess.Popen(['sudo', '/opt/dcm-agent/embedded/agentve/bin/dcm-agent', '--report'],
+    p = subprocess.Popen(['sudo',
+                          '/opt/dcm-agent/embedded/agentve/bin/dcm-agent',
+                          '--report'],
                          shell=False,
                          stdout=subprocess.PIPE,
                          stderr=subprocess.PIPE)
     (stdoutdata, stderrdata) = p.communicate()
     rc = p.wait()
     if rc != 0:
-        agent_report_message = "The agent report did not run correctly: stdout=%s, stderr=%s" % (stdoutdata, stderrdata)
+        agent_report_message =
+            "The agent report did not run correctly: stdout=%s, stderr=%s" % (stdoutdata, stderrdata)
         _g_logger.debug(agent_report_message)
         sys.exit(1)
 
@@ -176,14 +195,17 @@ def start_agent():
 
 
 def get_agent_version():
-    p = subprocess.Popen(['sudo', '/opt/dcm-agent/embedded/agentve/bin/dcm-agent', '--version'],
+    p = subprocess.Popen(['sudo',
+                          '/opt/dcm-agent/embedded/agentve/bin/dcm-agent',
+                          '--version'],
                          shell=False,
                          stdout=subprocess.PIPE,
                          stderr=subprocess.PIPE)
     (stdoutdata, stderrdata) = p.communicate()
     rc = p.wait()
     if rc != 0:
-        agent_version_message = "The agent did not return version: stdout=%s, stderr=%s" % (stdoutdata, stderrdata)
+        agent_version_message =\
+            "The agent did not return version: stdout=%s, stderr=%s" % (stdoutdata, stderrdata)
         _g_logger.debug(agent_version_message)
         sys.exit(1)
     return stdoutdata.split()[1].decode()
@@ -236,12 +258,12 @@ def main():
         sys.exit(1)
 
     if not _upgrading(version, current_version):
-        upgrade_message = "Current version %s is more recent than upgrade version %s.  " \
-                          "You must supply a more recent version to upgrade" % (current_version, version)
+        upgrade_message = "Current version %s is more recent than upgrade version %s.  You must supply a more recent version to upgrade" % (current_version, version)
         _g_logger.debug(upgrade_message)
         sys.exit(1)
 
-    _g_logger.debug("Current version: %s | Upgrade to %s" % (current_version, version))
+    _g_logger.debug("Current version: %s | Upgrade to %s"
+                    % (current_version, version))
 
     installer_exe = get_installer(package_url)
     if not os.path.isfile(installer_exe):
@@ -252,10 +274,12 @@ def main():
     conf = read_old_conf(backup_dir)
     if not allow_unknown_certs:
         try:
-            allow_unknown_certs = conf.getboolean("connection", "allow_unknown_certs")
+            allow_unknown_certs = conf.getboolean(
+                "connection", "allow_unknown_certs")
         except configparser.NoOptionError:
             pass
-    run_installer(installer_exe, package_url, version, backup_dir, allow_unknown_certs=allow_unknown_certs)
+    run_installer(installer_exe, package_url, version, backup_dir,
+                  allow_unknown_certs=allow_unknown_certs)
     dcm_user = pwd.getpwnam('dcm')[0]
     _g_logger.debug("DCM user is %s" % dcm_user)
     if os.path.isdir(os.path.join(base_dir, 'secure')):
@@ -267,11 +291,13 @@ def main():
     post_report = _run_report(backup_dir, pre=False)
 
     logs_location = ("""
-    There are logs associated with this upgrade if you wish to view them.  They are located at:
+    There are logs associated with this upgrade if you wish to view them.
+    They are located at:
         1. %s
         2. %s
         3. %s
-    """ % (pre_report, post_report, os.path.join(backup_dir, os.path.basename(_g_log_file))))
+    """ % (pre_report, post_report,
+           os.path.join(backup_dir, os.path.basename(_g_log_file))))
     shutil.copy(_g_log_file, backup_dir)
     os.remove(_g_log_file)
     _g_logger.debug(logs_location)

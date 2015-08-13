@@ -1,3 +1,18 @@
+#
+#  Copyright (C) 2014 Dell, Inc.
+#
+# Licensed under the Apache License, Version 2.0 (the "License");
+# you may not use this file except in compliance with the License.
+# You may obtain a copy of the License at
+#
+#     http://www.apache.org/licenses/LICENSE-2.0
+#
+# Unless required by applicable law or agreed to in writing, software
+# distributed under the License is distributed on an "AS IS" BASIS,
+# WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+# See the License for the specific language governing permissions and
+# limitations under the License.
+#
 import base64
 import getpass
 import hashlib
@@ -102,7 +117,6 @@ class TestProtocolCommands(reply.ReplyObserverInterface):
                            cloud_account,
                            cloud_region)
             cls.storage_clouds.append(cloud)
-
 
     @classmethod
     def setUpClass(cls):
@@ -885,7 +899,6 @@ class TestProtocolCommands(reply.ReplyObserverInterface):
         finally:
             self.conf_obj.extra_base_path = old_extra_path
 
-
     def test_bad_arguments(self):
         orig_hostname = socket.gethostname()
 
@@ -929,13 +942,12 @@ class TestProtocolCommands(reply.ReplyObserverInterface):
         r = req_rpc.get_reply()
         nose.tools.eq_(r["payload"]["return_code"], 0)
         try:
-            for name in user_list: # delete and clean up user
+            for name in user_list:  # delete and clean up user
                 pw_ent = pwd.getpwnam(name)
                 if pw_ent is not None:
                     os.system('userdel -r %s' % name)
         except KeyError:
             print("The name doesn't exist")
-
 
     @test_utils.system_changing
     def test_delete_private_keys(self):
@@ -975,7 +987,7 @@ class TestProtocolCommands(reply.ReplyObserverInterface):
             nose.tools.eq_(os.path.isfile(keyfile_path), False)
 
         try:
-            for name in user_list: # delete and clean up user and homedir
+            for name in user_list:  # delete and clean up user and homedir
                 pw_ent = pwd.getpwnam(name)
                 if pw_ent is not None:
                     os.system('userdel -r %s' % name)
@@ -1023,11 +1035,13 @@ class TestProtocolCommands(reply.ReplyObserverInterface):
         log_dir = os.path.join(self.test_base_path, 'logs')
         nose.tools.eq_(os.listdir(log_dir), [])
         secure_dir = os.path.join(self.test_base_path, 'secure')
-        nose.tools.eq_(os.path.isfile(os.path.join(secure_dir, 'agentdb.sql')), True)
-        nose.tools.eq_(os.path.isfile(os.path.join(secure_dir, 'token')), False)
+        nose.tools.eq_(os.path.isfile(
+            os.path.join(secure_dir, 'agentdb.sql')), True)
+        nose.tools.eq_(os.path.isfile(
+            os.path.join(secure_dir, 'token')), False)
 
         try:
-            for name in user_list: # delete and clean up user and homedir
+            for name in user_list:  # delete and clean up user and homedir
                 pw_ent = pwd.getpwnam(name)
                 if pw_ent is not None:
                     os.system('userdel -r %s' % name)
