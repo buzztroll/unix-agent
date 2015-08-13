@@ -1,29 +1,25 @@
-Installing and Configuring the DCM Agent
-========================================
+.. _configure:
 
-In most cases the DCM Agent should be installed via the installer script
-which can be found `here <http://linux.stable.agent.enstratius.com/installer.sh>`_.
-This bash script will diagnose the system on which it is running to determine
-the correct distribution package to download, install, and configure.  The
-default package repository can be be found
-`here <http://linux.stable.agent.enstratius.com>`_.   These
-packages are created with `omnibus <https://github.com/chef/omnibus>`_
-and contain the full stack of software needed for the agent including
-python 3.4.
+Configuration
+-------------
 
-For information on various install options run the installer.sh script with
-`--help`
+The installer configures the agent initially, but the configuration values can be
+changed without reinstalling the agent.
 
+One installed the program `dcm-agent-configure` can be run in order to (re)set the values
+in the configuration file.
 
-
-
+You can do this interactively or by explicitly passing arguments.
+To run the configuration tool interactively pass it the -i option.  This will prompt you with questions to
+answer.
 
 .. code-block:: bash
 
    $ dcm-agent-configure -i
 
+
 For those looking to automate an installation needed options can be set from
-the command line instead.  The needed options are::
+the command line instead.  The needed options are:
 
   --cloud {Amazon, etc...}, -c {Amazon, etc...}
                         The cloud where this virtual machine will be run.
@@ -41,8 +37,11 @@ This program will create a directory structure under <BASE_PATH>.  In it you
 will find the file <BASE_PATH>/etc/agent.conf.  This file contains information
 about your agent installation.
 
-Alternatively you can keep most changes in the config file by specifying
-the configuration file after -r flag and then setting custom values after that.
+Re-configure
+------------
+
+The dcm-agent-configure program can also be used to update an installed agent's
+configuration.  To reconfigure run
 
 .. code-block:: python
 
@@ -52,14 +51,3 @@ the configuration file after -r flag and then setting custom values after that.
 This will read in the current configuration and use all of its
 values as defaults.  Any other passed in command line options or answers to
 interactive questions will override these defaults.
-
-Running dcm-agent
------------------
-
-One the agent is installed and configured, whether it be manually or via the
-installer, the agent can be started with the following command:
-
-.. code-block:: bash
-
-   $ /etc/init.d/dcm-agent start
-

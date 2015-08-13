@@ -12,36 +12,32 @@ cloud applications.  Some of the features that it provides are:
 - Adding/removing users
 - Disk volume management
 
+Introduction
+===================
+
+* :doc:`Introduction <introduction/intro>`
+
+
 Install
 ===================
 
 Documentation for different install methods
 
-* :doc:`Basic Installation <install/install>`
+* :doc:`Basic Installation <install/agent_installation>`
 
-* :doc:`Advanced Installation <install/install>`
 
-Commands
+Troubleshooting
+===================
+
+Documentation on debug options and procedures.
+
+Plugin Development
 ===================
 
 Documentation on built in agent commands.
 
 * :doc:`Built in commands <commands/commands>`
 
-Debug
-===================
-
-Documentation on debug options and procedures.
-
-Customize
-===================
-
-Documentation on customizing the agent with your own scripts!
-
-Modules
-===================
-
-* :doc:`Agent Modules <modules/modules>`
 
 Upgrade
 ===================
@@ -49,6 +45,12 @@ Upgrade
 Documentation on using the upgrade tool
 
 * :doc:`Agent Upgrade Tool <upgrade/upgrade>`
+
+Modules
+===================
+
+* :doc:`Agent Modules <modules/modules>`
+
 
 .. toctree::
     :blob:
@@ -59,6 +61,7 @@ Documentation on using the upgrade tool
     customize
     modules
     upgrade
+    configure
 
 Indices and tables
 ==================
