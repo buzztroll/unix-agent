@@ -86,7 +86,6 @@ class HandshakeManager(object):
         if 'FOR_TEST_AGENT_ID_ENV' in os.environ:
             self.agent_id = os.environ['FOR_TEST_AGENT_ID_ENV']
 
-
     def validate_token_file(self):
         token_dir = self.conf.get_secure_dir()
         # At some point we should validate that only this user can read this
@@ -140,12 +139,14 @@ class HandshakeManager(object):
             # This signals that we used a bad token but have the chance to
             # recover by trying a new one
             self._generate_token()
-            hs = HandshakeIncomingReply(HandshakeIncomingReply.REPLY_CODE_BAD_TOKEN)
+            hs = HandshakeIncomingReply(
+                HandshakeIncomingReply.REPLY_CODE_BAD_TOKEN)
         elif incoming_doc['return_code'] ==\
                 HandshakeIncomingReply.REPLY_CODE_UNAUTHORIZED:
             # unauthorized, like anything else can be transient.  Sometimes
             # dcm is just not ready for the agent when it comes up
-            hs = HandshakeIncomingReply(HandshakeIncomingReply.REPLY_CODE_UNAUTHORIZED)
+            hs = HandshakeIncomingReply(
+                HandshakeIncomingReply.REPLY_CODE_UNAUTHORIZED)
         elif incoming_doc['return_code'] ==\
                 HandshakeIncomingReply.REPLY_CODE_FORCE_BACKOFF:
             try:

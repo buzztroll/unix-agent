@@ -43,7 +43,7 @@ class UserCallback(object):
         if kwargs is None:
             self._kwargs = {}
         self._time_ready = datetime.datetime.now() +\
-                           datetime.timedelta(seconds=delay)
+            datetime.timedelta(seconds=delay)
         self._lock = threading.RLock()
         self._rc = None
         self._exception = None

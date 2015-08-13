@@ -29,6 +29,7 @@ import dcmdocker.start_container as start_container
 import dcmdocker.delete_container as delete_container
 import dcmdocker.tests.utils as test_utils
 
+
 class TestDockerContainerLogs(unittest.TestCase):
 
     @classmethod

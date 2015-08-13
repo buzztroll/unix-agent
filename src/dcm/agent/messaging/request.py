@@ -38,7 +38,8 @@ class RequestRPC(object):
                  reply_callback=None, reply_args=None, reply_kwargs=None):
         self._doc = document
         self._request_id = str(uuid.uuid4())
-        self._sm = state_machine.StateMachine(states.RequesterStates.REQUEST_NEW)
+        self._sm = state_machine.StateMachine(
+            states.RequesterStates.REQUEST_NEW)
         self._timeout = timeout
         self._reply_callback = reply_callback
         self._reply_args = reply_args
@@ -57,7 +58,6 @@ class RequestRPC(object):
         self._setup_states()
         self.ack_sender = 0
         self._lock = threading.RLock()
-
 
     def lock(self):
         self._lock.acquire()

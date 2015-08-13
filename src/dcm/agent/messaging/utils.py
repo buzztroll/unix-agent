@@ -62,7 +62,8 @@ class MessageTimer(object):
         _g_logger.info("Resending reply to %s" % self._send_doc["request_id"])
         self._send_doc['entity'] = "timer"
         conn.send(self._send_doc)
-        self._timer = dcm_events.register_callback(self._cb, args=[self], delay=self._timeout)
+        self._timer = dcm_events.register_callback(
+            self._cb, args=[self], delay=self._timeout)
 
     @agent_utils.class_method_sync
     def cancel(self):

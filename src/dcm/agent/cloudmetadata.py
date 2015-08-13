@@ -222,7 +222,8 @@ class DigitalOceanMetaData(CloudMetaData):
     def get_ipv4_addresses(self):
         # do caching
         ip_list = []
-        private_ip = self.get_cloud_metadata("interfaces/public/0/ipv4/address")
+        private_ip = self.get_cloud_metadata(
+            "interfaces/public/0/ipv4/address")
 
         if private_ip:
             ip_list.append(private_ip)
@@ -476,7 +477,8 @@ def set_metadata_object(conf):
         meta_data_obj = CloudStackMetaData(
             conf, base_url=conf.cloud_metadata_url)
     elif cloud_name == CLOUD_TYPES.DigitalOcean:
-        meta_data_obj = DigitalOceanMetaData(conf, base_url=conf.cloud_metadata_url)
+        meta_data_obj = DigitalOceanMetaData(
+            conf, base_url=conf.cloud_metadata_url)
     elif cloud_name == CLOUD_TYPES.Konami:
         meta_data_obj = KonamiMetaData(conf)
     elif cloud_name == CLOUD_TYPES.Other:

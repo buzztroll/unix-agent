@@ -192,8 +192,8 @@ class Plugin(object):
     @agent_util.not_implemented_decorator
     def run(self):
         """This method is called by the agent to give the plugin a thread that
-        it can use to do its work.  When the plugin is finished it should return
-        a PluginReply.
+        it can use to do its work.  When the plugin is finished it should
+        return a PluginReply.
 
         If the plugin experiences an error while processing it can throw an
         exception from the dcm.agent.plugins.api.exceptions module.

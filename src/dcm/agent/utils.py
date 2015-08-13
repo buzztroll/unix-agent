@@ -515,4 +515,3 @@ def get_device_mappings(conf):
         raise
 
     return device_mapping_list
-

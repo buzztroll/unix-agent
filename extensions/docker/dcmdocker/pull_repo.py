@@ -48,7 +48,8 @@ class PullRepo(docker_utils.DockerJob):
                 j_obj = json.loads(line)
                 id_map[j_obj['id']] = line
             except Exception as ex:
-                _g_logger.debug("Error dealing with the pull output " + str(ex))
+                _g_logger.debug(
+                    "Error dealing with the pull output " + str(ex))
         for k in id_map:
             dcm_logger.log_to_dcm_console_job_details(
                 job_name=self.name, details="pulled " + id_map[k])

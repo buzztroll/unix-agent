@@ -44,8 +44,7 @@ class TestSystemStatPlugin(unittest.TestCase):
         arguments = {"statType": "cpu-idle",
                      "statName": stat_name,
                      "holdCount": hold_count,
-                     "checkInterval": check_interval
-        }
+                     "checkInterval": check_interval}
 
         plugin = init_system_stat.load_plugin(
             self.conf_obj, str(uuid.uuid4()),

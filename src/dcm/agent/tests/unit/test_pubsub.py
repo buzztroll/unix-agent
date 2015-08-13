@@ -155,4 +155,3 @@ class TestPubSub(unittest.TestCase):
 
         self._event_space.poll(timeblock=0.0)
         self.assertIn('done', x_val)
-

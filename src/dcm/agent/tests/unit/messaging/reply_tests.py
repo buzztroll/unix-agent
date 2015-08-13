@@ -326,7 +326,7 @@ class TestRequestListener(object):
             "payload": {}
         }
 
-        reply_listener = reply.RequestListener(self.conf , conn, disp, self.db)
+        reply_listener = reply.RequestListener(self.conf, conn, disp, self.db)
         reply_listener.incoming_parent_q_message(ack_doc)
 
         (param_list, keywords) = conn.send.call_args

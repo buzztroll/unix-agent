@@ -27,6 +27,7 @@ import dcmdocker.delete_image as delete_image
 import dcmdocker.list_containers as list_containers
 import dcmdocker.tests.utils as test_utils
 
+
 class TestDockerImageCommands(unittest.TestCase):
 
     def setUp(self):

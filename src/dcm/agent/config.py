@@ -441,4 +441,3 @@ def setup_logging(logging_configfile):
     with open(logging_configfile, 'rt') as f:
         config = yaml.load(f.read())
         logging.config.dictConfig(config)
-

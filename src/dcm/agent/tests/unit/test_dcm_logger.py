@@ -43,7 +43,8 @@ class TestLoggingClear(unittest.TestCase):
 
         log_file_str = log_file_str.replace("@LOG_LEVEL@", "DEBUG")
         log_file_str = log_file_str.replace("@DCM_USER@", getpass.getuser())
-        log_file_str = log_file_str.replace("@LOGFILE_PATH@", cls.base_log_file)
+        log_file_str = log_file_str.replace(
+            "@LOGFILE_PATH@", cls.base_log_file)
 
         with open(cls.log_conf_file, "w") as fptr:
             fptr.write(log_file_str)
@@ -108,4 +109,3 @@ class TestLoggingClear(unittest.TestCase):
         self.assertEqual(log_dict['type'], "LOG")
         self.assertEqual(log_dict['level'], "ERROR")
         self.assertEqual(urllib.parse.unquote(log_dict['message']), msg)
-

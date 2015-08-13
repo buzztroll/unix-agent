@@ -90,7 +90,8 @@ class InitializeJob(plugin_base.Plugin):
                 job_name=self.name, details="Adding the user")
             res_obj = self.add_user.run()
             if res_obj.get_return_code() != 0:
-                res_obj.set_message(res_obj.get_message() + " : addUser failed")
+                res_obj.set_message(
+                    res_obj.get_message() + " : addUser failed")
                 return res_obj
 
             self.conf.state = "RUNNING"

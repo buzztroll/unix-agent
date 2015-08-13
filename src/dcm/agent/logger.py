@@ -103,7 +103,8 @@ def delete_logs():
 
 class DCMAgentLogger(RotatingFileHandler):
 
-    def __init__(self, filename, owner=None, mode='a', maxBytes=0, backupCount=0, encoding=None, delay=False):
+    def __init__(self, filename, owner=None, mode='a', maxBytes=0,
+                 backupCount=0, encoding=None, delay=False):
         self._uid = pwd.getpwnam(owner).pw_uid
         self._gid = grp.getgrnam(owner).gr_gid
         super(DCMAgentLogger, self).__init__(
@@ -229,4 +230,3 @@ log_to_dcm_console_incoming_message = functools.partial(
     log_to_dcm_console,
     logging.DEBUG,
     "An incoming message for the command %(job_name)s.")
-

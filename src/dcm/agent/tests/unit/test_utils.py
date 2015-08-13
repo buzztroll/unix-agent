@@ -59,4 +59,3 @@ class TestUtils(unittest.TestCase):
         res = json_param_type({"x": 1})
         self.assertTrue('x' in res.keys())
         self.assertEqual(res['x'], 1)
-

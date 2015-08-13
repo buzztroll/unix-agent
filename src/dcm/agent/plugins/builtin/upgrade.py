@@ -79,7 +79,8 @@ class Upgrade(plugin_base.Plugin):
             command_list.extend(self.args.args)
             _g_logger.debug("Plugin running the command %s"
                             % str(command_list))
-            (stdout, stderr, rc) = plugin_utils.run_command(self.conf, command_list)
+            (stdout, stderr, rc) = plugin_utils.run_command(
+                self.conf, command_list)
             _g_logger.debug("Command %s: stdout %s.  stderr: %s" %
                             (str(command_list), stdout, stderr))
             return plugin_base.PluginReply(

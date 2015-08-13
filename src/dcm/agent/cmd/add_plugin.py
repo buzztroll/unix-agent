@@ -44,7 +44,7 @@ def setup_command_line_parser():
 def get_plugin_details(full_module_name, short_module_name):
     mod = importlib.import_module(full_module_name)
     lp_func = getattr(mod, 'load_plugin', None)
-    if lp_func is None and type(lp_func) == types.FunctionType:
+    if lp_func is None and isinstance(types.FunctionType, lp_func):
         return False
 
     for d in mod.__dict__:
@@ -91,7 +91,8 @@ def rewrite_conf(conf_file, module_list, prefix):
         try:
             parser.add_section(section_name)
         except configparser.DuplicateSectionError:
-            raise Exception("The plugin %s already exists.  Please rename it." % m['command_name'])
+            raise Exception("The plugin %s already exists.  Please rename it."
+                            % m['command_name'])
         parser.set(section_name, "type", "python_module")
         parser.set(section_name, "module_name", m['module_name'])
         if m['long_runner'] is not None:

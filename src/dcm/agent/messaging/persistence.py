@@ -273,6 +273,7 @@ class SQLiteAgentDB(object):
     @agent_utils.class_method_sync
     def clean_all(self, request_id):
         stmt = ("DELETE FROM requests WHERE request_id <> ?")
+
         def do_it(cursor):
             cursor.execute(stmt, (request_id,))
         self._execute(do_it)

@@ -67,14 +67,15 @@ class StateMachine(object):
             self._event_list.append((event, old_state, new_state))
             try:
                 if func is not None:
-                    self._logger.debug("Calling %s | %s" % (func.__name__,                                                         func.__doc__))
+                    self._logger.debug("Calling %s | %s" % (func.__name__,
+                                                            func.__doc__))
                     func(**kwargs)
                 self._current_state = new_state
                 self._logger.debug("Moved to new state %s." % new_state)
             except exceptions.DoNotChangeStateException as dncse:
                 self._logger.warning("An error occurred that permits us "
-                                  "to continue but skip the state "
-                                  "change. %s" % str(dncse))
+                                     "to continue but skip the state "
+                                     "change. %s" % str(dncse))
             except Exception as ex:
                 self._logger.exception("An exception occurred %s")
                 raise

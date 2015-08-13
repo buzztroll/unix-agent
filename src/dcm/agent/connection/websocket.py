@@ -411,7 +411,8 @@ class WebSocketConnection(threading.Thread):
         comes in from DCM.  In this case we queue the message and process it
         it the handshake is determined to be successful.
         """
-        _g_logger.debug("New message received before the handshake was processed")
+        _g_logger.debug(
+            "New message received before the handshake was processed")
         self.pre_hs_message_queue.put(incoming_data)
 
     def _sm_successful_handshake(self):

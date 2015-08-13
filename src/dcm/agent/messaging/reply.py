@@ -153,7 +153,7 @@ class ReplyRPC(object):
                 message_types.MessageTypes.ACK:
                     states.ReplyEvents.REPLY_ACK_RECEIVED,
                 message_types.MessageTypes.NACK:
-                states.ReplyEvents.REPLY_NACK_RECEIVED,
+                    states.ReplyEvents.REPLY_NACK_RECEIVED,
                 message_types.MessageTypes.CANCEL:
                     states.ReplyEvents.CANCEL_RECEIVED,
                 message_types.MessageTypes.STATUS:
@@ -886,7 +886,8 @@ class RequestListener(object):
             req.kill()
 
     def wait_for_all_nicely(self):
-        # XXX TODO how long should this block? do we need this?  looks like just for tests
+        # XXX TODO how long should this block? do we need this?
+        # looks like just for tests
         while self._requests:
             dcm_events.poll()
 

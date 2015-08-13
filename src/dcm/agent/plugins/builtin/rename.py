@@ -62,7 +62,7 @@ class Rename(plugin_base.ScriptPlugin):
         plugin_utils.log_to_dcm_console_job_details(
             job_name=self.name, details=
             "Renaming the server to %s with the local IP %s"
-                % (self.args.serverName, private_ips[0]))
+            % (self.args.serverName, private_ips[0]))
 
         return super(Rename, self).run()
 

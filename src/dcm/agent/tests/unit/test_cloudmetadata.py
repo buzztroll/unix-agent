@@ -306,5 +306,3 @@ class TestDigitalOceanMetaDataBase(unittest.TestCase):
         md_server_data.return_value = startup_data
         sd = self.cm_obj.get_startup_script()
         self.assertEqual(startup_data, sd)
-
-
