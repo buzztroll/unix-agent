@@ -156,7 +156,7 @@ class TestAgentVerboseSystemStats(unittest.TestCase):
             hold_count1,
             interval1)
 
-        time.sleep((hold_count1 + 2) * interval1)
+        time.sleep((hold_count1 + 3) * interval1)
         stats_d = systemstats.get_stats(name1)
         self.assertEqual(len(stats_d['status']), hold_count1)
 
@@ -176,7 +176,7 @@ class TestAgentVerboseSystemStats(unittest.TestCase):
             hold_count1,
             interval1)
 
-        time.sleep((hold_count1 + 2) * interval1)
+        time.sleep((hold_count1 + 3) * interval1)
         stats_d = systemstats.get_stats(name1)
         self.assertEqual(len(stats_d['status']), hold_count1)
 
@@ -196,7 +196,7 @@ class TestAgentVerboseSystemStats(unittest.TestCase):
             hold_count1,
             interval1)
 
-        time.sleep((hold_count1 + 2) * interval1)
+        time.sleep((hold_count1 + 3) * interval1)
         stats_d = systemstats.get_stats(name1)
         self.assertEqual(len(stats_d['status']), hold_count1)
 
@@ -216,7 +216,7 @@ class TestAgentVerboseSystemStats(unittest.TestCase):
             hold_count1,
             interval1)
 
-        time.sleep((hold_count1 + 2) * interval1)
+        time.sleep((hold_count1 + 3) * interval1)
         stats_d = systemstats.get_stats(name1)
         self.assertEqual(len(stats_d['status']), hold_count1)
 
@@ -236,7 +236,7 @@ class TestAgentVerboseSystemStats(unittest.TestCase):
             hold_count1,
             interval1)
 
-        time.sleep((hold_count1 + 2) * interval1)
+        time.sleep((hold_count1 + 3) * interval1)
         stats_d = systemstats.get_stats(name1)
         self.assertEqual(len(stats_d['status']), hold_count1)
 
@@ -256,7 +256,7 @@ class TestAgentVerboseSystemStats(unittest.TestCase):
             hold_count1,
             interval1)
 
-        time.sleep((hold_count1 + 2) * interval1)
+        time.sleep((hold_count1 + 3) * interval1)
         stats_d = systemstats.get_stats(name1)
         self.assertEqual(len(stats_d['status']), hold_count1)
 
