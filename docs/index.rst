@@ -12,16 +12,21 @@ cloud applications.  Some of the features that it provides are:
 - Adding/removing users
 - Disk volume management
 
+Contents:
 
 .. toctree::
-    :maxdepth: 3
+   :maxdepth: 1
+   :includehidden:
 
-    install
-    commands
-    modules
+   intro
+   distros
+   install/agent_installation
+   troubleshooting
+   upgrade/upgrade
+   plugins/plugins
 
 
-Indices and tables
+Indices And Tables
 ==================
 
 * :ref:`genindex`
