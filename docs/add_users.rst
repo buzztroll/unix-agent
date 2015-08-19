@@ -11,12 +11,12 @@ To add a new user
 Find your server in the list of deployed servers and click on its row.  This
 will cause a new set of buttons to be displayed like the ones shown below.
 
-.. image:: ../images/agent_edit_button.png
+.. image:: ./images/agent_edit_button.png
 
 Click on *Edit Server*.  This will bring you to a screen similar to the one
 below:
 
-.. image:: ../images/agent_user_management.png
+.. image:: ./images/agent_user_management.png
 
 
 Select the user name that you want to add and the level of access and click

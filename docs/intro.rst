@@ -1,4 +1,4 @@
-Dell Cloud Manager Agent Introduction
+Agent Introduction
 =====================================
 
 The dcm-agent is a lightweight service that runs inside of your VM.  When the
@@ -15,15 +15,16 @@ number of VMs is pragmatically limitless. The hard part is coordinating all of
 these pieces to perform in cadence.  The Dell Cloud Manager and dcm-agent
 provide the instrumentation to make this possible.
 
-.. image:: ../images/dcmagentapp.png
+.. image:: ./images/dcmagentapp.png
 
-Topics
------------------------
 
-* :doc:`Console Interactions <console>`
-* :doc:`Add Users <add_users>`
-* :doc:`Supported Distributions <distros>`
-* :doc:`Trouble Shooting <troubleshooting>`
-* :doc:`Architecture <architecture>`
+.. toctree::
+   :maxdepth: 1
+   :includehidden:
 
+   install/agent_installation
+   console
+   add_users
+   troubleshooting
+   architecture
 

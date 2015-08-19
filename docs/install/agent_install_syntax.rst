@@ -9,12 +9,14 @@ Interactive install syntax
 
   Issue the following command to install the DCM Agent in "interactive mode".
 
-    :samp:`bash <( curl -k http://es-pyagent.s3.amazonaws.com/installer.sh )`
+    :samp:`bash <( curl -k http://linux.stable.agent.enstratius.com/installer.sh )`
 
   You will be prompted for:
 
-  1. Cloud provider of the launched server where the DCM Agent will be installed.
-  2. Web socket URL string for the Dell Cloud Manager provisioning server agentManager service.
+  1. Cloud provider of the launched server where the DCM Agent will be
+     installed.
+  2. Web socket URL string for the Dell Cloud Manager provisioning server
+     agentManager service.
 
     Format: wss://\ **hostname_or_ipaddress**\/agentManager
 
@@ -28,7 +30,7 @@ Non-interactive install syntax
 
   Issue the following command to install the DCM Agent in "non-interactive mode".
 
-    :samp:`curl -k http://es-pyagent.s3.amazonaws.com/installer.sh | bash -s - [options]`
+    :samp:`curl -k http://linux.stable.agent.enstratius.com/installer.sh | bash -s - [options]`
 
     .. code-block:: text
 

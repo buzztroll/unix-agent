@@ -11,3 +11,9 @@ following commands in the src directory:
 
 One installed the program :ref:`configure` must be run in order to
 properly setup the system for use with the agent.
+
+.. toctree::
+   :maxdepth: 1
+   :includehidden:
+
+   ../configure/configure

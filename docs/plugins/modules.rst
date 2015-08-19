@@ -1,5 +1,5 @@
-Module Documentation
-=====================
+Plugin Development Modules
+============================
 
 dcm.agent.plugins.api
 ---------------------

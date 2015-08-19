@@ -16,3 +16,8 @@ Agent:
 * RHEL 7.0 (x86_64)
 * RHEL 6.5 (x86_64)
 * RHEL 6.4 (x86_64)
+
+
+For the above distributions omnibus packages targeted at the specific
+distribution are built and published.  The `omnibus <https://github.com/chef/omnibus>`_
+packages contain the full stack of dependencies including python 3.
