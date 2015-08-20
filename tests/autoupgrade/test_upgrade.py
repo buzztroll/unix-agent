@@ -60,6 +60,10 @@ def main():
 
     # build image and start container with it
     build_image(client, image_name)
+
+    # a problem with docker requires a new client after a build
+    del client
+    client = get_client(version='1.15', **kwargs_from_env())
     container = create_container(
         client, image_name, True, '/bin/bash /run_forever.sh')
     client.start(container)
