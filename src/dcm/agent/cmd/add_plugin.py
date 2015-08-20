@@ -36,6 +36,16 @@ def setup_command_line_parser():
                         dest="prefix",
                         help="A string to prepend to all the command names found",
                         default="")
+    parser.add_argument("--name", "-n",
+                        dest="shortname",
+                        help="Force the plugin name.  Only used without -f.",
+                        default=None)
+    parser.add_argument("-f", "--find", help="Search the module for plugins",
+                        action="store_true")
+    parser.add_argument("-o", "--overwrite", help="Overwrite existing entries.",
+                        action="store_true")
+    parser.add_argument("-d", "--delete", help="Delete the plugin name.",
+                        action="store_true")
     parser.add_argument('module_name', type=str, metavar="<module name>",
                         help="The name of the module where this program will search for plugins.")
     return parser
@@ -83,7 +93,7 @@ def find_plugins(base_module_name):
     return plugin_list
 
 
-def rewrite_conf(conf_file, module_list, prefix):
+def rewrite_conf(conf_file, module_list, prefix, force):
     parser = configparser.ConfigParser()
     parser.read(conf_file)
     for m in module_list:
@@ -91,8 +101,9 @@ def rewrite_conf(conf_file, module_list, prefix):
         try:
             parser.add_section(section_name)
         except configparser.DuplicateSectionError:
-            raise Exception("The plugin %s already exists.  Please rename it."
-                            % m['command_name'])
+            if not force:
+                raise Exception("The plugin %s already exists.  Please rename it."
+                                % m['command_name'])
         parser.set(section_name, "type", "python_module")
         parser.set(section_name, "module_name", m['module_name'])
         if m['long_runner'] is not None:
@@ -102,19 +113,64 @@ def rewrite_conf(conf_file, module_list, prefix):
         parser.write(fptr)
 
 
+def delete_plugin(conf_file, plugin_name):
+    parser = configparser.ConfigParser()
+    parser.read(conf_file)
+    section_name = "plugin:%s" % plugin_name
+
+    new_config = configparser.ConfigParser()
+    found = False
+    for s in parser.sections():
+        if s != section_name:
+            new_config.add_section(s)
+            for o in parser.options(s):
+                v = parser.get(s, o)
+                new_config.set(s, o, v)
+        else:
+            found = True
+    if not found:
+        return False
+    with open(conf_file, "w") as fptr:
+        new_config.write(fptr)
+    return True
+
+
 def main(args=sys.argv):
     parser = setup_command_line_parser()
     opts = parser.parse_args(args=args[1:])
 
     conf = agent_config.AgentConfig([opts.conffile])
 
-    module_list = find_plugins(opts.module_name)
-    rewrite_conf(conf.plugin_configfile, module_list, opts.prefix)
+    if opts.delete:
+        found = delete_plugin(conf.plugin_configfile, opts.module_name)
+        if not found:
+            print("The plugin name %s was not found." % opts.module_name)
+            return 1
+        return 0
+
+    if opts.find:
+        module_list = find_plugins(opts.module_name)
+    else:
+        short_module_name = opts.module_name[opts.module_name.rfind(".")+1:]
+        plugin_info = get_plugin_details(opts.module_name, short_module_name)
+        if plugin_info is None:
+            raise Exception(
+                "The module %s is not a valid plugin" % opts.module_name)
+        plugin_name = plugin_info[0]
+        if opts.shortname is not None:
+            plugin_name = opts.shortname
+
+        module_list = [{'module_name': opts.module_name,
+                        'command_name': plugin_name,
+                        'long_runner': plugin_info[1]}]
+
+    rewrite_conf(conf.plugin_configfile, module_list, opts.prefix, opts.overwrite)
 
     print("Updated the plugin configuration file %s" % conf.plugin_configfile)
     for m in module_list:
         print("\tAdded command %s" % m['command_name'])
     print("Restart the agent for changes to take effect.")
+    return 0
 
 
 if __name__ == '__main__':
