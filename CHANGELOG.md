@@ -1,3 +1,10 @@
+# 0.12.1 (2015-8-4)
+
+Features:
+* Refactored to system stats to report bytes/second.
+* Reorganized and added more documentation.
+* Updated the dcm-agent-add-plugin to overwrite and remove plugins.
+
 # 0.12.0 (2015-8-4)
 
 Features:
