@@ -24,6 +24,7 @@ Contents:
    troubleshooting
    upgrade/upgrade
    plugins/plugins
+   test/test
 
 
 Indices And Tables
