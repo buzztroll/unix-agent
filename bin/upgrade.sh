@@ -12,7 +12,8 @@ function help(){
           --version [VERSION]        Required and sets AGENT_VERSION env var.
           --base_dir [DIR]           Optional and sets AGENT_BASE_DIR, default is /dcm.
           --package_url [URL]        Optional and sets AGENT_BASE_URL, default is http://linux.stable.agent.enstratius.com
-          --allow_unknown_certs/-Z    Optional flag to disable cert validation
+          --allow_unknown_certs/-Z   Optional flag to disable cert validation
+          --package_location [URL]   Option to for a package URL
           "
           }
 cd /tmp
@@ -33,3 +34,4 @@ start=`pwd`
 chmod +x $start/upgrade.py
 echo "Running upgrade script with arguments: $@"
 python $start/upgrade.py $@
+exit $?
