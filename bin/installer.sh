@@ -13,7 +13,7 @@ environment variables will alter the behavior as described:
 
 AGENT_LOCAL_PACKAGE=<path>
   - When set the script will look for the distribution package at the
-    given path on the local file system.
+    given path on the local file system, or the given full URL.
 
 AGENT_BASE_URL=<url>
   - This is the base path to an HTTP repository where the packages are kept.

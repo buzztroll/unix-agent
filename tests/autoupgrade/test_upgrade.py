@@ -89,17 +89,26 @@ def main():
     agent_upgrade_version = os.getenv('AGENT_UPGRADE_VERSION') or "0.11.2"
     agent_upgrade_url = os.getenv('AGENT_UPGRADE_BASE_URL') or\
         "http://linux.stable.agent.enstratius.com"
-    upgrade_id = client.exec_create(
-        container, '/bin/bash /upgrade.sh --version %s --package_url %s'
-                   % (agent_upgrade_version, agent_upgrade_url))
+
+    client_cmd = "/bin/bash /upgrade.sh --version %s --package_url %s" %\
+        (agent_upgrade_version, agent_upgrade_url)
+    agent_location = os.getenv('AGENT_LOCAL_PACKAGE')
+    if agent_location is not None:
+        client_cmd = client_cmd + " --package_location %s" % agent_location
+
+    upgrade_id = client.exec_create(container, client_cmd)
     upgrade_response = client.exec_start(upgrade_id)
+    print("Upgrade response " + upgrade_response)
 
     # assert that upgrade agent version is correct
     upgrade_version_id = client.exec_create(
         container, '/opt/dcm-agent/embedded/agentve/bin/dcm-agent --version')
     upgrade_version_response = client.exec_start(upgrade_version_id)
-    print(upgrade_version_response)
-    assert agent_upgrade_version in upgrade_version_response
+    print("Upgrade version response " + upgrade_version_response)
+    if agent_location:
+        assert agent_upgrade_version not in current_version_response
+    else:
+        assert agent_upgrade_version in upgrade_version_response
 
     print(get_logs(client, container))
     client.stop(container)

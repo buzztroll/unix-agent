@@ -223,5 +223,5 @@ class TestBackoff(unittest.TestCase):
         time.sleep(idle_time)
         backoff.closed()
         self.assertFalse(backoff.ready())
-        time.sleep(idle_time * idle_mod)
+        time.sleep(idle_time * idle_mod + 0.1)
         self.assertTrue(backoff.ready())

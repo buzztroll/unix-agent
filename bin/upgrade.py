@@ -65,12 +65,14 @@ def get_installer(url):
 
 
 def run_installer(local_exe, pkg_base_url, new_version, backup_dir,
-                  allow_unknown_certs):
+                  allow_unknown_certs, package_location):
     old_conf = os.path.join(backup_dir, "agent.conf")
     env = os.environ.copy()
     env["AGENT_BASE_URL"] = pkg_base_url
     env["AGENT_VERSION"] = new_version
     env["DCM_AGENT_REMOVE_EXISTING"] = "1"
+    if package_location is not None:
+        env['AGENT_LOCAL_PACKAGE'] = package_location
 
     if allow_unknown_certs:
         cmd = ['sudo', '-E', local_exe, '-Z', '-r', old_conf]
@@ -159,7 +161,7 @@ def _run_report(backup_dir, pre):
     (stdoutdata, stderrdata) = p.communicate()
     rc = p.wait()
     if rc != 0:
-        agent_report_message =
+        agent_report_message =\
             "The agent report did not run correctly: stdout=%s, stderr=%s" % (stdoutdata, stderrdata)
         _g_logger.debug(agent_report_message)
         sys.exit(1)
@@ -232,6 +234,12 @@ def get_parse_args():
                         default="http://linux.stable.agent.enstratius.com",
                         help="This value will set AGENT_BASE_URL")
 
+    parser.add_argument("--package_location",
+                        "-p",
+                        dest="package_location",
+                        default=None,
+                        help="This value will set AGENT_LOCAL_PACKAGE")
+
     parser.add_argument("--allow_unknown_certs", "-Z",
                         dest="allow_unknown_certs",
                         action='store_true',
@@ -279,14 +287,14 @@ def main():
         except configparser.NoOptionError:
             pass
     run_installer(installer_exe, package_url, version, backup_dir,
-                  allow_unknown_certs=allow_unknown_certs)
-    dcm_user = pwd.getpwnam('dcm')[0]
-    _g_logger.debug("DCM user is %s" % dcm_user)
+                  allow_unknown_certs, parsed_args.package_location)
+    dcm_user_info = pwd.getpwnam('dcm')
+    _g_logger.debug("DCM user is %s" % dcm_user_info[0])
     if os.path.isdir(os.path.join(base_dir, 'secure')):
         _g_logger.debug("Secure directory detected")
         for name in glob.glob(os.path.join(base_dir, 'secure/*')):
-            _g_logger.debug("CHOWN %s to %s" % (name, dcm_user))
-            os.chown(name, dcm_user[2], dcm_user[3])
+            _g_logger.debug("CHOWN %s to %s" % (name, dcm_user_info[0]))
+            os.chown(name, dcm_user_info[2], dcm_user_info[3])
     start_agent()
     post_report = _run_report(backup_dir, pre=False)
 
