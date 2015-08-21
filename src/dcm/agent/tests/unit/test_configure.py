@@ -80,6 +80,91 @@ class TestConfigure(unittest.TestCase):
             d = os.path.join(self.test_base_path, d)
             self.assertTrue(os.path.exists(d), d)
 
+    def test_logging_plugin_not_changed_w_reconfig(self):
+        # original config
+        conf_args = ["-c", "Amazon",
+                     "-u", "http://doesntmatter.org/ws",
+                     "-p", self.test_base_path,
+                     "-C", "ws"]
+        rc = configure.main(conf_args)
+        self.assertEqual(rc, 0)
+
+        logging_file = os.path.join(self.test_base_path, "etc/logging.yaml")
+        plugin_file = os.path.join(self.test_base_path, "etc/plugin.conf")
+
+        # customer customizes logging and plugin
+        logging_write = open(logging_file, "w")
+        logging_write.write("Hello")
+        logging_write.close()
+
+        plugin_write = open(plugin_file, "w")
+        plugin_write.write("Hello")
+        plugin_write.close()
+
+        # reconfig
+        conf_args = ["-r", os.path.join(self.test_base_path, "etc/agent.conf")]
+        rc = configure.main(conf_args)
+        self.assertEqual(rc, 0)
+
+        with open(logging_file, "r") as f:
+            self.assertEqual("Hello", f.readline())
+        with open(plugin_file, "r") as f:
+            self.assertEqual("Hello", f.readline())
+
+    def test_force_reload_works(self):
+        # original config
+        conf_args = ["-c", "Amazon",
+                     "-u", "http://doesntmatter.org/ws",
+                     "-p", self.test_base_path,
+                     "-C", "ws"]
+        rc = configure.main(conf_args)
+        self.assertEqual(rc, 0)
+        logging_file = os.path.join(self.test_base_path, "etc/logging.yaml")
+        plugin_file = os.path.join(self.test_base_path, "etc/plugin.conf")
+
+        # customer customizes logging and plugin
+        logging_write = open(logging_file, "w")
+        logging_write.write("Hello")
+        logging_write.close()
+
+        plugin_write = open(plugin_file, "w")
+        plugin_write.write("Hello")
+        plugin_write.close()
+
+        # reconfig
+        conf_args = ["-r", os.path.join(self.test_base_path, "etc/agent.conf"), "-R"]
+        rc = configure.main(conf_args)
+        self.assertEqual(rc, 0)
+
+        with open(logging_file, "r") as f:
+            self.assertNotEqual("Hello", f.readline())
+        with open(plugin_file, "r") as f:
+            self.assertNotEqual("Hello", f.readline())
+
+    def test_confs_created_if_not_exist(self):
+         # original config
+        conf_args = ["-c", "Amazon",
+                     "-u", "http://doesntmatter.org/ws",
+                     "-p", self.test_base_path,
+                     "-C", "ws"]
+        rc = configure.main(conf_args)
+        self.assertEqual(rc, 0)
+        logging_file = os.path.join(self.test_base_path, "etc/logging.yaml")
+        plugin_file = os.path.join(self.test_base_path, "etc/plugin.conf")
+
+        #delete files after install and config
+        os.remove(logging_file)
+        os.remove(plugin_file)
+        self.assertFalse(os.path.isfile(logging_file))
+        self.assertFalse(os.path.isfile(plugin_file))
+
+        #redo original config
+        conf_args = ["-r", os.path.join(self.test_base_path, "etc/agent.conf")]
+        rc = configure.main(conf_args)
+        self.assertEqual(rc, 0)
+        self.assertTrue(os.path.isfile(plugin_file))
+        self.assertTrue(os.path.isfile(logging_file))
+
     def test_all_cloud_configure(self):
         for cloud in configure.cloud_choices:
             if cloud.lower() == "unknown":

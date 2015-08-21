@@ -91,6 +91,14 @@ def setup_command_line_parser():
                         help="The previous config file that will be used "
                              "to populate defaults.")
 
+    parser.add_argument("--rewrite-logging-plugin", "-R",
+                        dest="rewrite_logging_plugin",
+                        action="store_true",
+                        default=False,
+                        help="When reconfiguring the agent with -r option "
+                             "You can additionally specifiy this option to"
+                             "force the overwrite of plugin and logging configs.")
+
     parser.add_argument("--temp-path", "-t",
                         dest="temp_path",
                         help="The temp path")
@@ -362,17 +370,19 @@ def merge_opts(conf_d, opts):
             sd[i] = (h, v)
 
 
-def do_plugin_and_logging_conf(conf_d, opts):
+def do_plugin_conf(conf_d):
     (_, base_dir) = conf_d["storage"]["base_dir"]
     (_, dest_plugin_path) = conf_d["plugin"]["configfile"]
-    (_, dest_logging_path) = conf_d["logging"]["configfile"]
-
     root_dir = dcm.agent.get_root_location()
-
     src_pluggin_path = os.path.join(root_dir, "etc", "plugin.conf")
-    src_logging_path = os.path.join(root_dir, "etc", "logging.yaml")
-
     shutil.copy(src_pluggin_path, dest_plugin_path)
+
+
+def do_logging_conf(conf_d, opts):
+    (_, base_dir) = conf_d["storage"]["base_dir"]
+    (_, dest_logging_path) = conf_d["logging"]["configfile"]
+    root_dir = dcm.agent.get_root_location()
+    src_logging_path = os.path.join(root_dir, "etc", "logging.yaml")
     shutil.copy(src_logging_path, dest_logging_path)
 
     if opts.logfile is None:
@@ -526,10 +536,16 @@ def main(argv=sys.argv[1:]):
 
     try:
         make_dirs(conf_d)
+        (_, base_dir) = conf_d["storage"]["base_dir"]
         if not opts.reload:
             copy_scripts(conf_d)
-        do_plugin_and_logging_conf(conf_d, opts)
-        (_, base_dir) = conf_d["storage"]["base_dir"]
+            do_plugin_conf(conf_d)
+            do_logging_conf(conf_d, opts)
+        else:
+            if not os.path.isfile(os.path.join(base_dir, "etc", "plugin.conf")) or opts.rewrite_logging_plugin:
+                do_plugin_conf(conf_d)
+            if not os.path.isfile(os.path.join(base_dir, "etc", "logging.yaml")) or opts.rewrite_logging_plugin:
+                do_logging_conf(conf_d, opts)
         cleanup_previous_install(conf_d)
         conf_file_name = os.path.join(base_dir, "etc", "agent.conf")
         write_conf_file(conf_file_name, conf_d)
