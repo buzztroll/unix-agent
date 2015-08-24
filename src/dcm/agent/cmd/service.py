@@ -294,7 +294,7 @@ def start_main_service(cli_args):
             agent.shutdown_main_loop()
         if getattr(cli_args, "verbose", 0) > 2:
             raise
-    except Exception as ex:
+    except Exception:
         _g_logger = logging.getLogger(__name__)
         console_log(
             cli_args,

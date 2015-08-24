@@ -13,11 +13,9 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 #
-import collections
 import os
 import socket
 import unittest
-import urllib.parse
 import uuid
 
 from nose.plugins import skip
@@ -60,7 +58,6 @@ class TestDockerContainer(unittest.TestCase):
         plugin = delete_image.DeleteImages(
             cls.conf, "400", {}, "test", arguments)
         reply = plugin.run()
-        reply_obj = reply['reply_object']
 
     def setUp(self):
         """

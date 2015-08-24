@@ -156,7 +156,7 @@ class TestEventSpace(unittest.TestCase):
         self.assertTrue(ub.has_run())
         self.assertIsNone(ub.get_exception())
 
-    def test_return_code(self):
+    def test_raise_exception(self):
         event_space = events.EventSpace()
         exception_message = str(uuid.uuid4())
 

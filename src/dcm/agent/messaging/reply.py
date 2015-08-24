@@ -879,9 +879,7 @@ class RequestListener(object):
         Stop accepting new requests but allow for outstanding messages to
         complete.
         """
-        self._shutdown = True  #  XXX danger will robinson.  Lets not have
-                               #  too many flags like this before we have
-                               #  a state machine
+        self._shutdown = True
         for req in list(self._requests.values()):
             req.kill()
 

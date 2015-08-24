@@ -19,7 +19,6 @@ import logging
 import os
 import re
 
-import dcm.agent.exceptions as exceptions
 from dcm.agent.plugins.api.exceptions import AgentPluginConfigException
 
 

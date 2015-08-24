@@ -13,7 +13,6 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 #
-import collections
 import os
 import unittest
 import uuid
@@ -58,7 +57,6 @@ class TestDockerContainerLogs(unittest.TestCase):
         plugin = delete_image.DeleteImages(
             cls.conf, "400", {}, "test", arguments)
         reply = plugin.run()
-        reply_obj = reply['reply_object']
 
     def setUp(self):
         """

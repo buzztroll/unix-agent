@@ -13,7 +13,6 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 #
-from distutils.log import warn
 import getpass
 import logging
 import os

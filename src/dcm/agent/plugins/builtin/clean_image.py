@@ -97,7 +97,6 @@ class CleanImage(plugin_base.Plugin):
         self._done_event.set()
 
     def run(self):
-        message = ''
         try:
             events.global_pubsub.publish(
                 events.DCMAgentTopics.CLEANUP,
@@ -113,8 +112,8 @@ class CleanImage(plugin_base.Plugin):
                         self.conf,
                         self.job_id,
                         {'script_name': 'removeUser'},
-                         'remove_user',
-                         {'userId': user}).run()
+                        'remove_user',
+                        {'userId': user}).run()
                     if rdoc.get_return_code() != 0:
                         rdoc.set_message(rdoc.get_message() +
                                          " : Delete users failed on %s" % user)

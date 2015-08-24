@@ -60,8 +60,8 @@ class Rename(plugin_base.ScriptPlugin):
 
         self.ordered_param_list.append(private_ips[0])
         plugin_utils.log_to_dcm_console_job_details(
-            job_name=self.name, details=
-            "Renaming the server to %s with the local IP %s"
+            job_name=self.name,
+            details="Renaming the server to %s with the local IP %s"
             % (self.args.serverName, private_ips[0]))
 
         return super(Rename, self).run()
