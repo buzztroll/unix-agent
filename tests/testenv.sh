@@ -4,12 +4,6 @@
 ip_addr=$2
 ip_addr+=":5678"
 
-## path to creds file which is a text file with entries like
-## 1 <aws key> <aws secret> us_west_oregon
-## where 1 signifies AWS as the provider.
-## see es-ex-pyagent/src/dcm/agent/storagecloud.py for
-## all current providers
-
 ABSOLUTE_PATH=$(cd `dirname "${BASH_SOURCE[0]}"` && pwd)
 ABSOLUTE_PATH+="/creds"
 

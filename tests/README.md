@@ -12,10 +12,6 @@ and you have cloned [the es-ex-pyagent repo](https://www.github.com/enStratus/es
 
 2. Copy pycharm-debug.egg into this directory and set up creds file
   * ``` cp /Applications/PyCharm.app/pycharm-debug.egg .  ```
-  * ``` touch creds ```
-  * ``` echo "1 <aws_access_key> <aws_secret_key> us_west_oregon" > creds ```
-  * Substitute in the above appropriate creds...you can have multiple.
-  * See es-ex-pyagent/src/dcm/agent/storagecloud.py for all current providers
 
 3. Start and setup VM distribution you are testing
   * example ``` vagrant up default-ubuntu-1204 ``` 

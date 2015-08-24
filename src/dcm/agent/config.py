@@ -14,7 +14,6 @@
 # limitations under the License.
 #
 import configparser
-import libcloud.security
 import logging
 import logging.config
 import os
@@ -220,12 +219,6 @@ class AgentConfig(object):
         if self.storage_script_dir == "/PYTHON_LIBS_SCRIPTS":
             self.storage_script_dir = None
 
-        if self.storagecloud_ca_cert_dir and\
-                os.path.exists(self.storage_ca_cert_dir):
-            libcloud.security.CA_CERTS_PATH.append(self.storage_ca_cert_dir)
-        if not self.storagecloud_secure:
-            libcloud.security.VERIFY_SSL_CERT = False
-
         if self.platform_name is None or self.platform_version is None:
             distro_name, distro_version = utils.identify_platform(self)
             self.platform_name = distro_name
@@ -365,9 +358,6 @@ def build_options_list():
         FilenameOpt("storage", "mountpoint", default="/mnt/dcmdata"),
         FilenameOpt("storage", "dbfile", default=None),
         FilenameOpt("storage", "script_dir", default=None),
-
-        FilenameOpt("storagecloud", "ca_cert_dir", default=None),
-        FilenameOpt("storagecloud", "secure", default=True),
 
         ConfigOpt("storage", "db_timeout", int, default=60*60*4,
                   help_msg="The amount of time in seconds for a request id to "
