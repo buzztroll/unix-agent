@@ -53,7 +53,9 @@ def main():
     copy_scripts()
 
     # kwargs_from_env is helper function for working with boot2docker
-    # look at https://github.com/docker/docker-py/blob/master/docs/boot2docker.md for more info
+    # look at
+    # https://github.com/docker/docker-py/blob/master/docs/boot2docker.md
+    # for more info
     client = get_client(version='1.15', **kwargs_from_env())
 
     image_name = 'agent/upgrader'

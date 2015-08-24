@@ -440,7 +440,7 @@ class WebSocketConnection(threading.Thread):
 
         try:
             self._ws.close()
-        except Exception as ex:
+        except Exception:
             _g_logger.exception(
                 "Got an error while closing in handshake state")
         self._backoff.error()
@@ -543,7 +543,7 @@ class WebSocketConnection(threading.Thread):
         """
         try:
             self._ws.close()
-        except Exception as ex:
+        except Exception:
             _g_logger.exception(
                 "Got an error while closing in handshake state")
 
@@ -557,7 +557,7 @@ class WebSocketConnection(threading.Thread):
         """
         try:
             self._ws.close()
-        except Exception as ex:
+        except Exception:
             _g_logger.exception(
                 "Got an error while closing in handshake state")
 

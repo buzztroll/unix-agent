@@ -14,10 +14,6 @@
 # limitations under the License.
 #
 import logging
-import os
-import sys
-
-import dcm.agent.exceptions as exceptions
 
 
 _g_logger = logging.getLogger(__name__)

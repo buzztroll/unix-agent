@@ -102,8 +102,9 @@ def rewrite_conf(conf_file, module_list, prefix, force):
             parser.add_section(section_name)
         except configparser.DuplicateSectionError:
             if not force:
-                raise Exception("The plugin %s already exists.  Please rename it."
-                                % m['command_name'])
+                raise Exception(
+                    "The plugin %s already exists.  Please rename it."
+                    % m['command_name'])
         parser.set(section_name, "type", "python_module")
         parser.set(section_name, "module_name", m['module_name'])
         if m['long_runner'] is not None:
@@ -164,7 +165,8 @@ def main(args=sys.argv):
                         'command_name': plugin_name,
                         'long_runner': plugin_info[1]}]
 
-    rewrite_conf(conf.plugin_configfile, module_list, opts.prefix, opts.overwrite)
+    rewrite_conf(conf.plugin_configfile, module_list,
+                 opts.prefix, opts.overwrite)
 
     print("Updated the plugin configuration file %s" % conf.plugin_configfile)
     for m in module_list:

@@ -63,7 +63,7 @@ class DockerJob(plugin_base.Plugin):
         parse_docker_options(conf)
         try:
             self.docker_conn = get_docker_connection(self.conf)
-        except errors.DockerException as docker_ex:
+        except errors.DockerException:
             raise
 
 

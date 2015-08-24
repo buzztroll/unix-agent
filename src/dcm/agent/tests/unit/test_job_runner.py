@@ -121,7 +121,6 @@ class TestJobRunnerChild(unittest.TestCase):
         self.assertEqual(args[0][0], 0)
 
     def test_bad_sync_job(self):
-        msg = str(uuid.uuid4())
         wrk = (job_runner.JobRunnerWorker.CMD_JOB, ["notreal"], "/", {})
         pipe = mock.Mock()
         pipe.poll.return_value = True

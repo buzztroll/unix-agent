@@ -208,7 +208,6 @@ class TestJoyentMetaDataBase(unittest.TestCase):
 
     @mock.patch('dcm.agent.utils.run_command')
     def test_base_injected_try_both_locations(self, runcmd):
-        fakeid = "someid"
         runcmd.return_value = ("", "error", 1)
 
         tmp_dir = tempfile.mkdtemp()

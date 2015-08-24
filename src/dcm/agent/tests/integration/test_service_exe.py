@@ -120,14 +120,14 @@ class TestProgramOptions(unittest.TestCase):
 
     @mock.patch('dcm.agent.cloudmetadata.guess_effective_cloud')
     @mock.patch('dcm.agent.utils.identify_platform')
-    def test_bad_pid_status(self, id_platform, guess_effective_cloud_mock):
+    def test_used_pid_status(self, id_platform, guess_effective_cloud_mock):
         id_platform.return_value = ("ubuntu", "14.04")
         guess_effective_cloud_mock.return_value = "Other"
         pid_file = os.path.join(self.test_base_path, "dcm-agent.pid")
 
         pid_val = None
         pid_list = psutil.pids()
-        for i in range(10, 2^15):
+        for i in range(10, 2 ^ 15):
             if i not in pid_list:
                 pid_val = i
                 break

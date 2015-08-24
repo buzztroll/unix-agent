@@ -14,7 +14,6 @@
 # limitations under the License.
 #
 import logging
-import os
 
 import dcm.agent.exceptions as exceptions
 import dcm.agent.plugins.api.base as plugin_base

@@ -16,7 +16,6 @@
 import os
 import subprocess
 
-import dcm.agent.exceptions as agent_exceptions
 import dcm.agent.plugins.api.base as plugin_base
 from dcm.agent.plugins.api.exceptions import AgentPluginConfigException
 import dcm.agent.plugins.loader as plugin_loader

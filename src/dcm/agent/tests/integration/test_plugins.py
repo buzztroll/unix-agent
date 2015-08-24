@@ -25,7 +25,6 @@ import uuid
 import zlib
 
 import dcm.agent.config as config
-import dcm.agent.exceptions as exceptions
 from dcm.agent.plugins.api.exceptions import AgentPluginOperationException
 import dcm.agent.plugins.builtin.fetch_run as fetch_plugin
 import dcm.agent.plugins.builtin.run_script as run_script_plugin

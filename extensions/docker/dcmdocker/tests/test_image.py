@@ -13,7 +13,6 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 #
-import collections
 import os
 import unittest
 import uuid
@@ -43,7 +42,7 @@ class TestDockerImageCommands(unittest.TestCase):
         arguments = {'repository': 'ubuntu'}
         plugin = pull_repo.PullRepo(
             self.conf, "400", {}, "test", arguments)
-        reply = plugin.run()
+        plugin.run()
 
     def test_empty_image_list(self):
         arguments = {}
@@ -55,7 +54,7 @@ class TestDockerImageCommands(unittest.TestCase):
         arguments = {}
         plugin = list_containers.DockerListContainer(
             self.conf, "400", {}, "test", arguments)
-        reply = plugin.run()
+        plugin.run()
 
     def test_import_image_list_delete(self):
         if 'DCM_DOCKER_IMAGE_LOCATION' not in os.environ:
