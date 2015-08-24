@@ -201,11 +201,6 @@ class AgentUnsupportedCloudFeature(AgentBaseException):
     pass
 
 
-class AgentStorageCloudException(AgentBaseException):
-    def __init__(self, message):
-        super(AgentStorageCloudException, self).__init__(message)
-
-
 class PersistenceException(AgentBaseException):
     pass
 

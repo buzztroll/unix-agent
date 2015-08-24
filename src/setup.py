@@ -81,7 +81,6 @@ setup(name='dcm-agent',
                         "ws4py == 0.3.4",
                         "psutil == 2.2.1",
                         "netifaces == 0.10.4",
-                        "apache-libcloud == 0.17.0",
                         "clint == 0.4.1"],
 
       package_data={"dcm.agent": ["dcm/agent/scripts/*",
