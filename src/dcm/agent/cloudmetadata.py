@@ -35,6 +35,7 @@ class CLOUD_TYPES:
     CloudStack = "CloudStack"
     CloudStack3 = "CloudStack3"
     DigitalOcean = "DigitalOcean"
+    Eucalyptus = "Eucalyptus"
     Google = "Google"
     Joyent = "Joyent"
     Konami = "Konami"
