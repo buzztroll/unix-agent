@@ -27,7 +27,7 @@ import ws4py.client.threadedclient as ws4py_client
 import dcm.agent.exceptions as exceptions
 import dcm.agent.handshake as handshake
 import dcm.agent.logger as dcm_logger
-import dcm.agent.state_machine as state_machine
+import dcm.agent.events.state_machine as state_machine
 import dcm.agent.utils as agent_utils
 
 from dcm.agent.events.globals import global_space as dcm_events

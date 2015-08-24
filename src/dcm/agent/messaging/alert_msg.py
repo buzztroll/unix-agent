@@ -16,7 +16,7 @@
 import threading
 
 import dcm.agent.utils as utils
-import dcm.agent.state_machine as state_machine
+import dcm.agent.events.state_machine as state_machine
 
 from dcm.agent.events.globals import global_space as dcm_events
 

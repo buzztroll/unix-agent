@@ -24,7 +24,7 @@ import dcm.agent.logger as dcm_logger
 import dcm.agent.messaging.states as states
 import dcm.agent.messaging.types as message_types
 import dcm.agent.messaging.utils as utils
-import dcm.agent.state_machine as state_machine
+import dcm.agent.events.state_machine as state_machine
 import dcm.agent.utils as agent_util
 import dcm.eventlog.tracer as tracer
 
