@@ -84,7 +84,7 @@ Optional Arguments:
 
   --install-extras      Install extras package
 
-  --extra-package-location URL,  url of extra packages to be installed.  Default is http://s3.amazonaws.com/es-pyagent
+  --extra-package-location URL,  url of extra packages to be installed.  Default is http://linux.stable.agent.enstratius.com
 "
 }
 
@@ -97,7 +97,7 @@ if [ $# -gt 0 ]; then
 fi
 
 function agent_exists() {
-    if [ -f "/opt/dcm-agent/embedded" ]; then
+    if [ -e "/opt/dcm-agent/embedded" ]; then
         return 0
     else
         return 1
@@ -353,9 +353,9 @@ function handle_deps {
 function set_base_url {
     if [[ "X$AGENT_BASE_URL" == "X" || "X$AGENT_BASE_URL" == "XNONE" ]]; then
         if [ "X$AGENT_UNSTABLE" != "X" ]; then
-            export AGENT_BASE_URL="https://s3.amazonaws.com/dcmagentunstable"
+            export AGENT_BASE_URL="https://linux.development.agent.enstratius.com"
         else
-            export AGENT_BASE_URL="https://es-pyagent.s3.amazonaws.com"
+            export AGENT_BASE_URL="https://linux.stable.agent.enstratius.com"
         fi
     fi
 }
