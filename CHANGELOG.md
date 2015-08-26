@@ -1,4 +1,19 @@
-# 0.12.1 (2015-8-4)
+# 0.12.2 (2015-08-26)
+
+Features:
+* Added documentation for running local tests.
+* Added functionality into the system stat base class.
+* Moved the state machine into the events package.
+* Added a direct link to force the package for upgrade tests.
+
+Bug fixes:
+* Do not allow overwrite of logging and plugin files on reconfiguration.
+* Cleaned up Vagrantfile for local testing.
+* Flake8 and general file cleanup including deleting files.
+* Fixed the agent_exists detection and cleanup in the installer script.
+* Removed the storage cloud module and the dependency on libcloud.
+
+# 0.12.1 (2015-8-20)
 
 Features:
 * Refactored to system stats to report bytes/second.
