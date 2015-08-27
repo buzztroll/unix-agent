@@ -37,6 +37,7 @@ import dcm.agent.messaging as messaging
 import dcm.agent.messaging.persistence as persistence
 import dcm.agent.messaging.reply as reply
 import dcm.agent.utils as utils
+import dcm.agent.systemstats as systemstats
 
 import dcm.agent.events.globals as events
 
@@ -143,6 +144,7 @@ class DCMAgent(object):
                 self.g_logger.exception("A top level exception occurred")
 
     def cleanup_agent(self):
+        systemstats.clean_up_all()
         if self.db_cleaner:
             self.g_logger.debug("Shutting down the db cleaner runner")
             self.db_cleaner.done()
