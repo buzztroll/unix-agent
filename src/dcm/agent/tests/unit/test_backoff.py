@@ -210,18 +210,18 @@ class TestBackoff(unittest.TestCase):
         time.sleep(initial_backoff_second)
         self.assertTrue(backoff.ready())
 
-    def test_backoff_object_idle_time(self):
-        initial_backoff_second = 300.0
-        idle_mod = 0.25
-        max_backoff_seconds = initial_backoff_second * 10
+    def test_backoff_object_ready_after_many_errors_than_activity(self):
+        initial_backoff_second = 0.05
+        max_backoff_seconds = initial_backoff_second
         backoff = websocket.Backoff(
             max_backoff_seconds,
-            initial_backoff_second=initial_backoff_second,
-            idle_modifier=idle_mod)
-        backoff.activity()
-        idle_time = 1.0
-        time.sleep(idle_time)
-        backoff.closed()
+            initial_backoff_second=initial_backoff_second)
+        backoff.error()
+        backoff.error()
+        backoff.error()
+        backoff.error()
+        backoff.error()
+        backoff.error()
         self.assertFalse(backoff.ready())
-        time.sleep(idle_time * idle_mod + 0.1)
+        backoff.activity()
         self.assertTrue(backoff.ready())

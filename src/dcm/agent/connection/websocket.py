@@ -58,17 +58,17 @@ class WsConnStates:
 class Backoff(object):
 
     def __init__(self, max_backoff_seconds,
-                 initial_backoff_second=0.5,
-                 idle_modifier=0.25):
+                 initial_backoff_second=0.5):
         self._backoff_seconds = initial_backoff_second
         self._max_backoff = max_backoff_seconds
         if self._backoff_seconds > self._max_backoff:
             self._backoff_seconds = self._max_backoff
-        self._idle_modifier = idle_modifier
         self._ready_time = datetime.datetime.now()
         self._last_activity = self._ready_time
+        self._initial_backoff_second = initial_backoff_second
 
     def activity(self):
+        self._backoff_seconds = self._initial_backoff_second
         self._ready_time = datetime.datetime.now()
         self._last_activity = self._ready_time
 
@@ -83,10 +83,6 @@ class Backoff(object):
 
     def error(self):
         self._set_ready_time(self._backoff_seconds*2.0)
-
-    def closed(self):
-        idle_time = datetime.datetime.now() - self._last_activity
-        self._set_ready_time(idle_time.total_seconds() * self._idle_modifier)
 
     def ready(self):
         return self._ready_time < datetime.datetime.now()
@@ -284,7 +280,6 @@ class WebSocketConnection(threading.Thread):
     #########
     @agent_utils.class_method_sync
     def event_close(self):
-        self._backoff.closed()
         self._sm.event_occurred(WsConnEvents.CLOSE)
 
     @agent_utils.class_method_sync
