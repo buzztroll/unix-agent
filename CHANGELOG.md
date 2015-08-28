@@ -1,3 +1,11 @@
+# 0.12.3 (2015-08-27)
+
+Bug fixes:
+* When a websocket connects times out from being idle the agent will
+  now connect back immediately instead of backing off.
+* Reset the backoff to 0 after some successful activity occurs.
+* Shutdown the statistics subsystem when the agent shuts down. 
+
 # 0.12.2 (2015-08-26)
 
 Features:
