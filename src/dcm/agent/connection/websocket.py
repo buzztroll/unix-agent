@@ -390,7 +390,7 @@ class WebSocketConnection(threading.Thread):
                                    % float(hs.force_backoff))
                     self._backoff.force_backoff_time(hs.force_backoff)
                 self._ws.close()
-                ex = exceptions.AgentHandshakeException(hs.reply_type)
+                ex = exceptions.AgentHandshakeException(hs)
                 self._throw_error(ex)
             else:
                 dcm_events.register_callback(self.event_successful_handshake,
