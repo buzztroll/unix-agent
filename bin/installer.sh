@@ -414,8 +414,10 @@ fi
 remove_agent
 
 if agent_exists; then
+    echo '**************************************'
     echo 'Python agent is already installed'
     echo 'Deleting old db and files to prepare for new configuration'
+    echo '**************************************'
     reconfig_prep
 else
     echo '**************************************'

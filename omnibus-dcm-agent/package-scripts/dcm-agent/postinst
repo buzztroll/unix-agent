@@ -21,7 +21,6 @@ BASEDIRNAME="/dcm"
 needed_directories="$BASEDIRNAME $BASEDIRNAME/etc $BASEDIRNAME/bin $BASEDIRNAME/logs $BASEDIRNAME/home"
 for d in $needed_directories
 do
-    echo "Creating directory at $d..."
     if [ ! -d $d ] ; then
 	    mkdir -p $d
 	    if [ $? != 0 ] ; then
@@ -29,10 +28,8 @@ do
             exit 30
 	    fi
     fi
-    echo "Done."
 done
 
-echo "Creating user and group..."
 # Create user/group group.
 grep -q "^$DCM_USERNAME:" /etc/group
 if [ $? != 0 ] ; then
@@ -51,8 +48,6 @@ if [ $? != 0 ] ; then
 		exit 41
 	fi
 fi
-echo "Done."
-echo "Adding user to sudoers..."
 # Update sudoers.
 if [ -d /etc/sudoers.d ]; then
 	# For distros that have the latest sudo package which uses sudoers.d directory.
@@ -77,9 +72,7 @@ else
 	echo "error. sudoers not found."
 	exit 55
 fi
-echo "Done."
 
-echo "Attempting to install startup scripts..."
 
 startup_fname="/etc/init.d/dcm-agent"
 echo "#!/usr/bin/env bash" > $startup_fname
@@ -110,7 +103,6 @@ else
 	echo "Could not identify startup protocols. Contact enStratus support at support@enstratus.com."
 	exit 90
 fi
-echo "Done."
 
 echo "env -i PATH=$PATH $BASEDIRNAME/bin/enstratiusinitd " '$@' >> $startup_fname
 chmod 755 $startup_fname
@@ -122,13 +114,11 @@ if [ -e /opt/dcm-agent/embedded/agentve ]; then
 fi
 ln -s /opt/dcm-agent/agentve /opt/dcm-agent/embedded/agentve
 
-echo "Create the configuration file"
 /opt/dcm-agent/agentve/bin/dcm-agent-configure -v -I -U $DCM_USERNAME -p $BASEDIRNAME
 if [ $? -ne 0 ]; then
     echo "The default configuration failed"
     exit 1
 fi
-echo "Done"
 
 echo "======================================================="
 echo "The installation of the DCM Agent has completed."
