@@ -34,7 +34,11 @@ DCM_AGENT_FORCE_DISTRO_VERSION
 
 DCM_AGENT_REMOVE_EXISTING
   - If this program is run on a machine that already has an agent installed
-    we will first remove the existing agent.
+    we will remove and clean up the existing agent.
+
+DCM_AGENT_CLEANUP
+  - If an agent is already installed on the server and this is set the all
+    files associated with the previous install will be removed.
 
 ###############################################################################
 
@@ -97,21 +101,22 @@ if [ $# -gt 0 ]; then
 fi
 
 function agent_exists() {
-    if [ -e "/opt/dcm-agent/embedded" ]; then
-        return 0
-    else
-        return 1
-    fi
+    $DCM_AGENT_PKG_QUERY > /dev/null
+    return $?
+}
+
+function agent_running() {
+    ps -u dcm
+    return $?
 }
 
 function reconfig_prep() {
    echo "The existing version is"
-   /opt/dcm-agent/agentve/bin/dcm-agent --version
+   /opt/dcm-agent/embedded/agentve/bin/dcm-agent --version
    /etc/init.d/dcm-agent stop
    pkill -9 dcm-agent
-   rm -f /dcm/etc/agentdb.sql
-   rm -f /dcm/logs/agent.log
-   rm -f /dcm/logs/agent.log.job_runner
+   rm -f /dcm/secure/*
+   rm -f /dcm/logs/*
 }
 
 
@@ -183,6 +188,9 @@ function identify_distro_version() {
 
 # DCM_AGENT_PKG_EXTENSION
 # DCM_AGENT_INSTALLER_CMD
+# DCM_AGENT_REMOVE_CMD
+# DCM_AGENT_PACKAGE_MANAGER_INSTALL_CMD
+# DCM_AGENT_PKG_QUERY
 function identify_package_installer_extension() {
     distro_name=$1
 
@@ -193,6 +201,7 @@ function identify_package_installer_extension() {
             export DCM_AGENT_REMOVE_CMD="dpkg -r"
             export DEBIAN_FRONTEND=noninteractive
             export DCM_AGENT_PACKAGE_MANAGER_INSTALL_CMD="apt-get install -y"
+            export DCM_AGENT_PKG_QUERY="dpkg -s dcm-agent"
             apt-get update
             ;;
         "debian")
@@ -201,6 +210,7 @@ function identify_package_installer_extension() {
             export DCM_AGENT_REMOVE_CMD="dpkg -r"
             export DEBIAN_FRONTEND=noninteractive
             export DCM_AGENT_PACKAGE_MANAGER_INSTALL_CMD="apt-get install -y"
+            export DCM_AGENT_PKG_QUERY="dpkg -s dcm-agent"
             apt-get update
             ;;
         "centos")
@@ -208,12 +218,14 @@ function identify_package_installer_extension() {
             export DCM_AGENT_INSTALLER_CMD="rpm -Uvh"
             export DCM_AGENT_REMOVE_CMD="rpm -e"
             export DCM_AGENT_PACKAGE_MANAGER_INSTALL_CMD="yum install -y"
+            export DCM_AGENT_PKG_QUERY="rpm -q dcm-agent"
             ;;
         "rhel")
             export DCM_AGENT_PKG_EXTENSION="rpm"
             export DCM_AGENT_INSTALLER_CMD="rpm -Uvh"
             export DCM_AGENT_REMOVE_CMD="rpm -e"
             export DCM_AGENT_PACKAGE_MANAGER_INSTALL_CMD="yum install -y"
+            export DCM_AGENT_PKG_QUERY="rpm -q dcm-agent"
             ;;
         *)
             echo "Sorry that is not a valid distribution"
@@ -361,15 +373,6 @@ function set_base_url {
 }
 
 
-function remove_agent {
-    if [ -z $DCM_AGENT_REMOVE_EXISTING ]; then
-        return
-    fi
-    echo "Removing the existing agent"
-    $DCM_AGENT_REMOVE_CMD dcm-agent
-}
-
-
 set_base_url
 identify_distro_version
 identify_package_installer_extension $DCM_AGENT_DISTRO_NAME
@@ -380,6 +383,18 @@ agent_version_ext=""
 if [ "X$AGENT_VERSION" != "X" ]; then
     agent_version_ext="-$AGENT_VERSION"
 fi
+
+if agent_running; then
+    if [ -z $DCM_AGENT_REMOVE_EXISTING ]; then
+        echo '******************************************************************'
+        echo 'The agent is running.  Installing an agent while it is running can'
+        echo 'have undefined results.  If you want to install anyway please set'
+        echo 'the env DCM_AGENT_REMOVE_EXISTING=true.'
+        echo '******************************************************************'
+        exit 1
+    fi
+fi
+
 
 # If the agent version is set we use only it
 if [ ! -z $DCM_AGENT_FORCE_DISTRO_VERSION ]; then
@@ -411,12 +426,62 @@ if [ $? -ne 0 ]; then
     exit 1
 fi
 
-remove_agent
 
+#
+#  Here we clean up the previously installed agent if that was requested
+#  explicitly.  This allows the agent to be upgraded without a deleting
+#  any needed files (token) but also allows for an upgrade and reconfigure
+#
+if [ ! -z $DCM_AGENT_CLEANUP ]; then
+    if agent_exists; then
+        if agent_running; then
+            echo "ERROR!  The agent previously existed and is already running."
+            echo "------  This can cause token reuse in ways that will not allow"
+            echo "        this agent to authenticate.  This is not supported."
+            exit 1
+        fi
+        echo '**************************************'
+        echo 'The dcm agent is already installed.'
+        echo "Cleaning up the previous configuration."
+        echo '**************************************'
+        rm -f /dcm/logs/*
+        rm -f /dcm/secure/*
+    fi
+fi
 if agent_exists; then
-    echo 'Python agent is already installed'
-    echo 'Deleting old db and files to prepare for new configuration'
-    reconfig_prep
+    if [ -z $DCM_AGENT_REMOVE_EXISTING ]; then
+        echo '**************************************'
+        echo 'Python agent is already installed'
+        echo 'Deleting old db and files to prepare for new configuration'
+        echo '**************************************'
+        if agent_running; then
+            echo "ERROR!  The agent previously existed and is already running."
+            echo "------  This can cause token reuse in ways that will not allow"
+            echo "        this agent to authenticate.  This is not supported."
+            exit 1
+        fi
+        reconfig_prep
+    else
+        if agent_running; then
+            echo '**************************************'
+            echo 'Stopping the agent.'
+            echo '**************************************'
+            /etc/init.d/dcm-agent stop
+        fi
+        echo '**************************************'
+        echo 'Removing the existing agent.'
+        echo '**************************************'
+        $DCM_AGENT_REMOVE_CMD dcm-agent
+        if [ $? -ne 0 ]; then
+            echo "Failed to remove the existing agent!"
+            exit 1
+        fi
+
+        echo '**************************************'
+        echo 'Installing the agent.'
+        echo '**************************************'
+        install_agent
+    fi
 else
     echo '**************************************'
     echo 'Proceeding with installation of Agent'
@@ -424,10 +489,8 @@ else
     install_agent
 fi
 
-
 # Create configuration file and optionally install chef client(subject to change).
 if [ "X$1" == "X" ]; then
-    echo /opt/dcm-agent/embedded/agentve/bin/dcm-agent-configure -i --base-path /dcm
     env -i PATH=$PATH /opt/dcm-agent/embedded/agentve/bin/dcm-agent-configure -i --base-path /dcm
     # Install optional packages.
     install_chef_client
