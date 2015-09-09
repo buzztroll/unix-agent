@@ -45,11 +45,8 @@ import dcm.agent.events.globals as events
 _g_conf_file_env = "DCM_AGENT_CONF"
 
 
-def get_config_files(base_dir=None, conffile=None):
-    candidates = ["/dcm/etc/agent.conf",
-                  os.path.expanduser("~/.dcm/agent.conf")]
-    if base_dir:
-        candidates.append(os.path.join(base_dir, "etc", "agent.conf"))
+def get_config_files(conffile=None):
+    candidates = ["/dcm/etc/agent.conf"]
     if _g_conf_file_env in os.environ:
         candidates.append(os.environ[_g_conf_file_env])
     if conffile:
@@ -59,9 +56,8 @@ def get_config_files(base_dir=None, conffile=None):
     for f in candidates:
         f = os.path.abspath(f)
         if os.path.exists(f):
-            locations.append(f)
-        else:
-            logging.warn("Config file locations %s does not exist" % f)
+            if f not in locations:
+                locations.append(f)
 
     return locations
 
