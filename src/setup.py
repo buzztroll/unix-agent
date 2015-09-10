@@ -71,6 +71,7 @@ setup(name='dcm-agent',
       entry_points={
           'console_scripts': [
               "dcm-agent=dcm.agent.cmd.service:main",
+              "dcm-agent-scrubber=dcm.agent.cmd.scrubber:main",
               "dcm-agent-configure=dcm.agent.cmd.configure:main",
               "dcm-agent-gen-docs=dcm.agent.cmd.gen_docs:main",
               "dcm-agent-add-plugins=dcm.agent.cmd.add_plugin:main"

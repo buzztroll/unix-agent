@@ -18,7 +18,7 @@ import re
 
 
 def main(bin_path):
-    lookfor = '.*history'
+    lookfor = '.*hist*'
     for (dirpath, dirname, filename) in os.walk('/home'):
         for file in filename:
             if re.match(lookfor, file):
