@@ -24,6 +24,7 @@ Contents:
    troubleshooting
    upgrade/upgrade
    plugins/plugins
+   scrubber
    test/test
 
 

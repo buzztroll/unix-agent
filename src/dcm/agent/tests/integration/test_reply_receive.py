@@ -1017,9 +1017,13 @@ class TestProtocolCommands(reply.ReplyObserverInterface):
             pw_ent = pwd.getpwnam(user_name)
             nose.tools.eq_(pw_ent.pw_name, user_name)
             history_file = '/home/%s/.fake_history' % user_name
-            kf = open(history_file, "w")
-            kf.write('this is fake stuff')
-            kf.close()
+            with open(history_file, "w") as kf:
+                kf.write('this is fake stuff')
+
+            keep_file = '/home/%s/keepme.fake_history' % user_name
+            with open(keep_file, "w") as fptr:
+                fptr.write('this is fake stuff')
+
         doctwo = {
             "command": "clean_image",
             "arguments": {}}
@@ -1031,14 +1035,13 @@ class TestProtocolCommands(reply.ReplyObserverInterface):
         for user in user_list:
             history_path = '/home/%s/.fake_history' % user
             nose.tools.eq_(os.path.isfile(history_path), False)
+            nose.tools.eq_(os.path.isfile(keep_file), True)
 
         log_dir = os.path.join(self.test_base_path, 'logs')
         nose.tools.eq_(os.listdir(log_dir), [])
         secure_dir = os.path.join(self.test_base_path, 'secure')
         nose.tools.eq_(os.path.isfile(
             os.path.join(secure_dir, 'agentdb.sql')), True)
-        nose.tools.eq_(os.path.isfile(
-            os.path.join(secure_dir, 'token')), False)
 
         try:
             for name in user_list:  # delete and clean up user and homedir

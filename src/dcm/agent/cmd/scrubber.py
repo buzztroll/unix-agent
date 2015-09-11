@@ -110,14 +110,14 @@ secure_delete = get_secure_delete()
 def delete_history(opts, tar):
     console_output(opts, 1, "Deleting all users history files...")
 
-    lookfor = '.*hist*'
+    lookfor = '\..*hist.*'
     all_users = pwd.getpwall()
     user_homes = [user_home[5] for user_home in all_users]
     for base_dir in user_homes:
-        for (dirpath, dirname, filename) in os.walk(base_dir):
-            for file in filename:
-                if re.match(lookfor, file):
-                    secure_delete(opts, tar, file)
+        for (dirpath, dirname, filenames) in os.walk(base_dir):
+            for f in filenames:
+                if re.match(lookfor, f):
+                    secure_delete(opts, tar, os.path.join(dirpath, f))
 
 
 def is_privatekey(keyfile):
@@ -135,8 +135,8 @@ def delete_private_keys(opts, tar):
     for base_dir in user_homes:
         ssh_dir = os.path.join(base_dir, '.ssh')
         for (dirpath, dirname, filenames) in os.walk(ssh_dir):
-            for file in filenames:
-                filepath = os.path.join(dirpath, file)
+            for f in filenames:
+                filepath = os.path.join(dirpath, f)
                 if is_privatekey(filepath):
                     secure_delete(opts, tar, filepath)
 
@@ -161,7 +161,7 @@ def delete_cloud_init_cache(opts, tar):
 
 
 def clean_logs(opts, tar):
-    lookfor_strs = ['.*.log', '.*.gz']
+    lookfor_strs = ['\.*.log', '\.*.gz']
 
     dir_list = ['/var/log',]
     for base_dir in dir_list:
@@ -209,7 +209,7 @@ def general_cleanup(opts, tar):
 
 
 def clean_dhcp_leases(opts, tar):
-    lookfor_strs = ['.*.lease*', '.*.info']
+    lookfor_strs = ['.*\.lease*', '.*\.info']
     potential_paths = ['/var/lib/dhcp',
                        '/var/lib/dhcp3',
                        '/var/lib/dhclient',
@@ -260,8 +260,8 @@ def main(args=sys.argv):
     except BaseException as ex:
         if tar is not None:
             tar.close()
-        os.remove(opts.rescue_tar)
-        console_output(opts, 0, "Error: " + ex.messsage)
+            os.remove(opts.rescue_tar)
+        console_output(opts, 0, "Error: " + str(ex))
         if opts.verbose > 1:
             raise
         sys.exit(1)
