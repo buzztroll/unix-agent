@@ -1,3 +1,17 @@
+# 0.13.0 (2015-09-11)
+
+Features:
+* Added the scrubber program for cleaning up servers before making them
+  into images.
+
+Bug fixes:
+* Fixed the installer script to more properly detect the existance of the
+  installed package.
+* Allowed the user of the installer to force an upgrade on images that
+  already have the agent installed.
+* Fixed a bug the caused an error when processing a rejection message from
+  the DCM handshake.
+
 # 0.12.3 (2015-08-27)
 
 Bug fixes:
