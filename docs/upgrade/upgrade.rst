@@ -11,8 +11,10 @@ The tool is located within the agent repo itself as of version 0.11.3.  Go to ``
 to find the tools.  The tools will also be available in the online repos where the agent packages themselves are
 found. 
 
-There you will find the actual tool called ``upgrade.py`` and a small shell wrapper for your convenience called
-``upgrade.sh``.
+There you will find the actual tool called
+`upgrade.py <http://linux.development.agent.enstratius.com/upgrade.py>`_ and
+a small shell wrapper for your convenience called
+`upgrade.sh <http://linux.development.agent.enstratius.com/upgrade.sh>`_.
 
 The wrapper script can accept a small number of args, only one of which is required.  Here is a description of the 
 arguments you can pass::
