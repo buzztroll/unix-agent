@@ -138,6 +138,7 @@ class HandshakeManager(object):
                 HandshakeIncomingReply.REPLY_CODE_BAD_TOKEN:
             # This signals that we used a bad token but have the chance to
             # recover by trying a new one
+            _g_logger.warn("A stale token was used.  The agent is generating a new token.")
             self._generate_token()
             hs = HandshakeIncomingReply(
                 HandshakeIncomingReply.REPLY_CODE_BAD_TOKEN)
