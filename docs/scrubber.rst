@@ -23,3 +23,13 @@ One important option is the *--rescue-tar*.  This option creates a tarfile that
 will contain all of the deleted files.  This provides a way to recover any
 crucial information that may be needed in the parent image.  This file should
 then be copied off of the server before the image is created.
+
+Before making an image from a server that is already running the dcm agent we
+recommend running the scrubber in the following way:
+
+    .. code-block:: text
+
+      dcm-agent-scrubber -k -A -H -r /tmp/dcm_scrubber_backup.tar.gz
+
+Then copy the file */tmp/dcm_scrubber_backup.tar.gz* off of the server and
+remove it from the server.
