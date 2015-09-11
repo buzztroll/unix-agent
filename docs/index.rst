@@ -1,6 +1,8 @@
 DCM Agent For Linux
 ===================
 
+.. image:: ./images/dcm_agent_logo.png
+
 The dcm-agent is an open source python project for use with the Dell Cloud
 Manager (DCM).  When installed inside of a virtual machine that is launched
 using DCM it gives DCM system level control over the VM instance and thus
