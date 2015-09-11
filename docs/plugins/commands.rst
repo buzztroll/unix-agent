@@ -132,5 +132,5 @@ not make any other calls into dcm.agent modules or class methods.
 
 
 An example dcm-agent plugin can be found `here
-<https://github.com/enStratus/es-ex-pyagent/tree/master/extensions/example>`_.
+<https://github.com/enStratus/unix-agent/tree/master/extensions/example>`_.
 

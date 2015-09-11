@@ -15,7 +15,7 @@
 #
 # -*- coding: utf-8 -*-
 #
-# es-ex-pyagent documentation build configuration file, created by
+# dcm unit-agent documentation build configuration file, created by
 # sphinx-quickstart on Thu Jul 30 20:07:45 2015.
 #
 # This file is execfile()d with the current directory set to its
@@ -227,7 +227,7 @@ if not on_rtd:  # only import and set the theme if we're building docs locally
 #html_search_scorer = 'scorer.js'
 
 # Output file base name for HTML help builder.
-htmlhelp_basename = 'es-ex-pyagentdoc'
+htmlhelp_basename = 'unix-agentdoc'
 
 # -- Options for LaTeX output ---------------------------------------------
 
@@ -249,7 +249,7 @@ latex_elements = {
 # (source start file, target name, title,
 #  author, documentclass [howto, manual, or own class]).
 latex_documents = [
-  (master_doc, 'es-ex-pyagent.tex', u'es-ex-pyagent Documentation',
+  (master_doc, 'unix-agent.tex', u'unix-agent Documentation',
    u'Dell Software Group', 'manual'),
 ]
 
@@ -279,7 +279,7 @@ latex_documents = [
 # One entry per manual page. List of tuples
 # (source start file, name, description, authors, manual section).
 man_pages = [
-    (master_doc, 'es-ex-pyagent', u'es-ex-pyagent Documentation',
+    (master_doc, 'unix-agent', u'unix-agent Documentation',
      [author], 1)
 ]
 
@@ -293,8 +293,8 @@ man_pages = [
 # (source start file, target name, title, author,
 #  dir menu entry, description, category)
 texinfo_documents = [
-  (master_doc, 'es-ex-pyagent', u'es-ex-pyagent Documentation',
-   author, 'es-ex-pyagent', 'One line description of project.',
+  (master_doc, 'unix-agent', u'unix-agent Documentation',
+   author, 'unix-agent', 'One line description of project.',
    'Miscellaneous'),
 ]
 

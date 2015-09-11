@@ -19,7 +19,7 @@ if [ $1 = '-h' ] || [ $1 = '--help' ]
      The options below let you determine which environment variables to
      set for testing the agent.  Note that to set DCM_AGENT_STORAGE_CREDS
      properly you must have your credentials in a file called creds in the
-     same directory as this file. <whereeveryoursourceis>/es-ex-pyagent/tests/<here>
+     same directory as this file. <whereeveryoursourceis>/unix-agent/tests/<here>
      Don't worry, there is a 'creds' entry in the .gitignore.  But please double check
      for yourself.
 
