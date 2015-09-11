@@ -56,6 +56,9 @@ def setup_command_line_parser():
     parser.add_argument("-A", "--agent",
                         help="Delete dcm agent files.",
                         action="store_true")
+    parser.add_argument("-X", "--agent_running",
+                        help=argparse.SUPPRESS,
+                        action="store_true")
     parser.add_argument("-l", "--clean-logs", help="Delete system log files.",
                         action="store_true")
     parser.add_argument("-b", "--batch",
@@ -175,12 +178,8 @@ def clean_logs(opts, tar):
 
 def clean_agent_files(opts, tar):
     console_output(opts, 2, "Cleaning the agent files.")
-    files_to_clean = ['/dcm/secure/agentdb.sql',
-                      '/dcm/secure/token',
+    files_to_clean = ['/dcm/secure/token',
                       '/var/lib/waagent/provisioned',
-                      '/dcm/logs/agent.log',
-                      '/dcm/logs/agent.log.job_runner',
-                      '/dcm/logs/agent.log.wire',
                       '/tmp/boot.log',
                       '/tmp/agent_info.tar.gz',
                       '/tmp/meta_info.txt',
@@ -188,6 +187,12 @@ def clean_agent_files(opts, tar):
                       '/tmp/startup_script.txt',
                       '/tmp/error.log',
                       '/tmp/installer.sh']
+
+    if not opts.agent_running:
+        files_to_clean.append('/dcm/logs/agent.log')
+        files_to_clean.append('/dcm/logs/agent.log.job_runner')
+        files_to_clean.append('/dcm/logs/agent.log.wire')
+        files_to_clean.append('/dcm/secure/agentdb.sql')
 
     for f in files_to_clean:
         if os.path.exists(f):

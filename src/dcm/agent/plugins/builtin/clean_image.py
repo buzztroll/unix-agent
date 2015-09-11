@@ -14,6 +14,7 @@
 # limitations under the License.
 #
 import logging
+import os
 import sys
 import threading
 
@@ -43,54 +44,23 @@ class CleanImage(plugin_base.Plugin):
         self._done_event = threading.Event()
         self._topic_error = None
 
-    def delete_private_keys(self):
-        exe = self.conf.get_script_location("delete_keys.py")
+    def run_scrubber(self, opts):
+        exe = os.path.join(os.path.dirname(sys.executable),
+                           "dcm-agent-scrubber")
         cmd = [
             self.conf.system_sudo,
             '-E',
-            sys.executable,
             exe
         ]
+        if opts:
+            cmd.extend(opts)
 
         (stdout, stderr, rc) = utils.run_command(self.conf, cmd)
         if rc != 0:
             return plugin_base.PluginReply(
                 rc, messge=stdout, error_message=stderr)
         return plugin_base.PluginReply(
-            0, message="Keys were deleted successfully")
-
-    def delete_history(self):
-        exe = self.conf.get_script_location("delete_history.py")
-        cmd = [
-            self.conf.system_sudo,
-            '-E',
-            sys.executable,
-            exe
-        ]
-
-        (stdout, stderr, rc) = utils.run_command(self.conf, cmd)
-        if rc != 0:
-            return plugin_base.PluginReply(
-                rc, messge=stdout, error_message=stderr)
-        return plugin_base.PluginReply(
-            0, message="History deleted successfully")
-
-    def general_cleanup(self, dbfile):
-        exe = self.conf.get_script_location("general_cleanup.py")
-        cmd = [
-            self.conf.system_sudo,
-            '-E',
-            sys.executable,
-            exe,
-            dbfile
-        ]
-
-        (stdout, stderr, rc) = utils.run_command(self.conf, cmd)
-        if rc != 0:
-            return plugin_base.PluginReply(
-                rc, messge=stdout, error_message=stderr)
-        return plugin_base.PluginReply(
-            0, message="General cleanup completed successfully")
+            0, message="The image was scrubbed successfully")
 
     def _clean_topic_done(self, topic_error):
         self._topic_error = topic_error
@@ -119,24 +89,12 @@ class CleanImage(plugin_base.Plugin):
                                          " : Delete users failed on %s" % user)
                         return rdoc
 
+            scrub_opts = ["-H", "-X", "-b"]
             if self.args.delKeys:
                 dcm_logger.log_to_dcm_console_job_details(
                     job_name=self.name, details='Deleting private keys.')
-                res_doc = self.delete_private_keys()
-                if res_doc.get_return_code() != 0:
-                    return res_doc
-
-            dcm_logger.log_to_dcm_console_job_details(
-                job_name=self.name, details='Deleting history files.')
-            res_doc = self.delete_history()
-            if res_doc.get_return_code() != 0:
-                return res_doc
-
-            dcm_logger.log_to_dcm_console_job_details(
-                job_name=self.name, details='Starting general cleanup.')
-            res_doc = self.general_cleanup(self.conf.storage_dbfile)
-            if res_doc.get_return_code() != 0:
-                return res_doc
+                scrub_opts.append("-k")
+            self.run_scrubber(scrub_opts)
 
             self._done_event.wait()
             if self._topic_error is not None:
