@@ -971,9 +971,8 @@ class TestProtocolCommands(reply.ReplyObserverInterface):
             pw_ent = pwd.getpwnam(user_name)
             nose.tools.eq_(pw_ent.pw_name, user_name)
             keyfile = '/home/%s/.ssh/key' % user_name
-            kf = open(keyfile, "w")
-            kf.write('-----BEGIN RSA PRIVATE KEY-----\n')
-            kf.close()
+            with open(keyfile, "w") as kf:
+                kf.write('-----BEGIN RSA PRIVATE KEY-----\n')
         doctwo = {
             "command": "clean_image",
             "arguments": {"delKeys": True}}
@@ -981,6 +980,10 @@ class TestProtocolCommands(reply.ReplyObserverInterface):
         req_rpc = self._rpc_wait_reply(doctwo)
         r = req_rpc.get_reply()
         nose.tools.eq_(r["payload"]["return_code"], 0)
+        jd = r["payload"]["reply_object"]
+        while jd["job_status"] in ["WAITING", "RUNNING"]:
+            jd = self._get_job_description(jd["job_id"])
+        nose.tools.eq_(jd["job_status"], "COMPLETE")
 
         for user in user_list:
             keyfile_path = '/home/%s/.ssh/key' % user
@@ -1031,6 +1034,10 @@ class TestProtocolCommands(reply.ReplyObserverInterface):
         req_rpc = self._rpc_wait_reply(doctwo)
         r = req_rpc.get_reply()
         nose.tools.eq_(r["payload"]["return_code"], 0)
+        jd = r["payload"]["reply_object"]
+        while jd["job_status"] in ["WAITING", "RUNNING"]:
+            jd = self._get_job_description(jd["job_id"])
+        nose.tools.eq_(jd["job_status"], "COMPLETE")
 
         for user in user_list:
             history_path = '/home/%s/.fake_history' % user
