@@ -22,7 +22,7 @@ These optional environment variables can be set prior to running the DCM Agent i
                                     By default the agent installer downloads the agent distribution packages from https://linux.stable.agent.enstratius.com
 
                                     To direct the installer to download the DCM Agent distribution package from the unstable DCM Agent repository specify:    
-                                    export AGENT_BASE_URL="https://s3.amazonaws.com/dcmagentunstable"
+                                    export AGENT_BASE_URL="https://linux.development.agent.enstratius.com"
 
   AGENT_UNSTABLE                    If this variable exists then the installer will download and install the latest unstable version of the DCM Agent distribution package.
                                     Example: export AGENT_UNSTABLE=YES

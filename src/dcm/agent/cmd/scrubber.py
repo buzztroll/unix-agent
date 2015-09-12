@@ -161,7 +161,7 @@ def delete_cloud_init_cache(opts, tar):
 
 
 def clean_logs(opts, tar):
-    lookfor_strs = ['\.*.log', '\.*.gz']
+    lookfor_strs = ['.*\.log', '.*\.gz']
 
     dir_list = ['/var/log',]
     for base_dir in dir_list:
