@@ -178,8 +178,7 @@ def clean_logs(opts, tar):
 
 def clean_agent_files(opts, tar):
     console_output(opts, 2, "Cleaning the agent files.")
-    files_to_clean = ['/dcm/secure/token',
-                      '/var/lib/waagent/provisioned',
+    files_to_clean = ['/var/lib/waagent/provisioned',
                       '/tmp/boot.log',
                       '/tmp/agent_info.tar.gz',
                       '/tmp/meta_info.txt',
