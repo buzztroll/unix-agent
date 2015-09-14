@@ -89,7 +89,7 @@ class CleanImage(plugin_base.Plugin):
                                          " : Delete users failed on %s" % user)
                         return rdoc
 
-            scrub_opts = ["-H", "-X", "-b"]
+            scrub_opts = ["-H", "-X", "-b", "-A"]
             if self.args.delKeys:
                 dcm_logger.log_to_dcm_console_job_details(
                     job_name=self.name, details='Deleting private keys.')
