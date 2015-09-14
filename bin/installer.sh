@@ -17,7 +17,7 @@ AGENT_LOCAL_PACKAGE=<path>
 
 AGENT_BASE_URL=<url>
   - This is the base path to an HTTP repository where the packages are kept.
-    For example: https://s3.amazonaws.com/dcmagentunstable.  Packages will
+    For example: https://linux.development.agent.enstratius.com.  Packages will
     be found under that url with a name that matches:
     dcm-agent-<distribution>-<distribution version>-<architecture>.<pkg type>
     For example: dcm-agent-ubuntu-10.04-amd64.deb

@@ -26,6 +26,7 @@ Contents:
    troubleshooting
    upgrade/upgrade
    plugins/plugins
+   authentication/index
    scrubber
    test/test
 
