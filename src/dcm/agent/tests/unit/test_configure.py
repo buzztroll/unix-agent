@@ -265,10 +265,12 @@ class TestConfigure(unittest.TestCase):
             dcm.agent.cmd.configure._get_input = func
         self.assertEqual(cloud.lower(), configure.cloud_choices[0].lower())
 
-    def test_interactive_configure(self):
+    @patch('dcm.agent.cmd.configure.cert_check')
+    def test_interactive_configure(self, patch_cert_check):
         def _l_get_input(prompt):
             return "0"
 
+        patch_cert_check.return_value = True
         url = "ws://someplace.com:5434/path"
         with mock.patch('sys.stdin'):
             sys.stdin.readline.return_value = url
@@ -292,6 +294,8 @@ class TestConfigure(unittest.TestCase):
         self.assertEqual(agentmanager_url, url)
         cloud_type = parser.get("cloud", "type")
         self.assertEqual(cloud_type, configure.cloud_choices[0])
+        cert = parser.get("connection", "allow_unknown_certs")
+        self.assertEqual(cert, "True")
 
     @patch('dcm.agent.utils.http_get_to_file')
     @patch('dcm.agent.utils.extras_installed')
