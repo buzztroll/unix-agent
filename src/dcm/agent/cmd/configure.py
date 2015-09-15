@@ -474,6 +474,12 @@ def enable_start_agent(opts):
         # TODO other platforms
 
 
+def cert_check():
+    print("Would you like to disable certificate checking? (not recommended) (y/n)")
+    ans = sys.stdin.readline().strip()
+    return ans == ans.lower() == "y" or ans.lower() == "yes"
+
+
 def do_interactive(opts, conf_d):
     if not opts.interactive:
         return
@@ -483,6 +489,8 @@ def do_interactive(opts, conf_d):
     (h, url) = conf_d["connection"]["agentmanager_url"]
     url = get_url(default=url)
     conf_d["connection"]["agentmanager_url"] = (h, url)
+    check_certs = cert_check()
+    conf_d["connection"]["allow_unknown_certs"] = (h, check_certs)
 
 
 def gather_values(opts):
