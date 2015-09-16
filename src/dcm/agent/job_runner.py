@@ -177,27 +177,14 @@ class JobRunner(object):
 
         if env is None:
             env = {}
-        _g_logger.info("Sending the command %s to the child runner" % cmd)
-        (rc, pid, msg) = self._send_receive_safe(
-            (JobRunnerWorker.CMD_JOB, cmd, cwd, env))
-        if rc != 0:
-            _g_logger.error("The command failed to start %s" % msg)
-            return ("", msg, rc)
+        process = subprocess.Popen(cmd,
+                                   stdout=subprocess.PIPE,
+                                   stderr=subprocess.PIPE,
+                                   cwd=cwd,
+                                   env=env)
 
-        # we need to busy wait poll for a reply so that we can multiplex
-        # work over the pipe
-        done = False
-        while not done:
-            (rc, stdout, stderr) = self._send_receive_safe(
-                (JobRunnerWorker.CMD_POLL_JOB, pid))
-            if rc is not None:
-                done = True
-            else:
-                time.sleep(0.5)
-
-        # If it started we will start waiting for it to finish
-        _g_logger.info("Output from the command %s. rc=%d, stdout=%s, "
-                       "stderr=%s" % (cmd, rc, stdout, stderr))
+        (stdout, stderr) = process.communicate()
+        rc = process.wait()
         return (stdout, stderr, rc)
 
     def shutdown(self):
