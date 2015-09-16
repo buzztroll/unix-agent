@@ -39,6 +39,18 @@ g_user_env_str = "DCM_USER"
 g_basedir_env_str = "DCM_BASEDIR"
 
 
+_g_bundled_cert_file = "/opt/dcm-agent/embedded/ssl/certs/cacert.pem"
+_g_cert_warning = """
+*****************************************************************************
+                             WARNING
+                             -------
+The certificate file %s is bundled /opt/dcm-agent/embedded/ssl/certs/cacert.pem
+with the agent and  must be maintained manually.  There is no daemon running
+that will update the certificates in it or enforce revocation policies.
+*****************************************************************************
+""" % _g_bundled_cert_file
+
+
 cloud_choices = [i for i in
                  dir(cloudmetadata.CLOUD_TYPES) if not i.startswith("__")]
 
@@ -153,7 +165,7 @@ def setup_command_line_parser():
                              "bad idea but is very useful for testing.")
 
     parser.add_argument("--cacert-file", "-A", dest="cacert_file",
-                        default="/opt/dcm-agent/embedded/ssl/certs/cacert.pem")
+                        default=None)
 
     return parser
 
@@ -295,8 +307,6 @@ def write_conf_file(dest_filename, conf_dict):
 
 
 def make_dirs(conf_d):
-    print("Making the needed directories...")
-
     (_, base_path) = conf_d["storage"]["base_dir"]
 
     dirs_to_make = [
@@ -312,7 +322,6 @@ def make_dirs(conf_d):
 
     for (directory, mod) in dirs_to_make:
         try:
-            print("    %s" % directory)
             os.mkdir(directory)
         except OSError as ex:
             if ex.errno != 17:
@@ -474,10 +483,29 @@ def enable_start_agent(opts):
         # TODO other platforms
 
 
+def guess_cacert_location():
+    possible_locations = ["/etc/ssl/certs/ca-bundle.crt",
+                          "/etc/ssl/certs/ca-certificates.crt",
+                          _g_bundled_cert_file]
+    for l in possible_locations:
+        if os.path.exists(l):
+            return l
+
+
 def cert_check():
-    print("Would you like to disable certificate checking? (not recommended) (y/n)")
+    print("Would you like to disable certificate checking? (not recommended) (y/N)")
     ans = sys.stdin.readline().strip()
     return ans == ans.lower() == "y" or ans.lower() == "yes"
+
+
+def interactive_cert_path():
+    default_path = guess_cacert_location()
+    print("Please select a default path for certificate file (%s)" %
+          default_path)
+    ans = sys.stdin.readline().strip()
+    if not ans:
+        ans = default_path
+    return ans
 
 
 def do_interactive(opts, conf_d):
@@ -491,6 +519,26 @@ def do_interactive(opts, conf_d):
     conf_d["connection"]["agentmanager_url"] = (h, url)
     check_certs = cert_check()
     conf_d["connection"]["allow_unknown_certs"] = (h, check_certs)
+
+    (h, cert_path) = conf_d["connection"]["ca_cert"]
+    if not check_certs and cert_path is None:
+        cert_path = interactive_cert_path()
+        conf_d["connection"]["ca_cert"] = (h, cert_path)
+
+
+def validate_cacerts(conf_d):
+    (h, val) = conf_d["connection"]["allow_unknown_certs"]
+    if val:
+       return
+
+    (h, val) = conf_d["connection"]["ca_cert"]
+    if  val is None:
+        val = guess_cacert_location()
+        if val is None:
+            raise Exception("If the unknown certificates are not allowed you must specify a cert file with the --cacert-file option.")
+        conf_d["connection"]["ca_cert"] = (h, val)
+    if val == _g_bundled_cert_file:
+        print(_g_cert_warning)
 
 
 def gather_values(opts):
@@ -531,6 +579,7 @@ def main(argv=sys.argv[1:]):
     do_interactive(opts, conf_d)
     normalize_cloud_name(conf_d)
     pick_meta_data(conf_d)
+    validate_cacerts(conf_d)
 
     # before writing anything make sure that all the needed values are
     # set
