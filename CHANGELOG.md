@@ -1,3 +1,15 @@
+# 0.13.1 (2015-09-17)
+
+Features:
+* Added documentation about the handshake and connection process.
+* Allowed the user to set the certificate verifications configuration
+  values.
+* Adjust the configuration program to setup the agent to read system CA
+  certificate files where possible.
+
+Bug fixes:
+* Stopped the scrubber program from deleting the token file.
+
 # 0.13.0 (2015-09-11)
 
 Features:
