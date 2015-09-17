@@ -3,7 +3,7 @@
 How Agents Trust DCM
 ====================
 
-DCM sends agent's system level commands that allow root level access to the
+DCM sends agent s system level commands that allow root level access to the
 server on which it is running.  Because of this it is crucial that the
 agent trusts it has connected to the trusted DCM server and not an impostor
 or possible man-in-the-middle.
