@@ -14,15 +14,16 @@
 # limitations under the License.
 #
 import argparse
-import re
-import os
-import tempfile
 import logging
-import uuid
-import sys
-import subprocess
-import shutil
+import os
 import pwd
+import re
+import shutil
+import signal
+import subprocess
+import sys
+import tempfile
+import uuid
 
 try:
     import configparser
@@ -34,12 +35,50 @@ import requests
 _g_log_file = "/tmp/myuplog" + str(uuid.uuid4()).split("-")[0]
 _g_logger = logging.getLogger()
 _g_logger.setLevel(logging.DEBUG)
-fh = logging.FileHandler(_g_log_file)
-fh.setLevel(logging.DEBUG)
-ch = logging.StreamHandler(stream=sys.stdout)
-ch.setLevel(logging.DEBUG)
-_g_logger.addHandler(fh)
-_g_logger.addHandler(ch)
+_g_fh = logging.FileHandler(_g_log_file)
+_g_fh.setLevel(logging.DEBUG)
+_g_ch = logging.StreamHandler(stream=sys.stdout)
+_g_ch.setLevel(logging.DEBUG)
+_g_logger.addHandler(_g_fh)
+_g_logger.addHandler(_g_ch)
+
+
+def create_daemon():
+    pid = os.fork()
+    if pid == 0:
+        os.setsid()
+        signal.signal(signal.SIGHUP, signal.SIG_IGN)
+        pid = os.fork()
+        if pid == 0:
+            os.chdir('/')
+        else:
+            sys.exit(0)
+    else:
+        sys.exit(0)
+
+    _g_logger.removeHandler(_g_ch)
+    _g_logger.removeHandler(_g_fh)
+    _g_ch.close()
+    _g_fh.close()
+
+    maxfd = 16
+    for fd in range(0, maxfd):
+        try:
+            os.close(fd)
+        except OSError:
+            pass
+    if hasattr(os, "devnull"):
+        REDIRECT_TO = os.devnull
+    else:
+        REDIRECT_TO = "/dev/null"
+    os.open(REDIRECT_TO, os.O_RDWR)
+    os.open("/tmp/agent_upgrade.txt", os.O_CREAT | os.O_WRONLY)
+    os.dup2(1, 2)
+
+    fh = logging.FileHandler("/tmp/agent_upgrade.log")
+    fh.setLevel(logging.DEBUG)
+    _g_logger.addHandler(fh)
+
 
 
 def backup_agent_files(base_dir):
@@ -222,6 +261,13 @@ def get_parse_args():
                         required=True,
                         help="The software version to be upgraded to.")
 
+    parser.add_argument("--daemon",
+                        "-d",
+                        dest="daemon",
+                        default=False,
+                        action="store_true",
+                        help="Run the upgrade program as a daemon.  This is useful for the agent but should not be used from the command line.")
+
     parser.add_argument("--base_dir",
                         "-b",
                         dest="base_dir",
@@ -277,6 +323,10 @@ def main():
     if not os.path.isfile(installer_exe):
         _g_logger.debug("There was a problem downloading the installer.  Exiting program now.")
         exit(1)
+
+    if parsed_args.daemon:
+        _g_logger.debug("Running this program as a background daemon.")
+        create_daemon()
 
     stop_agent()
     conf = read_old_conf(backup_dir)
