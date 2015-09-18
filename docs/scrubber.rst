@@ -29,7 +29,7 @@ recommend running the scrubber in the following way:
 
     .. code-block:: text
 
-      dcm-agent-scrubber -k -A -H -r /tmp/dcm_scrubber_backup.tar.gz
+      dcm-agent-scrubber -k -A -H -t -r /tmp/dcm_scrubber_backup.tar.gz
 
 Then copy the file */tmp/dcm_scrubber_backup.tar.gz* off of the server and
 remove it from the server.

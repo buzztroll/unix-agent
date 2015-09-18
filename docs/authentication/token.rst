@@ -19,8 +19,8 @@ most likely be successful because the bad actor would but running on the
 trusted server.  Because sensitive information flows between DCM and the agent
 we must make sure that a bad actor cannot authenticate with DCM in this way.
 
-Protocol 104
-------------
+First Connection
+----------------
 
 To protect against this case, when the agent first starts it generates a random
 string called a *token*.  This token is persisted in a file that can only be
