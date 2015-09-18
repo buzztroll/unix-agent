@@ -328,7 +328,6 @@ def main():
         _g_logger.debug("Running this program as a background daemon.")
         create_daemon()
 
-    stop_agent()
     conf = read_old_conf(backup_dir)
     if not allow_unknown_certs:
         try:
@@ -336,6 +335,7 @@ def main():
                 "connection", "allow_unknown_certs")
         except configparser.NoOptionError:
             pass
+    stop_agent()
     run_installer(installer_exe, package_url, version, backup_dir,
                   allow_unknown_certs, parsed_args.package_location)
     dcm_user_info = pwd.getpwnam('dcm')

@@ -56,6 +56,9 @@ def setup_command_line_parser():
     parser.add_argument("-A", "--agent",
                         help="Delete dcm agent files.",
                         action="store_true")
+    parser.add_argument("-t", "--agent-token",
+                        help="Delete dcm agent token.  This is recommended but off by default because the current instance will not be able to talk to DCM without it.",
+                        action="store_true")
     parser.add_argument("-X", "--agent_running",
                         help=argparse.SUPPRESS,
                         action="store_true")
@@ -255,6 +258,8 @@ def main(args=sys.argv):
             clean_dhcp_leases(opts, tar)
         if opts.agent:
             clean_agent_files(opts, tar)
+        if opts.agent_token:
+            secure_delete(opts, tar, "/dcm/secure/token")
         general_cleanup(opts, tar)
     except BaseException as ex:
         if tar is not None:

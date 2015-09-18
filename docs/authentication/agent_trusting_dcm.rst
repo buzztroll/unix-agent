@@ -20,7 +20,7 @@ is to a trusted entity.  In the SaaS version of DCM this is the case.
 Unknown Certificates
 --------------------
 
-For some *on premise* installations of DCM the certificate DCM uses may not
+For some *on premises* installations of DCM the certificate DCM uses may not
 be signed by a known CA or it may be a self signed certificate.  There are two
 ways to configure agents to work in this case.
 
@@ -50,17 +50,22 @@ ways to configure agents to work in this case.
    The safe way to handle this situation is to distribute the correct cacert
    onto the agent's server machine.  In this way the correct certificate will
    be verified at the time of each connection.  Safely getting the certificate
-   of your DCM host is outside of the scope of this discussion.  One way
-   to achieve this is to run the following command from a safe place on the
-   network:
+   of your DCM host is outside of the scope of this discussion.  In the cases
+   where the certificate is signed by a CA the CA certificate must be
+   downloaded from that CA.
+
+   In the cases where the certificate is self signed, the host cert is
+   the signing cert.  One way to download a host cert is to run the following
+   command from a safe place on the network:
 
    .. code-block:: text
 
      openssl s_client -showcerts -connect <dcm hostname>:443 < /dev/null
 
-   The output from the above command should then be placed in a file on the
-   server that is running the agent.  Finally the agents configuration should
-   be updated.  Open */dcm/etc/agent.conf* and edit the following:
+   Once the signing certifacte is acquired it can be added to the servers
+   system maintained certificates (typically /etc/ssl/certs/ca-certificates.crt
+   or /etc/ssl/certs/ca-bundle.crt) or it can be put into its own file.
+   In either case the agents configuration must reference the correct file:
 
    .. code-block:: text
 
@@ -70,4 +75,4 @@ ways to configure agents to work in this case.
      # DCM.
      ca_cert=<path to the certificate file>
 
-In both cases the agent must be restarted before the change will take effect.
+The agent must be restarted before the change will take effect.
