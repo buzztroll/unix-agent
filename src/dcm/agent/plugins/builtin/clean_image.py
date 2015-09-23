@@ -33,6 +33,9 @@ class CleanImage(plugin_base.Plugin):
         "delUser":
             ("List of accounts to remove",
              False, list, None),
+        "delHistory":
+            ("Flag to delete all history files in all accounts",
+             False, bool, None),
         "delKeys":
             ("Flag to delete private keys in users home directories",
              False, bool, False)
@@ -89,7 +92,9 @@ class CleanImage(plugin_base.Plugin):
                                          " : Delete users failed on %s" % user)
                         return rdoc
 
-            scrub_opts = ["-H", "-X", "-b", "-A"]
+            scrub_opts = ["-X", "-b", "-A"]
+            if self.args.delHistory:
+                scrub_opts.append("-H")
             if self.args.delKeys:
                 dcm_logger.log_to_dcm_console_job_details(
                     job_name=self.name, details='Deleting private keys.')

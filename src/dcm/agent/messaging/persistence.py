@@ -38,6 +38,15 @@ create table if not exists requests (
     agent_id          string,
     last_update_time  date
 );
+
+create table if not exists users (
+    username          string primary key not null,
+    added_time        date,
+    ssh_public_key    text,
+    owner             integer,
+    agent_id          string,
+    administrator     integer
+);
 """
 
 
@@ -94,10 +103,10 @@ class SQLiteRequestObject(object):
 
 
 class SQLiteAgentDB(object):
+    _lock = threading.RLock()
 
     def __init__(self, db_file):
         self._db_file = db_file
-        self._lock = threading.RLock()
 
         try:
             self._db_conn = sqlite3.connect(
@@ -277,6 +286,46 @@ class SQLiteAgentDB(object):
         def do_it(cursor):
             cursor.execute(stmt, (request_id,))
         self._execute(do_it)
+
+    @agent_utils.class_method_sync
+    def add_user(self, agent_id, name, ssh_key, admin):
+        stmt1 = ("SELECT COUNT(*) FROM users where agent_id=?")
+        stmt2 = ("INSERT INTO users(username, agent_id, owner, "
+                 "administrator, ssh_public_key, added_time) "
+                 "VALUES(?, ?, ?, ?, ?, ?)")
+
+        def do_it(cursor):
+            cursor.execute(stmt1, (agent_id,))
+            if cursor.rowcount != 0:
+                owner = 1
+            else:
+                owner = 0
+            nw = datetime.datetime.now()
+            if admin:
+                administrator = 1
+            else:
+                administrator = 0
+            cursor.execute(stmt2,
+                           (name, agent_id, owner, administrator, ssh_key, nw))
+
+        self._execute(do_it)
+
+    @agent_utils.class_method_sync
+    def get_owner(self, agent_id, name, ssh_key, admin):
+        stmt = ("SELECT username, ssh_public_key FROM users where agent_id=? and owner=1")
+
+        def do_it(cursor):
+            cursor.execute(stmt, (agent_id,))
+            if cursor.rowcount < 1:
+                raise exceptions.PersistenceException(
+                    "There is no owner in the database")
+            if cursor.rowcount > 1:
+                _g_logger.warning(
+                    "The database has more than 1 user as the owner")
+            row = cursor.fetchone()
+            return (row[0], row[1])
+
+        return self._execute(do_it)
 
 
 class DBCleaner(threading.Thread):

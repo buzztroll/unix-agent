@@ -15,6 +15,7 @@
 #
 import os
 
+import dcm.agent.messaging.persistence as persistence
 import dcm.agent.plugins.api.base as plugin_base
 import dcm.agent.plugins.api.utils as plugin_utils
 
@@ -42,6 +43,7 @@ class AddUser(plugin_base.ScriptPlugin):
                                    self.args.lastName,
                                    self.args.administrator.lower()]
         self.ssh_public_key = self.args.authentication
+        self._db = persistence.SQLiteAgentDB(conf.storage_dbfile)
 
     def run(self):
         key_file = self.conf.get_temp_file(self.args.userId + ".pub")
@@ -57,6 +59,11 @@ class AddUser(plugin_base.ScriptPlugin):
                 details="Attempting to add the user %s." % self.args.userId)
 
             rc = super(AddUser, self).run()
+
+            admin_bool = self.args.administrator.lower() == "true"
+            self._db.add_user(
+                self.conf.agent_id, self.args.userId, self.ssh_public_key,
+                admin_bool)
 
             plugin_utils.log_to_dcm_console_job_details(
                 job_name=self.name,
