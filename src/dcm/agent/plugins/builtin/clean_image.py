@@ -20,6 +20,7 @@ import threading
 
 import dcm.agent.events.globals as events
 import dcm.agent.logger as dcm_logger
+from dcm.agent.messaging import persistence
 import dcm.agent.utils as utils
 import dcm.agent.plugins.api.base as plugin_base
 import dcm.agent.plugins.builtin.remove_user as remove_user
@@ -36,6 +37,9 @@ class CleanImage(plugin_base.Plugin):
         "delHistory":
             ("Flag to delete all history files in all accounts",
              False, bool, None),
+        "recovery":
+            ("Create a recovery tar file of all the files that are deleted and encrypt it with the owners public key.",
+             False, bool, None),
         "delKeys":
             ("Flag to delete private keys in users home directories",
              False, bool, False)
@@ -46,6 +50,7 @@ class CleanImage(plugin_base.Plugin):
             conf, job_id, items_map, name, arguments)
         self._done_event = threading.Event()
         self._topic_error = None
+        self._db = persistence.SQLiteAgentDB(conf.storage_dbfile)
 
     def run_scrubber(self, opts):
         exe = os.path.join(os.path.dirname(sys.executable),
@@ -99,6 +104,20 @@ class CleanImage(plugin_base.Plugin):
                 dcm_logger.log_to_dcm_console_job_details(
                     job_name=self.name, details='Deleting private keys.')
                 scrub_opts.append("-k")
+            if self.args.recovery:
+                # find the public key, if not there abort
+                try:
+                    username, public_key = self._db.get_owner()
+                except:
+                    _g_logger.exception("Could not get the owning user")
+                    raise Exception(
+                        "The agent could not encrypt the rescue image")
+                if public_key is None:
+                    raise Exception(
+                        "The agent could not encrypt the rescue image")
+                tar_file = "/tmp/dcm_agent_recovery.tar.gz"
+                scrub_opts.extent(["-r", tar_file, "-e", public_key])
+
             self.run_scrubber(scrub_opts)
 
             self._done_event.wait()
