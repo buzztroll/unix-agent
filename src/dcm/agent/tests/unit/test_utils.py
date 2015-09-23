@@ -18,7 +18,7 @@ import os
 import tempfile
 import unittest
 
-import dcm.agent.cmd.service as service
+import dcm.agent.config as config
 from dcm.agent.plugins.api.utils import json_param_type
 import dcm.agent.utils as utils
 
@@ -36,7 +36,7 @@ class TestUtils(unittest.TestCase):
         os.environ["DCM_AGENT_CONF"] = path2
 
         try:
-            file_list = service.get_config_files(conffile=path)
+            file_list = config.get_config_files(conffile=path)
             self.assertIn(path, file_list)
             self.assertIn(path2, file_list)
         finally:

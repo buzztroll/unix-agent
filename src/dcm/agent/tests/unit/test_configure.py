@@ -27,7 +27,6 @@ import dcm
 import dcm.agent.cloudmetadata as cloudmetadata
 import dcm.agent.cmd.configure as configure
 import dcm.agent.config as config
-from dcm.agent.cmd.service import get_config_files
 import dcm.agent.tests.utils.general as test_utils
 import dcm.agent.utils as agent_utils
 
@@ -303,7 +302,7 @@ class TestConfigure(unittest.TestCase):
             self, extras_installed_cmd, mock_http_get_to_file):
         extras_installed_cmd.return_value = False
         mock_http_get_to_file.return_value = False
-        config_files = get_config_files()
+        config_files = config.get_config_files()
         conf = config.AgentConfig(config_files)
         conf.extra_location = "fake"
         with patch('dcm.agent.utils.run_command') as mock_run_cmd:
@@ -317,7 +316,7 @@ class TestConfigure(unittest.TestCase):
             self, extras_installed_cmd, mock_http_get_to_file):
         extras_installed_cmd.return_value = False
         mock_http_get_to_file.return_value = False
-        config_files = get_config_files()
+        config_files = config.get_config_files()
         conf = config.AgentConfig(config_files)
         conf.extra_location = "fake"
         conf_args = [conf]

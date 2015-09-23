@@ -4,6 +4,8 @@ import pwd
 import re
 import sys
 import tarfile
+from Crypto.PublicKey import RSA
+from dcm.agent import config
 
 
 opts_msg = """DCM Agent Image Preparation.
@@ -20,6 +22,11 @@ To backup all of the information that it will remove please use the
 it.  This file can then be untarred to restore the removed files.  However,
 this file should be manually copied off the server and then safely removed
 before the image creation occurs.
+
+It is recommended that this file is encrypted using a public key on this system.
+It can then be decrypted by using the matching private key which should be
+safely stored in a location off of this system.  To encrypt the recovery tarball
+use the -e option.
 """
 
 _g_tarfile_output_message = """
@@ -31,6 +38,16 @@ the server and then securely delete it!
 ******************************************************************************
 """
 
+_g_public_key_message = """
+******************************************************************************
+When creating a restoring tarfile it is recommended that this file be encrypted
+with a public key.  This way if it is burnt into a child VM image it cannot
+be seen by any parties that may boot that image in the future.  To restore the
+rescue file the associated private key (which should not be on this system can
+be used.
+******************************************************************************
+"""
+
 
 def setup_command_line_parser():
     parser = argparse.ArgumentParser(description=opts_msg)
@@ -39,6 +56,9 @@ def setup_command_line_parser():
                         action='count', default=1)
     parser.add_argument("-r", "--rescue-tar",
                         help="Create a tarball that can be used to recover the secrets that this will erase.",
+                        default=None)
+    parser.add_argument("-e", "--public-key",
+                        help="A path to the public encryption key that will be used to encrypt this file.",
                         default=None)
     parser.add_argument("-c", "--cloud-init",
                         help="Delete cloud-init cache and logs.",
@@ -190,11 +210,15 @@ def clean_agent_files(opts, tar):
                       '/tmp/error.log',
                       '/tmp/installer.sh']
 
+    conf = config.AgentConfig(config.get_config_files())
+    log_dir = os.path.join(conf.storage_base_dir, "logs")
+
     if not opts.agent_running:
-        files_to_clean.append('/dcm/logs/agent.log')
-        files_to_clean.append('/dcm/logs/agent.log.job_runner')
-        files_to_clean.append('/dcm/logs/agent.log.wire')
-        files_to_clean.append('/dcm/secure/agentdb.sql')
+        files_to_clean.append(os.path.join(log_dir, 'agent.log'))
+        files_to_clean.append(os.path.join(log_dir, 'agent.log.job_runner'))
+        files_to_clean.append(os.path.join(log_dir, 'agent.log.wire'))
+        files_to_clean.append(conf.storage_dbfile)
+    files_to_clean.append(os.path.join(conf.get_secure_dir), "token")
 
     for f in files_to_clean:
         if os.path.exists(f):
@@ -228,22 +252,100 @@ def clean_dhcp_leases(opts, tar):
                     secure_delete(opts, tar, file)
 
 
+def get_get_public_key_path(opts):
+    if opts.batch or opts.public_key is not None:
+        return opts.public_key
+
+    sys.stdout.write(_g_public_key_message)
+    sys.stdout.write("Would you like to encrypt with the public key (Y/n)? ")
+    sys.stdout.flush()
+    answer = sys.stdin.readline().strip()
+    if answer.lower() != 'y' and answer.lower() != "yes":
+        return None
+
+    key_path = os.path.expanduser("~/.ssh/id_rsa.pub")
+    sys.stdout.write(
+        "Please enter the path to the public key to use for encryption (%s): "
+        % key_path)
+    sys.stdout.flush()
+    answer = sys.stdin.readline().strip()
+    if answer:
+        key_path = answer
+
+    if not os.path.exists(key_path):
+        raise Exception("The key path %s does not exist." % key_path)
+
+    return key_path
+
+
+def get_public_key_data(opts, tar):
+    if tar is None:
+        # nothing to encrypt if there is no tar
+        return None
+    public_key_path = get_get_public_key_path(opts)
+    if not public_key_path:
+        return None
+
+    console_output(opts, 1, "Using the public key %s" % public_key_path)
+    try:
+        with open(public_key_path, "r") as fptr:
+            return fptr.read()
+    except IOError:
+        raise Exception("The public key file %s could not be read."
+                        % public_key_path)
+
+
+def get_tarfile_path(opts):
+    if opts.rescue_tar is not None or opts.batch:
+        return opts.rescue_tar
+    sys.stdout.write("Please enter the location of the rescue tarfile:")
+    sys.stdout.flush()
+    tarfile_path = sys.stdin.readline().strip()
+    if not tarfile_path:
+        return None
+    print(tarfile_path)
+    return tarfile_path
+
+
+def get_tar(opts):
+    tarfile_path = get_tarfile_path(opts)
+    if tarfile_path is None:
+        return (None, None)
+    tarfile_path = os.path.abspath(tarfile_path)
+    console_output(opts, 1, "Using the rescue file %s" % tarfile_path)
+    tar = tarfile.open(tarfile_path, "w:gz")
+    return (tarfile_path, tar)
+
+
+def encrypt_with_key(tarfile_path, public_key):
+    if public_key is None:
+        return tarfile_path
+
+    pub_key_data_parts = public_key.split()
+    try:
+        suffix = pub_key_data_parts[2]
+    except IndexError:
+        suffix = "enc"
+
+    encryptor = RSA.importKey(public_key)
+
+    new_tar_path = tarfile_path + "." + suffix
+    try:
+        with open(tarfile_path, "rb") as tar_fptr:
+            encriptedData = encryptor.encrypt(tar_fptr.read(), 0)
+        with open(new_tar_path, "wb") as out_fptr:
+            out_fptr.write(encriptedData[0])
+        return new_tar_path
+    finally:
+        os.remove(tarfile_path)
+
+
 def main(args=sys.argv):
     parser = setup_command_line_parser()
     opts = parser.parse_args(args=args[1:])
 
-    tarfile_path = opts.rescue_tar
-    if tarfile_path is None and not opts.batch:
-        sys.stdout.write("Please enter the location of the rescue tarfile:")
-        sys.stdout.flush()
-        tarfile_path = sys.stdin.readline().strip()
-
-    if tarfile_path is not None:
-        tarfile_path = os.path.abspath(tarfile_path)
-        console_output(opts, 1, "Using the rescue file %s" % tarfile_path)
-        tar = tarfile.open(tarfile_path, "w:gz")
-    else:
-        tar = None
+    (tarfile_path, tar) = get_tar(opts)
+    public_key_data = get_public_key_data(opts, tar)
 
     try:
         if opts.history:
@@ -272,6 +374,7 @@ def main(args=sys.argv):
     else:
         if tar is not None:
             tar.close()
+            tarfile_path = encrypt_with_key(tarfile_path, public_key_data)
             console_output(
                 opts, 0,
                 _g_tarfile_output_message % tarfile_path)
