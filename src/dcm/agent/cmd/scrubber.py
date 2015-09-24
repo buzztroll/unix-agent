@@ -1,10 +1,19 @@
 import argparse
+import hashlib.md5 as md5
 import os
 import pwd
+import random
 import re
+import string
 import sys
 import tarfile
-from Crypto.PublicKey import RSA
+import tempfile
+import uuid
+
+import Crypto.Cipher.AES as AES
+import Crypto.Random as Random
+import Crypto.PublicKey.RSA as RSA
+
 from dcm.agent import config
 
 
@@ -316,6 +325,53 @@ def get_tar(opts):
     return (tarfile_path, tar)
 
 
+def generate_symmetric_key():
+    symmetric_key = str(uuid.uuid4()) + ''.join(random.choice(
+        string.ascii_letters + string.digits + "-_!@#^(),.=+")
+        for _ in range(10))
+    return symmetric_key
+
+
+def derive_key_and_iv(password, salt, key_length, iv_length):
+    d = d_i = b''
+    while len(d) < key_length + iv_length:
+        d_i = md5(d_i + password + salt).digest()
+        d += d_i
+    return d[:key_length], d[key_length:key_length+iv_length]
+
+
+def encrypt(in_file, out_file, password, key_length=32):
+    bs = AES.block_size
+    salted_bytes = 'Salted__'.encode()
+    salt = Random.new().read(bs - len(salted_bytes))
+    key, iv = derive_key_and_iv(password.encode(), salt, key_length, bs)
+    cipher = AES.new(key, AES.MODE_CBC, iv)
+    out_file.write(salted_bytes + salt)
+    finished = False
+    while not finished:
+        chunk = in_file.read(1024 * bs)
+        if len(chunk) == 0 or len(chunk) % bs != 0:
+            padding_length = (bs - len(chunk) % bs) or bs
+            chunk += padding_length * chr(padding_length).encode()
+            finished = True
+        out_file.write(cipher.encrypt(chunk))
+
+
+def tar_two_files(file_path, encrypted_key, outpath):
+    osf, temppath = tempfile.mkstemp()
+    try:
+        with os.fdopen(osf, "w") as fptr:
+            fptr.write(encrypted_key)
+
+        tar = tarfile.open(outpath, "w:gz")
+        tar.add(temppath, arcname='key')
+        tar.add(file_path, arcname='data.enc')
+        tar.close()
+    finally:
+        os.remove(temppath)
+        os.remove(file_path)
+
+
 def encrypt_with_key(tarfile_path, public_key):
     if public_key is None:
         return tarfile_path
@@ -326,17 +382,22 @@ def encrypt_with_key(tarfile_path, public_key):
     except IndexError:
         suffix = "enc"
 
+    # first generate the symmetric key to encrypt
+    symmetric_key = generate_symmetric_key()
     encryptor = RSA.importKey(public_key)
+    encrypted_key = encryptor.encrypt(symmetric_key, 0)
 
-    new_tar_path = tarfile_path + "." + suffix
+    final_path = tarfile_path + "." + suffix + ".rescue"
+    osf, temp_path = tempfile.mkstemp()
     try:
-        with open(tarfile_path, "rb") as tar_fptr:
-            encriptedData = encryptor.encrypt(tar_fptr.read(), 0)
-        with open(new_tar_path, "wb") as out_fptr:
-            out_fptr.write(encriptedData[0])
-        return new_tar_path
+        with open(tarfile_path, "rb") as tar_fptr,\
+                os.fdopen(osf, "wb") as out_fptr:
+            encrypt(tar_fptr, out_fptr, symmetric_key)
+        tar_two_files(temp_path, encrypted_key, final_path)
+        return final_path
     finally:
         os.remove(tarfile_path)
+        os.remove(temp_path)
 
 
 def main(args=sys.argv):
