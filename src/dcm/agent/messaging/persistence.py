@@ -40,12 +40,13 @@ create table if not exists requests (
 );
 
 create table if not exists users (
-    username          string primary key not null,
+    username          string not null,
     added_time        date,
     ssh_public_key    text,
     owner             integer,
     agent_id          string,
-    administrator     integer
+    administrator     integer,
+    PRIMARY KEY (username, agent_id)
 );
 """
 
@@ -289,24 +290,35 @@ class SQLiteAgentDB(object):
 
     @agent_utils.class_method_sync
     def add_user(self, agent_id, name, ssh_key, admin):
-        stmt1 = ("SELECT COUNT(*) FROM users where agent_id=?")
-        stmt2 = ("INSERT INTO users(username, agent_id, owner, "
-                 "administrator, ssh_public_key, added_time) "
-                 "VALUES(?, ?, ?, ?, ?, ?)")
+        test_owner = ("SELECT * FROM users where agent_id=?")
+        test_exists = ("SELECT * FROM users where agent_id=? and "
+                       "username=?")
+        insert_new = ("INSERT INTO users(username, agent_id, owner, "
+                      "administrator, ssh_public_key, added_time) "
+                      "VALUES(?, ?, ?, ?, ?, ?)")
+        update_existing = ("UPDATE users SET username=?, agent_id=?, owner=?, "
+                           "administrator=?, ssh_public_key=?, added_time=?")
 
         def do_it(cursor):
-            cursor.execute(stmt1, (agent_id,))
-            if cursor.rowcount != 0:
-                owner = 1
-            else:
-                owner = 0
             nw = datetime.datetime.now()
             if admin:
                 administrator = 1
             else:
                 administrator = 0
-            cursor.execute(stmt2,
-                           (name, agent_id, owner, administrator, ssh_key, nw))
+            cursor.execute(test_owner, (agent_id,))
+            if cursor.rowcount != 0:
+                owner = 1
+            else:
+                owner = 0
+            cursor.execute(test_exists, (agent_id, name))
+            if cursor.rowcount != 0:
+                cursor.execute(
+                    update_existing,
+                    (name, agent_id, owner, administrator, ssh_key, nw))
+            else:
+                cursor.execute(
+                    insert_new,
+                    (name, agent_id, owner, administrator, ssh_key, nw))
 
         self._execute(do_it)
 

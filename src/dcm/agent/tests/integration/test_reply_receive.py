@@ -1029,7 +1029,7 @@ class TestProtocolCommands(reply.ReplyObserverInterface):
 
         doctwo = {
             "command": "clean_image",
-            "arguments": {}}
+            "arguments": {'delHistory': 'true'}}
 
         req_rpc = self._rpc_wait_reply(doctwo)
         r = req_rpc.get_reply()

@@ -218,7 +218,6 @@ def clean_agent_files(opts, tar):
         files_to_clean.append(os.path.join(log_dir, 'agent.log.job_runner'))
         files_to_clean.append(os.path.join(log_dir, 'agent.log.wire'))
         files_to_clean.append(conf.storage_dbfile)
-    files_to_clean.append(os.path.join(conf.get_secure_dir), "token")
 
     for f in files_to_clean:
         if os.path.exists(f):
