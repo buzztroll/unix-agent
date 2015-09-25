@@ -1,10 +1,11 @@
 import argparse
-import hashlib.md5 as md5
+import hashlib
 import os
 import pwd
 import random
 import re
 import string
+import subprocess
 import sys
 import tarfile
 import tempfile
@@ -14,7 +15,7 @@ import Crypto.Cipher.AES as AES
 import Crypto.Random as Random
 import Crypto.PublicKey.RSA as RSA
 
-from dcm.agent import config
+import dcm.agent.config as config
 
 
 opts_msg = """DCM Agent Image Preparation.
@@ -63,7 +64,7 @@ def setup_command_line_parser():
     parser.add_argument("-v", "--verbose",
                         help="Increase the amount of output.",
                         action='count', default=1)
-    parser.add_argument("-r", "--rescue-tar",
+    parser.add_argument("-r", "--rescue-file",
                         help="Create a tarball that can be used to recover the secrets that this will erase.",
                         default=None)
     parser.add_argument("-e", "--public-key",
@@ -96,6 +97,9 @@ def setup_command_line_parser():
     parser.add_argument("-b", "--batch",
                         help="Run the program without interrupting the user.  This could cause their to be no rescue file.",
                         action="store_true")
+    parser.add_argument("-D", "--dry-run",
+                        help="Run the program without actually deleting any files.",
+                        action="store_true")
     return parser
 
 
@@ -120,6 +124,9 @@ def get_secure_delete():
         if tar is not None:
             tar.add(path)
 
+        if opts.dry_run:
+            return
+
         console_output(opts, 2, "Securely deleting %s" % path)
         rc = os.system("%s  -f -z %s" % (srm_path, path))
         if rc != 0:
@@ -129,6 +136,9 @@ def get_secure_delete():
         if tar is not None:
             tar.add(path)
         console_output(opts, 2, "Deleting %s" % path)
+
+        if opts.dry_run:
+            return
         os.remove(path)
 
     if srm_path:
@@ -286,8 +296,8 @@ def get_get_public_key_path(opts):
     return key_path
 
 
-def get_public_key_data(opts, tar):
-    if tar is None:
+def get_public_key_data(opts):
+    if opts.rescue_file is None:
         # nothing to encrypt if there is no tar
         return None
     public_key_path = get_get_public_key_path(opts)
@@ -297,32 +307,32 @@ def get_public_key_data(opts, tar):
     console_output(opts, 1, "Using the public key %s" % public_key_path)
     try:
         with open(public_key_path, "r") as fptr:
-            return fptr.read()
+            return fptr.readline()
     except IOError:
         raise Exception("The public key file %s could not be read."
                         % public_key_path)
 
 
-def get_tarfile_path(opts):
-    if opts.rescue_tar is not None or opts.batch:
-        return opts.rescue_tar
+def get_rescue_path(opts):
+    if opts.rescue_file is not None or opts.batch:
+        return os.path.abspath(opts.rescue_file)
     sys.stdout.write("Please enter the location of the rescue tarfile:")
     sys.stdout.flush()
-    tarfile_path = sys.stdin.readline().strip()
-    if not tarfile_path:
+    rescue_path = sys.stdin.readline().strip()
+    if not rescue_path:
         return None
-    print(tarfile_path)
-    return tarfile_path
+    rescue_path = os.path.abspath(rescue_path)
+    return rescue_path
 
 
-def get_tar(opts):
-    tarfile_path = get_tarfile_path(opts)
-    if tarfile_path is None:
-        return (None, None)
-    tarfile_path = os.path.abspath(tarfile_path)
-    console_output(opts, 1, "Using the rescue file %s" % tarfile_path)
+def get_tar(opts, rescue_path):
+    if rescue_path is None:
+        return None, None
+    console_output(opts, 1, "Using the rescue file %s" % rescue_path)
+    osf, tarfile_path = tempfile.mkstemp()
+    os.close(osf)
     tar = tarfile.open(tarfile_path, "w:gz")
-    return (tarfile_path, tar)
+    return tarfile_path, tar
 
 
 def generate_symmetric_key():
@@ -335,7 +345,7 @@ def generate_symmetric_key():
 def derive_key_and_iv(password, salt, key_length, iv_length):
     d = d_i = b''
     while len(d) < key_length + iv_length:
-        d_i = md5(d_i + password + salt).digest()
+        d_i = hashlib.md5(d_i + password + salt).digest()
         d += d_i
     return d[:key_length], d[key_length:key_length+iv_length]
 
@@ -357,55 +367,97 @@ def encrypt(in_file, out_file, password, key_length=32):
         out_file.write(cipher.encrypt(chunk))
 
 
-def tar_two_files(file_path, encrypted_key, outpath):
-    osf, temppath = tempfile.mkstemp()
+def _write_temp_file(data):
+    osf, temp_file_path = tempfile.mkstemp()
     try:
-        with os.fdopen(osf, "w") as fptr:
-            fptr.write(encrypted_key)
-
-        tar = tarfile.open(outpath, "w:gz")
-        tar.add(temppath, arcname='key')
-        tar.add(file_path, arcname='data.enc')
-        tar.close()
+        os.write(osf, data)
+        return temp_file_path
     finally:
-        os.remove(temppath)
-        os.remove(file_path)
+        os.close(osf)
+
+
+def encrypt_symmetric_key_with_public_key(symmetric_key, public_key):
+    rsa_pk = RSA.importKey(public_key)
+    pk = rsa_pk.publickey()
+    pem_pub = pk.exportKey(format='PEM')
+    public_key_file = _write_temp_file(pem_pub)
+
+    try:
+        openssl_binary_location = "openssl"
+        args = [openssl_binary_location,
+                'rsautl', '-encrypt', '-pubin',
+                '-inkey', public_key_file]
+        print(' '.join(args))
+        process = subprocess.Popen(' '.join(args),
+                                   stdin=subprocess.PIPE,
+                                   stdout=subprocess.PIPE,
+                                   stderr=subprocess.PIPE,
+                                   shell=True)
+        (stdout, stderr) = process.communicate(symmetric_key.encode())
+        rc = process.wait()
+        if rc != 0:
+            raise Exception("Public key encryption failed: %s" % stderr)
+        return stdout
+    finally:
+        os.remove(public_key_file)
 
 
 def encrypt_with_key(tarfile_path, public_key):
-    if public_key is None:
-        return tarfile_path
-
-    pub_key_data_parts = public_key.split()
-    try:
-        suffix = pub_key_data_parts[2]
-    except IndexError:
-        suffix = "enc"
+    if public_key is None or tarfile_path is None:
+        return tarfile_path, None
 
     # first generate the symmetric key to encrypt
     symmetric_key = generate_symmetric_key()
-    encryptor = RSA.importKey(public_key)
-    encrypted_key = encryptor.encrypt(symmetric_key, 0)
+    encrypted_key = encrypt_symmetric_key_with_public_key(
+        symmetric_key, public_key)
 
-    final_path = tarfile_path + "." + suffix + ".rescue"
     osf, temp_path = tempfile.mkstemp()
     try:
         with open(tarfile_path, "rb") as tar_fptr,\
                 os.fdopen(osf, "wb") as out_fptr:
             encrypt(tar_fptr, out_fptr, symmetric_key)
-        tar_two_files(temp_path, encrypted_key, final_path)
-        return final_path
+        return temp_path, encrypted_key
     finally:
         os.remove(tarfile_path)
-        os.remove(temp_path)
+
+
+def make_rescue_file(data_tar_path, rescue_file_destination_path,
+                     encrypted_key=None, public_key=None):
+
+    # find the recovery
+    recovery_script_path = os.path.join(config.get_python_script_dir(),
+                                        "recovery.sh")
+    temp_key_path = None
+    temp_key_name_path = None
+    try:
+        tar = tarfile.open(rescue_file_destination_path, "w:gz")
+
+        if encrypted_key is not None:
+            temp_key_path = _write_temp_file(encrypted_key)
+            tar.add(temp_key_path, arcname='key')
+
+        if public_key is not None:
+            temp_key_name_path = _write_temp_file(public_key.encode())
+            tar.add(temp_key_name_path, arcname='public_key')
+
+        tar.add(data_tar_path, arcname='data.enc')
+        tar.add(recovery_script_path, arcname='recovery.sh')
+        tar.close()
+    finally:
+        if temp_key_path is not None:
+            os.remove(temp_key_path)
+        if temp_key_name_path is not None:
+            os.remove(temp_key_name_path)
+        os.remove(data_tar_path)
 
 
 def main(args=sys.argv):
     parser = setup_command_line_parser()
     opts = parser.parse_args(args=args[1:])
 
-    (tarfile_path, tar) = get_tar(opts)
-    public_key_data = get_public_key_data(opts, tar)
+    public_key_data = get_public_key_data(opts)
+    rescue_path = get_rescue_path(opts)
+    (tarfile_path, tar) = get_tar(opts, rescue_path)
 
     try:
         if opts.history:
@@ -421,12 +473,15 @@ def main(args=sys.argv):
         if opts.agent:
             clean_agent_files(opts, tar)
         if opts.agent_token:
-            secure_delete(opts, tar, "/dcm/secure/token")
+            try:
+                secure_delete(opts, tar, "/dcm/secure/token")
+            except FileNotFoundError:
+                console_output(opts, 1, "The token file does not exist.")
         general_cleanup(opts, tar)
     except BaseException as ex:
         if tar is not None:
             tar.close()
-            os.remove(opts.rescue_tar)
+            os.remove(tarfile_path)
         console_output(opts, 0, "Error: " + str(ex))
         if opts.verbose > 1:
             raise
@@ -434,7 +489,13 @@ def main(args=sys.argv):
     else:
         if tar is not None:
             tar.close()
-            tarfile_path = encrypt_with_key(tarfile_path, public_key_data)
+            tarfile_path, encrypted_key =\
+                encrypt_with_key(tarfile_path, public_key_data)
+
+            make_rescue_file(tarfile_path, rescue_path,
+                          encrypted_key=encrypted_key,
+                          public_key=public_key_data)
+
             console_output(
                 opts, 0,
-                _g_tarfile_output_message % tarfile_path)
+                _g_tarfile_output_message % rescue_path)
