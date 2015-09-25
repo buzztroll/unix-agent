@@ -1,3 +1,16 @@
+# 0.13.2 (2015-09-25)
+
+Features:
+* Additional documentation for the scrubber and CA certificates.
+* Added encryption to the scrubber.
+* Allow the upgrade program to run as a background daemon.
+* Keep track of users added to the system by the agent.
+* Added the option to delete the token with the scrubber.
+
+Bug fixes:
+* Fixed a bug in reporting why failures occured in clean_image.
+* Fixed bugs in the scrubber.
+
 # 0.13.1 (2015-09-17)
 
 Features:
