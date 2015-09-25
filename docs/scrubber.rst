@@ -32,7 +32,7 @@ the system by the scrubber.  The system can be restored with this file by
 untarring it in the root directory.
 
 Of course if this recovery file is left on the created image the same problem
-remains.  A bad actor could read secret information from it.  To solve this
+remains, a bad actor could read secret information from it.  To solve this
 problem the scrubber will encrypt the recovery file with the instance owners
 RSA public key making it so only the original owner of the instance can access
 the data in the recovery file.
@@ -55,6 +55,26 @@ server and remove it from the server.
 
 Recovery
 --------
+
+The recovery file is a gziped tarball with the following format:
+- recovery.sh
+  A script which aids in the recovery process
+- data.enc
+  The data removed from the system by the scrubber in a tarball.  If encryption
+  was used to create this it will be an encrypted file.
+- public_key
+  The public key used to encrypt the symmetric key used to encrypt data.enc.
+  If encryption was not used this file will not exist.
+- key
+  The encrypted symmetric key used to encrypt data.enc.  This file must be
+  decrypted by the private key which matches the public key used to create it.
+  The decrypted result can then be used to decrypt the data.enc and thereby
+  recover the data.  If encryption was not used this file will not exist.
+
+To recover the scrubbed data untar the recovery file and run the recovery.sh
+file.  This will do all of the decryption work needed and will result in an
+unencrypted tarball.  That tarball can then be copied to the server and untarred
+in the root directory.
 
 To recover all the deleted files run the following command from the system
 that contains your private key:
