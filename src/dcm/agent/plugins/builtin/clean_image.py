@@ -66,7 +66,7 @@ class CleanImage(plugin_base.Plugin):
         (stdout, stderr, rc) = utils.run_command(self.conf, cmd)
         if rc != 0:
             return plugin_base.PluginReply(
-                rc, messge=stdout, error_message=stderr)
+                rc, message=stdout, error_message=stderr)
         return plugin_base.PluginReply(
             0, message="The image was scrubbed successfully")
 

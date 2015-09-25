@@ -171,7 +171,6 @@ def is_privatekey(keyfile):
 
 def delete_private_keys(opts, tar):
     console_output(opts, 1, "Deleting all users private key files...")
-
     all_users = pwd.getpwall()
     user_homes = [user_home[5] for user_home in all_users]
     for base_dir in user_homes:
@@ -183,12 +182,15 @@ def delete_private_keys(opts, tar):
                     secure_delete(opts, tar, filepath)
 
 
-def delete_authorize_keys(opts, tar, base_dir):
+def delete_authorize_keys(opts, tar):
     console_output(opts, 1, "Deleting all users authorized key files...")
 
-    ssh_authorized_keys = os.path.join(base_dir, '.ssh/authorized_keys')
-    if os.path.exists(ssh_authorized_keys):
-        secure_delete(opts, tar, ssh_authorized_keys)
+    all_users = pwd.getpwall()
+    user_homes = [user_home[5] for user_home in all_users]
+    for base_dir in user_homes:
+        ssh_authorized_keys = os.path.join(base_dir, '.ssh/authorized_keys')
+        if os.path.exists(ssh_authorized_keys):
+            secure_delete(opts, tar, ssh_authorized_keys)
 
 
 def delete_cloud_init_cache(opts, tar):
@@ -314,8 +316,10 @@ def get_public_key_data(opts):
 
 
 def get_rescue_path(opts):
-    if opts.rescue_file is not None or opts.batch:
+    if opts.rescue_file is not None:
         return os.path.abspath(opts.rescue_file)
+    if opts.batch:
+        return None
     sys.stdout.write("Please enter the location of the rescue tarfile:")
     sys.stdout.flush()
     rescue_path = sys.stdin.readline().strip()
