@@ -32,6 +32,7 @@ import dcm.agent.utils as utils
 
 
 _g_logger = logging.getLogger(__name__)
+_g_conf_file_env = "DCM_AGENT_CONF"
 
 
 class PLATFORM_TYPES(object):
@@ -431,3 +432,21 @@ def setup_logging(logging_configfile):
     with open(logging_configfile, 'rt') as f:
         config = yaml.load(f.read())
         logging.config.dictConfig(config)
+
+
+def get_config_files(conffile=None):
+    candidates = ["/dcm/etc/agent.conf"]
+    if _g_conf_file_env in os.environ:
+        candidates.append(os.environ[_g_conf_file_env])
+    if conffile:
+        candidates.append(conffile)
+
+    locations = []
+    for f in candidates:
+        f = os.path.abspath(f)
+        if os.path.exists(f):
+            if f not in locations:
+                locations.append(f)
+
+    return locations
+

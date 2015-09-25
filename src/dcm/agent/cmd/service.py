@@ -42,26 +42,6 @@ import dcm.agent.systemstats as systemstats
 import dcm.agent.events.globals as events
 
 
-_g_conf_file_env = "DCM_AGENT_CONF"
-
-
-def get_config_files(conffile=None):
-    candidates = ["/dcm/etc/agent.conf"]
-    if _g_conf_file_env in os.environ:
-        candidates.append(os.environ[_g_conf_file_env])
-    if conffile:
-        candidates.append(conffile)
-
-    locations = []
-    for f in candidates:
-        f = os.path.abspath(f)
-        if os.path.exists(f):
-            if f not in locations:
-                locations.append(f)
-
-    return locations
-
-
 class DCMAgent(object):
 
     def __init__(self, conf):
@@ -265,7 +245,7 @@ def parse_command_line(argv):
 def start_main_service(cli_args):
     agent = None
     try:
-        config_files = get_config_files(conffile=cli_args.conffile)
+        config_files = config.get_config_files(conffile=cli_args.conffile)
         conf = config.AgentConfig(config_files)
         agent = DCMAgent(conf)
         agent.pre_threads()
@@ -305,7 +285,7 @@ def start_main_service(cli_args):
 
 
 def get_status(cli_args):
-    config_files = get_config_files(conffile=cli_args.conffile)
+    config_files = config.get_config_files(conffile=cli_args.conffile)
     conf = config.AgentConfig(config_files)
 
     db_obj = messaging.persistence.SQLiteAgentDB(conf.storage_dbfile)
