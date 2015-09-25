@@ -1,4 +1,4 @@
-# 0.13.2 (2015-09-25)
+# 0.13.2 (2015-09-28)
 
 Features:
 * Additional documentation for the scrubber and CA certificates.

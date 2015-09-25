@@ -57,15 +57,16 @@ Recovery
 --------
 
 The recovery file is a gziped tarball with the following format:
-- recovery.sh
+
+* recovery.sh
   A script which aids in the recovery process
-- data.enc
+* data.enc
   The data removed from the system by the scrubber in a tarball.  If encryption
   was used to create this it will be an encrypted file.
-- public_key
+* public_key
   The public key used to encrypt the symmetric key used to encrypt data.enc.
   If encryption was not used this file will not exist.
-- key
+* key
   The encrypted symmetric key used to encrypt data.enc.  This file must be
   decrypted by the private key which matches the public key used to create it.
   The decrypted result can then be used to decrypt the data.enc and thereby
