@@ -48,7 +48,7 @@ recommend running the scrubber in the following way:
 
     .. code-block:: text
 
-      dcm-agent-scrubber -k -A -H -t -r /tmp/dcm_scrubber_backup.tar.gz -e <path to your ssh public key>
+      dcm-agent-scrubber -X -k -A -H -t -r /tmp/dcm_scrubber_backup.tar.gz -e <path to your ssh public key>
 
 Then copy the file */tmp/dcm_scrubber_backup.tar.gz.<ssh key name>* off of the
 server and remove it from the server.
