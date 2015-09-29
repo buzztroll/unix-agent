@@ -341,10 +341,13 @@ class GCEMetaData(CloudMetaData):
         return self.get_cloud_metadata("instance/attributes/startup-script")
 
     def get_instance_id(self):
-        # XXX TODO check to instance id, this is injected
-        instance_id = self.get_cloud_metadata(
-            "instance/attributes/es-dmcm-launch-id")
+        gce_id = self.get_cloud_metadata(
+            "instance/id")
+        md_hostname = self.get_cloud_metadata(
+            "instance/hostname")
+        server_name = md_hostname.split('.', 1)[0]
         super(GCEMetaData, self).get_instance_id()
+        instance_id = server_name + "_" + gce_id
         _g_logger.debug("Instance ID is %s" % str(instance_id))
         return instance_id
 
