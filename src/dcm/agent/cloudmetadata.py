@@ -343,8 +343,13 @@ class GCEMetaData(CloudMetaData):
     def get_instance_id(self):
         gce_id = self.get_cloud_metadata(
             "instance/id")
+        if gce_id is None:
+            return None
         md_hostname = self.get_cloud_metadata(
             "instance/hostname")
+        if md_hostname is None:
+            _g_logger.warn("GCE hostname metadata value is None")
+            return None
         server_name = md_hostname.split('.', 1)[0]
         super(GCEMetaData, self).get_instance_id()
         instance_id = server_name + "_" + gce_id
