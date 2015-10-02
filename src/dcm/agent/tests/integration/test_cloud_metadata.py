@@ -130,9 +130,9 @@ class TestCloudMetadata(unittest.TestCase):
     def test_get_gce_instance_id(self, mock_server):
         self.conf.meta_data_object = cloudmetadata.GCEMetaData(
             self.conf, base_url=self.conf.cloud_metadata_url)
-        mock_server.return_value = 'fake_instance_id'
+        mock_server.side_effect = ['fake_instance_id', 'servername.hello.com']
         instance_id = self.conf.meta_data_object.get_instance_id()
-        self.assertEqual(instance_id, 'fake_instance_id')
+        self.assertEqual(instance_id, 'servername_fake_instance_id')
 
     @patch('dcm.agent.cloudmetadata.JoyentMetaData.get_cloud_metadata')
     def test_get_joyent_instance_id(self, mock_joyent_meta):
