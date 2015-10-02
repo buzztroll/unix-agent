@@ -41,7 +41,7 @@ function handle_encrypted_rescue() {
         exit 1
     fi
 
-    SYMM_KEY=`openssl rsautl -decrypt -inkey /root/priv -in key`
+    SYMM_KEY=`openssl rsautl -decrypt -inkey $PRIVATE_KEY_LOCATION -in key`
     openssl aes-256-cbc -d -in $ENC_DATA_ENC -out $RECOVERY_DESTINATION -k $SYMM_KEY
     if [ $? -ne 0 ]; then
         echo "Failed to decrypt the data file.  Please verify that this is the private key $PRIVATE_KEY_LOCATION is the correct key."
