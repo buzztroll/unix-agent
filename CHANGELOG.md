@@ -1,3 +1,11 @@
+# 0.13.3 (2015-10-2)
+
+Bug fixes:
+* GCE now sends the correct provider ID.
+* Patch the remote_tester to work with the agent manager tests again.
+* Fixed the recovery script in the scrubber to not use a hard coded path
+  to the private key.
+
 # 0.13.2 (2015-09-28)
 
 Features:
@@ -8,7 +16,7 @@ Features:
 * Added the option to delete the token with the scrubber.
 
 Bug fixes:
-* Fixed a bug in reporting why failures occured in clean_image.
+* Fixed a bug in reporting why failures occurred in clean_image.
 * Fixed bugs in the scrubber.
 
 # 0.13.1 (2015-09-17)
@@ -30,7 +38,7 @@ Features:
   into images.
 
 Bug fixes:
-* Fixed the installer script to more properly detect the existance of the
+* Fixed the installer script to more properly detect the existence of the
   installed package.
 * Allowed the user of the installer to force an upgrade on images that
   already have the agent installed.
