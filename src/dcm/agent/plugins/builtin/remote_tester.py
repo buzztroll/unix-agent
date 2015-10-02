@@ -65,7 +65,30 @@ class RemoteTester(plugin_base.Plugin):
                 in_msg = in_msg + ch
             _g_logger.info("Tester plugin Received " + in_msg.decode())
             self.sock.close()
-            rc = json.loads(in_msg.decode())
+            rc_dict = json.loads(in_msg.decode())
+            rc = rc_dict['return_code']
+            try:
+                reply_type = rc_dict['reply_type']
+            except KeyError:
+                reply_type = None
+            try:
+                reply_object = rc_dict['reply_object']
+            except KeyError:
+                reply_object = None
+            try:
+                message = rc_dict['message']
+            except KeyError:
+                message = None
+            try:
+                error_message = rc_dict['error_message']
+            except KeyError:
+                error_message = None
+
+            rc = plugin_base.PluginReply(rc,
+                                         reply_type=reply_type,
+                                         reply_object=reply_object,
+                                         message=message,
+                                         error_message=error_message)
             _g_logger.info("Tester plugin sending back " + str(rc))
             return rc
         except:
