@@ -484,8 +484,11 @@ def get_device_mappings(conf):
             device_id = elements[len(elements) - 1]
             file_system = parts[1]
             mount_point = parts[2]
-            size = int(parts[3])
-            used = int(parts[4])
+            try:
+                size = int(parts[3])
+                used = int(parts[4])
+            except ValueError:
+                continue
             if parts[0].startswith("/dev/mapper"):
                 encrypted = True
             else:
