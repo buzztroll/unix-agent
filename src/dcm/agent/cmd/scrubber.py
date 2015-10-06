@@ -121,6 +121,10 @@ def get_secure_delete():
             break
 
     def srm_remove(opts, tar, path):
+        if not os.path.exists():
+            console_output(
+                opts, 1, "Skipping %s because it does not exist" % path)
+            return
         if tar is not None:
             tar.add(path)
 
@@ -133,6 +137,10 @@ def get_secure_delete():
             raise Exception("Failed to remove %s" % path)
 
     def python_rm(opts, tar, path):
+        if not os.path.exists():
+            console_output(
+                opts, 1, "Skipping %s because it does not exist" % path)
+            return
         if tar is not None:
             tar.add(path)
         console_output(opts, 2, "Deleting %s" % path)
