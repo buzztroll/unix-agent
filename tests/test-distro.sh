@@ -53,7 +53,7 @@ if [ "X$4" != "Xnull" ]; then
     cd -
 fi
 
-nosetests --with-coverage --cover-xml --cover-xml-file=$output_dir/dcm_agent_cover.xml --cover-package=dcm.agent dcm.agent.tests --with-xunit --xunit-file=$output_dir/dcm_agent_xunit.xml dcm.agent.tests 2>&1 | tee $output_dir/nosetests.output
+nose2 dcm.agent.tests 2>&1 | tee $output_dir/nosetests.output
 if [ ${PIPESTATUS[0]} -ne 0 ]; then
     echo "Failed to test"
     exit 2

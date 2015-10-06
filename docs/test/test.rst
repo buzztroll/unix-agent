@@ -48,7 +48,7 @@ Simply :samp:`vagrant ssh <machinename>` and do
 
     $ sudo -i
     $ source /opt/dcm-agent/embedded/agentve/bin/activate
-    $ nosetests -v dcm.agent.tests
+    $ nose2 -v dcm.agent.tests
 
 
 Using a Remote Debugger
