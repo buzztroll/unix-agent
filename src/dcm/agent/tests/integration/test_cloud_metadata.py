@@ -22,7 +22,6 @@ import tempfile
 import unittest
 
 from mock import patch
-import nose.plugins.skip as skip
 
 import dcm.agent.cloudmetadata as cloudmetadata
 import dcm.agent.config as config
@@ -96,7 +95,7 @@ class TestCloudMetadata(unittest.TestCase):
 
     def test_get_instance_data_amazon_none(self):
         if 'DCM_AGENT_ON_AMAZON' in os.environ:
-            raise skip.SkipTest("We are actually on amazon")
+            raise unittest.SkipTest("We are actually on amazon")
         self._get_instance_data_cloud_none(cloudmetadata.CLOUD_TYPES.Amazon)
 
     def test_get_instance_data_google_none(self):

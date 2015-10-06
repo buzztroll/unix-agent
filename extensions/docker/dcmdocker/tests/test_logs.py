@@ -17,8 +17,6 @@ import os
 import unittest
 import uuid
 
-from nose.plugins import skip
-
 import dcmdocker.stop_container as stop_container
 import dcmdocker.import_image as import_image
 import dcmdocker.delete_image as delete_image
@@ -36,7 +34,7 @@ class TestDockerContainerLogs(unittest.TestCase):
         cls.conf = test_utils.get_docker_conf_obj()
 
         if 'DCM_DOCKER_IMAGE_LOCATION' not in os.environ:
-            raise skip.SkipTest('skipping')
+            raise unittest.SkipTest('skipping')
 
         image_location = os.environ['DCM_DOCKER_IMAGE_LOCATION']
         repo = "agenttest" + str(uuid.uuid4()).split("-")[0]

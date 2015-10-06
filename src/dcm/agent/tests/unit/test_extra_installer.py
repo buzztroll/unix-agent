@@ -19,8 +19,6 @@ import shutil
 import tempfile
 import unittest
 
-from nose.plugins import skip
-
 import dcm.agent.cmd.configure as configure
 import dcm.agent.config as config
 import dcm.agent.tests.utils.general as test_utils
@@ -57,7 +55,7 @@ class TestExtraConfigure(unittest.TestCase):
     @test_utils.system_changing
     def test_config_works_with_install_extras(self):
         if 'DCM_AGENT_TEST_EXTRA_PACKAGE_URL' not in os.environ:
-            raise skip.SkipTest("No extras package known, skipping")
+            raise unittest.SkipTest("No extras package known, skipping")
         conf_args = ["-c", "aMazOn",
                      "-u", "http://doesntmatter.org/ws",
                      "-p", self.test_base_path,

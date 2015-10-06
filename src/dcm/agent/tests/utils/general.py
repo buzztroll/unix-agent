@@ -18,9 +18,8 @@ import signal
 import sys
 import time
 import traceback
+import unittest
 import warnings
-
-import nose.plugins.skip as skip
 
 import dcm.agent.utils as utils
 
@@ -100,7 +99,7 @@ def get_conf_file(fname="agent.conf"):
 def system_changing(func):
     def inner(*args, **kwargs):
         if SYSTEM_CHANGING_TEST_ENV not in os.environ:
-            raise skip.SkipTest(
+            raise unittest.SkipTest(
                 "Test %s will change your system environment.  "
                 "If you are sure you want to do this (ie you are "
                 "running in a disposable VM) sent the environment "
@@ -115,7 +114,7 @@ def aws_access_needed(func):
     def inner(*args, **kwargs):
         if S3_ACCESS_KEY_ENV not in os.environ or \
                 S3_SECRET_KEY_ENV not in os.environ:
-            raise skip.SkipTest(
+            raise unittest.SkipTest(
                 "Test %s will change only run if the environment variables "
                 "%s and %s are set to the AWS access tokens" %
                 (func.__name__, S3_ACCESS_KEY_ENV, S3_SECRET_KEY_ENV))
@@ -127,7 +126,7 @@ def aws_access_needed(func):
 def skip_docker(func):
     def inner(*args, **kwargs):
         if os.path.exists("/.dockerinit"):
-            raise skip.SkipTest(
+            raise unittest.SkipTest(
                 "We are running on docker and thus skipping this test.  "
                 "%s" % func.__name__)
         return func(*args, **kwargs)

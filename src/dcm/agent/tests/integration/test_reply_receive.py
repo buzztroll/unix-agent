@@ -28,11 +28,10 @@ import tempfile
 import threading
 import time
 import traceback
+import unittest
 import uuid
 
 from mock import patch
-import nose
-from nose.plugins import skip
 
 import dcm.agent
 import dcm.agent.cmd.configure as configure
@@ -66,7 +65,7 @@ class CloudT(object):
 
 # does not inherit from unittest because of the python generators for
 # testing storage clouds
-class TestProtocolCommands(reply.ReplyObserverInterface):
+class TestProtocolCommands(unittest.TestCase):
     def new_message(self, reply):
         pass
 
@@ -234,8 +233,8 @@ class TestProtocolCommands(reply.ReplyObserverInterface):
         }
         req_reply = self._rpc_wait_reply(doc)
         r = req_reply.get_reply()
-        nose.tools.eq_(r["payload"]["reply_type"], "string")
-        nose.tools.eq_(r["payload"]["return_code"], 0)
+        self.assertEqual(r["payload"]["reply_type"], "string")
+        self.assertEqual(r["payload"]["return_code"], 0)
         # TODO verify that this matches the output of the command
 
     def test_get_agent_data(self):
@@ -245,8 +244,8 @@ class TestProtocolCommands(reply.ReplyObserverInterface):
         }
         req_rpc = self._rpc_wait_reply(doc)
         r = req_rpc.get_reply()
-        nose.tools.eq_(r["payload"]["reply_type"], "agent_data")
-        nose.tools.eq_(r["payload"]["return_code"], 0)
+        self.assertEqual(r["payload"]["reply_type"], "agent_data")
+        self.assertEqual(r["payload"]["return_code"], 0)
 
     @test_utils.system_changing
     def test_add_user_remove_user(self):
@@ -262,11 +261,11 @@ class TestProtocolCommands(reply.ReplyObserverInterface):
                           "administrator": False}}
         req_rpc = self._rpc_wait_reply(doc)
         r = req_rpc.get_reply()
-        nose.tools.eq_(r["payload"]["return_code"], 0)
+        self.assertEqual(r["payload"]["return_code"], 0)
 
         pw_ent = pwd.getpwnam(user_name)
 
-        nose.tools.eq_(pw_ent.pw_name, user_name)
+        self.assertEqual(pw_ent.pw_name, user_name)
 
         doc = {
             "command": "remove_user",
@@ -274,10 +273,10 @@ class TestProtocolCommands(reply.ReplyObserverInterface):
 
         req_rpc = self._rpc_wait_reply(doc)
         r = req_rpc.get_reply()
-        nose.tools.eq_(r["payload"]["return_code"], 0)
+        self.assertEqual(r["payload"]["return_code"], 0)
         try:
             pwd.getpwnam(user_name)
-            nose.tools.ok_(False, "should have raised an exception")
+            self.assertTrue(False, "should have raised an exception")
         except KeyError:
             pass
 
@@ -297,7 +296,7 @@ class TestProtocolCommands(reply.ReplyObserverInterface):
         msg = 'this following name failed:  ' + user_name
 
         try:
-            nose.tools.ok_(r["payload"]["return_code"] != 0, msg)
+            self.assertTrue(r["payload"]["return_code"] != 0, msg)
 
         finally:
             try:  # delete and clean up user
@@ -313,13 +312,13 @@ class TestProtocolCommands(reply.ReplyObserverInterface):
                  with -,_ at beginning or end of username fail
         """
         if "SYSTEM_CHANGING_TEST" not in os.environ:
-            raise skip.SkipTest('skipping')
+            raise unittest.SkipTest('skipping')
 
         usernames = ['-bob', '_bob', 'bob_', 'bob-',
                      '-bob-', '_bob_', '_bob-', '-bob_']
 
         for user_name in usernames:
-            yield self._build_underscore_dash_names, user_name
+            self._build_underscore_dash_names(user_name)
 
     def _build_fake_names(self, sc):
         user_name = 'Bob' + sc
@@ -338,7 +337,7 @@ class TestProtocolCommands(reply.ReplyObserverInterface):
         msg = 'special char is ' + sc
 
         try:
-            nose.tools.ok_(r["payload"]["return_code"] != 0, msg)
+            self.assertTrue(r["payload"]["return_code"] != 0, msg)
         finally:
             try:  # delete and clean up user
                 pw_ent = pwd.getpwnam(user_name)
@@ -353,13 +352,13 @@ class TestProtocolCommands(reply.ReplyObserverInterface):
                  with things in spec_chars fail
         """
         if "SYSTEM_CHANGING_TEST" not in os.environ:
-            raise skip.SkipTest('skipping')
+            raise unittest.SkipTest('skipping')
 
         spec_chars = ['*', '&', '!', '?', '/', '\\', '.', '^', '$', '(', ')',
                       '{', '}', '[', ']']
 
         for sc in spec_chars:
-            yield self._build_fake_names, sc
+            self._build_fake_names(sc)
 
     @test_utils.system_changing
     def test_add_admin_user_remove_user(self):
@@ -376,13 +375,13 @@ class TestProtocolCommands(reply.ReplyObserverInterface):
         req_rpc = self._rpc_wait_reply(doc)
         r = req_rpc.get_reply()
         print(str(r))
-        nose.tools.eq_(r["payload"]["return_code"], 0)
+        self.assertEqual(r["payload"]["return_code"], 0)
 
         pw_ent = pwd.getpwnam(user_name)
 
         # TODO figure out a safe way to verify that sudo was added
 
-        nose.tools.eq_(pw_ent.pw_name, user_name)
+        self.assertEqual(pw_ent.pw_name, user_name)
 
         doc = {
             "command": "remove_user",
@@ -390,10 +389,10 @@ class TestProtocolCommands(reply.ReplyObserverInterface):
 
         req_rpc = self._rpc_wait_reply(doc)
         r = req_rpc.get_reply()
-        nose.tools.eq_(r["payload"]["return_code"], 0)
+        self.assertEqual(r["payload"]["return_code"], 0)
         try:
             pwd.getpwnam(user_name)
-            nose.tools.ok_(False, "should have raised an exception")
+            self.assertTrue(False, "should have raised an exception")
         except KeyError:
             pass
 
@@ -413,12 +412,12 @@ class TestProtocolCommands(reply.ReplyObserverInterface):
                           "encryptedEphemeralFsKey": None}}
         req_rpc = self._rpc_wait_reply(doc)
         r = req_rpc.get_reply()
-        nose.tools.eq_(r["payload"]["return_code"], 0)
-        nose.tools.eq_(socket.gethostname(), new_hostname)
+        self.assertEqual(r["payload"]["return_code"], 0)
+        self.assertEqual(socket.gethostname(), new_hostname)
 
         customer_user = utils.make_id_string("c", cust)
         pw_ent = pwd.getpwnam(customer_user)
-        nose.tools.eq_(pw_ent.pw_name, customer_user)
+        self.assertEqual(pw_ent.pw_name, customer_user)
 
     def test_list_devices(self):
         doc = {
@@ -427,7 +426,7 @@ class TestProtocolCommands(reply.ReplyObserverInterface):
         }
         req_reply = self._rpc_wait_reply(doc)
         r = req_reply.get_reply()
-        nose.tools.eq_(r["payload"]["return_code"], 0)
+        self.assertEqual(r["payload"]["return_code"], 0)
 
         # TODO verify that this matches the output of the command
 
@@ -443,9 +442,9 @@ class TestProtocolCommands(reply.ReplyObserverInterface):
         }
         req_reply = self._rpc_wait_reply(doc)
         r = req_reply.get_reply()
-        nose.tools.eq_(r["payload"]["return_code"], 0)
+        self.assertEqual(r["payload"]["return_code"], 0)
 
-        nose.tools.eq_(socket.gethostname(), new_hostname)
+        self.assertEqual(socket.gethostname(), new_hostname)
 
         doc = {
             "command": "rename",
@@ -453,9 +452,9 @@ class TestProtocolCommands(reply.ReplyObserverInterface):
         }
         req_reply = self._rpc_wait_reply(doc)
         r = req_reply.get_reply()
-        nose.tools.eq_(r["payload"]["return_code"], 0)
+        self.assertEqual(r["payload"]["return_code"], 0)
 
-        nose.tools.eq_(socket.gethostname(), orig_hostname)
+        self.assertEqual(socket.gethostname(), orig_hostname)
 
     @test_utils.skip_docker
     @test_utils.system_changing
@@ -469,8 +468,8 @@ class TestProtocolCommands(reply.ReplyObserverInterface):
         }
         req_reply = self._rpc_wait_reply(doc)
         r = req_reply.get_reply()
-        nose.tools.ok_(r["payload"]["return_code"] == 0)
-        nose.tools.eq_(socket.gethostname(), "pp1")
+        self.assertTrue(r["payload"]["return_code"] == 0)
+        self.assertEqual(socket.gethostname(), "pp1")
 
         doc = {
             "command": "rename",
@@ -478,9 +477,9 @@ class TestProtocolCommands(reply.ReplyObserverInterface):
         }
         req_reply = self._rpc_wait_reply(doc)
         r = req_reply.get_reply()
-        nose.tools.eq_(r["payload"]["return_code"], 0)
+        self.assertEqual(r["payload"]["return_code"], 0)
 
-        nose.tools.eq_(socket.gethostname(), orig_hostname)
+        self.assertEqual(socket.gethostname(), orig_hostname)
 
     @test_utils.skip_docker
     @test_utils.system_changing
@@ -497,8 +496,8 @@ class TestProtocolCommands(reply.ReplyObserverInterface):
         req_reply = self._rpc_wait_reply(doc)
         r = req_reply.get_reply()
         print(socket.gethostname())
-        nose.tools.ok_(r["payload"]["return_code"] != 0)
-        nose.tools.eq_(socket.gethostname(), orig_hostname)
+        self.assertTrue(r["payload"]["return_code"] != 0)
+        self.assertEqual(socket.gethostname(), orig_hostname)
 
     def _get_job_description(self, job_id):
         arguments = {
@@ -510,8 +509,8 @@ class TestProtocolCommands(reply.ReplyObserverInterface):
         }
         req_reply = self._rpc_wait_reply(doc)
         r = req_reply.get_reply()
-        nose.tools.eq_(r["payload"]["return_code"], 0)
-        nose.tools.eq_(r["payload"]["reply_type"], "job_description")
+        self.assertEqual(r["payload"]["return_code"], 0)
+        self.assertEqual(r["payload"]["reply_type"], "job_description")
 
         jd = r["payload"]["reply_object"]
 
@@ -529,7 +528,7 @@ class TestProtocolCommands(reply.ReplyObserverInterface):
         }
         req_reply = self._rpc_wait_reply(doc)
         r = req_reply.get_reply()
-        nose.tools.eq_(r["payload"]["return_code"], 0)
+        self.assertEqual(r["payload"]["return_code"], 0)
 
     @test_utils.skip_docker
     @test_utils.system_changing
@@ -543,8 +542,8 @@ class TestProtocolCommands(reply.ReplyObserverInterface):
         }
         req_reply = self._rpc_wait_reply(doc)
         r = req_reply.get_reply()
-        nose.tools.ok_(r["payload"]["return_code"] != 0)
-        nose.tools.eq_(socket.gethostname(), orig_hostname)
+        self.assertTrue(r["payload"]["return_code"] != 0)
+        self.assertEqual(socket.gethostname(), orig_hostname)
 
         doc = {
             "command": "rename",
@@ -552,9 +551,9 @@ class TestProtocolCommands(reply.ReplyObserverInterface):
         }
         req_reply = self._rpc_wait_reply(doc)
         r = req_reply.get_reply()
-        nose.tools.eq_(r["payload"]["return_code"], 0)
+        self.assertEqual(r["payload"]["return_code"], 0)
 
-        nose.tools.eq_(socket.gethostname(), orig_hostname)
+        self.assertEqual(socket.gethostname(), orig_hostname)
 
     @test_utils.skip_docker
     @test_utils.system_changing
@@ -573,8 +572,8 @@ class TestProtocolCommands(reply.ReplyObserverInterface):
                           "encryptedEphemeralFsKey": None}}
         req_rpc = self._rpc_wait_reply(doc)
         r = req_rpc.get_reply()
-        nose.tools.ok_(r["payload"]["return_code"] != 0)
-        nose.tools.eq_(socket.gethostname(), orig_hostname)
+        self.assertTrue(r["payload"]["return_code"] != 0)
+        self.assertEqual(socket.gethostname(), orig_hostname)
 
     @test_utils.system_changing
     def test_mount_variety(self):
@@ -585,7 +584,7 @@ class TestProtocolCommands(reply.ReplyObserverInterface):
         elif os.path.exists("/dev/hdb"):
             device_id = "hdb"
         else:
-            raise skip.SkipTest("No second drive was found")
+            raise unittest.SkipTest("No second drive was found")
 
         mappings = utils.get_device_mappings(self.conf_obj)
         for dm in mappings:
@@ -597,7 +596,7 @@ class TestProtocolCommands(reply.ReplyObserverInterface):
         for dm in mappings:
             if dm['device_id'] == device_id:
                 if dm['mount_point'] != mount_point:
-                    raise skip.SkipTest("The device is already mounted")
+                    raise unittest.SkipTest("The device is already mounted")
 
         doc = {
             "command": "mount_volume",
@@ -613,7 +612,7 @@ class TestProtocolCommands(reply.ReplyObserverInterface):
         jd = r["payload"]["reply_object"]
         while jd["job_status"] in ["WAITING", "RUNNING"]:
             jd = self._get_job_description(jd["job_id"])
-        nose.tools.eq_(jd["job_status"], "COMPLETE")
+        self.assertEqual(jd["job_status"], "COMPLETE")
         print("done mount")
 
         found = False
@@ -621,8 +620,8 @@ class TestProtocolCommands(reply.ReplyObserverInterface):
         for dm in mappings:
             if dm['device_id'] == device_id:
                 found = True
-                nose.tools.eq_(dm['mount_point'], mount_point)
-        nose.tools.ok_(found)
+                self.assertEqual(dm['mount_point'], mount_point)
+        self.assertTrue(found)
 
         arguments = {
             "deviceId": device_id,
@@ -633,7 +632,7 @@ class TestProtocolCommands(reply.ReplyObserverInterface):
         }
         req_reply = self._rpc_wait_reply(doc)
         r = req_reply.get_reply()
-        nose.tools.eq_(r["payload"]["return_code"], 0)
+        self.assertEqual(r["payload"]["return_code"], 0)
 
         mount_point = os.path.join(tempfile.mkdtemp(), "mnt2")
         doc = {
@@ -649,7 +648,7 @@ class TestProtocolCommands(reply.ReplyObserverInterface):
         jd = r["payload"]["reply_object"]
         while jd["job_status"] in ["WAITING", "RUNNING"]:
             jd = self._get_job_description(jd["job_id"])
-        nose.tools.eq_(jd["job_status"], "COMPLETE")
+        self.assertEqual(jd["job_status"], "COMPLETE")
         print("done format")
 
         arguments = {
@@ -661,14 +660,14 @@ class TestProtocolCommands(reply.ReplyObserverInterface):
         }
         req_reply = self._rpc_wait_reply(doc)
         r = req_reply.get_reply()
-        nose.tools.eq_(r["payload"]["return_code"], 0)
+        self.assertEqual(r["payload"]["return_code"], 0)
 
     @test_utils.system_changing
     def test_mount_encryption(self):
         enc_str = "ENCRYPTED_FILE_ENV"
 
         if enc_str not in os.environ:
-            raise skip.SkipTest("set %s to try encryption tests" % enc_str)
+            raise unittest.SkipTest("set %s to try encryption tests" % enc_str)
 
         enc_key = os.environ["ENCRYPTED_FILE_ENV"]
         mount_point = os.path.join(tempfile.mkdtemp(), "mnt")
@@ -694,7 +693,7 @@ class TestProtocolCommands(reply.ReplyObserverInterface):
         jd = r["payload"]["reply_object"]
         while jd["job_status"] in ["WAITING", "RUNNING"]:
             jd = self._get_job_description(jd["job_id"])
-        nose.tools.eq_(jd["job_status"], "COMPLETE")
+        self.assertEqual(jd["job_status"], "COMPLETE")
 
         arguments = {
             "deviceId": "es" + device_id,
@@ -706,7 +705,7 @@ class TestProtocolCommands(reply.ReplyObserverInterface):
         }
         req_reply = self._rpc_wait_reply(doc)
         r = req_reply.get_reply()
-        nose.tools.eq_(r["payload"]["return_code"], 0)
+        self.assertEqual(r["payload"]["return_code"], 0)
 
     def test_upgrade(self):
         try:
@@ -731,16 +730,16 @@ class TestProtocolCommands(reply.ReplyObserverInterface):
             print("sending upgrade")
             req_reply = self._rpc_wait_reply(doc)
             r = req_reply.get_reply()
-            nose.tools.eq_(r["payload"]["return_code"], 0)
+            self.assertEqual(r["payload"]["return_code"], 0)
 
             print("verify upgrade")
             with open(tmpfname, "r") as fptr:
                 line = fptr.readline()
-            nose.tools.ok_(line)
+            self.assertTrue(line)
             la = line.split()
 
-            nose.tools.eq_(la[0], newVersion)
-            nose.tools.eq_(la[1], dcm.agent.g_version)
+            self.assertEqual(la[0], newVersion)
+            self.assertEqual(la[1], dcm.agent.g_version)
         except Exception as ex:
             with open("/tmp/SUP", "w") as fptr:
                 fptr.write("got here")
@@ -758,7 +757,7 @@ class TestProtocolCommands(reply.ReplyObserverInterface):
                 fptr.write(test_utils.build_assertion_exception("tester"))
             print(ex)
             print(test_utils.build_assertion_exception("tester"))
-            nose.tools.ok_(False, str(ex))
+            self.assertTrue(False, str(ex))
 
     def test_run_script(self):
         _, tmpfname = tempfile.mkstemp()
@@ -782,14 +781,14 @@ class TestProtocolCommands(reply.ReplyObserverInterface):
         }
         req_reply = self._rpc_wait_reply(doc)
         r = req_reply.get_reply()
-        nose.tools.eq_(r["payload"]["return_code"], 0)
+        self.assertEqual(r["payload"]["return_code"], 0)
 
         with open(tmpfname, "r") as fptr:
             line = fptr.readline()
-        nose.tools.ok_(line)
+        self.assertTrue(line)
         la = line.split()
 
-        nose.tools.eq_(la, args)
+        self.assertEqual(la, args)
 
     @test_utils.system_changing
     def test_configure_server_with_chef(self):
@@ -819,20 +818,20 @@ class TestProtocolCommands(reply.ReplyObserverInterface):
         }
         req_reply = self._rpc_wait_reply(doc)
         r = req_reply.get_reply()
-        nose.tools.eq_(r["payload"]["return_code"], 0)
-        nose.tools.eq_(r["payload"]["reply_type"], "job_description")
+        self.assertEqual(r["payload"]["return_code"], 0)
+        self.assertEqual(r["payload"]["reply_type"], "job_description")
 
         jd = r["payload"]["reply_object"]
         while jd["job_status"] in ["WAITING", "RUNNING"]:
             jd = self._get_job_description(jd["job_id"])
-        nose.tools.eq_(jd["job_status"], "COMPLETE")
+        self.assertEqual(jd["job_status"], "COMPLETE")
 
         with open(tmpfname, "r") as fptr:
             lines = fptr.readlines()
-        nose.tools.ok_(len(lines) >= 1)
+        self.assertTrue(len(lines) >= 1)
 
         line1_a = lines[0].split()
-        nose.tools.eq_(line1_a[1], confClientName)
+        self.assertEqual(line1_a[1], confClientName)
 
     @patch('dcm.agent.utils.extras_installed')
     @test_utils.system_changing
@@ -882,20 +881,20 @@ class TestProtocolCommands(reply.ReplyObserverInterface):
             }
             req_reply = self._rpc_wait_reply(doc)
             r = req_reply.get_reply()
-            nose.tools.eq_(r["payload"]["return_code"], 0)
-            nose.tools.eq_(r["payload"]["reply_type"], "job_description")
+            self.assertEqual(r["payload"]["return_code"], 0)
+            self.assertEqual(r["payload"]["reply_type"], "job_description")
 
             jd = r["payload"]["reply_object"]
             while jd["job_status"] in ["WAITING", "RUNNING"]:
                 jd = self._get_job_description(jd["job_id"])
-            nose.tools.eq_(jd["job_status"], "COMPLETE")
+            self.assertEqual(jd["job_status"], "COMPLETE")
 
             with open(tmpfname, "r") as fptr:
                 lines = fptr.readlines()
-            nose.tools.ok_(len(lines) >= 1)
+            self.assertTrue(len(lines) >= 1)
 
             line1_a = lines[0].split()
-            nose.tools.eq_(line1_a[3], confClientName)
+            self.assertEqual(line1_a[3], confClientName)
         finally:
             self.conf_obj.extra_base_path = old_extra_path
 
@@ -909,8 +908,8 @@ class TestProtocolCommands(reply.ReplyObserverInterface):
         }
         req_reply = self._rpc_wait_reply(doc)
         r = req_reply.get_reply()
-        nose.tools.ok_(r["payload"]["return_code"] != 0)
-        nose.tools.eq_(socket.gethostname(), orig_hostname)
+        self.assertTrue(r["payload"]["return_code"] != 0)
+        self.assertEqual(socket.gethostname(), orig_hostname)
 
     @test_utils.system_changing
     def test_remove_multiple_users(self):
@@ -929,10 +928,10 @@ class TestProtocolCommands(reply.ReplyObserverInterface):
             user_list.append(user_name)
             req_rpc = self._rpc_wait_reply(doc)
             r = req_rpc.get_reply()
-            nose.tools.eq_(r["payload"]["return_code"], 0)
+            self.assertEqual(r["payload"]["return_code"], 0)
 
             pw_ent = pwd.getpwnam(user_name)
-            nose.tools.eq_(pw_ent.pw_name, user_name)
+            self.assertEqual(pw_ent.pw_name, user_name)
 
         doctwo = {
             "command": "clean_image",
@@ -940,7 +939,7 @@ class TestProtocolCommands(reply.ReplyObserverInterface):
 
         req_rpc = self._rpc_wait_reply(doctwo)
         r = req_rpc.get_reply()
-        nose.tools.eq_(r["payload"]["return_code"], 0)
+        self.assertEqual(r["payload"]["return_code"], 0)
         try:
             for name in user_list:  # delete and clean up user
                 pw_ent = pwd.getpwnam(name)
@@ -966,10 +965,10 @@ class TestProtocolCommands(reply.ReplyObserverInterface):
             user_list.append(user_name)
             req_rpc = self._rpc_wait_reply(doc)
             r = req_rpc.get_reply()
-            nose.tools.eq_(r["payload"]["return_code"], 0)
+            self.assertEqual(r["payload"]["return_code"], 0)
 
             pw_ent = pwd.getpwnam(user_name)
-            nose.tools.eq_(pw_ent.pw_name, user_name)
+            self.assertEqual(pw_ent.pw_name, user_name)
             keyfile = '/home/%s/.ssh/key' % user_name
             with open(keyfile, "w") as kf:
                 kf.write('-----BEGIN RSA PRIVATE KEY-----\n')
@@ -979,15 +978,15 @@ class TestProtocolCommands(reply.ReplyObserverInterface):
 
         req_rpc = self._rpc_wait_reply(doctwo)
         r = req_rpc.get_reply()
-        nose.tools.eq_(r["payload"]["return_code"], 0)
+        self.assertEqual(r["payload"]["return_code"], 0)
         jd = r["payload"]["reply_object"]
         while jd["job_status"] in ["WAITING", "RUNNING"]:
             jd = self._get_job_description(jd["job_id"])
-        nose.tools.eq_(jd["job_status"], "COMPLETE")
+        self.assertEqual(jd["job_status"], "COMPLETE")
 
         for user in user_list:
             keyfile_path = '/home/%s/.ssh/key' % user
-            nose.tools.eq_(os.path.isfile(keyfile_path), False)
+            self.assertEqual(os.path.isfile(keyfile_path), False)
 
         try:
             for name in user_list:  # delete and clean up user and homedir
@@ -1015,10 +1014,10 @@ class TestProtocolCommands(reply.ReplyObserverInterface):
             user_list.append(user_name)
             req_rpc = self._rpc_wait_reply(doc)
             r = req_rpc.get_reply()
-            nose.tools.eq_(r["payload"]["return_code"], 0)
+            self.assertEqual(r["payload"]["return_code"], 0)
 
             pw_ent = pwd.getpwnam(user_name)
-            nose.tools.eq_(pw_ent.pw_name, user_name)
+            self.assertEqual(pw_ent.pw_name, user_name)
             history_file = '/home/%s/.fake_history' % user_name
             with open(history_file, "w") as kf:
                 kf.write('this is fake stuff')
@@ -1033,21 +1032,21 @@ class TestProtocolCommands(reply.ReplyObserverInterface):
 
         req_rpc = self._rpc_wait_reply(doctwo)
         r = req_rpc.get_reply()
-        nose.tools.eq_(r["payload"]["return_code"], 0)
+        self.assertEqual(r["payload"]["return_code"], 0)
         jd = r["payload"]["reply_object"]
         while jd["job_status"] in ["WAITING", "RUNNING"]:
             jd = self._get_job_description(jd["job_id"])
-        nose.tools.eq_(jd["job_status"], "COMPLETE")
+        self.assertEqual(jd["job_status"], "COMPLETE")
 
         for user in user_list:
             history_path = '/home/%s/.fake_history' % user
-            nose.tools.eq_(os.path.isfile(history_path), False)
-            nose.tools.eq_(os.path.isfile(keep_file), True)
+            self.assertEqual(os.path.isfile(history_path), False)
+            self.assertEqual(os.path.isfile(keep_file), True)
 
         log_dir = os.path.join(self.test_base_path, 'logs')
-        nose.tools.eq_(os.listdir(log_dir), [])
+        self.assertEqual(os.listdir(log_dir), [])
         secure_dir = os.path.join(self.test_base_path, 'secure')
-        nose.tools.eq_(os.path.isfile(
+        self.assertEqual(os.path.isfile(
             os.path.join(secure_dir, 'agentdb.sql')), True)
 
         try:

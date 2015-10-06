@@ -17,8 +17,6 @@ import os
 import unittest
 import uuid
 
-from nose.plugins import skip
-
 import dcmdocker.pull_repo as pull_repo
 import dcmdocker.list_images as list_images
 import dcmdocker.import_image as import_image
@@ -58,7 +56,7 @@ class TestDockerImageCommands(unittest.TestCase):
 
     def test_import_image_list_delete(self):
         if 'DCM_DOCKER_IMAGE_LOCATION' not in os.environ:
-            raise skip.SkipTest('skipping')
+            raise unittest.SkipTest('skipping')
 
         image_location = os.environ['DCM_DOCKER_IMAGE_LOCATION']
 

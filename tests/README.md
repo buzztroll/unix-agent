@@ -55,6 +55,6 @@ and you have cloned [the unix-agent repo](https://www.github.com/enStratus/unix-
   * ``` cd /<projectdirectory>/unix-agent/tests/ ```
   * ``` source testenv.sh --help ```
   * source testenv.sh again with your options and host machine private ip address
-  * ``` nosetests dcm.agent.tests ```
+  * ``` nose2 dcm.agent.tests ```
   * You should see it connect to your PyCharm debugger where you can do the usual set breakpoints and step through
   

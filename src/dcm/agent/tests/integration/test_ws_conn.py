@@ -17,10 +17,9 @@ import datetime
 import getpass
 import os
 import socket
+import unittest
 import tempfile
 import threading
-
-import nose
 
 import dcm.agent.cmd.configure as configure
 import dcm.agent.cmd.service as service
@@ -30,7 +29,7 @@ import dcm.agent.tests.utils.general as test_utils
 
 # does not inherit from unittest because of the python generators for
 # testing storage clouds
-class TestWsConnection(object):
+class TestWsConnection(unittest.TestCase):
 
     @classmethod
     def setUpClass(cls):
@@ -107,7 +106,7 @@ class TestWsConnection(object):
             serversocket.close()
             agent.shutdown_main_loop()
             t1.join()
-        nose.tools.ok_(expected_connections * .9 - 1 < connect_count
-                       < expected_connections * 1.1 + 1,
-                       "connect_count is %d, expected %d" %
-                       (connect_count, expected_connections))
+        self.assertTrue(expected_connections * .9 - 1 < connect_count
+                        < expected_connections * 1.1 + 1,
+                        "connect_count is %d, expected %d" %
+                        (connect_count, expected_connections))

@@ -22,7 +22,6 @@ import tempfile
 import unittest
 
 import mock
-from nose.plugins import skip
 import psutil
 from dcm.agent import logger
 
@@ -133,7 +132,7 @@ class TestProgramOptions(unittest.TestCase):
                 break
         if pid_val is None:
             warn("No free pid found... huh")
-            raise skip.SkipTest("No free pid found")
+            raise unittest.SkipTest("No free pid found")
 
         with open(pid_file, "w") as fptr:
             fptr.write(str(pid_val))

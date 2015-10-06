@@ -14,10 +14,10 @@
 # limitations under the License.
 #
 import getpass
-import nose
 import os
 import shutil
 import tempfile
+import unittest
 
 import dcm.agent.cmd.service as service
 import dcm.agent.cmd.configure as configure
@@ -27,7 +27,8 @@ import dcm.agent.tests.utils.general as test_utils
 
 # does not inherit from unittest because of the python generators for
 # testing storage clouds
-class TestAgentStatus(object):
+
+class TestAgentStatus(unittest.TestCase):
 
     @classmethod
     def setUpClass(cls):
@@ -56,4 +57,4 @@ class TestAgentStatus(object):
         # we need a way to parse the output to verify tests
         rc = service.main(
             args=["dcm-agent", "-c", self.test_conf_path, "status"])
-        nose.tools.eq_(rc, 1)
+        self.assertEqual(rc, 1)
