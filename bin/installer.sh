@@ -47,9 +47,8 @@ Optional Arguments:
 
   --cloud {Amazon, etc...}, -c {Amazon, etc...}
                         The cloud where this virtual machine will be run.
-                        Options: Amazon, Azure, Bluelock, CloudStack,
-                        CloudStack3, Eucalyptus, Google, Joyent, Konami,
-                        OpenStack, Other, UNKNOWN
+                        Options: Amazon, Azure, CloudStack, CloudStack3,
+                        Eucalyptus, Google, Joyent, OpenStack, Other, UNKNOWN
 
   --url URL, -u URL     The location of the dcm web socket listener
 

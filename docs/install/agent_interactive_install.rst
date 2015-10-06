@@ -22,9 +22,9 @@ Run the following command below with **root** authority to install the DCM Agent
     Instance ID is i-ce752c3f
      0) Amazon
      1) Azure
-     2) Bluelock
-     3) CloudStack
-     4) CloudStack3
+     2) CloudStack
+     3) CloudStack3
+     4) DigitalOcean
      5) Eucalyptus
      6) Google
      7) Joyent

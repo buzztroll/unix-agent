@@ -38,8 +38,8 @@ Non-interactive install syntax
 
           -c, --cloud           cloud Provider 
                                 --------------------------------------------------------------
-                                Amazon, Azure, Bluelock, CloudStack, CloudStack3,
-                                Eucalyptus, Google, Joyent, Konami, OpenStack, Other, UNKNOWN
+                                Amazon, Azure, CloudStack, CloudStack3,
+                                Eucalyptus, Google, Joyent, OpenStack, Other, UNKNOWN
 
           -u, --url             Web socket URL of the Dell Cloud Manager provisioning server agent manager service
                                 Format: wss://hostname_or_ipaddress/agentManager 
