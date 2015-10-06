@@ -1,3 +1,12 @@
+# 0.13.4 (2015-10-6)
+
+Bug fixes:
+* FB8147.  list_devices failed on RHEL 7 due to the output from listDevices
+  similar to rootfs - / - -.
+* Update the installation documentation to reflect the currently supported
+  clouds.
+* The scrubber now logs a message when a file is not found instead of failing.
+
 # 0.13.3 (2015-10-2)
 
 Bug fixes:
