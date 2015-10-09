@@ -1,3 +1,9 @@
+# 0.13.5 (2015-10-9)
+
+Bug fixes:
+* Clean DHCP logs in the scrubber.
+* Clean all files under /dcm/logs.  This fixes FB8178 by removing rotated logs
+
 # 0.13.4 (2015-10-6)
 
 Bug fixes:
@@ -6,6 +12,7 @@ Bug fixes:
 * Update the installation documentation to reflect the currently supported
   clouds.
 * The scrubber now logs a message when a file is not found instead of failing.
+* Migrated to nose2
 
 # 0.13.3 (2015-10-2)
 
