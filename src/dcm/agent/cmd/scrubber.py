@@ -214,7 +214,6 @@ def delete_cloud_init_cache(opts, tar):
 
 def clean_logs(opts, tar):
     lookfor_strs = ['.*\.log', '.*\.gz']
-
     dir_list = ['/var/log',]
     for base_dir in dir_list:
         for (dirpath, dirname, filename) in os.walk(base_dir):
@@ -226,6 +225,12 @@ def clean_logs(opts, tar):
                         break
                 if found:
                     secure_delete(opts, tar, file)
+
+
+def clean_agent_logs(opts, tar, log_dir):
+    for (dirpath, dirname, filename) in os.walk(log_dir):
+        for file in filename:
+            secure_delete(opts, tar, file)
 
 
 def clean_agent_files(opts, tar):
@@ -243,9 +248,7 @@ def clean_agent_files(opts, tar):
     log_dir = os.path.join(conf.storage_base_dir, "logs")
 
     if not opts.agent_running:
-        files_to_clean.append(os.path.join(log_dir, 'agent.log'))
-        files_to_clean.append(os.path.join(log_dir, 'agent.log.job_runner'))
-        files_to_clean.append(os.path.join(log_dir, 'agent.log.wire'))
+        clean_agent_logs(opts, tar, log_dir)
         files_to_clean.append(conf.storage_dbfile)
 
     for f in files_to_clean:
@@ -480,7 +483,7 @@ def main(args=sys.argv):
             delete_authorize_keys(opts, tar)
         if opts.clean_logs:
             clean_logs(opts, tar)
-        if opts.clean_logs:
+        if opts.dhcp:
             clean_dhcp_leases(opts, tar)
         if opts.agent:
             clean_agent_files(opts, tar)
