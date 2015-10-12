@@ -1,3 +1,8 @@
+# 0.13.6 (2015-10-12)
+
+Bug fixes:
+* Fixes FB8178 by removing files by their absolute path.
+
 # 0.13.5 (2015-10-9)
 
 Bug fixes:
