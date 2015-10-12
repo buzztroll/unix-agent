@@ -217,20 +217,22 @@ def clean_logs(opts, tar):
     dir_list = ['/var/log',]
     for base_dir in dir_list:
         for (dirpath, dirname, filename) in os.walk(base_dir):
-            for file in filename:
+            for f in filename:
                 found = False
                 for lookfor in lookfor_strs:
-                    if re.match(lookfor, file):
+                    if re.match(lookfor, f):
                         found = True
                         break
                 if found:
-                    secure_delete(opts, tar, file)
+                    filepath = os.path.join(dirpath, f)
+                    secure_delete(opts, tar, filepath)
 
 
 def clean_agent_logs(opts, tar, log_dir):
-    for (dirpath, dirname, filename) in os.walk(log_dir):
-        for file in filename:
-            secure_delete(opts, tar, file)
+    for (dirpath, dirname, filenames) in os.walk(log_dir):
+        for f in filenames:
+            abs_path = os.path.join(dirpath, f)
+            secure_delete(opts, tar, abs_path)
 
 
 def clean_agent_files(opts, tar):
@@ -273,14 +275,15 @@ def clean_dhcp_leases(opts, tar):
                        '/var/lib/dhcpcd']
     for p in potential_paths:
         for (dirpath, dirname, filename) in os.walk(p):
-            for file in filename:
+            for f in filename:
                 found = False
                 for lookfor in lookfor_strs:
-                    if re.match(lookfor, file):
+                    if re.match(lookfor, f):
                         found = True
                         break
                 if found:
-                    secure_delete(opts, tar, file)
+                    filepath = os.path.join(dirpath, f)
+                    secure_delete(opts, tar, filepath)
 
 
 def get_get_public_key_path(opts):
