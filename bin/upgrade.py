@@ -84,7 +84,11 @@ def create_daemon():
 def backup_agent_files(base_dir):
     backup_conf_dir = tempfile.mkdtemp()
     a_conf = os.path.join(base_dir, "etc/agent.conf")
+    token = os.path.join(base_dir, "secure/token")
+    agentdb = os.path.join(base_dir, "secure/agentdb.sql")
     shutil.copy(a_conf, backup_conf_dir)
+    shutil.copy(token, backup_conf_dir)
+    shutil.copy(agentdb, backup_conf_dir)
     backup_message = "Backing up agent files to %s" % backup_conf_dir
     _g_logger.debug(backup_message)
     return backup_conf_dir
@@ -252,6 +256,15 @@ def get_agent_version():
     return stdoutdata.split()[1].decode()
 
 
+def restore_secure_dir(backup_dir, base_dir):
+    try:
+        shutil.copy(os.path.join(backup_dir, "token"), os.path.join(base_dir, "secure/token"))
+        shutil.copy(os.path.join(backup_dir, "agentdb.sql"), os.path.join(base_dir, "secure/agentdb.sql"))
+    except Exception as e:
+        restore_dir_message = "The report secure directory did not run correctly: %s" % e
+        _g_logger.debug(restore_dir_message)
+
+
 def get_parse_args():
     parser = argparse.ArgumentParser()
 
@@ -338,6 +351,7 @@ def main():
     stop_agent()
     run_installer(installer_exe, package_url, version, backup_dir,
                   allow_unknown_certs, parsed_args.package_location)
+    restore_secure_dir(backup_dir, base_dir)
     dcm_user_info = pwd.getpwnam('dcm')
     _g_logger.debug("DCM user is %s" % dcm_user_info[0])
     if os.path.isdir(os.path.join(base_dir, 'secure')):
@@ -358,6 +372,8 @@ def main():
            os.path.join(backup_dir, os.path.basename(_g_log_file))))
     shutil.copy(_g_log_file, backup_dir)
     os.remove(_g_log_file)
+    os.remove(os.path.join(backup_dir, "token"))
+    os.remove(os.path.join(backup_dir, "agentdb.sql"))
     _g_logger.debug(logs_location)
 
 if __name__ == "__main__":
