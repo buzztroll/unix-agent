@@ -1,3 +1,8 @@
+# 0.13.6 (2015-10-14)
+
+Bug fixes:
+* Safely preserves the token file between upgrades.
+
 # 0.13.6 (2015-10-12)
 
 Bug fixes:
