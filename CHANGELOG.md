@@ -1,4 +1,8 @@
-# 0.13.6 (2015-10-14)
+# 1.0.0 (2015-10-15)
+
+QA approved 0.13.7 for stable promotion.
+
+# 0.13.7 (2015-10-14)
 
 Bug fixes:
 * Safely preserves the token file between upgrades.
