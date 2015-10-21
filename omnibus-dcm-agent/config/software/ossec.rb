@@ -16,19 +16,23 @@ build do
     "USER_ENABLE_ROOTCHECK" => "y",
     "USER_ENABLE_ACTIVE_RESPONSE" => "n"
   }
-  command "wget -O /tmp/ossec-hids-2.8.2.tar.gz -U ossec http://www.ossec.net/files/ossec-hids-2.8.2.tar.gz ", :env => build_env
-  command "wget -O /tmp/ossec.txt -U ossec http://www.ossec.net/files/ossec-hids-2.8.2-checksum.txt ", :env => build_env
+
+  %x[wget -O /tmp/ossec-hids-2.8.2.tar.gz -U ossec http://www.ossec.net/files/ossec-hids-2.8.2.tar.gz]
+  %x[wget -O /tmp/ossec.txt -U ossec http://www.ossec.net/files/ossec-hids-2.8.2-checksum.txt]
+
   checksum_file = Digest::MD5.hexdigest(File.read('/tmp/ossec-hids-2.8.2.tar.gz'))
   lines = File.readlines('/tmp/ossec.txt')
   line = lines.select { |lines| lines[/#{"MD5"}/i] }
   check_line = line[0].split(" ")
   checksum_check = check_line[1]
+
   if checksum_file != checksum_check then
     puts "Checksum did not match...exiting."
     exit 1
   end
-  command "tar -zxvf /tmp/ossec-hids-2.8.2.tar.gz -C /tmp", :env => build_env
-  command "/tmp/ossec-hids-2.8.2/install.sh", :env => build_env
+
+  %x[tar -zxvf /tmp/ossec-hids-2.8.2.tar.gz -C /tmp]
+  command '/tmp/ossec-hids-2.8.2/install.sh', env: build_env
 
   erb source: "ossec.conf.erb",
       dest: "#{dst_path}/etc/ossec.conf",
