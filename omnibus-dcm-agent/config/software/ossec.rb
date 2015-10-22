@@ -4,7 +4,7 @@ default_version "2.8.2"
 
 
 build do
-  dst_path = "/opt/ossec"
+  dst_path = "#{install_dir}/ossec"
   build_env = {
     "USER_CLEANINSTALL" => "y",
     "USER_NO_STOP" => "y",
