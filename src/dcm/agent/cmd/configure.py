@@ -142,7 +142,7 @@ def setup_command_line_parser():
 
     parser.add_argument("--extra-package-location",
                         dest="extra_package_location",
-                        default="https://es-pyagent.s3.amazonaws.com/",
+                        default="https://linux-stable-agent.enstratius.com/",
                         help="The URL of the dcm-agent-extras package which "
                              "contains additional software dependencies "
                              "needed for some commands.")

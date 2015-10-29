@@ -9,12 +9,12 @@ Interactive Install Example
 
 Run the following command below with **root** authority to install the DCM Agent in interactive mode.
 
-  :samp:`bash <( curl -k http://linux.stable.agent.enstratius.com/installer.sh )`
+  :samp:`bash <( curl -k -L https://linux.stable.agent.enstratius.com/installer.sh )`
 
   .. code-block:: text
     :emphasize-lines: 19,21,35-36,45
 
-    root@ip-10-29-59-177:~# bash <( curl -k http://linux.stable.agent.enstratius.com/installer.sh )
+    root@ip-10-29-59-177:~# bash <( curl -k -L https://linux.stable.agent.enstratius.com/installer.sh )
 
     *** some display output from the install has been omitted in order to reduce clutter ***
 

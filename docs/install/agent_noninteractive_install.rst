@@ -10,7 +10,7 @@ Non-interactive Install Examples
 The following curl command will install the latest DCM Agent and configure it to communicate to this agentManager server: **wss://66.57.3.53/agentManager**. 
 For most DCM Agent installs in On-Premise Dell Cloud Manager server environments that is the only required option. The DCM Agent will also be started after the install finishes. 
 
-  :samp:`curl -k http://linux.stable.agent.enstratius.com/installer.sh | bash -s - -u wss://66.57.3.53/agentManager && service dcm-agent start`
+  :samp:`curl -k -L https://linux.stable.agent.enstratius.com/installer.sh | bash -s - -u wss://66.57.3.53/agentManager && service dcm-agent start`
 
   .. code-block:: text
 
@@ -31,7 +31,7 @@ For most DCM Agent installs in On-Premise Dell Cloud Manager server environments
 The following curl command will install the latest DCM Agent, configure it for the OpenStack cloud, install the latest Chef client, and configure the DCM Agent to communicate to
 this agentManager server: **wss://66.57.3.53/agentManager**. The DCM Agent will also be started after the install finishes.
 
-  :samp:`curl -k http://linux.stable.agent.enstratius.com/installer.sh | bash -s - -c OpenStack --chef-client -u wss://66.57.3.53/agentManager && service dcm-agent start`
+  :samp:`curl -k -L https://linux.stable.agent.enstratius.com/installer.sh | bash -s - -c OpenStack --chef-client -u wss://66.57.3.53/agentManager && service dcm-agent start`
 
   .. code-block:: text
 
