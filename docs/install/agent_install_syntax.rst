@@ -9,7 +9,7 @@ Interactive install syntax
 
   Issue the following command to install the DCM Agent in "interactive mode".
 
-    :samp:`bash <( curl -k -L https://linux.stable.agent.enstratius.com/installer.sh )`
+    :samp:`bash <( curl -k -L https://linux-stable-agent.enstratius.com/installer.sh )`
 
   You will be prompted for:
 
@@ -30,7 +30,7 @@ Non-interactive install syntax
 
   Issue the following command to install the DCM Agent in "non-interactive mode".
 
-    :samp:`curl -k -L https://linux.stable.agent.enstratius.com/installer.sh | bash -s - [options]`
+    :samp:`curl -k -L https://linux-stable-agent.enstratius.com/installer.sh | bash -s - [options]`
 
     .. code-block:: text
 
@@ -52,7 +52,7 @@ Non-interactive install syntax
           -t, --tmp-path        Path to the temporary directory  (default /tmp)
 
           -U, --user            Linux user that the DCM Agent will run as (default dcm)
-                                If you specify a different user then that user must already exist.
+                                If you specify a different user then that user must already ex-st.
 
           -o, --chef-client     Install the latest Chef client                                     
         
