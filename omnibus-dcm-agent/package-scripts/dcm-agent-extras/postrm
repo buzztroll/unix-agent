@@ -2,7 +2,7 @@
 
 set -u
 
-DIR=/opt/dcm-agent-extras/ossec
-mkdir -p ${DIR}
+DIR=/opt/dcm-agent-extras
+rm -rf ${DIR}
 
 exit 0

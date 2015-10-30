@@ -13,7 +13,11 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 #
+import calendar
+import datetime
+import hashlib
 import threading
+import uuid
 
 import dcm.agent.utils as utils
 import dcm.agent.events.state_machine as state_machine
@@ -38,7 +42,7 @@ class AlertAckMsg(object):
 
     def __init__(self, doc, conn, timeout=5.0):
         self._timeout = timeout
-        self._doc = doc
+        self.doc = doc
         self._sm = state_machine.StateMachine(States.NEW)
         self.setup_states()
         self._timer = None
@@ -122,3 +126,47 @@ class AlertAckMsg(object):
                                 Events.STOP,
                                 States.COMPLETE,
                                 None)
+
+
+class AlertSender(object):
+
+    def __init__(self, conn, db):
+        self._conn = conn
+        self._db = db
+        self._alerts = {}
+
+    def send_alert(self, alert_time, subject, level, rule, message):
+
+        request_id = str(uuid.uuid4())
+        doc = {
+            'type': 'ALERT',
+            'request_id': request_id,
+            'current_timestamp': calendar.timegm(datetime.time.gmtime()) * 1000,
+            'alert_timestamp': int(alert_time * 1000),
+            'level': level,
+            'rule': rule,
+            'message': message,
+            'subject': subject
+        }
+        alert_msg = AlertAckMsg(doc, self._conn)
+        self._alerts[request_id] = alert_msg
+        alert_msg.send()
+
+    def incoming_message(self, incoming_doc):
+        request_id = incoming_doc['request_id']
+        alert = self._out_standing_alerts[request_id]
+        alert.incoming_message()
+
+        h = hashlib.sha256()
+        h.update(str(alert.doc['alert_timestamp']))
+        h.update(alert.doc['subject'])
+        h.update(alert.doc['message'])
+        alert_hash = h.hexdigest()
+        self._db.add_alert(alert.doc['alert_timestamp'],
+                           alert.doc['current_timestamp'],
+                           alert_hash,
+                           alert.doc['level'],
+                           alert.doc['rule'],
+                           alert.doc['subject'],
+                           alert.doc['message'])
+        del self._out_standing_alerts[request_id]

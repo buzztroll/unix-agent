@@ -48,6 +48,17 @@ create table if not exists users (
     administrator     integer,
     PRIMARY KEY (username, agent_id)
 );
+
+create table if not exists alerts (
+    alert_time        integer not null,
+    added_time        integer,
+    alert_hash        string not null,
+    level             integer,
+    rule              integer,
+    message           text,
+    subject           text,
+    PRIMARY KEY (alert_hash)
+);
 """
 
 
@@ -336,6 +347,34 @@ class SQLiteAgentDB(object):
                     "The database has more than 1 user as the owner")
             row = cursor.fetchone()
             return (row[0], row[1])
+
+        return self._execute(do_it)
+
+    @agent_utils.class_method_sync
+    def add_alert(self, alert_time, time_received,
+                  alert_hash, level, rule, subject, message):
+        insert_new = ("INSERT INTO alerts(alert_time, added_time, alert_hash, "
+                      "level, rule, subject, message) "
+                      "VALUES(?, ?, ?, ?, ?, ?, ?)")
+
+        def do_it(cursor):
+            cursor.execute(
+                insert_new,
+                (alert_time, time_received, alert_hash, level, rule,
+                 subject, message))
+
+        self._execute(do_it)
+
+    @agent_utils.class_method_sync
+    def get_latest_alert(self):
+        stmt = "SELECT max(alert_time) from alerts"
+
+        def do_it(cursor):
+            cursor.execute(stmt)
+            if cursor.rowcount < 1:
+                raise 0
+            row = cursor.fetchone()
+            return row[0]
 
         return self._execute(do_it)
 
