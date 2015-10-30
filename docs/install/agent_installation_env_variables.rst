@@ -19,10 +19,10 @@ These optional environment variables can be set prior to running the DCM Agent i
                                     Example: export AGENT_LOCAL_PACKAGE="/tmp/dcm-agent-ubuntu-14.04-amd64-latest.deb"
 
   AGENT_BASE_URL=<url>              This setting will direct the installer to use the specified URL as the base URL for downloading the DCM Agent distribution package.
-                                    By default the agent installer downloads the agent distribution packages from https://linux.stable.agent.enstratius.com
+                                    By default the agent installer downloads the agent distribution packages from https://linux-stable-agent.enstratius.com
 
                                     To direct the installer to download the DCM Agent distribution package from the unstable DCM Agent repository specify:    
-                                    export AGENT_BASE_URL="https://linux.development.agent.enstratius.com"
+                                    export AGENT_BASE_URL="https://linux-development-agent.enstratius.com"
 
   AGENT_UNSTABLE                    If this variable exists then the installer will download and install the latest unstable version of the DCM Agent distribution package.
                                     Example: export AGENT_UNSTABLE=YES
