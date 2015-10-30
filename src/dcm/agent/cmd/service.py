@@ -21,6 +21,7 @@ import clint
 import json
 import logging
 import os
+from dcm.agent.messaging import alert_msg
 import psutil
 import signal
 import sys
@@ -49,6 +50,7 @@ class DCMAgent(object):
         self.conn = None
         self.conf = conf
         self.disp = None
+        self.intrusion_detection = None
         self.request_listener = None
         self.g_logger = logging.getLogger(__name__)
         self._db = persistence.SQLiteAgentDB(conf.storage_dbfile)
@@ -103,6 +105,11 @@ class DCMAgent(object):
                               self.handshaker)
             self.disp.start_workers(self.request_listener)
 
+            if self.conf.intrusion_detection_ossec:
+                self.intrusion_detection =\
+                    alert_msg.AlertSender(self.conn, self._db)
+                self.intrusion_detection.start()
+
             rc = self.agent_main_loop()
             return rc
         finally:
@@ -121,6 +128,8 @@ class DCMAgent(object):
 
     def cleanup_agent(self):
         systemstats.clean_up_all()
+        if self.intrusion_detection:
+            self.intrusion_detection.stop()
         if self.db_cleaner:
             self.g_logger.debug("Shutting down the db cleaner runner")
             self.db_cleaner.done()

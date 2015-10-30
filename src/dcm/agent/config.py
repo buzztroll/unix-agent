@@ -368,6 +368,9 @@ def build_options_list():
         ConfigOpt("system", "user", str, default="dcm"),
         ConfigOpt("system", "sudo", str, default="/usr/bin/sudo"),
 
+        ConfigOpt("intrusion_detection", "ossec", bool, default=False),
+
+
         ConfigOpt("cloud", "type", str, default=CLOUD_TYPES.UNKNOWN,
                   help_msg="The type of cloud on which this agent is running"),
         ConfigOpt("cloud", "metadata_url", str,

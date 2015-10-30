@@ -100,7 +100,6 @@ case "$1" in
     chown root:${GROUP} ${DIR}/etc/ossec.conf
     chmod 440 ${DIR}/etc/ossec.conf
 
-    /opt/dcm-agent-extras/ossec/bin/ossec-control enable client-syslog
     ;;
 
     abort-upgrade|abort-remove|abort-deconfigure)

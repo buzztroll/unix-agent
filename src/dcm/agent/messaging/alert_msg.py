@@ -74,7 +74,7 @@ class AlertAckMsg(object):
     def _send_timeout(self):
         self._timer = dcm_events.register_callback(
             self.timeout, delay=self._timeout)
-        self._conn.send(self._doc)
+        self._conn.send(self.doc)
 
     def _sm_send_message(self):
         self._send_timeout()
@@ -130,13 +130,16 @@ class AlertAckMsg(object):
 
 class AlertSender(object):
 
-    def __init__(self, conn, db):
+    def __init__(self, conn, db, poll_interval=30):
         self._conn = conn
         self._db = db
         self._alerts = {}
+        self._stopping = None
+        self._thread = None
+        self._cond = threading.Condition()
+        self._poll_interval = poll_interval
 
     def send_alert(self, alert_time, subject, level, rule, message):
-
         request_id = str(uuid.uuid4())
         doc = {
             'type': 'ALERT',
@@ -170,3 +173,27 @@ class AlertSender(object):
                            alert.doc['subject'],
                            alert.doc['message'])
         del self._out_standing_alerts[request_id]
+
+    def stop(self):
+        self._cond.acquire()
+        try:
+            self._stopping.set()
+            self.cond.notify()
+        finally:
+            self._cond.release()
+
+    def start(self):
+        if self._thread is not None:
+            raise Exception("The alert object has already been started.")
+        self._stopping = threading.Event()
+        self._thread = threading.Thread(target=self._run)
+        self._thread.start()
+
+    def _run(self):
+        self._cond.acquire()
+        try:
+            while not self._stopping.is_set():
+                # do work here
+                self.cond.wait(timeout=self._poll_interval)
+        finally:
+            self._cond.release()
