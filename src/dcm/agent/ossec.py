@@ -24,7 +24,7 @@ from watchdog.events import FileSystemEventHandler
 
 class OssecAlertParser(FileSystemEventHandler):
 
-    def __init__(self, dir_to_watch="/opt/dcm-agent-extras/ossec/logs/alerts", w_file="alert.log"):
+    def __init__(self, dir_to_watch="/opt/dcm-agent-extras/ossec/logs/alerts", w_file="alerts.log"):
         super(FileSystemEventHandler, self).__init__()
         self.dir_to_watch = dir_to_watch
         self.w_file = w_file
@@ -70,6 +70,11 @@ class OssecAlertParser(FileSystemEventHandler):
 
     def _parse_data(self, data, time_to_seek):
         data_list = data[time_to_seek:]
+        alert_time = -1
+        subject = ''
+        level = -1
+        rule = -1
+        message = ''
         while data_list:
             alert_chunk = data_list[0:data_list.index('')+1] #alerts separated by blank lines
             for item in alert_chunk:
@@ -83,8 +88,8 @@ class OssecAlertParser(FileSystemEventHandler):
                     subject = item[item.index('->')+3:]
                 #based on the default format line that starts with 'Alert' is index 2 in alert_chunk
                 #so we take the rest and concat as the message
-                message = ''
                 for mess in alert_chunk[3:]:
                     message += ' | ' + mess
-                self.alert_sender.send_alert(alert_time, subject, level, rule, message)
+                print(alert_time, subject, level, rule, message)
+            #self.alert_sender.send_alert(alert_time, subject, level, rule, message)
             data_list = data_list[data_list.index('')+1:] # get rid of used chunk

@@ -146,7 +146,7 @@ class AlertSender(object):
         doc = {
             'type': 'ALERT',
             'request_id': request_id,
-            'current_timestamp': calendar.timegm(datetime.time.gmtime()) * 1000,
+            'current_timestamp': calendar.timegm(time.gmtime()) * 1000,
             'alert_timestamp': int(alert_time * 1000),
             'level': level,
             'rule': rule,
