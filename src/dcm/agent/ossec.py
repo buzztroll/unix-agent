@@ -32,7 +32,7 @@ class OssecAlertParser(FileSystemEventHandler):
         config_files = config.get_config_files()
         conf = config.AgentConfig(config_files)
         self.db = persistence.SQLiteAgentDB(conf.storage_dbfile)
-        self.alert_sender = alert_msg.AlertSender(self.db._db_conn, self.db)
+        self.alert_sender = alert_msg.AlertSender(self.conn, self.db)
 
     def start(self):
         """
@@ -76,7 +76,14 @@ class OssecAlertParser(FileSystemEventHandler):
         rule = -1
         message = ''
         while data_list:
-            alert_chunk = data_list[0:data_list.index('')+1] #alerts separated by blank lines
+            try:
+                alert_chunk = data_list[0:data_list.index('')+1] #alerts separated by blank lines
+            except ValueError:
+                alert_chunk = data_list[0:]
+            #based on the default format line that starts with 'Alert' is index 2 in alert_chunk
+            #so we take the rest and concat as the message
+            for mess in alert_chunk[3:]:
+                message += ' | ' + mess
             for item in alert_chunk:
                 if item.startswith('** Alert'):
                     linelist = item.split(' ')
@@ -86,10 +93,9 @@ class OssecAlertParser(FileSystemEventHandler):
                     level = linelist[3].strip(')')
                     rule = linelist[1]
                     subject = item[item.index('->')+3:]
-                #based on the default format line that starts with 'Alert' is index 2 in alert_chunk
-                #so we take the rest and concat as the message
-                for mess in alert_chunk[3:]:
-                    message += ' | ' + mess
-                print(alert_time, subject, level, rule, message)
-            #self.alert_sender.send_alert(alert_time, subject, level, rule, message)
-            data_list = data_list[data_list.index('')+1:] # get rid of used chunk
+            print(alert_time, subject, level, rule, message)
+            self.alert_sender.send_alert(alert_time, subject, level, rule, message)
+            try:
+                data_list = data_list[data_list.index('')+1:] # get rid of used chunk
+            except ValueError:
+                data_list = []
