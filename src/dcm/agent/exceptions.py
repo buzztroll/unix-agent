@@ -160,8 +160,8 @@ class InvalidMessageParameterValueException(MalformedMessageException):
 class AgentHandshakeException(Exception):
     def __init__(self, handshake_doc, extra_msg=None):
         if handshake_doc:
-            msg = "The handshake failed with code %s.  doc=%s."\
-                % (handshake_doc["return_code"], str(handshake_doc))
+            msg = "The handshake failed with code %s."\
+                  % handshake_doc.reply_type
         else:
             msg = "Handshake Error."
         if extra_msg:
