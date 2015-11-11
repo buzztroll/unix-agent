@@ -16,7 +16,7 @@
 #
 
 name "python"
-default_version "3.4.1"
+default_version "3.5.0"
 
 dependency "readline"
 dependency "sqlite"
@@ -27,7 +27,7 @@ dependency "openssl"
 dependency "bzip2"
 
 source :url => "http://python.org/ftp/python/#{version}/Python-#{version}.tgz",
-       :md5 => '26695450087f8587b26d0b6a63844af5'
+       :md5 => 'a56c0c0b45d75a0ec9c6dee933c41c36'
 
 relative_path "Python-#{version}"
 
