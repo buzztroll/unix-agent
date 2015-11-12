@@ -3,8 +3,8 @@ name "ossec"
 
 default_version "2.8.2"
 
-source url: "http://www.ossec.net/files/ossec-hids-2.8.2.tar.gz",
-       md5: "3036d5babc96216135759338466e1f79"
+source url: "https://bintray.com/artifact/download/ossec/ossec-hids/ossec-hids-2.8.3.tar.gz",
+       md5: "bcf783c2273805e2a4c2112011fafb83"
 
 relative_path "ossec-hids-2.8.2"
 

@@ -13,12 +13,17 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 #
+import hashlib
+import logging
 import threading
 
 import dcm.agent.utils as utils
 import dcm.agent.events.state_machine as state_machine
 
 from dcm.agent.events.globals import global_space as dcm_events
+
+
+_g_logger = logging.getLogger(__name__)
 
 
 class States:
@@ -45,6 +50,13 @@ class AlertAckMsg(object):
         self._lock = threading.RLock()
         self._conn = conn
 
+        h = hashlib.sha256()
+        h.update(str(doc['alert_timestamp']).encode())
+        h.update(doc['subject'].encode())
+        h.update(doc['message'].encode())
+        self.alert_hash = h.hexdigest()
+
+
     @utils.class_method_sync
     def incoming_message(self):
         self._sm.event_occurred(Events.ACK_RECEIVED)
@@ -70,6 +82,7 @@ class AlertAckMsg(object):
     def _send_timeout(self):
         self._timer = dcm_events.register_callback(
             self.timeout, delay=self._timeout)
+        _g_logger.debug("Sending the alert message " + str(self.doc))
         self._conn.send(self.doc)
 
     def _sm_send_message(self):

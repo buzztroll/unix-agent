@@ -377,7 +377,7 @@ class SQLiteAgentDB(object):
         def do_it(cursor):
             cursor.execute(stmt)
             row = cursor.fetchone()
-            if row is None:
+            if row is None or len(row) < 1 or row[0] is None:
                 return 0
             return row[0]
 
