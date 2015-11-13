@@ -100,6 +100,9 @@ case "$1" in
     chown root:${GROUP} ${DIR}/etc/ossec.conf
     chmod 440 ${DIR}/etc/ossec.conf
 
+    chmod 755 ${DIR}
+    chmod 755 ${DIR}/logs
+    chmod 755 ${DIR}/logs/alerts
     ;;
 
     abort-upgrade|abort-remove|abort-deconfigure)

@@ -10,7 +10,7 @@ homepage "https://enstratius.com"
 
 install_dir "/opt/#{name}"
 
-build_version "0.5.0" # SEARCH_TOKEN do not delete
+build_version "0.5.2" # SEARCH_TOKEN do not delete
 #build_version Omnibus::BuildVersion.semver
 build_iteration 1
 
