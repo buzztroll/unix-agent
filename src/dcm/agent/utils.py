@@ -518,3 +518,12 @@ def get_device_mappings(conf):
         raise
 
     return device_mapping_list
+
+def ossec_running():
+
+    return False
+
+def start_ossec():
+    _g_logger.debug("Starting ossec")
+    rc = os.system("/opt/dcm-agent-extras/ossec/bin/ossec-control start")
+    return rc == 0
