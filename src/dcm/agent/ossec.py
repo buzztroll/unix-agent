@@ -76,7 +76,7 @@ def parse_file(fname, cutofftime, sender):
 
 class AlertSender(FileSystemEventHandler):
 
-    def __init__(self, conn, db, poll_interval=5.0,
+    def __init__(self, conn, db, max_process_time=5.0, alert_threshold=5,
                  dir_to_watch="/opt/dcm-agent-extras/ossec/logs/alerts",
                  w_file="alerts.log"):
         super(FileSystemEventHandler, self).__init__()
@@ -87,14 +87,20 @@ class AlertSender(FileSystemEventHandler):
         self._stopping = None
         self._thread = None
         self._cond = threading.Condition()
-        self._poll_interval = poll_interval
+        self.max_process_time = max_process_time
         self._last_processed = time.time()
         self.dir_to_watch = dir_to_watch
         self.w_file = w_file
         self.observer = None
+        self._alert_threshold = alert_threshold
 
-    def send_alert(self, alert_time, subject, level, rule, message):
+    def send_alert(self, alert_time, subject, level, rule, message,
+                   source_ip=None, user=None):
         _g_logger.debug("Send alert request")
+        if level < self._alert_threshold:
+            _g_logger.info(
+                "Skipping the alert because its level threshold is too low" +
+                message)
         request_id = str(uuid.uuid4())
         doc = {
             'type': 'ALERT',
@@ -103,6 +109,8 @@ class AlertSender(FileSystemEventHandler):
             'alert_timestamp': int(float(alert_time) * 1000),
             'level': level,
             'rule': rule,
+            'user': user,
+            'source_ip': source_ip,
             'message': message,
             'subject': subject
         }
@@ -113,7 +121,6 @@ class AlertSender(FileSystemEventHandler):
             self._alerts[request_id] = alert
             self._alert_by_hash[alert.alert_hash] = alert
             alert.send()
-
 
     def incoming_message(self, incoming_doc):
         request_id = incoming_doc['request_id']
@@ -187,7 +194,7 @@ class AlertSender(FileSystemEventHandler):
             self._cond.release()
 
     def _run(self):
-        timeout = self._poll_interval
+        timeout = self.max_process_time
         self._cond.acquire()
         try:
             while not self._stopping.is_set():
@@ -196,8 +203,8 @@ class AlertSender(FileSystemEventHandler):
                 _g_logger.debug("ossec processor thread woke up")
                 time_now = time.time()
                 time_diff = time_now - self._last_processed
-                if  time_diff < self._poll_interval:
-                    timeout = self._poll_interval - time_diff
+                if  time_diff < self.max_process_time:
+                    timeout = self.max_process_time - time_diff
                 else:
                     self._last_processed = time_now
                     timeout = None

@@ -55,7 +55,7 @@ class AlertAckMsg(object):
         h.update(doc['subject'].encode())
         h.update(doc['message'].encode())
         self.alert_hash = h.hexdigest()
-
+        self.doc['alert_hash'] = self.alert_hash
 
     @utils.class_method_sync
     def incoming_message(self):
