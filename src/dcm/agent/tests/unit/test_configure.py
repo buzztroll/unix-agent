@@ -329,7 +329,7 @@ class TestConfigure(unittest.TestCase):
                      "-u", "http://doesntmatter.org/ws",
                      "-p", self.test_base_path,
                      "-C", "ws",
-                     "--intrusion-detection-ossec"]
+                     "--intrusion-detection-ossec", "true"]
         rc = configure.main(conf_args)
         self.assertEqual(rc, 0)
         self.assertTrue(os.path.exists("/opt/dcm-agent-extras/ossec"))

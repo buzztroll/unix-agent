@@ -47,7 +47,7 @@ class TestAlertSender(unittest.TestCase):
                      "-C", "ws",
                      "-U", cls.run_as_user,
                      "-l", "/tmp/agent_status_test.log",
-                     "--intrusion-detection-ossec",
+                     "--intrusion-detection-ossec", "true",
                      "--install-extras",
                      "--extra-package-location", "file:///agent/src", #os.environ['DCM_AGENT_TEST_EXTRA_PACKAGE_URL']]
                      "--package-name", "dcm-agent-extras-ubuntu-14-amd64.deb"]
