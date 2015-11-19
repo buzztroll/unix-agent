@@ -221,6 +221,8 @@ def _gather_info(conf):
                         "/var/log/boot.log",
                         "/tmp/meta_info.txt",
                         "/tmp/startup_script.txt",
+                        "/tmp/es-puppet-firstrun.log",
+                        "/tmp/enstratus-chefrun.log",
                         "/tmp/process_info.txt"]
 
     for f in files_to_collect:
