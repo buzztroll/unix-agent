@@ -104,6 +104,7 @@ fi
 
 function agent_exists() {
     $DCM_AGENT_PKG_QUERY > /dev/null
+    [ -e /opt/dcm-agent ]
     return $?
 }
 
