@@ -49,8 +49,7 @@ class TestAlertSender(unittest.TestCase):
                      "-l", "/tmp/agent_status_test.log",
                      "--intrusion-detection-ossec", "true",
                      "--install-extras",
-                     "--extra-package-location", "file:///agent/src", #os.environ['DCM_AGENT_TEST_EXTRA_PACKAGE_URL']]
-                     "--package-name", "dcm-agent-extras-ubuntu-14-amd64.deb"]
+                     "--extra-package-location", os.environ['DCM_AGENT_TEST_EXTRA_PACKAGE_URL']]
         rc = configure.main(conf_args)
         if rc != 0:
             raise Exception("We could not configure the test env")
