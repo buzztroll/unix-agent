@@ -370,10 +370,10 @@ def build_options_list():
 
         ConfigOpt("intrusion_detection", "ossec", bool, default=False),
         ConfigOpt("intrusion_detection", "max_process_time", float, default=5.0,
-                  "This value specifics the amount of time that must expire"
-                  " between processing the alerts file.  This value is here"
-                  " to prevent too many frequent alerts from overwhelming the"
-                  " agent."),
+                  help_msg="This value specifics the amount of time that must "
+                           "expire between processing the alerts file.  This "
+                           "value is here to prevent too many frequent alerts "
+                           "from overwhelming the agent."),
         ConfigOpt("intrusion_detection", "alert_threshold", float, default=5,
                   help_msg="The ossec alert level threshold to send to dcm."
                            " Any alert level below this threshold will be"
