@@ -63,9 +63,3 @@ class TestAlertSender(unittest.TestCase):
         os.system("rm -r /opt/dcm-agent-extras")
         os.system("dpkg --purge dcm-agent-extras")
         os.system("pkill -9 ossec")
-
-    def test_extras_installed(self):
-        self.tearDown()
-        rc = dcmagent.main(args=["dcm-agent", "-c", self.test_conf_path, "start"])
-        self.assertEqual(rc, 0)
-        self.assertTrue(os.path.exists("/opt/dcm-agent-extras/ossec"))

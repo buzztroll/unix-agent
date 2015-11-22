@@ -73,7 +73,7 @@ class DCMAgent(object):
         self.shutting_down = True
         events.global_space.wakeup(cancel_all=True)
 
-    def pre_threads(self, conf):
+    def pre_threads(self):
         signal.signal(signal.SIGINT, self.kill_handler)
         signal.signal(signal.SIGTERM, self.kill_handler)
         signal.signal(signal.SIGUSR2, self.stack_trace_handler)
@@ -91,10 +91,9 @@ class DCMAgent(object):
             self.g_logger.info("Setting up intrusion detection.")
             if not utils.extras_installed(self.conf):
                 utils.install_extras(self.conf)
-            if not utils.ossec_running():
-                rc = utils.start_ossec()
-                if not rc:
-                    self.g_logger.warn("Ossec failed to start")
+            rc = utils.start_ossec()
+            if not rc:
+                self.g_logger.warn("Ossec failed to start")
 
     def run_agent(self):
         try:
@@ -271,11 +270,11 @@ def start_main_service(cli_args):
         config_files = config.get_config_files(conffile=cli_args.conffile)
         conf = config.AgentConfig(config_files)
         agent = DCMAgent(conf)
-        agent.pre_threads(conf)
         if cli_args.version:
             print("Version %s" % dcm.agent.g_version)
             return 0
 
+        agent.pre_threads()
         if cli_args.report:
             utils._g_logger.disabled = True
             cm._g_logger.disabled = True

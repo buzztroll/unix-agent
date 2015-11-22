@@ -332,4 +332,6 @@ class TestConfigure(unittest.TestCase):
                      "--intrusion-detection-ossec", "true"]
         rc = configure.main(conf_args)
         self.assertEqual(rc, 0)
-        self.assertTrue(os.path.exists("/opt/dcm-agent-extras/ossec"))
+        conf = config.AgentConfig([os.path.join(
+            self.test_base_path, "etc/agent.conf")])
+        self.assertTrue(conf.intrusion_detection_ossec)

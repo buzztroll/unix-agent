@@ -582,6 +582,9 @@ def main(argv=sys.argv[1:]):
     opts.intrusion_detection_ossec =\
         opts.intrusion_detection_ossec in ['y', 'yes', 't', 'true']
 
+    if opts.intrusion_detection_ossec:
+        opts.install_extras = True
+
     conf_d = gather_values(opts)
     if not opts.initial:
         guess_default_cloud(conf_d)
