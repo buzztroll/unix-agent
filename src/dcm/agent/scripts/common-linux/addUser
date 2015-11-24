@@ -67,8 +67,6 @@ else
 	exists=0
 fi
 
-echo "LOG FILE=$DCM_LOG_FILE"
-
 sudo "$GROUPADD" ${CUST_ID} 2>&1
 ret=$?
 if [ $ret -ne 9 -a $ret -ne 0 ]; then

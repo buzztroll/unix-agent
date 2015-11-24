@@ -169,9 +169,8 @@ def setup_command_line_parser():
 
     parser.add_argument("--intrusion-detection-ossec", "-d",
                         dest="intrusion_detection_ossec",
-                        action='store_true',
-                        default=False,
-                        help="Flag to install and start ossec.  In addition the agent will process alerts.")
+                        default="False",
+                        help="Boolean to install and start ossec.  In addition the agent will process alerts.  The value must be one of [yes,no,true,false]")
 
     return parser
 
@@ -579,6 +578,12 @@ def main(argv=sys.argv[1:]):
         print("WARNING: %s is an invalid log level.  Using INFO"
               % opts.loglevel)
         opts.loglevel = "INFO"
+    opts.intrusion_detection_ossec = opts.intrusion_detection_ossec.lower()
+    opts.intrusion_detection_ossec =\
+        opts.intrusion_detection_ossec in ['y', 'yes', 't', 'true']
+
+    if opts.intrusion_detection_ossec:
+        opts.install_extras = True
 
     conf_d = gather_values(opts)
     if not opts.initial:

@@ -87,6 +87,14 @@ class DCMAgent(object):
             h, p = pydev.split(":")
             utils.setup_remote_pydev(h, int(p))
 
+        if self.conf.intrusion_detection_ossec:
+            self.g_logger.info("Setting up intrusion detection.")
+            if not utils.extras_installed(self.conf):
+                utils.install_extras(self.conf)
+            rc = utils.start_ossec()
+            if not rc:
+                self.g_logger.warn("Ossec failed to start")
+
     def run_agent(self):
         try:
             self.db_cleaner = persistence.DBCleaner(
@@ -105,16 +113,14 @@ class DCMAgent(object):
                               self.handshaker)
             self.disp.start_workers(self.request_listener)
 
+            # this is done in two steps because we only want to fork before the
+            # threads are created
             if self.conf.intrusion_detection_ossec:
-                self.g_logger.info("Setting up intrusion detection.")
-                if not utils.extras_installed(self.conf):
-                    utils.install_extras(self.conf)
-                if not utils.ossec_running():
-                    rc = utils.start_ossec()
-                    if not rc:
-                        self.g_logger.warn("Ossec failed to start")
                 self.intrusion_detection =\
-                    ossec.AlertSender(self.conn, self._db)
+                    ossec.AlertSender(
+                        self.conn, self._db,
+                        max_process_time=self.conf.intrusion_detection_max_process_time,
+                        alert_threshold=self.conf.intrusion_detection_alert_threshold)
                 self.intrusion_detection.start()
 
             rc = self.agent_main_loop()
@@ -264,11 +270,11 @@ def start_main_service(cli_args):
         config_files = config.get_config_files(conffile=cli_args.conffile)
         conf = config.AgentConfig(config_files)
         agent = DCMAgent(conf)
-        agent.pre_threads()
         if cli_args.version:
             print("Version %s" % dcm.agent.g_version)
             return 0
 
+        agent.pre_threads()
         if cli_args.report:
             utils._g_logger.disabled = True
             cm._g_logger.disabled = True

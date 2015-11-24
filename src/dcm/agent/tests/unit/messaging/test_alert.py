@@ -31,8 +31,16 @@ class TestAlertMessaging(unittest.TestCase):
     def setUp(self):
         pass
 
+    def _make_fake_alert_message(self):
+        alert_doc = {"somekey": "value",
+                     'alert_timestamp': 10.0,
+                     'subject': 'fake subject',
+                     'message': 'some alert message'}
+        return alert_doc
+
+
     def test_simple_alert(self):
-        alert_doc = {"somekey": "value"}
+        alert_doc = self._make_fake_alert_message()
         conn = mock.Mock()
         alerter = alert_msg.AlertAckMsg(alert_doc, conn)
         alerter.send()
@@ -43,7 +51,7 @@ class TestAlertMessaging(unittest.TestCase):
 
     def test_alert_retransmission(self):
         timeout = 0.1
-        alert_doc = {"somekey": "value"}
+        alert_doc = self._make_fake_alert_message()
         conn = mock.Mock()
         alerter = alert_msg.AlertAckMsg(alert_doc, conn, timeout=timeout)
         alerter.send()
@@ -56,7 +64,7 @@ class TestAlertMessaging(unittest.TestCase):
 
     def test_twosends_two_acks(self):
         timeout = 0.1
-        alert_doc = {"somekey": "value"}
+        alert_doc = self._make_fake_alert_message()
         conn = mock.Mock()
         alerter = alert_msg.AlertAckMsg(alert_doc, conn, timeout=timeout)
         alerter.send()
@@ -67,7 +75,7 @@ class TestAlertMessaging(unittest.TestCase):
 
     def test_stop_before_done(self):
         timeout = 0.1
-        alert_doc = {"somekey": "value"}
+        alert_doc = self._make_fake_alert_message()
         conn = mock.Mock()
         alerter = alert_msg.AlertAckMsg(alert_doc, conn, timeout=timeout)
         alerter.send()
@@ -76,7 +84,7 @@ class TestAlertMessaging(unittest.TestCase):
 
     def test_stop_before_send(self):
         timeout = 0.1
-        alert_doc = {"somekey": "value"}
+        alert_doc = self._make_fake_alert_message()
         conn = mock.Mock()
         alerter = alert_msg.AlertAckMsg(alert_doc, conn, timeout=timeout)
         alerter.stop()

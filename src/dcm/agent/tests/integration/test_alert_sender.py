@@ -47,10 +47,9 @@ class TestAlertSender(unittest.TestCase):
                      "-C", "ws",
                      "-U", cls.run_as_user,
                      "-l", "/tmp/agent_status_test.log",
-                     "--intrusion-detection-ossec",
+                     "--intrusion-detection-ossec", "true",
                      "--install-extras",
-                     "--extra-package-location", "file:///agent/src", #os.environ['DCM_AGENT_TEST_EXTRA_PACKAGE_URL']]
-                     "--package-name", "dcm-agent-extras-ubuntu-14-amd64.deb"]
+                     "--extra-package-location", os.environ['DCM_AGENT_TEST_EXTRA_PACKAGE_URL']]
         rc = configure.main(conf_args)
         if rc != 0:
             raise Exception("We could not configure the test env")
@@ -64,9 +63,3 @@ class TestAlertSender(unittest.TestCase):
         os.system("rm -r /opt/dcm-agent-extras")
         os.system("dpkg --purge dcm-agent-extras")
         os.system("pkill -9 ossec")
-
-    def test_extras_installed(self):
-        self.tearDown()
-        rc = dcmagent.main(args=["dcm-agent", "-c", self.test_conf_path, "start"])
-        self.assertEqual(rc, 0)
-        self.assertTrue(os.path.exists("/opt/dcm-agent-extras/ossec"))
