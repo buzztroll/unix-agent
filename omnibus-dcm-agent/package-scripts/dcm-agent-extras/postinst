@@ -108,6 +108,7 @@ case "$1" in
 	chown ${USERR}:${GROUP} ${DIR}/queue/rids
 
 	# setup the dcm user so it can be added to ossec
+	set +e
 	DCM_USERNAME=dcm
     grep -q "^$DCM_USERNAME:" /etc/group
     if [ $? != 0 ] ; then
