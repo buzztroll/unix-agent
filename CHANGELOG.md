@@ -1,3 +1,19 @@
+# 1.1.0 (2015-11-26)
+
+Features:
+* Added the ability to send ossec alerts back to DCM.
+* Adjusted the URLS to reference the new DNS names, eg:
+  https://linux-stable-agent.enstratius.com
+* Updated openssl to version 1.0.1p.
+* Updated to python version 3.5.0.
+* Added puppet and chef log information to the report tarball.
+* Added support for SonarCube.
+* Watchdog added as a dependency.
+
+Bug fixes:
+* Fixed stale token clean up handler. Prior to this patch the agent would
+  remove the stale token but then fail while creating the exception.
+
 # 1.0.0 (2015-10-15)
 
 QA approved 0.13.7 for stable promotion.
