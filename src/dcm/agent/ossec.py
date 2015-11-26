@@ -45,34 +45,37 @@ class OssecAlert(object):
     def input_line(self, line):
         if line.startswith("Rule:"):
             match = _g_rule_matcher.search(line)
-            self.rule = match.group(1)
-            self.level = match.group(1)
+            self.rule = int(match.group(1))
+            self.level = int(match.group(1))
             self.subject = match.group(1)
         else:
             self.message = self.message + line
 
 
 def parse_file(fname, cutofftime, sender):
-    current_alert = None
-    with open(fname, "r") as fptr:
-        for line in fptr.readlines():
-            if line.startswith('** Alert '):
-                if current_alert is not None:
-                    # right here is where a new event is ready to be sent
-                    sender.send_alert(
-                        new_alert.timestamp, new_alert.subject,
-                        new_alert.level, new_alert.rule, new_alert.message)
+    try:
+        current_alert = None
+        with open(fname, "r") as fptr:
+            for line in fptr.readlines():
+                if line.startswith('** Alert '):
+                    if current_alert is not None:
+                        # right here is where a new event is ready to be sent
+                        sender.send_alert(
+                            new_alert.timestamp, new_alert.subject,
+                            new_alert.level, new_alert.rule, new_alert.message)
 
-                new_alert = OssecAlert(line)
-                # skip anything that we have already processed
-                if new_alert.timestamp < cutofftime:
-                   current_alert = None
+                    new_alert = OssecAlert(line)
+                    # skip anything that we have already processed
+                    if new_alert.timestamp < cutofftime:
+                       current_alert = None
+                    else:
+                        current_alert = new_alert
                 else:
-                    current_alert = new_alert
-            else:
-                if current_alert is not None:
-                    current_alert.input_line(line)
-
+                    if current_alert is not None:
+                        current_alert.input_line(line)
+    except Exception as ex:
+        _g_logger.exception(
+            "An exception occurred while processing the alert file: " + str(ex))
 
 class AlertSender(FileSystemEventHandler):
 

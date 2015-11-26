@@ -1,0 +1,33 @@
+#!/usr/bin/env bash
+
+set -u
+
+case "${1:-''}" in
+  'start')
+    log_daemon_msg "Starting dcm ossec"
+    /opt/dcm-agent-extras/ossec/bin/ossec-control start
+    ;;
+
+  'stop')
+    log_daemon_msg "Stopping dcm ossec"
+    /opt/dcm-agent-extras/ossec/bin/ossec-control stop
+    ;;
+
+  'restart')
+    log_daemon_msg "Restarting dcm ossec"
+    /opt/dcm-agent-extras/ossec/bin/ossec-control restart
+    ;;
+
+  'reload')
+    ;;
+
+  'status')
+    log_daemon_msg "Reporting Status of dcm ossec"
+    ;;
+
+  *)
+    echo "Usage: $SELF start|stop|restart|reload|status"
+        exit 1
+        ;;
+
+esac

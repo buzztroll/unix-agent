@@ -28,4 +28,9 @@ build do
       dest: "#{dst_path}/etc/ossec.conf",
       mode: 0644,
       vars: { dst_path: dst_path }
+
+  erb source: "ossec.initd.erb",
+      dest: "/etc/init.d/dcm-ossec",
+      mode: 0755,
+      vars: {}
 end

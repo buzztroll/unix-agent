@@ -5,4 +5,8 @@ set -u
 DIR=/opt/dcm-agent-extras
 rm -rf ${DIR}
 
+userdel ossec
+userdel ossecm
+userdel ossecr
+
 exit 0

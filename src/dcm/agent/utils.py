@@ -525,5 +525,5 @@ def ossec_running():
 
 def start_ossec():
     _g_logger.debug("Starting ossec")
-    rc = os.system("/opt/dcm-agent-extras/ossec/bin/ossec-control start")
+    rc = os.system("sudo /opt/dcm-agent-extras/ossec/bin/ossec-control start")
     return rc == 0

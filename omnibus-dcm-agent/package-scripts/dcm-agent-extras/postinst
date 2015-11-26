@@ -107,6 +107,27 @@ case "$1" in
 	chown ${USERR}:${GROUP} ${DIR}/queue/agent-info
 	chown ${USERR}:${GROUP} ${DIR}/queue/rids
 
+	# setup the dcm user so it can be added to ossec
+	set +e
+	DCM_USERNAME=dcm
+    grep -q "^$DCM_USERNAME:" /etc/group
+    if [ $? != 0 ] ; then
+        groupadd $DCM_USERNAME
+        if [ $? != 0 ] ; then
+            echo "Failed to add $DCM_USERNAME group."
+            exit 40
+        fi
+    fi
+    # Create user.
+    id -u $DCM_USERNAME
+    if [ $? != 0 ] ; then
+        useradd -d $BASEDIRNAME/home -g $DCM_USERNAME -s /bin/false -m $DCM_USERNAME
+        if [ $? != 0 ] ; then
+            echo "Failed to add $DCM_USERNAME user."
+            exit 41
+        fi
+    fi
+    usermod -G $GROUP $DCM_USERNAME
     ;;
 
     *)
