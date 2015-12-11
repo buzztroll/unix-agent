@@ -104,14 +104,6 @@ class DCMAgent(object):
             # def get a connection object
             self.conn = config.get_connection_object(self.conf)
             self.disp = dispatcher.Dispatcher(self.conf)
-            self.request_listener = reply.RequestListener(
-                self.conf, self.conn, self.disp, self._db)
-
-            logger.set_dcm_connection(self.conf, self.conn)
-
-            self.conn.connect(self.request_listener.incoming_parent_q_message,
-                              self.handshaker)
-            self.disp.start_workers(self.request_listener)
 
             # this is done in two steps because we only want to fork before the
             # threads are created
@@ -122,6 +114,15 @@ class DCMAgent(object):
                         max_process_time=self.conf.intrusion_detection_max_process_time,
                         alert_threshold=self.conf.intrusion_detection_alert_threshold)
                 self.intrusion_detection.start()
+
+            self.request_listener = reply.RequestListener(
+                self.conf, self.conn, self.disp, self._db, id_system=self.intrusion_detection)
+
+            logger.set_dcm_connection(self.conf, self.conn)
+
+            self.conn.connect(self.request_listener.incoming_parent_q_message,
+                              self.handshaker)
+            self.disp.start_workers(self.request_listener)
 
             rc = self.agent_main_loop()
             return rc
