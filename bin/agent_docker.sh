@@ -17,7 +17,7 @@
 #************************
 
 if [ $DCM_DOCKER_VERSION -z ]; then
-    export DCM_DOCKER_VERSION=1.3.2
+    export DCM_DOCKER_VERSION=1.9.1
 fi
 
 set -e

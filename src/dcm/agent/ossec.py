@@ -77,6 +77,7 @@ def parse_file(fname, cutofftime, sender):
         _g_logger.exception(
             "An exception occurred while processing the alert file: " + str(ex))
 
+
 class AlertSender(FileSystemEventHandler):
 
     def __init__(self, conn, db, max_process_time=5.0, alert_threshold=5,
