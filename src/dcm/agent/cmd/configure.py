@@ -580,9 +580,6 @@ def main(argv=sys.argv[1:]):
     opts.intrusion_detection_ossec =\
         opts.intrusion_detection_ossec in ['y', 'yes', 't', 'true']
 
-    if opts.intrusion_detection_ossec:
-        opts.install_extras = True
-
     conf_d = gather_values(opts)
     if not opts.initial:
         guess_default_cloud(conf_d)
@@ -620,12 +617,15 @@ def main(argv=sys.argv[1:]):
         if not opts.initial:
             enable_start_agent(opts)
 
+        conf = config.AgentConfig([conf_file_name])
         if opts.install_extras:
-            conf = config.AgentConfig([conf_file_name])
             if opts.package_name:
                 agent_utils.install_extras(conf, package=opts.package_name)
             else:
                 agent_utils.install_extras(conf)
+        if opts.intrusion_detection_ossec and not agent_utils.ossec_installed(conf):
+            # call out to install ossec
+            agent_utils.install_ossec(conf)
 
     except Exception as ex:
         print(str(ex), file=sys.stderr)

@@ -69,9 +69,7 @@ class TestAlertMessaging(unittest.TestCase):
         alerter = alert_msg.AlertAckMsg(alert_doc, conn, timeout=timeout)
         alerter.send()
         dcm_events.poll(timeblock=timeout*1.5)
-        call = mock.call(alert_doc)
         self.assertGreaterEqual(conn.send.call_count, 2)
-        self.assertEqual(conn.send.call_args_list, [call, call])
 
     def test_stop_before_done(self):
         timeout = 0.1

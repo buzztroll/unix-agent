@@ -1,0 +1,84 @@
+#!/usr/bin/env bash
+
+
+set -u
+PATH=/bin:${PATH}
+
+BASENAME=`basename $0`
+DIRNAME=`dirname $0`
+. "$DIRNAME/common_mod"
+
+
+set -e
+
+function install_ossec_ubuntu_precise_trusty_utopic () {
+    if [ "$DCM_AGENT_PLATFORM_VERSION" == "10.04" ]; then
+        echo "Automated installation of ossec is not supported on this platform"
+        exit 1
+    fi
+
+    apt-key adv --fetch-keys http://ossec.wazuh.com/repos/apt/conf/ossec-key.gpg.key
+    echo 'deb http://ossec.wazuh.com/repos/apt/ubuntu precise main' >> /etc/apt/sources.list
+    apt-get update
+    export DEBIAN_FRONTEND=noninteractive
+    apt-get install -y ossec-hids
+
+    sed -i 's/TYPE=.*/TYPE="local"/' /etc/ossec-init.conf
+
+}
+
+function install_ossec_debian_sid_jessie_wheezy () {
+    case "$DCM_AGENT_PLATFORM_VERSION" in
+       6*)
+           echo "The ossec install is not supported on this platform"
+           exit 1
+           ;;
+    esac
+
+
+    apt-key adv --fetch-keys http://ossec.wazuh.com/repos/apt/conf/ossec-key.gpg.key
+    echo 'deb http://ossec.wazuh.com/repos/apt/debian wheezy main' >> /etc/apt/sources.list
+    apt-get update
+    export DEBIAN_FRONTEND=noninteractive
+    apt-get install -y ossec-hids
+
+    sed -i 's/TYPE=.*/TYPE="local"/' /etc/ossec-init.conf
+}
+
+function install_ossec_rpm () {
+    export NON_INT=1
+    yum install -y wget
+    curl https://www.atomicorp.com/installers/atomic | bash
+    yum install -y ossec-hids ossec-hids-server
+
+    sed -i 's/TYPE=.*/TYPE="local"/' /etc/ossec-init.conf
+}
+
+if [ -z $DCM_AGENT_PLATFORM_NAME ]; then
+    echo "The env DCM_AGENT_PLATFORM_NAME must be set"
+    exit 1
+fi
+
+case "$DCM_AGENT_PLATFORM_NAME" in
+    "ubuntu")
+        install_ossec_ubuntu_precise_trusty_utopic
+        ;;
+    "debian")
+        install_ossec_debian_sid_jessie_wheezy
+        ;;
+    "rhel")
+        install_ossec_rpm
+        ;;
+    "centos")
+        install_ossec_rpm
+        ;;
+     *)
+        echo "$DCM_AGENT_PLATFORM_NAME" is not a supported platform
+        exit 1
+        ;;
+esac
+
+cp $DIRNAME/ossec.conf /var/ossec/etc/ossec.conf
+/usr/sbin/usermod -a -G ossec dcm
+
+exit 0

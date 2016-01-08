@@ -310,6 +310,10 @@ def extras_installed(conf):
     return os.path.exists("/opt/dcm-agent-extras")
 
 
+def ossec_installed(conf):
+    return os.path.exists("/var/ossec")
+
+
 def extras_remove(conf):
     distro = conf.platform_name
     cmd = _g_map_platform_remove_package[distro][:]
@@ -343,6 +347,14 @@ def http_get_to_file(url, filename):
     except urllib.error.URLError:
         raise exceptions.AgentRuntimeException(
             "There was a problem connecting to the URL " + url)
+
+
+def install_ossec(conf):
+    command = conf.get_script_location("installOssec")
+    (stdout, stderr, rc) = run_command(conf, command)
+    if rc != 0:
+        raise exceptions.AgentExecutableException(command, rc, stdout, stderr)
+    return rc
 
 
 def install_extras(conf, package=None):
@@ -519,11 +531,12 @@ def get_device_mappings(conf):
 
     return device_mapping_list
 
-def ossec_running():
 
+def ossec_running():
     return False
+
 
 def start_ossec():
     _g_logger.debug("Starting ossec")
-    rc = os.system("sudo /opt/dcm-agent-extras/ossec/bin/ossec-control start")
+    rc = os.system("sudo /var/ossec/bin/ossec-control start")
     return rc == 0

@@ -14,19 +14,14 @@
 # limitations under the License.
 #
 
-from distutils.log import warn
 import getpass
-import json
 import os
 import shutil
 import tempfile
 import unittest
 
-import mock
-import psutil
 from dcm.agent import logger
 
-import dcm.agent.cmd.service as dcmagent
 import dcm.agent.cmd.configure as configure
 import dcm.agent.tests.utils.general as test_utils
 
