@@ -35,11 +35,14 @@ class CLOUD_TYPES:
     CloudStack = "CloudStack"
     CloudStack3 = "CloudStack3"
     DigitalOcean = "DigitalOcean"
-    Eucalyptus = "Eucalyptus"
     Google = "Google"
     Joyent = "Joyent"
-    Konami = "Konami"
+    _Konami = "Konami" # won't show in interactive session
     OpenStack = "OpenStack"
+    VirtuStream = "VirtuStream"
+    ScaleMatrix = "ScaleMatrix"
+    VMware = "VMware"
+    WindowsAzurePack = "WindowsAzurePack"
     Other = "Other"
     UNKNOWN = "UNKNOWN"
 
@@ -451,7 +454,7 @@ class KonamiMetaData(CloudMetaData):
         return [private, public]
 
     def get_cloud_type(self):
-        return CLOUD_TYPES.Konami
+        return CLOUD_TYPES._Konami
 
 
 def set_metadata_object(conf):
@@ -463,7 +466,8 @@ def set_metadata_object(conf):
         meta_data_obj = JoyentMetaData(conf)
     elif cloud_name == CLOUD_TYPES.Google:
         meta_data_obj = GCEMetaData(conf, base_url=conf.cloud_metadata_url)
-    elif cloud_name == CLOUD_TYPES.Azure:
+    elif cloud_name == CLOUD_TYPES.Azure or \
+            cloud_name == CLOUD_TYPES.WindowsAzurePack:
         meta_data_obj = AzureMetaData(conf)
     elif cloud_name == CLOUD_TYPES.OpenStack:
         meta_data_obj = OpenStackMetaData(conf,
@@ -475,7 +479,7 @@ def set_metadata_object(conf):
     elif cloud_name == CLOUD_TYPES.DigitalOcean:
         meta_data_obj = DigitalOceanMetaData(
             conf, base_url=conf.cloud_metadata_url)
-    elif cloud_name == CLOUD_TYPES.Konami:
+    elif cloud_name == CLOUD_TYPES._Konami:
         meta_data_obj = KonamiMetaData(conf)
     elif cloud_name == CLOUD_TYPES.Other:
         meta_data_obj = UnknownMetaData(conf)

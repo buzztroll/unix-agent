@@ -52,7 +52,7 @@ that will update the certificates in it or enforce revocation policies.
 
 
 cloud_choices = [i for i in
-                 dir(cloudmetadata.CLOUD_TYPES) if not i.startswith("__")]
+                 dir(cloudmetadata.CLOUD_TYPES) if not i.startswith("_")]
 
 
 def setup_command_line_parser():
