@@ -59,7 +59,9 @@ class AlertAckMsg(object):
 
     @utils.class_method_sync
     def incoming_message(self):
+        _g_logger.debug("ENTERING INCOMING MESSAGE")
         self._sm.event_occurred(Events.ACK_RECEIVED)
+        _g_logger.debug("EXITING INCOMING MESSAGE")
 
     def lock(self):
         self._lock.acquire()
@@ -90,8 +92,10 @@ class AlertAckMsg(object):
 
     def _sm_ack_received(self):
         # the timer must be active
+        _g_logger.debug("ENTERING SM_ACK_RECEIVED")
         dcm_events.cancel_callback(self._timer)
         self._timer = None
+        _g_logger.debug("EXITING SM_ACK_RECEIVED")
 
     def _sm_resend_message(self):
         self._send_timeout()

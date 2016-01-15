@@ -46,8 +46,8 @@ class OssecAlert(object):
         if line.startswith("Rule:"):
             match = _g_rule_matcher.search(line)
             self.rule = int(match.group(1))
-            self.level = int(match.group(1))
-            self.subject = match.group(1)
+            self.level = int(match.group(2))
+            self.subject = match.group(3)
         else:
             self.message = self.message + line
 
@@ -64,11 +64,13 @@ def parse_file(fname, cutofftime, sender):
                             new_alert.timestamp, new_alert.subject,
                             new_alert.level, new_alert.rule, new_alert.message)
 
-                    new_alert = OssecAlert(line)
                     # skip anything that we have already processed
-                    if new_alert.timestamp < cutofftime:
-                       current_alert = None
+                    new_alert = OssecAlert(line)
+                    if int(float(new_alert.timestamp))*1000 < cutofftime:
+                        _g_logger.debug("We have already processed to time %s", str(new_alert.timestamp))
+                        current_alert = None
                     else:
+                        _g_logger.debug("Processing a new alert")
                         current_alert = new_alert
                 else:
                     if current_alert is not None:
@@ -127,9 +129,11 @@ class AlertSender(FileSystemEventHandler):
 
     def incoming_message(self, incoming_doc):
         request_id = incoming_doc['request_id']
-        alert = self._out_standing_alerts[request_id]
-        alert.incoming_message()
+        _g_logger.debug("Intrustion Detection received an ACK %s", request_id)
 
+        alert = self._alerts[request_id]
+        alert.incoming_message()
+        _g_logger.debug("Adding the alert to the db.")
         self._db.add_alert(alert.doc['alert_timestamp'],
                            alert.doc['current_timestamp'],
                            alert.alert_hash,
@@ -137,7 +141,7 @@ class AlertSender(FileSystemEventHandler):
                            alert.doc['rule'],
                            alert.doc['subject'],
                            alert.doc['message'])
-        del self._out_standing_alerts[request_id]
+        del self._alerts[request_id]
         del self._alert_by_hash[alert.alert_hash]
 
     def stop(self):
@@ -207,12 +211,15 @@ class AlertSender(FileSystemEventHandler):
                 time_now = time.time()
                 time_diff = time_now - self._last_processed
                 if  time_diff < self.max_process_time:
+                    _g_logger.debug("time_diff is less %s", str(self.max_process_time))
                     timeout = self.max_process_time - time_diff
                 else:
                     self._last_processed = time_now
                     timeout = None
                     latest_processed_time = self._db.get_latest_alert_time()
+                    _g_logger.debug("Latest processed time is %s", latest_processed_time)
                     alert_file = os.path.join(self.dir_to_watch, self.w_file)
+                    _g_logger.debug("Processing alert file %s", alert_file)
                     parse_file(alert_file, latest_processed_time, self)
         finally:
             self._cond.release()
