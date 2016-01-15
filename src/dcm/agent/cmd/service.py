@@ -89,8 +89,8 @@ class DCMAgent(object):
 
         if self.conf.intrusion_detection_ossec:
             self.g_logger.info("Setting up intrusion detection.")
-            if not utils.extras_installed(self.conf):
-                utils.install_extras(self.conf)
+            if not utils.ossec_installed(self.conf):
+                utils.install_ossec(self.conf)
             rc = utils.start_ossec()
             if not rc:
                 self.g_logger.warn("Ossec failed to start")

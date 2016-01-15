@@ -81,7 +81,8 @@ class TestConfigure(unittest.TestCase):
 
     def test_logging_plugin_not_changed_w_reconfig(self):
         # original config
-        conf_args = ["-c", "Amazon",
+        conf_args = ["-v",
+                     "-c", "Amazon",
                      "-u", "http://doesntmatter.org/ws",
                      "-p", self.test_base_path,
                      "-C", "ws"]
@@ -92,8 +93,21 @@ class TestConfigure(unittest.TestCase):
         plugin_file = os.path.join(self.test_base_path, "etc/plugin.conf")
 
         # customer customizes logging and plugin
+        logging_data = """
+---
+version: 1
+disable_existing_loggers: False
+formatters:
+    simple:
+        format: "%(levelname)s %(asctime)s [%(name)s] %(filename)s:%(lineno)d [(REQUEST=%(dcm_request_id)s)] %(message)s"
+    todcm:
+        format: "%(asctime)s [%(name)s] %(filename)s:%(lineno)d [(REQUEST=%(dcm_request_id)s)] %(message)s"
+    wire:
+        format: "[%(asctime)s] %(message)s"
+
+        """
         logging_write = open(logging_file, "w")
-        logging_write.write("Hello")
+        logging_write.write(logging_data)
         logging_write.close()
 
         plugin_write = open(plugin_file, "w")
@@ -101,12 +115,13 @@ class TestConfigure(unittest.TestCase):
         plugin_write.close()
 
         # reconfig
-        conf_args = ["-r", os.path.join(self.test_base_path, "etc/agent.conf")]
+        conf_args = ["-v", "-r",
+                     os.path.join(self.test_base_path, "etc/agent.conf")]
         rc = configure.main(conf_args)
         self.assertEqual(rc, 0)
 
         with open(logging_file, "r") as f:
-            self.assertEqual("Hello", f.readline())
+            self.assertEqual(logging_data, f.read())
         with open(plugin_file, "r") as f:
             self.assertEqual("Hello", f.readline())
 
@@ -322,13 +337,27 @@ class TestConfigure(unittest.TestCase):
             self.assertRaises(Exception, agent_utils.install_extras, conf_args)
 
     def test_configure_ossec(self):
+        conf1 = config.AgentConfig([])
+
+        def check_version(conf):
+            unsupported_platform_version = [("ubuntu", "10.04"),
+                                            ("debian", "6.0")]
+            for p, v in unsupported_platform_version:
+                if conf.platform_name == p and conf.platform_version.startswith(v):
+                    return True
+            return False
+
+        if check_version(conf1):
+            return
+
         conf_args = ["-c", "Amazon",
                      "-u", "http://doesntmatter.org/ws",
                      "-p", self.test_base_path,
                      "-C", "ws",
                      "--intrusion-detection-ossec", "true"]
         rc = configure.main(conf_args)
-        self.assertEqual(rc, 0)
+        self.assertEqual(rc, 0, msg="Failed for " + conf1.platform_name +
+                         " : " + conf1.platform_version)
         conf = config.AgentConfig([os.path.join(
             self.test_base_path, "etc/agent.conf")])
         self.assertTrue(conf.intrusion_detection_ossec)
