@@ -283,7 +283,7 @@ class TestKonamiMetaDataBase(unittest.TestCase):
 
     def test_cloud_type(self):
         self.assertEqual(self.cm_obj.get_cloud_type(),
-                         cm.CLOUD_TYPES.Konami)
+                         cm.CLOUD_TYPES._Konami)
 
 
 class TestDigitalOceanMetaDataBase(unittest.TestCase):
