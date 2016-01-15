@@ -229,8 +229,6 @@ def pick_meta_data(conf_d):
     (_, cloud) = conf_d["cloud"]["type"]
     if cloud == cloudmetadata.CLOUD_TYPES.Amazon:
         mu = "http://169.254.169.254/latest/meta-data/"
-    elif cloud == cloudmetadata.CLOUD_TYPES.Eucalyptus:
-        mu = "http://169.254.169.254/1.0/meta-data/"
     elif cloud == cloudmetadata.CLOUD_TYPES.OpenStack:
         mu = "http://169.254.169.254/openstack/2012-08-10/meta_data.json"
     elif cloud == cloudmetadata.CLOUD_TYPES.Google:

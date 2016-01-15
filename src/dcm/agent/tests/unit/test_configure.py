@@ -185,9 +185,6 @@ class TestConfigure(unittest.TestCase):
             if cloud == "Amazon":
                 mu = "http://169.254.169.254/latest/meta-data/"
                 self.assertEqual(mu, cloud_from_file)
-            elif cloud == "Eucalyptus":
-                mu = "http://169.254.169.254/1.0/meta-data/"
-                self.assertEqual(mu, cloud_from_file)
             elif cloud == "OpenStack":
                 mu = ("http://169.254.169.254/openstack/2012-08-10/"
                       "meta_data.json")
