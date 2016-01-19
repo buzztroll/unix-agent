@@ -339,7 +339,7 @@ function install_chef_client {
 
     if [[ $chef_install == "yes" ]]; then
         echo "Installing chef-client."
-        curl -L http://www.opscode.com/chef/install.sh | sudo bash -s -- -v 11.16.4
+        curl -L http://www.opscode.com/chef/install.sh | sudo bash -s -- -v 12.6
         echo "Done."
     fi
 }
@@ -503,7 +503,7 @@ else
         case $flag in
           (--chef-client|-o)
           echo "Installing chef-client."
-          curl -s -L https://www.opscode.com/chef/install.sh | bash
+          curl -L http://www.opscode.com/chef/install.sh | sudo bash -s -- -v 12.6
           echo "Done."
           ;;
           (*)
