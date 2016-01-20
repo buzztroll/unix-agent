@@ -61,12 +61,12 @@ def parse_file(fname, cutofftime, sender):
                     if current_alert is not None:
                         # right here is where a new event is ready to be sent
                         sender.send_alert(
-                            new_alert.timestamp, new_alert.subject,
+                            int(float(new_alert.timestamp)*1000), new_alert.subject,
                             new_alert.level, new_alert.rule, new_alert.message)
-
                     # skip anything that we have already processed
                     new_alert = OssecAlert(line)
-                    if int(float(new_alert.timestamp))*1000 < cutofftime:
+                    na_time = int(float(new_alert.timestamp)*1000)
+                    if na_time <= cutofftime:
                         _g_logger.debug("We have already processed to time %s", str(new_alert.timestamp))
                         current_alert = None
                     else:
@@ -112,7 +112,7 @@ class AlertSender(FileSystemEventHandler):
             'type': 'ALERT',
             'request_id': request_id,
             'current_timestamp': calendar.timegm(time.gmtime()) * 1000,
-            'alert_timestamp': int(float(alert_time) * 1000),
+            'alert_timestamp': alert_time,
             'level': level,
             'rule': rule,
             'user': user,
