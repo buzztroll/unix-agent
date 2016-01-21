@@ -34,7 +34,7 @@ CLIENT_RB='/etc/chef/client.rb'
 CHEF_CLIENT=/opt/chef/bin/chef-client
 if [ ! -x "$CHEF_CLIENT" ]; then
    $LOGGER -t "$logTag" "No chef-client found on system. Installing"
-   curl -L http://www.opscode.com/chef/install.sh | sudo bash -s -- -v 11.16.4
+   curl -L http://www.opscode.com/chef/install.sh | sudo bash -s -- -v 12.6
    if [ $? != 0 ]; then
 	$LOGGER -t "$logTag" "Unable to install Chef automatically"
 	exit 1
