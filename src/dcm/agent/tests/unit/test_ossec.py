@@ -50,9 +50,12 @@ Nov  3 19:21:18 vagrant sudo: pam_unix(sudo:session): session opened for user ro
 
 
 EXPECTED_CALLS = [
- call(1446578476.4335, 'SSHD authentication success.', 3, 5715, '2015 Nov 03 19:21:16 vagrant->/var/log/auth.log\nSrc IP: 10.0.2.2\nUser: vagrant\nNov  3 19:21:16 vagrant sshd[19258]: Accepted publickey for vagrant from 10.0.2.2 port 54086 ssh2: RSA dd:3b:b8:2e:85:04:06:e9:ab:ff:a8:0a:c0:04:6e:d6\n\n'),
- call(1446578476.4685, 'Login session opened.', 3, 5501, '2015 Nov 03 19:21:16 vagrant->/var/log/auth.log\nNov  3 19:21:16 vagrant sshd[19258]: pam_unix(sshd:session): session opened for user vagrant by (uid=0)\n\n'),
- call(1446578480.4949, 'Successful sudo to ROOT executed', 3, 5402, '2015 Nov 03 19:21:20 vagrant->/var/log/auth.log\nUser: vagrant\nNov  3 19:21:18 vagrant sudo:  vagrant : TTY=pts/1 ; PWD=/home/vagrant ; USER=root ; COMMAND=/bin/bash\n\n')]
+ call(1446578476433, 'SSHD authentication success.', 3, 5715, '2015 Nov 03 19:21:16 vagrant->/var/log/auth.log\nSrc IP: 10.0.2.2\nUser: vagrant\nNov  3 19:21:16 vagrant sshd[19258]: Accepted publickey for vagrant from 10.0.2.2 port 54086 ssh2: RSA dd:3b:b8:2e:85:04:06:e9:ab:ff:a8:0a:c0:04:6e:d6\n\n'),
+ call(1446578476468, 'Login session opened.', 3, 5501, '2015 Nov 03 19:21:16 vagrant->/var/log/auth.log\nNov  3 19:21:16 vagrant sshd[19258]: pam_unix(sshd:session): session opened for user vagrant by (uid=0)\n\n'),
+ call(1446578480494, 'Successful sudo to ROOT executed', 3, 5402, '2015 Nov 03 19:21:20 vagrant->/var/log/auth.log\nUser: vagrant\nNov  3 19:21:18 vagrant sudo:  vagrant : TTY=pts/1 ; PWD=/home/vagrant ; USER=root ; COMMAND=/bin/bash\n\n'),
+ call(1446578480521, 'Login session opened.', 3, 5501, '2015 Nov 03 19:21:20 vagrant->/var/log/auth.log\nNov  3 19:21:18 vagrant sudo: pam_unix(sudo:session): session opened for user root by vagrant(uid=0)\n\n'),
+]
+
 
 class TestOssec(unittest.TestCase):
 
@@ -72,6 +75,6 @@ class TestOssec(unittest.TestCase):
             assert alert in EXPECTED_CALLS
 
     def test_parse_part_data(self):
-        parse_file("/tmp/alerts.log", 1446578476.4685, self.alert_sender)
+        parse_file("/tmp/alerts.log", 1446578476433, self.alert_sender)
         assert EXPECTED_CALLS[0] not in self.alert_sender.send_alert.call_args_list
 

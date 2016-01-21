@@ -62,7 +62,7 @@ class UnmountVolume(plugin_base.Plugin):
         try:
             self.umount()
             if self.args.encrypted:
-                plugin_utils.close_encrypted_device(
+                close_encrypted_device(
                     self.conf, self.args.deviceId)
             return plugin_base.PluginReply(0, reply_type="void")
         except exceptions.AgentExecutableException as aex:
