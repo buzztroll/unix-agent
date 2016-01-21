@@ -1,3 +1,16 @@
+
+# 1.2.0 (2016-01-20)
+
+Features:
+* Install Ossec with a script instead of packaging.
+
+Bug fixes:
+* Now only showing supported clouds in interactive agent install.
+* Fixed ossec parser and associated tests.
+* Fixed reference to close_encrypted_device in umnount_volume plugin.
+* Changed plugin.conf to allow calls to unmount and unmount_volume to succeed.
+* The agent will now fetch version 12.6 of chef client.
+ 
 # 1.1.0 (2015-11-26)
 
 Features:
