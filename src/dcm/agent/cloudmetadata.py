@@ -49,7 +49,7 @@ class CLOUD_TYPES:
 
 def normalize_cloud_name(cloud_name):
     for key in [i for i in dir(CLOUD_TYPES)
-                if not i.startswith("_")]:
+                if not i.startswith("__")]:
         name = getattr(CLOUD_TYPES, key)
         if name.lower() == cloud_name.lower():
             return name
