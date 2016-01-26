@@ -1,3 +1,7 @@
+# 1.2.2 (2016-01-26)
+
+Bug fixes:
+* Fixed bug where agent failed to unmount an encrypted volume.
 
 # 1.2.1 (2016-01-21)
 
