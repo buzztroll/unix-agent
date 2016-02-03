@@ -374,7 +374,7 @@ def build_options_list():
                            "expire between processing the alerts file.  This "
                            "value is here to prevent too many frequent alerts "
                            "from overwhelming the agent."),
-        ConfigOpt("intrusion_detection", "alert_threshold", float, default=5,
+        ConfigOpt("intrusion_detection", "alert_threshold", int, default=10,
                   help_msg="The ossec alert level threshold to send to dcm."
                            " Any alert level below this threshold will be"
                            " logged locally but not forwarded back to DCM."),

@@ -361,3 +361,33 @@ formatters:
         conf = config.AgentConfig([os.path.join(
             self.test_base_path, "etc/agent.conf")])
         self.assertTrue(conf.intrusion_detection_ossec)
+        self.assertEqual(conf.intrusion_detection_alert_threshold, 10)
+
+    def test_configure_ossec_alert_threshold_change(self):
+        conf1 = config.AgentConfig([])
+
+        def check_version(conf):
+            unsupported_platform_version = [("ubuntu", "10.04"),
+                                            ("debian", "6.0")]
+            for p, v in unsupported_platform_version:
+                if conf.platform_name == p and conf.platform_version.startswith(v):
+                    return True
+            return False
+
+        if check_version(conf1):
+            return
+
+        conf_args = ["-c", "Amazon",
+                     "-u", "http://doesntmatter.org/ws",
+                     "-p", self.test_base_path,
+                     "-C", "ws",
+                     "--intrusion-detection-ossec", "true",
+                     "--ids-alert-threshold", "5"]
+        rc = configure.main(conf_args)
+        self.assertEqual(rc, 0, msg="Failed for " + conf1.platform_name +
+                         " : " + conf1.platform_version)
+        conf = config.AgentConfig([os.path.join(
+            self.test_base_path, "etc/agent.conf")])
+        self.assertTrue(conf.intrusion_detection_ossec)
+        self.assertEqual(conf.intrusion_detection_alert_threshold, 5)
+

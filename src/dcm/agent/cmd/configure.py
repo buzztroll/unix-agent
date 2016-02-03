@@ -170,7 +170,13 @@ def setup_command_line_parser():
     parser.add_argument("--intrusion-detection-ossec", "-d",
                         dest="intrusion_detection_ossec",
                         default="False",
-                        help="Boolean to install and start ossec.  In addition the agent will process alerts.  The value must be one of [yes,no,true,false]")
+                        help="Boolean to install and start ossec.  In addition the agent will process alerts."
+                             "  The value must be one of [yes,no,true,false]")
+
+    parser.add_argument("--ids-alert-threshold", "-T",
+                        dest="ids_alert_threshold",
+                        default=10,
+                        help="The value at which the agent will not send alerts to DCM.")
 
     return parser
 
@@ -367,7 +373,8 @@ def merge_opts(conf_d, opts):
         "package_name": ("extra", "package_name"),
         "allow_unknown_certs": ("connection", "allow_unknown_certs"),
         "cacert_file": ("connection", "ca_cert"),
-        "intrusion_detection_ossec": ("intrusion_detection", "ossec")
+        "intrusion_detection_ossec": ("intrusion_detection", "ossec"),
+        "ids_alert_threshold": ("intrusion_detection", "alert_threshold")
     }
     for opts_name in map_opts_to_conf:
         (s, i) = map_opts_to_conf[opts_name]
