@@ -91,6 +91,8 @@ Optional Arguments:
 
   --instrusion-detection-ossec, -d Flag to install and start ossec.  In addition the agent will process alerts.  Default is False
 
+  --ids-alert-threshold, -T      Integer alert level at which the agent will persist locally but not log back to DCM.
+
 "
 }
 
