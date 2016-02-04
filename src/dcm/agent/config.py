@@ -420,7 +420,10 @@ def build_options_list():
         ConfigOpt("extra", "base_path", str, default="/opt/dcm-agent-extras",
                   help_msg="The location where the extras package will be "
                            "installed.  This should only change in conjunction"
-                           " with the extras omnibus installer.")
+                           " with the extras omnibus installer."),
+
+        ConfigOpt("configuration_management", "chef_client_version", str, default="11.16.4",
+                  help_msg="Version of chef client to be installed")
     ]
 
     return option_list

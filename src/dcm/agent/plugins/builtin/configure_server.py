@@ -121,7 +121,8 @@ class ConfigureServer(plugin_base.Plugin):
                         run_list_file_name,
                         authId,
                         endpoint,
-                        environmentId]
+                        environmentId,
+                        self.conf.configuration_management_chef_client_version]
             return plugin_utils.run_command(self.conf, cmd_list)
         finally:
             plugin_utils.safe_delete(run_list_file_name)
