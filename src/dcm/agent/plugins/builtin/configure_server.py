@@ -20,6 +20,7 @@ import os
 import urllib.parse
 
 import dcm.agent.exceptions as exceptions
+import dcm.agent.logger as dcm_logger
 import dcm.agent.plugins.api.base as plugin_base
 import dcm.agent.plugins.api.exceptions as plugin_exceptions
 import dcm.agent.plugins.api.utils as plugin_utils
@@ -32,7 +33,8 @@ _g_logger = logging.getLogger(__name__)
 class ConfigureServer(plugin_base.Plugin):
     protocol_arguments = {
         "configType":
-            ("", True, str, None),
+            ("Which configuration management software to use (chef or puppet)",
+             True, str, None),
         "authId":
             ("", False, str, None),
         "configurationData":
@@ -205,6 +207,13 @@ class ConfigureServer(plugin_base.Plugin):
         else:
             raise plugin_exceptions.AgentPluginParameterBadValueException(
                 "configType", "CHEF or PUPPET")
+
+        if stderr:
+            dcm_logger.log_to_dcm_console_configuration_management_error(
+                stderr=stderr)
+        if stdout:
+            dcm_logger.log_to_dcm_console_configuration_management_output(
+                stdout=stdout)
 
         if rc != 0:
             return plugin_base.PluginReply(rc, message=stderr)
