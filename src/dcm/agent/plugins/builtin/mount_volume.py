@@ -53,6 +53,11 @@ _g_platform_dep_crypto_installer = {
                                             "cryptsetup"],
 }
 
+_g_platform_xfs_installer = {
+    config.PLATFORM_TYPES.PLATFORM_UBUNTU: ['debInstall',
+                                            "xfsprogs"],
+}
+
 
 def _is_supported(conf):
     try:
@@ -125,6 +130,8 @@ class MountVolume(plugin_base.ScriptPlugin):
         return key_file_path
 
     def format(self, device_id):
+        if self.args.fileSystem == "xfs":
+            self._install_deps(_g_platform_xfs_installer)
         return utils.agent_format(
             self.conf, device_id, self.args.fileSystem,
             self.args.mountPoint, self.args.encryptedFsEncryptionKey)

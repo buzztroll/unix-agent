@@ -42,7 +42,11 @@ else
 	exit 1
 fi
 
-[ -f /sbin/mkfs.${fileSystem} ] || ( $LOGGER -t "$logTag" "${fileSystem} not supported ; exit 24" )
+if [ ! -f /sbin/mkfs.${fileSystem} ]; then
+  $LOGGER -t "$logTag" "${fileSystem} not supported"
+  exit 24
+fi
+
 case "$fileSystem" in
 reiserfs)	yes | sudo /sbin/mkfs.${fileSystem} -f $device
 			;;
