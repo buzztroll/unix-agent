@@ -23,6 +23,7 @@ import dcmdocker.import_image as import_image
 import dcmdocker.delete_image as delete_image
 import dcmdocker.list_containers as list_containers
 import dcmdocker.tests.utils as test_utils
+import dcmdocker.utils as docker_utils
 
 
 class TestDockerImageCommands(unittest.TestCase):
@@ -41,6 +42,18 @@ class TestDockerImageCommands(unittest.TestCase):
         plugin = pull_repo.PullRepo(
             self.conf, "400", {}, "test", arguments)
         plugin.run()
+
+    def test_pull_bad_repo(self):
+        arguments = {'repository': 'notreal'}
+        plugin = pull_repo.PullRepo(
+            self.conf, "400", {}, "test", arguments)
+        passed = False
+        try:
+            plugin.run()
+        except docker_utils.DCMDockerPullException as ex:
+            passed = True
+            print(str(ex))
+        self.assertTrue(passed, "A pull exception should have been thrown.")
 
     def test_empty_image_list(self):
         arguments = {}

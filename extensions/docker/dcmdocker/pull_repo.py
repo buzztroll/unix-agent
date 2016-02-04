@@ -44,12 +44,17 @@ class PullRepo(docker_utils.DockerJob):
         id_map = {}
         for line in out:
             _g_logger.debug(line)
-            try:
-                j_obj = json.loads(line)
+            line = line.decode()
+            j_obj = json.loads(line)
+            if 'id' in j_obj:
                 id_map[j_obj['id']] = line
-            except Exception as ex:
-                _g_logger.debug(
-                    "Error dealing with the pull output " + str(ex))
+            elif 'error' in j_obj:
+                _g_logger.error(
+                    "Error pulling the image " + line)
+                raise docker_utils.DCMDockerPullException(
+                    repo=self.args.repository,
+                    tag=self.args.tag,
+                    error_msg=j_obj['error'])
         for k in id_map:
             dcm_logger.log_to_dcm_console_job_details(
                 job_name=self.name, details="pulled " + id_map[k])
