@@ -230,3 +230,15 @@ log_to_dcm_console_incoming_message = functools.partial(
     log_to_dcm_console,
     logging.DEBUG,
     "An incoming message for the command %(job_name)s.")
+
+
+log_to_dcm_console_configuration_management_error = functools.partial(
+    log_to_dcm_console,
+    logging.WARN,
+    "Configuration management reported the errors: %(stderr)s.")
+
+
+log_to_dcm_console_configuration_management_output = functools.partial(
+    log_to_dcm_console,
+    logging.INFO,
+    "Configuration management reported: %(stdout)s.")
