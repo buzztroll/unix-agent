@@ -30,7 +30,16 @@ class DCMDockerConnectionException(DCMDockerException):
               ": %(docker_msg)s"
 
     def __init__(self, url, version, docker_msg):
-        super(DCMDockerConnectionException, self.message % locals())
+        super(DCMDockerConnectionException, self).__init__(
+            self.message % locals())
+
+
+class DCMDockerPullException(DCMDockerException):
+    message = "Failed to fetch the docker image %(repo)s : %(tag)s" \
+              ": %(error_msg)s"
+
+    def __init__(self, repo="", tag="", error_msg=None):
+        super(DCMDockerPullException, self).__init__(self.message % locals())
 
 
 def get_docker_connection(conf):

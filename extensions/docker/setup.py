@@ -15,7 +15,7 @@
 #
 from setuptools import setup, find_packages
 
-g_version = "0.2"
+g_version = "0.3"
 
 setup(name='dcmdocker',
       version=g_version,
