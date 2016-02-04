@@ -130,7 +130,7 @@ class MountVolume(plugin_base.ScriptPlugin):
         return key_file_path
 
     def format(self, device_id):
-        if self.args.fileSystem == "xfs":
+        if self.args.fileSystem is not None and self.args.fileSystem.lower() == "xfs":
             self._install_deps(_g_platform_xfs_installer)
         return utils.agent_format(
             self.conf, device_id, self.args.fileSystem,
