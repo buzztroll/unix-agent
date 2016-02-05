@@ -1,3 +1,13 @@
+# 1.2.3 (2016-02-05)
+
+Bug fixes:
+
+* Refactored to let user pass in chef client version to be installed, which addresses FB8747.
+* Reporting cleaner error messages when pulling a docker image.
+* Installing xfsprogs if that file system is specified on mount.  Cleanup of format script.  Addresses FB8736
+* Adding organized logging for configuration management.
+* Enabled configuration of intrusion detection alert threshold.
+
 # 1.2.2 (2016-01-26)
 
 Bug fixes:
