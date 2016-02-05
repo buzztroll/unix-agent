@@ -391,3 +391,30 @@ formatters:
         self.assertTrue(conf.intrusion_detection_ossec)
         self.assertEqual(conf.intrusion_detection_alert_threshold, 5)
 
+    def test_default_chef_client(self):
+        conf_args = ["-c", "aMazOn",
+                     "-u", "http://doesntmatter.org/ws",
+                     "-p", self.test_base_path,
+                     "-C", "ws"]
+        rc = configure.main(conf_args)
+        self.assertEqual(rc, 0)
+
+        parser = configparser.ConfigParser()
+        parser.read(os.path.join(self.test_base_path, "etc", "agent.conf"))
+        chef_client_version = parser.get("configuration_management", "chef_client_version")
+        self.assertEqual(chef_client_version, "11.16.4")
+
+    def test_config_chef_client(self):
+        conf_args = ["-c", "aMazOn",
+                     "-u", "http://doesntmatter.org/ws",
+                     "-p", self.test_base_path,
+                     "-C", "ws",
+                     "--chef-client-version", "12.6"]
+        rc = configure.main(conf_args)
+        self.assertEqual(rc, 0)
+
+        parser = configparser.ConfigParser()
+        parser.read(os.path.join(self.test_base_path, "etc", "agent.conf"))
+        chef_client_version = parser.get("configuration_management", "chef_client_version")
+        self.assertEqual(chef_client_version, "12.6")
+

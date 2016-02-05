@@ -158,7 +158,6 @@ def setup_command_line_parser():
                         help="Install the chef client")
 
     parser.add_argument("--chef-client-version", dest="chef_client_version",
-                        action='store_true',
                         default="11.16.4",
                         help="Version of the chef client to be installed.")
 
@@ -380,7 +379,6 @@ def merge_opts(conf_d, opts):
         "cacert_file": ("connection", "ca_cert"),
         "intrusion_detection_ossec": ("intrusion_detection", "ossec"),
         "ids_alert_threshold": ("intrusion_detection", "alert_threshold"),
-        "chef_client": ("configuration_management", "chef_client"),
         "chef_client_version": ("configuration_management", "chef_client_version")
     }
     for opts_name in map_opts_to_conf:

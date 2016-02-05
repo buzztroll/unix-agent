@@ -345,12 +345,12 @@ function install_chef_client {
     if [[ $chef_install == "yes" ]]; then
         echo "Enter the chef-client version you would like to install or press ENTER for $DEFAULT_CHEF_VERSION"
         chef_version=$( read_terminal )
-        echo "Installing chef-client."
-        if [ "X$chef_version" == "X" ]; then
-          curl -L http://www.opscode.com/chef/install.sh | sudo bash -s -- -v $DEFAULT_CHEF_VERSION
-        else
-          curl -L http://www.opscode.com/chef/install.sh | sudo bash -s -- -v $chef_version
+        echo "Installing chef-client version $chef_version."
+        if [ "X$chef_version" != "X" ]; then
+          DEFAULT_CHEF_VERSION=$chef_version
         fi
+        echo "curl -L http://www.opscode.com/chef/install.sh | sudo bash -s -- -v $DEFAULT_CHEF_VERSION"
+        curl -L http://www.opscode.com/chef/install.sh | sudo bash -s -- -v $DEFAULT_CHEF_VERSION
         echo "Done."
     fi
 }
@@ -503,13 +503,16 @@ else
     install_agent
 fi
 
+# Set chef client version if flag is passed.
 CHEF_CLIENT_VERSION=''
-for c_version in $@
+n=1
+for arg in $@
   do
-    case $c_version in
+    n=$((n+1))
+    case $arg in
       (--chef-client-version)
         echo "Getting the chef version"
-        CHEF_CLIENT_VERSION=$2
+        CHEF_CLIENT_VERSION=${!n}
         ;;
       (*)
         ;;
@@ -527,11 +530,11 @@ else
         case $flag in
           (--chef-client|-o)
           echo "Installing chef-client."
-          if [ "X$CHEF_CLIENT_VERSION" == "X" ]; then
-            curl -L http://www.opscode.com/chef/install.sh | sudo bash -s -- -v $DEFAULT_CHEF_VERSION
-          else
-            curl -L http://www.opscode.com/chef/install.sh | sudo bash -s -- -v $CHEF_CLIENT_VERSION
+          if [ "X$CHEF_CLIENT_VERSION" != "X" ]; then
+            DEFAULT_CHEF_VERSION=$CHEF_CLIENT_VERSION
           fi
+          echo "curl -L http://www.opscode.com/chef/install.sh | sudo bash -s -- -v $DEFAULT_CHEF_VERSION"
+          curl -L http://www.opscode.com/chef/install.sh | sudo bash -s -- -v $DEFAULT_CHEF_VERSION
           echo "Done."
           ;;
           (*)
