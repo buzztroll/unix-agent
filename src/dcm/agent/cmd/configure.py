@@ -152,10 +152,14 @@ def setup_command_line_parser():
                         default=None,
                         help="Name of the extra package to be installed.")
 
-    parser.add_argument("--chef-client", "-o", dest="chef-client",
+    parser.add_argument("--chef-client", "-o", dest="chef_client",
                         action='store_true',
                         default=False,
-                        help="This is just a placeholder for now.")
+                        help="Install the chef client")
+
+    parser.add_argument("--chef-client-version", dest="chef_client_version",
+                        default="11.16.4",
+                        help="Version of the chef client to be installed.")
 
     parser.add_argument("--allow-unknown-certs", "-Z",
                         dest="allow_unknown_certs",
@@ -374,7 +378,8 @@ def merge_opts(conf_d, opts):
         "allow_unknown_certs": ("connection", "allow_unknown_certs"),
         "cacert_file": ("connection", "ca_cert"),
         "intrusion_detection_ossec": ("intrusion_detection", "ossec"),
-        "ids_alert_threshold": ("intrusion_detection", "alert_threshold")
+        "ids_alert_threshold": ("intrusion_detection", "alert_threshold"),
+        "chef_client_version": ("configuration_management", "chef_client_version")
     }
     for opts_name in map_opts_to_conf:
         (s, i) = map_opts_to_conf[opts_name]

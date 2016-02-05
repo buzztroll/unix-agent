@@ -3,7 +3,7 @@
 
 SHELL_PID=$$
 installer_cmd=""
-
+DEFAULT_CHEF_VERSION=11.16.4
 function print_help() {
     echo "
 This script will fetch and install the dcm-agent on the virtual machine where
@@ -83,7 +83,9 @@ Optional Arguments:
   --loglevel LOGLEVEL, -L LOGLEVEL
                         The level of logging for the agent.
 
-  --chef-client, -o     Install chef client.
+  --chef-client, -o Install chef client.
+
+  --chef-client-version Version default is $DEFAULT_CHEF_VERSION
 
   --install-extras      Install extras package
 
@@ -339,9 +341,16 @@ function install_chef_client {
         esac
     done
 
+
     if [[ $chef_install == "yes" ]]; then
-        echo "Installing chef-client."
-        curl -L http://www.opscode.com/chef/install.sh | sudo bash -s -- -v 12.6
+        echo "Enter the chef-client version you would like to install or press ENTER for $DEFAULT_CHEF_VERSION"
+        chef_version=$( read_terminal )
+        echo "Installing chef-client version $chef_version."
+        if [ "X$chef_version" != "X" ]; then
+          DEFAULT_CHEF_VERSION=$chef_version
+        fi
+        echo "curl -L http://www.opscode.com/chef/install.sh | sudo bash -s -- -v $DEFAULT_CHEF_VERSION"
+        curl -L http://www.opscode.com/chef/install.sh | sudo bash -s -- -v $DEFAULT_CHEF_VERSION
         echo "Done."
     fi
 }
@@ -494,6 +503,22 @@ else
     install_agent
 fi
 
+# Set chef client version if flag is passed.
+CHEF_CLIENT_VERSION=''
+n=1
+for arg in $@
+  do
+    n=$((n+1))
+    case $arg in
+      (--chef-client-version)
+        echo "Getting the chef version"
+        CHEF_CLIENT_VERSION=${!n}
+        ;;
+      (*)
+        ;;
+     esac
+  done
+
 # Create configuration file and optionally install chef client(subject to change).
 if [ "X$1" == "X" ]; then
     env -i PATH=$PATH /opt/dcm-agent/embedded/agentve/bin/dcm-agent-configure -i --base-path /dcm
@@ -505,7 +530,11 @@ else
         case $flag in
           (--chef-client|-o)
           echo "Installing chef-client."
-          curl -L http://www.opscode.com/chef/install.sh | sudo bash -s -- -v 12.6
+          if [ "X$CHEF_CLIENT_VERSION" != "X" ]; then
+            DEFAULT_CHEF_VERSION=$CHEF_CLIENT_VERSION
+          fi
+          echo "curl -L http://www.opscode.com/chef/install.sh | sudo bash -s -- -v $DEFAULT_CHEF_VERSION"
+          curl -L http://www.opscode.com/chef/install.sh | sudo bash -s -- -v $DEFAULT_CHEF_VERSION
           echo "Done."
           ;;
           (*)

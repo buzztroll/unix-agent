@@ -27,6 +27,7 @@ EXTRA_INFO_FILE_PATH=$4
 AUTH_ID=$5
 ENDPOINT=$6
 CHEF_ENVIRONMENT=$7
+CHEF_CLIENT_VERSION=$8
 
 CLIENT_RB='/etc/chef/client.rb'
 
@@ -34,7 +35,7 @@ CLIENT_RB='/etc/chef/client.rb'
 CHEF_CLIENT=/opt/chef/bin/chef-client
 if [ ! -x "$CHEF_CLIENT" ]; then
    $LOGGER -t "$logTag" "No chef-client found on system. Installing"
-   curl -L http://www.opscode.com/chef/install.sh | sudo bash -s -- -v 12.6
+   curl -L http://www.opscode.com/chef/install.sh | sudo bash -s -- -v $CHEF_CLIENT_VERSION
    if [ $? != 0 ]; then
 	$LOGGER -t "$logTag" "Unable to install Chef automatically"
 	exit 1
