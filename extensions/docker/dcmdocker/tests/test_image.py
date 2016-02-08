@@ -38,7 +38,8 @@ class TestDockerImageCommands(unittest.TestCase):
         pass
 
     def test_pull_repo(self):
-        arguments = {'repository': 'ubuntu'}
+        arguments = {'repository': 'ubuntu',
+                     'tag': '14.04'}
         plugin = pull_repo.PullRepo(
             self.conf, "400", {}, "test", arguments)
         plugin.run()
