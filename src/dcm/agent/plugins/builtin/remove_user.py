@@ -13,7 +13,12 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 #
+import psutil
+import logging
+
 import dcm.agent.plugins.api.base as plugin_base
+
+_g_logger = logging.getLogger(__name__)
 
 
 class RemoveUser(plugin_base.ScriptPlugin):
@@ -28,6 +33,15 @@ class RemoveUser(plugin_base.ScriptPlugin):
         super(RemoveUser, self).__init__(
             conf, job_id, items_map, name, arguments)
         self.ordered_param_list = [self.args.userId]
+
+    def run(self):
+        rc = super(RemoveUser, self).run()
+        if rc._reply_doc["return_code"] != 0:
+            return plugin_base.PluginReply(
+                rc._reply_doc["return_code"], message='', error_message="Remove User Failed rc = %s" % str(rc))
+        else:
+            return plugin_base.PluginReply(
+                0, message="RemoveUser succeeded", error_message='')
 
 
 def load_plugin(conf, job_id, items_map, name, arguments):
