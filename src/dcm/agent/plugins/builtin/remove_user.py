@@ -39,7 +39,7 @@ class RemoveUser(plugin_base.ScriptPlugin):
     def run(self):
         command = [self.conf.get_script_location("removeUser"),
                    self.args.userId]
-        (stdout, stderr, rc) = plugin_utils.run_command(self.conf, command)
+        (stdout, stderr, rc) = plugin_utils.run_command(self.conf, command, with_sudo=True)
         if rc != 0:
             raise exceptions.AgentExecutableException(
                     command, rc, stdout, stderr)
