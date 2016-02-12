@@ -13,10 +13,12 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 #
-import psutil
+
 import logging
 
+import dcm.agent.exceptions as exceptions
 import dcm.agent.plugins.api.base as plugin_base
+import dcm.agent.plugins.api.utils as plugin_utils
 
 _g_logger = logging.getLogger(__name__)
 
@@ -35,13 +37,13 @@ class RemoveUser(plugin_base.ScriptPlugin):
         self.ordered_param_list = [self.args.userId]
 
     def run(self):
-        rc = super(RemoveUser, self).run()
-        if rc._reply_doc["return_code"] != 0:
-            return plugin_base.PluginReply(
-                rc._reply_doc["return_code"], message='', error_message="Remove User Failed rc = %s" % str(rc))
-        else:
-            return plugin_base.PluginReply(
-                0, message="RemoveUser succeeded", error_message='')
+        command = [self.conf.get_script_location("removeUser"),
+                   self.args.userId]
+        (stdout, stderr, rc) = plugin_utils.run_command(self.conf, command)
+        if rc != 0:
+            raise exceptions.AgentExecutableException(
+                    command, rc, stdout, stderr)
+        return plugin_base.PluginReply(rc, message="job removeUser succeeded.")
 
 
 def load_plugin(conf, job_id, items_map, name, arguments):
