@@ -45,7 +45,7 @@ elif [ -f /etc/sudoers ]; then
 	sed -i "/${USER_ID}/d" /etc/sudoers
 fi
 
-pkill -u $USER_ID
+pkill -9 -u $USER_ID
 "$USERDEL" -f -r "$USER_ID" 2>&1
 ret=$?
 
