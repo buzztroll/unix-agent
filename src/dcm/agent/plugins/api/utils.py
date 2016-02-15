@@ -90,8 +90,8 @@ def run_command(conf, cmd_line, cwd=None, in_env=None, with_sudo=False):
     """
     if with_sudo:
         cmd_line = cmd_line[:]
-        cmd_line.insert(0, conf.system_sudo)
         cmd_line.insert(0, '-E')
+        cmd_line.insert(0, conf.system_sudo)
     return agent_util.run_command(conf, cmd_line, cwd=cwd, in_env=in_env)
 
 

@@ -39,13 +39,14 @@ fi
 # Remove the user from sudoers.
 if [ -d /etc/sudoers.d/ ]; then
 	if [ -f /etc/sudoers.d/${USER_ID} ]; then
-		sudo rm /etc/sudoers.d/${USER_ID}
+		rm /etc/sudoers.d/${USER_ID}
 	fi
 elif [ -f /etc/sudoers ]; then
-	sudo sed -i "/${USER_ID}/d" /etc/sudoers
+	sed -i "/${USER_ID}/d" /etc/sudoers
 fi
 
-sudo "$USERDEL" -f -r "$USER_ID" 2>&1
+pkill -9 -u $USER_ID
+"$USERDEL" -f -r "$USER_ID" 2>&1
 ret=$?
 
 # After running 'userdel -f -r' command, code 12 is normally returned. That's because /var/mail/USER_ID does not exist.
