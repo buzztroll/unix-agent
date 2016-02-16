@@ -12,7 +12,7 @@ programs with the following options:
     --ids-alert-threshold, -T      Integer alert level at which the agent will persist locally but not log back to DCM.
                                    The default is 5.
 
-This will run the `installOssec` script and start the ossec daemon.  In addition it will start the ossec alert routine
+This will run the **installOssec** script and start the ossec daemon.  In addition it will start the ossec alert routine
 which will check the ossec alert log and persist any alerts that meet the threshold to the agent database.
 In addition, any alerts that are level 10 or above will be displayed on the DCM console UI.
 If you wish to stop using ossec on a given VM, simply stop all ossec services, and reconfigure the agent by opening

@@ -92,9 +92,9 @@ Non-interactive install syntax
   
   .. note:: By default the DCM Agent is configured to not be started at system boot.  If you wish to have the DCM Agent configured to be started at system boot then specify the **-B** or **--on-boot** option.
 
-  .. note:: By passing the --intrusion-detection-ossec flag, the agent will download and install ossec, and will process alerts
+  .. note:: By passing the **--intrusion-detection-ossec** flag, the agent will download and install ossec, and will process alerts
             from it that are level 5 and above.  Any alerts below 10 are only stored in the agent database.  Any alerts
             10 or greater are sent to DCM and are displayed on the console.  To customize the level of alerts stored in the agent
-            database simply pass your desired level to --ids-alert-threshold flag.
+            database simply pass your desired level to **--ids-alert-threshold** flag.
 
   .. warning:: The default value for the web socket URL is **wss://dcm.enstratius.com/agentManager** which is the Dell Cloud Manager SaaS provisioning server. This needs to be changed for On-Premise environments.
