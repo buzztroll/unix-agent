@@ -29,6 +29,7 @@ Contents:
    authentication/index
    scrubber
    test/test
+   intrusion-detection/ossec
 
 
 Indices And Tables
