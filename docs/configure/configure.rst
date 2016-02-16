@@ -51,3 +51,13 @@ configuration.  To reconfigure run
 This will read in the current configuration and use all of its
 values as defaults.  Any other passed in command line options or answers to
 interactive questions will override these defaults.
+
+
+Configuring Chef Client
+-----------------------
+
+If you have opted to install the chef client be aware that the default version of the chef client that is
+installed is 11.16.4, which may not work with your given chef server.  You can customize this by also passing
+in the chef client version flag with your preferred version:
+
+  --chef-client-version <version>
