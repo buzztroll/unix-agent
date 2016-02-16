@@ -29,7 +29,7 @@ Contents:
    authentication/index
    scrubber
    test/test
-   intrusion_detection
+   intrusion-detection
 
 
 Indices And Tables
