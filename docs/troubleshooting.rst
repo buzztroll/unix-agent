@@ -25,8 +25,9 @@ some troubleshooting steps that may help diagnose and fix common problems.
 
 * Increase the log level.  By default the dcm-agent logs at the "INFO" level.
   At times it may be useful to increase the level to DEBUG.  This will result
-  in very verbose logging and may provide the information needed.  To increase
-  the log level do the following:
+  in very verbose logging and may provide the information needed.  Note that
+  doing this can cause passwords to be logged in /dcm/logs/agent.log.wire.
+  To increase the log level do the following:
 
 
   * Edit /dcm/etc/logging.yaml
@@ -54,3 +55,16 @@ some troubleshooting steps that may help diagnose and fix common problems.
         Connected to example.com.
         Escape character is '^]'.
         ^]quit
+
+  * Inspect wire logs.  When logging is turned to DEBUG in all
+    loggers the JSON documents that are sent across the wire will be written
+    to the file /dcm/logs/agent.log.wire.  This infomation can be helpful
+    for debugging the agents interactions with DCM.  Note that the information
+    written to this log is raw and thus passwords may be written in clear text.
+    This logging is off by default.
+
+  * Inspect job runner logs.  Scripts are forked and executed by the agent
+    as part of its normal processing.  Details about the parameters sent
+    to these scripts and the output and exit codes from there scripts are
+    logged at /dcm/logs/agent.log.job_runner.  This information can be useful
+    when debugging errors in agent's commands.

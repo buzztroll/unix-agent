@@ -12,6 +12,7 @@ cloud applications.  Some of the features that it provides are:
 - Server health monitoring
 - Automated software installation/configuration
 - Adding/removing users
+- Intrusion detection alerts
 - Disk volume management
 
 Contents:
