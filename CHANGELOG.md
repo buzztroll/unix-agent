@@ -1,3 +1,15 @@
+# 1.2.4 (2016-02-16)
+
+Bug fixes:
+
+* Fixed bug where remove_user plugin failed silently if invoked while user was logged in to the VM.
+* Fixed bug that kept user as ADMIN if the user was initially added as ADMIN and subsequently removed
+  and added as a regular user.
+  
+Features:
+* Updated docs to include information on setting up intrusion detection and configuring the chef client version.
+* Updated docs to include the steps on setting wire logging for debugging purposes.
+
 # 1.2.3 (2016-02-05)
 
 Bug fixes:
